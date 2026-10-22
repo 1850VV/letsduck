@@ -14,3 +14,18 @@ const rows={
  hi:['कृपया यह फ़ील्ड भरें।','कम से कम {count} अक्षर लिखें।','कृपया यह मान जाँचें।']
 };
 export const extra=Object.fromEntries(Object.entries(rows).map(([code,[required,minlength,invalid]])=>[code,{'form.required':required,'form.minlength':minlength,'form.invalid':invalid}]));
+const serverMessages={
+ 'zh-Hans':['导出任务较多，请稍后重试','分页范围不对'],
+ 'zh-Hant':['匯出工作較多，請稍後重試','分頁範圍不正確'],
+ en:['The export queue is busy. Please try again shortly.','The page range is invalid.'],
+ ja:['エクスポートが混み合っています。しばらくしてから再試行してください。','ページの範囲が正しくありません。'],
+ ko:['내보내기 요청이 많습니다. 잠시 후 다시 시도해 주세요.','페이지 범위가 올바르지 않습니다.'],
+ fr:['La file d’exportation est occupée. Réessayez dans un instant.','La plage de pages est incorrecte.'],
+ de:['Die Exportwarteschlange ist ausgelastet. Bitte versuche es gleich erneut.','Der Seitenbereich ist ungültig.'],
+ es:['La cola de exportación está ocupada. Inténtalo de nuevo en un momento.','El intervalo de páginas no es válido.'],
+ 'pt-BR':['A fila de exportação está ocupada. Tente novamente em instantes.','O intervalo de páginas é inválido.'],
+ ru:['Очередь экспорта занята. Повторите попытку немного позже.','Неверный диапазон страниц.'],
+ ar:['قائمة انتظار التصدير مشغولة. حاول مرة أخرى بعد قليل.','نطاق الصفحات غير صالح.'],
+ hi:['निर्यात की कतार व्यस्त है। थोड़ी देर बाद फिर कोशिश करें।','पृष्ठों की सीमा अमान्य है।']
+};
+for(const [code,[busy,pagination]]of Object.entries(serverMessages))Object.assign(extra[code],{'error.export.busy':busy,'error.request.pagination':pagination});

@@ -1,6 +1,6 @@
 async page=>{
   await page.goto('http://127.0.0.1:8877/');await page.waitForFunction(()=>window.studioProto);
-  await page.evaluate(async()=>{const {api,setToken}=await import('/shared/api.mjs');await api('POST','/auth/logout',{});setToken(null);});
+  await page.evaluate(async()=>{const {api,setToken,getToken}=await import('/shared/api.mjs');if(getToken())await api('POST','/auth/logout',{});setToken(null);});
   await page.reload();await page.waitForFunction(()=>window.studioProto);
   if(await page.locator('#coach').isVisible())await page.locator('#coach-go').click();
   await page.locator('#language-trigger').click();await page.locator('[data-locale="fr"]').click();

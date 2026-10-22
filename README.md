@@ -17,17 +17,30 @@
 
 ## 结构
 
-前后端分离，后端只用 Python 标准库，前端是不需要构建的静态文件。
+前后端分离。后端使用 FastAPI + Uvicorn，前端是不需要构建的静态文件。数据库有两种模式：本地默认 SQLite，服务器可切换 MySQL 8.4。
 
 ```
 frontend/   静态前端：index.html（涂装台）、gallery/（配色广场）、shared/、lib/、vendor/（Three.js）
-backend/    API：server.py（路由）、store.py（SQLite：账号、方案、作品、评分）、exporter.py（3MF 导出）
+backend/    API：server.py（路由）、store.py（双数据库：账号、方案、作品、评分）、exporter.py（3MF 导出）
 assets/     本地资产包（被 Git 忽略，部署时只读挂载）
 ```
 
 接口都在 `/api/` 下：`auth/register|login|logout`、`me`、`schemes`、`works`（含 `works/<id>/rating`）、`plan`、`export`、`health`。
 
-## 用 Docker 部署到自己的服务器
+## 轻量部署（默认 SQLite）
+
+需要 Python 3.12+。不需要安装 MySQL，SQLite 数据仍在 `backend/data/doodleduck.db`，保留旧版 `DUCK_DB` 配置。首次打开旧数据库前会自动生成一致性备份，再补充索引与昵称查询字段。
+
+```sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements.txt
+python3 scripts/import_local_assets.py /path/to/assets
+.venv/bin/python run.py --no-open
+```
+
+打开 `http://127.0.0.1:8876/`。本地运行仍需要前述独立资产包。数据库模式不会改变模型授权与复现边界。
+
+## Docker 部署与服务器模式
 
 ```sh
 git clone git@github.com:1850VV/duck-palette.git
@@ -40,44 +53,66 @@ docker compose up -d --build
 
 未配置、非 HTTPS、localhost 或 IP 地址均不生成作品链接与二维码。尚未部署时仍可本机涂色和保存普通海报，界面明确提示分享地址未配置。部署后请用另一台手机扫描保存的海报，核对作品标题、作者和配色；浏览器手机尺寸和 QR 解码不能替代此项实机验收。
 
+以上 Docker 命令也默认使用 SQLite。服务器使用 MySQL 时，先在被 Git 忽略的 `.env` 中设置 `DUCK_MYSQL_PASSWORD` 和 `DUCK_MYSQL_ROOT_PASSWORD`，再运行：
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.mysql.yml up -d --build
+```
+
+**切换配置不会自动搬迁数据。已有 SQLite 数据时，先按 [部署与迁移说明](docs/deployment.md) 停止写入、备份、迁移并核对，再启动 MySQL 模式。**
+
 打开 `http://<服务器地址>:8080/`。端口可用 `DUCK_PORT=80 docker compose up -d` 修改。
 
 - `frontend`（nginx）提供静态页面和只读的 `/assets/`（不对外提供源 3MF），并把 `/api/` 转发给 `backend`。
-- `backend` 的数据库在 `duck-data` 卷里（`/data/doodleduck.db`）。备份：`docker compose cp backend:/data/doodleduck.db ./backup.db`。
+- SQLite 在 `duck-data` 卷的 `/data/doodleduck.db`；MySQL 在独立 `mysql-data` 卷。备份、回退和单机外部 MySQL 配置见 [部署与迁移说明](docs/deployment.md)。
 - 资产包只挂载、不打进镜像。没有 HTTPS；要公网访问，建议放在已有的反向代理（Caddy / nginx + 证书）后面。
 
 ## 本地开发
 
-需要 Python 3.9+ 和支持 WebGL 2 的浏览器；跑前端测试还需要 Node.js 22+。不需要 npm 安装。
+需要 Python 3.12+ 和支持 WebGL 2 的浏览器；跑前端测试还需要 Node.js 22+。先安装 `requirements-dev.txt`，不需要 npm 安装。
 
 ```sh
 python3 scripts/import_local_assets.py /path/to/assets
-python3 run.py
+.venv/bin/python run.py
 ```
 
-`run.py` 用一个进程同时提供前端、资产和 API（默认 `http://127.0.0.1:8876/`，`--port` 可改，`--no-open` 不自动开浏览器）。开发数据库在 `backend/data/`（被 Git 忽略），可用环境变量 `DUCK_DB` 指到别处。
+`run.py` 用 Uvicorn 提供前端、资产和 API；导出在独立进程运行（默认 `http://127.0.0.1:8876/`，`--port` 可改，`--no-open` 不自动开浏览器）。开发数据库在 `backend/data/`（被 Git 忽略），可用环境变量 `DUCK_DB` 指到别处。
 
 ## 验证
 
-不需要资产包的检查（CI 会跑）：
+不需要资产包的检查（CI 同时提供真实 MySQL 服务）：
 
 ```sh
-python3 scripts/publication_audit.py
-python3 -m unittest discover -s tests -p test_local_assets.py -v
-python3 -m unittest discover -s tests -p test_store.py -v
+.venv/bin/python -m pip install -r requirements-dev.txt
+```
+
+```sh
+.venv/bin/python scripts/publication_audit.py
+.venv/bin/python -m unittest discover -s tests -p test_local_assets.py -v
+.venv/bin/python -m unittest discover -s tests -p test_store.py -v
+.venv/bin/python -m unittest discover -s tests -p test_api.py -v
+.venv/bin/python -m unittest discover -s tests -p test_store_scaling.py -v
+.venv/bin/python -m unittest discover -s tests -p test_export_queue.py -v
+.venv/bin/python -m unittest discover -s tests -p test_migration.py -v
+.venv/bin/python -m unittest discover -s tests -p test_startup.py -v
 ```
 
 导入资产包后的完整检查：
 
 ```sh
-python3 -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -v
 node --test tests/*.mjs
 ```
+
+真实 MySQL 回归使用环境变量 `DUCK_TEST_DATABASE_URL`，目标库名必须以 `duck_test_` 开头；未配置时相关测试明确跳过。它覆盖相同的账号、接口、广场、配额和迁移场景。
+
+导出默认同时执行 1 个任务，最多等待 2 个；超过容量返回 `503`、`Retry-After` 和原有 `{error: ...}` 格式。可用 `DUCK_EXPORT_WORKERS` / `DUCK_EXPORT_QUEUE` 调整。广场仍返回原有数组，可选 `limit=1..200&offset=0..`；评分和改编统计改为批量查询。
 
 CI 不持有模型资产，不能替代真实模型、导出和浏览器验收。
 
 ## 文档
 
+- [部署模式、数据迁移、备份和回退](docs/deployment.md)
 - [项目结构与边界](docs/project.md)
 - [本地资产与复现边界](docs/local-assets.md)
 - [第三方来源与许可证](THIRD_PARTY_NOTICES.md)
