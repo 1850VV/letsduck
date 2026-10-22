@@ -7,7 +7,7 @@ class HttpLocaleTests(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp=tempfile.TemporaryDirectory()
         with socket.socket() as s:s.bind(('127.0.0.1',0));cls.port=s.getsockname()[1]
-        cls.process=subprocess.Popen([sys.executable,str(ROOT/'backend/server.py'),'--port',str(cls.port)],env={**os.environ,'DUCK_DB':str(Path(cls.tmp.name)/'db.sqlite'),'DUCK_QUIET':'1','DUCK_EDITION':'server'},stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        cls.process=subprocess.Popen([sys.executable,str(ROOT/'backend/server.py'),'--port',str(cls.port)],env={**os.environ,'DUCK_DB':str(Path(cls.tmp.name)/'db.sqlite'),'DUCK_QUIET':'1'},stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         for _ in range(100):
             try:cls.request('GET','/health');break
             except OSError:time.sleep(.05)

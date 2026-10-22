@@ -59,6 +59,17 @@ class MySQLStoreTest(test_store.StoreTest):
 
 @unittest.skipUnless(URL, 'DUCK_TEST_DATABASE_URL not configured')
 class MySQLApiTest(test_api.ApiTest):
+    def setUp(self):
+        # The startup guard looks for an unmigrated SQLite site at DUCK_DB (default backend/data/);
+        # never let a developer's own local database stand in for one.
+        from unittest.mock import patch
+        empty = tempfile.TemporaryDirectory()
+        self.addCleanup(empty.cleanup)
+        patcher = patch.dict(os.environ, {'DUCK_DB': os.path.join(empty.name, 'none.db')})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        super().setUp()
+
     def database_url(self):
         clean_mysql()
         return URL
@@ -75,7 +86,7 @@ class MySQLApiTest(test_api.ApiTest):
         test_migration.legacy_database(source)
         with patch.dict(os.environ, {'DUCK_DB': str(source)}):
             with self.assertRaisesRegex(RuntimeError, 'migrate_database'):
-                with TestClient(server.create_app(database_url=URL, edition='server')):
+                with TestClient(server.create_app(database_url=URL)):
                     pass
 
 

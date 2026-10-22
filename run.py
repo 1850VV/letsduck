@@ -1,23 +1,28 @@
-"""Lightweight launcher: FastAPI/Uvicorn serves the frontend, local assets and API.
+"""涂鸭 DoodleDuck personal edition launcher: `python3 run.py` (Windows: `py -3 run.py`).
 
-SQLite is the default. MySQL is selected explicitly by deployment configuration.
+Needs only Python 3.9+; nothing to install. Double-click 启动涂鸭.command (macOS) or 启动涂鸭.bat (Windows)
+to run it. The server edition (accounts + 配色广场) is deployed with Docker; see docs/deployment.md.
 """
+import sys
+
+if sys.version_info < (3, 9):
+    print('涂鸭需要 Python 3.9 或更新版本，当前是 %d.%d。DoodleDuck needs Python 3.9+.' % sys.version_info[:2])
+    raise SystemExit(1)
+
 from pathlib import Path
-import os, subprocess, sys
 
 ROOT = Path(__file__).resolve().parent
 FILES = ('source.3mf', 'geometry.bin', 'model.json', 'catalog.json', 'export-schema.json')
 
 if __name__ == '__main__':
+    for stream in (sys.stdout, sys.stderr):  # a legacy Windows console must not crash on Chinese text
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(errors='replace')
     missing = [name for name in FILES if not (ROOT / 'assets' / name).is_file()]
     if missing:
-        print('DoodleDuck needs a separately licensed local asset pack. Missing: ' + ', '.join(missing), file=sys.stderr)
-        print('See docs/local-assets.md; then run python3 scripts/import_local_assets.py <assets-directory>.', file=sys.stderr)
+        print('还缺少模型资产包（单独授权，不随源码提供）：' + ', '.join(missing), file=sys.stderr)
+        print('请参考 docs/local-assets.md，然后运行：python3 scripts/import_local_assets.py <资产文件夹>', file=sys.stderr)
         raise SystemExit(2)
-    args = sys.argv[1:]
-    env = {**os.environ, 'DUCK_ASSETS': str(ROOT / 'assets')}
-    if '--no-open' in args:
-        args.remove('--no-open')
-    else:
-        args.append('--open')
-    raise SystemExit(subprocess.call([sys.executable, str(ROOT / 'backend' / 'server.py'), '--static', str(ROOT / 'frontend'), *args], env=env))
+    sys.path.insert(0, str(ROOT / 'personal'))
+    import app
+    raise SystemExit(app.main(sys.argv[1:]))

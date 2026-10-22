@@ -1,4 +1,6 @@
-"""FastAPI API with optional local static hosting; Uvicorn owns HTTP lifecycle."""
+"""Server edition API (FastAPI + MySQL). nginx serves the frontend in Docker; --static serves it for development.
+
+The personal edition is a separate standard-library server in ../personal/."""
 import argparse
 from contextlib import asynccontextmanager
 import json
@@ -14,7 +16,7 @@ from urllib.request import urlopen
 import webbrowser
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.staticfiles import StaticFiles
 from sqlalchemy import func, select, text
@@ -45,12 +47,6 @@ def require_user(user=Depends(optional_user)):
     if not user:
         raise HTTPException(401, {'error': '请先登录', 'code': 'auth.required', 'params': {}})
     return user
-
-
-def scheme_owner(request: Request):
-    if request.app.state.edition == 'personal':
-        return {'id': request.app.state.personal_owner}
-    return require_user(optional_user(request))
 
 
 async def read_json(request: Request):
@@ -90,10 +86,7 @@ class PublicAssets(StaticFiles):
         return await super().get_response(path, scope)
 
 
-def create_app(database_url=None, static=None, exports=None, edition=None):
-    edition = edition or os.environ.get('DUCK_EDITION', 'personal')
-    if edition not in {'personal', 'server'}:
-        raise ValueError('DUCK_EDITION must be personal or server')
+def create_app(database_url=None, static=None, exports=None):
     @asynccontextmanager
     async def lifespan(app):
         try:
@@ -107,10 +100,6 @@ def create_app(database_url=None, static=None, exports=None, edition=None):
             workers=int(os.environ.get('DUCK_EXPORT_WORKERS', '1')),
             queue_size=int(os.environ.get('DUCK_EXPORT_QUEUE', '2')))
         try:
-            if edition == 'personal':
-                if app.state.store.engine.dialect.name != 'sqlite':
-                    raise ValueError('Personal edition requires SQLite; use DUCK_EDITION=server for MySQL')
-                app.state.personal_owner = app.state.store.personal_owner()
             # A mode switch must not silently present an empty site over existing local accounts.
             legacy = Path(os.environ.get('DUCK_DB', ROOT / 'data' / 'doodleduck.db')).resolve()
             if app.state.store.engine.dialect.name == 'mysql' and legacy.is_file():
@@ -126,18 +115,10 @@ def create_app(database_url=None, static=None, exports=None, edition=None):
             app.state.store.close()
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
-    app.state.edition = edition
 
     @app.middleware('http')
     async def response_headers(request, call_next):
-        path = request.url.path.rstrip('/')
-        if edition == 'personal' and (path == '/gallery' or path.startswith('/gallery/')):
-            response = RedirectResponse('/', status_code=303)
-        elif edition == 'personal' and (path == '/api/me' or path == '/api/auth'
-                or path.startswith('/api/auth/') or path == '/api/works' or path.startswith('/api/works/')):
-            response = JSONResponse({'error': '未知接口', 'code': 'request.not_found', 'params': {}}, status_code=404)
-        else:
-            response = await call_next(request)
+        response = await call_next(request)
         response.headers['Cache-Control'] = 'no-store'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         return response
@@ -173,11 +154,7 @@ def create_app(database_url=None, static=None, exports=None, edition=None):
 
     @app.get('/api/site')
     def site():
-        return {'publicUrl': os.environ.get('DUCK_PUBLIC_URL', '') if edition == 'server' else '', 'edition': edition}
-
-    @app.get('/api/gallery-access')
-    def gallery_access():
-        return Response(status_code=204 if edition == 'server' else 403)
+        return {'publicUrl': os.environ.get('DUCK_PUBLIC_URL', ''), 'edition': 'server'}
 
     @app.get('/api/catalog')
     def catalog(request: Request):
@@ -208,15 +185,15 @@ def create_app(database_url=None, static=None, exports=None, edition=None):
         return request.app.state.store.update_user(user['id'], body)
 
     @app.get('/api/schemes')
-    def list_schemes(request: Request, user=Depends(scheme_owner)):
+    def list_schemes(request: Request, user=Depends(require_user)):
         return request.app.state.store.schemes(user['id'])
 
     @app.put('/api/schemes/{sid}')
-    def put_scheme(sid: str, request: Request, user=Depends(scheme_owner), body=Depends(read_json)):
+    def put_scheme(sid: str, request: Request, user=Depends(require_user), body=Depends(read_json)):
         return request.app.state.store.save_scheme(user['id'], valid_id(sid), body)
 
     @app.delete('/api/schemes/{sid}')
-    def delete_scheme(sid: str, request: Request, user=Depends(scheme_owner)):
+    def delete_scheme(sid: str, request: Request, user=Depends(require_user)):
         request.app.state.store.delete_scheme(user['id'], valid_id(sid))
         return {'ok': True}
 

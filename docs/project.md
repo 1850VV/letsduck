@@ -12,12 +12,15 @@
 | `frontend/shared/edition.mjs` | 读取服务端版本配置，个人版屏蔽账号与广场入口 |
 | `frontend/shared/poster.mjs` | 分享海报与配色码 |
 | `frontend/lib/` | 配色规则：分区、套色与配色码、色彩工具、超进化动画 |
-| `backend/server.py` | API 路由；开发时也提供静态文件 |
-| `backend/store.py` · `database.py` | SQLite / MySQL：账号、私有方案、作品、评分与批量广场统计 |
+| `run.py` · `启动涂鸭.command` · `启动涂鸭.bat` | 个人版启动：检查 Python 3.9+ 与资产包，打开浏览器 |
+| `personal/app.py` · `schemes.py` | 个人版服务（标准库）：静态文件、资产、方案与导出接口，本机 SQLite |
+| `backend/server.py` | 服务器版 API 路由（FastAPI）；开发时也提供静态文件 |
+| `backend/store.py` · `database.py` | 服务器版存储：MySQL（测试与迁移也用 SQLite）——账号、私有方案、作品、评分与批量广场统计 |
+| `backend/rules.py` · `errors.py` | 两个版本共用的配色校验与错误码（标准库） |
 | `backend/export_jobs.py` | 有界导出进程池，限制执行和等待任务数量 |
 | `backend/migrate_database.py` | SQLite 一致性备份、事务导入和全字段核对 |
-| `backend/exporter.py` | 固定源 3MF 的材料分配与保留校验 |
-| `docker-compose.yml` · `docker-compose.mysql.yml` | nginx + FastAPI/Uvicorn；默认 SQLite，可叠加 MySQL 服务器模式 |
+| `backend/exporter.py` | 固定源 3MF 的材料分配与保留校验（标准库，两个版本共用） |
+| `docker-compose.yml` · `.env.example` | 服务器版：nginx + FastAPI/Uvicorn + MySQL 8.4 |
 | `tests/` | 规则、导出、存储、资产导入 |
 | `docs/history/` · `tools/history/` | 脱敏研究记录与早期处理脚本 |
 

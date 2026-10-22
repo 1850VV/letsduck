@@ -15,7 +15,7 @@ class ApiTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         factory = getattr(server, 'create_app', None)
         self.assertTrue(callable(factory), 'API must run through a FastAPI application factory')
-        self.app = factory(database_url=self.database_url(), edition='server')
+        self.app = factory(database_url=self.database_url())
         self.client = TestClient(self.app)
         self.client.__enter__()
         self.a = self.client.post('/api/auth/register', json={'name': 'Alpha', 'password': 'pass-a'}).json()

@@ -23,6 +23,10 @@ jobs:
       DUCK_TEST_DATABASE_URL: mysql+pymysql://root:ci-test-password@127.0.0.1:3306/duck_test_ci?charset=utf8mb4
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Personal edition with no third-party packages installed
+        run: |
+          python3 -I -m unittest discover -s tests -p test_personal.py -v
+          python3 -I -m compileall -q personal run.py backend/rules.py backend/errors.py backend/exporter.py
       - name: Install pinned backend and test dependencies
         run: python3 -m pip install -r requirements-dev.txt
       - name: Check publication boundary
@@ -36,11 +40,10 @@ jobs:
           python3 -m unittest discover -s tests -p test_export_queue.py -v
           python3 -m unittest discover -s tests -p test_migration.py -v
           python3 -m unittest discover -s tests -p test_startup.py -v
-          python3 -m unittest discover -s tests -p test_personal.py -v
           python3 -m unittest discover -s tests -p test_mysql.py -v
       - name: Check Python and browser module syntax
         run: |
-          python3 -m compileall -q backend run.py
+          python3 -m compileall -q backend personal run.py
           for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs; do
             node --check "$file"
           done
