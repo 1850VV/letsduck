@@ -12,9 +12,11 @@
 | `frontend/shared/poster.mjs` | 分享海报与配色码 |
 | `frontend/lib/` | 配色规则：分区、套色与配色码、色彩工具、超进化动画 |
 | `backend/server.py` | API 路由；开发时也提供静态文件 |
-| `backend/store.py` | SQLite：账号、私有方案、作品、评分 |
+| `backend/store.py` · `database.py` | SQLite / MySQL：账号、私有方案、作品、评分与批量广场统计 |
+| `backend/export_jobs.py` | 有界导出进程池，限制执行和等待任务数量 |
+| `backend/migrate_database.py` | SQLite 一致性备份、事务导入和全字段核对 |
 | `backend/exporter.py` | 固定源 3MF 的材料分配与保留校验 |
-| `docker-compose.yml` | nginx 前端 + Python 后端 + 数据卷 |
+| `docker-compose.yml` · `docker-compose.mysql.yml` | nginx + FastAPI/Uvicorn；默认 SQLite，可叠加 MySQL 服务器模式 |
 | `tests/` | 规则、导出、存储、资产导入 |
 | `docs/history/` · `tools/history/` | 脱敏研究记录与早期处理脚本 |
 

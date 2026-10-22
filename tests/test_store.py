@@ -1,4 +1,4 @@
-"""Accounts, schemes, works and ratings in the SQLite store. Synthetic data; no asset pack needed."""
+"""Accounts, schemes, works and ratings. Synthetic data; no asset pack needed."""
 import sys, tempfile, unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'backend'))
@@ -16,7 +16,7 @@ class StoreTest(unittest.TestCase):
         self.b = self.store.register('小鸭B', 'pass-b')
 
     def tearDown(self):
-        self.store.db.close()
+        self.store.close()
         self.tmp.cleanup()
 
     def test_accounts(self):
@@ -28,7 +28,10 @@ class StoreTest(unittest.TestCase):
         self.assertEqual(self.store.user_for(token)['name'], '小鸭A')
         self.store.logout(token)
         self.assertIsNone(self.store.user_for(token))
-        row = self.store.db.execute('SELECT pw_hash FROM users WHERE name=?', ('小鸭A',)).fetchone()
+        from database import users
+        from sqlalchemy import select
+        with self.store.engine.connect() as conn:
+            row = conn.execute(select(users.c.pw_hash).where(users.c.name == '小鸭A')).one()
         self.assertNotIn('pass-a', row[0])
 
     def test_schemes_are_private(self):
@@ -40,6 +43,20 @@ class StoreTest(unittest.TestCase):
             self.store.save_scheme(self.b['user']['id'], 's-1', {'name': '抢', 'design': DESIGN})
         with self.assertRaises(Invalid):
             self.store.save_scheme(uid, 's-2', {'name': '坏', 'design': {'colors': {}, 'assignments': {}}})
+
+    def test_large_legacy_provenance_and_unicode_survive_storage(self):
+        provenance = {'note': '🦆' * 25000}
+        uid = self.a['user']['id']
+        saved = self.store.save_scheme(uid, 's-large', {'name': '大方案', 'design': DESIGN, 'provenance': provenance})
+        self.assertEqual(saved['provenance'], provenance)
+        published = self.store.publish(uid, {'title': '大作品', 'design': DESIGN, 'provenance': provenance})
+        self.assertEqual(published['provenance'], provenance)
+
+    def test_invalid_password_update_cannot_partially_change_profile(self):
+        uid = self.a['user']['id']
+        with self.assertRaises(Invalid):
+            self.store.update_user(uid, {'name': 'Changed', 'password': 'x'})
+        self.assertEqual(self.store.user_for(self.a['token'])['name'], '小鸭A')
 
     def test_publish_rate_fork_delete(self):
         ua, ub = self.a['user']['id'], self.b['user']['id']
