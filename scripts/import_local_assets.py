@@ -43,5 +43,9 @@ def main():
     except (ValueError,OSError,zipfile.BadZipFile) as error:parser.exit(1,str(error)+'\n')
     print('Imported five local-only assets. Source SHA-256: '+digest)
     print('These assets retain their own terms; do not force-add them to Git.')
+    # The browser downloads the smaller geometry.pack.bin when present and falls back to geometry.bin.
+    from pack_geometry import write_pack
+    try:print('Packed the geometry for faster loading: geometry.pack.bin, %d bytes.'%write_pack(args.target))
+    except (ValueError,OSError,AssertionError) as error:print('Could not pack the geometry (%s); the site uses geometry.bin.'%error)
 
 if __name__=='__main__':main()

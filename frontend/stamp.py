@@ -23,7 +23,7 @@ from urllib.parse import urljoin
 
 PAGES = ('index.html', 'gallery/index.html')
 CODE = ('.mjs', '.js', '.css')
-MODEL = ('/assets/model.json', '/assets/geometry.bin', '/assets/catalog.json')  # fetched by shared/duck-view.mjs
+MODEL = ('/assets/model.json', '/assets/geometry.pack.bin', '/assets/catalog.json')  # fetched by shared/duck-view.mjs
 IMPORT = re.compile(r'''(?:\bimport|\bexport)\s*(?:[\w*{}\s,$]*?\bfrom\s*)?['"]([^'"]+)['"]''')
 ORIGIN = 'https://site'
 

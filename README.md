@@ -95,7 +95,7 @@ assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器
 ```sh
 git clone git@github.com:1850VV/duck-palette.git
 cd duck-palette
-python3 scripts/import_local_assets.py /path/to/assets   # 资产包只挂载，不打进镜像
+python3 scripts/import_local_assets.py /path/to/assets   # 资产包只挂载，不打进镜像；同时生成更小的 geometry.pack.bin
 cp .env.example .env                                      # 填两个不同的随机长密码
 docker compose up -d --build
 ```

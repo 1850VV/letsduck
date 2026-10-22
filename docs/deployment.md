@@ -38,6 +38,8 @@ MySQL 以 `--innodb-buffer-pool-size=${DUCK_MYSQL_BUFFER_POOL:-128M} --performan
 
 前端镜像构建时运行 `frontend/stamp.py`（标准库）：每个 `.mjs/.js/.css` 的地址加上内容哈希 `?v=`，页面里写入一个 import map（把模块的原始路径映射到带哈希的地址，模块内部的相对 import 不用改）、整张模块依赖图的 `modulepreload` 和模型文件的 `preload`，浏览器一打开就并行下载全部模块和模型。带 `?v=` 的代码 nginx 发 `Cache-Control: public, max-age=31536000, immutable`，不带的仍是 `no-cache`；HTML 每次核对。个人版和开发模式直接用源码，不经过这一步。
 
+模型几何另有一份传输用的 `assets/geometry.pack.bin`（`scripts/pack_geometry.py`，导入资产时自动生成；手动复制资产后可单独运行）：位置按每个零件的包围盒量化为 16 位（约 0.002 mm），索引差分编码可精确还原，打印摆放尽量存为变换矩阵，gzip 后约 1.0 MB（原 `geometry.bin` 约 3.0 MB）。浏览器优先下载它，在本地还原成原来的布局；没有或不匹配时自动改用 `geometry.bin`。3MF 导出只用源 3MF，不受影响。
+
 nginx 对 `/assets/`（模型几何、色表）发送 `Cache-Control: public, max-age=604800`，过期后用 ETag / Last-Modified 重新验证。更换资产包后，7 天内访问过的浏览器可能仍用旧文件，需要强制刷新。页面和脚本仍是 `no-cache`，每次都会核对是否有新版本。
 
 ### 外部 MySQL

@@ -6,10 +6,16 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 
+import { unpackGeometry } from './geometry-pack.mjs';
 const ASSETS = new URL('../assets/', import.meta.url);
 export async function loadDuck() {
   const get = (name, type) => fetch(new URL(name, ASSETS)).then((r) => {if (!r.ok) throw Error(name);return r[type]();});
-  const [model, binary, catalog] = await Promise.all([get('model.json', 'json'), get('geometry.bin', 'arrayBuffer'), get('catalog.json', 'json')]);
+  // geometry.pack.bin is a third of the size on the wire; geometry.bin stays the fallback (e.g. before the pack is generated).
+  const pack = fetch(new URL('geometry.pack.bin', ASSETS)).then((r) => r.ok ? r.arrayBuffer() : null).catch(() => null);
+  const [model, catalog] = await Promise.all([get('model.json', 'json'), get('catalog.json', 'json')]);
+  let binary = null;const packed = await pack;
+  if (packed) try {binary = unpackGeometry(packed, model);} catch {}
+  binary ||= await get('geometry.bin', 'arrayBuffer');
   for(const item of [...model.parts,...catalog.products]){const originalName=item.name;Object.defineProperty(item,'name',{get:()=>_label(originalName),enumerable:true,configurable:true});}
   return { model, binary, catalog, products: new Map(catalog.products.map((p) => [p.id, p])) };
 }
