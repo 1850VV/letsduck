@@ -24,29 +24,31 @@ CONFIG = json.loads(SOURCE_ZIP.read('Metadata/project_settings.config'))
 BASE_PRODUCTS = ['bambu-GFA00-10100', 'bambu-GFA00-10101', 'bambu-GFA00-10604', 'bambu-GFU03-51103']
 MAX_SLOTS = 16
 
-class InvalidDesign(ValueError):
+from errors import LocalizedError
+
+class InvalidDesign(LocalizedError):
     pass
 
 def plan(payload):
     if not isinstance(payload, dict) or payload.get('source_sha256') != MODEL['source_sha256']:
-        raise InvalidDesign('源模型不匹配，请刷新工作台后重试。')
+        raise InvalidDesign('源模型不匹配，请刷新工作台后重试。', code='export.20')
     assignments = payload.get('assignments')
     if not isinstance(assignments, dict) or set(assignments) != set(PARTS):
-        raise InvalidDesign('必须提供全部 35 个零件的耗材分配。')
+        raise InvalidDesign('必须提供全部 35 个零件的耗材分配。', code='export.21')
     palette = list(BASE_PRODUCTS)
     rows = []
     for part_id, part in PARTS.items():
         product_id = assignments[part_id]
         product = PRODUCTS.get(product_id) if isinstance(product_id, str) else None
         if not product:
-            raise InvalidDesign(f'{part_id} 尚未选择实际耗材；目标色不能直接作为产品导出。')
+            raise InvalidDesign(f'{part_id} 尚未选择实际耗材；目标色不能直接作为产品导出。', code='export.25', params={'v0': part_id})
         if product['series'] != part['material']:
-            raise InvalidDesign(f'{part_id} 必须保持 {part["material"]}，不能替换材料或硬度。')
+            raise InvalidDesign(f'{part_id} 必须保持 {part["material"]}，不能替换材料或硬度。', code='export.26', params={'v0': part_id, 'v1': part["material"]})
         if product_id not in palette:
             palette.append(product_id)
         rows.append(dict(id=part_id, uuid=part['uuid'], name=part['name'], originalName=part['originalName'], plate=part['plate'], objectId=part['sourceObject'], partId=part['sourcePart'], slot=palette.index(product_id)+1, product=product))
     if len(palette) > MAX_SLOTS:
-        raise InvalidDesign(f'本版最多支持 {MAX_SLOTS} 个耗材槽（包含原始 4 槽），请减少颜色后导出。')
+        raise InvalidDesign(f'本版最多支持 {MAX_SLOTS} 个耗材槽（包含原始 4 槽），请减少颜色后导出。', code='export.22', params={'v0': MAX_SLOTS})
     warnings = ['导出的是可编辑项目，不含切片 G-code。请在 Bambu Studio 中复核并重新切片。',
                 'TPU 90A 沿用原硬度与参数，使用外置进料，不通过 P1P 的 AMS 进料。',
                 '原 4 槽冲刷量沿用源表；新增颜色间用源表最大值作临时值。切片前须按新颜色重新计算冲刷量。',
@@ -100,7 +102,7 @@ def remap_objects(report):
         block = match.group(0)
         uuid = re.search(r'\buuid="([^"]+)"', block).group(1)
         if uuid not in slots or uuid in seen:
-            raise InvalidDesign('源零件标识重复或不匹配。')
+            raise InvalidDesign('源零件标识重复或不匹配。', code='export.27')
         seen.add(uuid)
         tag = f'<metadata key="extruder" value="{slots[uuid]}"/>'
         if re.search(r'<metadata\s+key="extruder"[^>]*/>', block):
@@ -122,13 +124,13 @@ def remap_objects(report):
 
 def thumbnail_bytes(value):
     if not isinstance(value,str) or not value.startswith('data:image/png;base64,'):
-        raise InvalidDesign('导出缩略图缺失，请等待模型载入后重试。')
+        raise InvalidDesign('导出缩略图缺失，请等待模型载入后重试。', code='export.23')
     try:
         data = base64.b64decode(value.split(',',1)[1], validate=True)
         if len(data)>600000 or data[:8]!=b'\x89PNG\r\n\x1a\n' or struct.unpack('>II',data[16:24])!=(512,512):
             raise ValueError()
     except (ValueError,struct.error):
-        raise InvalidDesign('缩略图格式无效。')
+        raise InvalidDesign('缩略图格式无效。', code='export.28')
     return data
 
 def verify_result(result, report, expected_config):
@@ -163,7 +165,7 @@ def export_3mf(payload):
     replacements = {'Metadata/project_settings.config':json.dumps(config,ensure_ascii=False,indent=4).encode(), 'Metadata/model_settings.config':remap_objects(report)}
     thumbs=payload.get('thumbnails')
     if not isinstance(thumbs,dict) or set(thumbs)!={'cover',*[f'{kind}{i}' for kind in ['plate','top'] for i in range(1,7)]}:
-        raise InvalidDesign('缺少当前方案的完整缩略图。')
+        raise InvalidDesign('缺少当前方案的完整缩略图。', code='export.24')
     for i in range(1,7):
         plate=thumbnail_bytes(thumbs[f'plate{i}']);top=thumbnail_bytes(thumbs[f'top{i}'])
         for name in [f'Metadata/plate_{i}.png',f'Metadata/plate_no_light_{i}.png']:replacements[name]=plate

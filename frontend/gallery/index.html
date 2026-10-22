@@ -2,21 +2,23 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>涂鸭 · 配色广场</title>
+<title>DoodleDuck</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="./gallery.css"><link rel="stylesheet" href="../shared/poster.css"><link rel="stylesheet" href="../shared/profile.css">
 <script type="importmap">{"imports":{"three":"../vendor/three.module.js"}}</script>
+<link rel="stylesheet" href="../shared/i18n.css">
+<script type="module" src="../shared/language-menu.mjs"></script>
 </head>
 <body>
 <header class="top">
   <a class="brand" href="#" data-brand-slot></a>
-  <nav><a href="#" data-nav="home">配色广场</a><a href="#mine" data-nav="mine">我的方案</a><a href="../">涂装台</a></nav>
-  <label class="search"><span>⌕</span><input id="q" placeholder="搜配色、作者或颜色"><kbd>/</kbd></label>
-  <div class="paste"><button class="ghost-btn" id="paste-btn">粘贴配色码</button><div class="paste-pop" id="paste-pop" hidden><label>粘贴配色码或分享链接<input id="paste-input" placeholder="v1.731b5be4.…" autocomplete="off"></label><div id="paste-preview"></div></div></div>
+  <nav><a href="#" data-nav="home" data-i18n="text.0392">配色广场</a><a href="#mine" data-nav="mine" data-i18n="text.0140">我的方案</a><a href="../" data-i18n="text.0644">涂装台</a></nav>
+  <label class="search"><span>⌕</span><input id="q" placeholder="搜配色、作者或颜色" data-i18n-placeholder="text.0647"><kbd>/</kbd></label>
+  <div class="paste"><button class="ghost-btn" id="paste-btn" data-i18n="text.0645">粘贴配色码</button><div class="paste-pop" id="paste-pop" hidden><label><span data-i18n="label.paste">粘贴配色码或分享链接</span><input id="paste-input" placeholder="v1.731b5be4.…" autocomplete="off"></label><div id="paste-preview"></div></div></div>
   <span id="profile-slot"></span>
-  <a class="publish" href="../">＋ 配一只</a>
+  <a class="publish" href="../" data-i18n="text.0646">＋ 配一只</a>
 </header>
-<main id="app"><p class="loading"><span></span>正在载入机器鸭…</p></main>
+<main id="app"><p class="loading"><span></span><span data-i18n="label.loading">正在载入机器鸭…</span></p></main>
 <div class="detail-overlay" id="detail" hidden><div class="detail-sheet" id="detail-body"></div></div>
 <div class="toast" id="toast" role="status"></div>
 <script type="module" src="./gallery.mjs"></script>

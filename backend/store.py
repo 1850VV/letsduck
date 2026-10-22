@@ -24,7 +24,9 @@ CREATE INDEX IF NOT EXISTS works_created ON works(created DESC);
 """
 
 
-class Invalid(ValueError):
+from errors import LocalizedError
+
+class Invalid(LocalizedError):
     """A request the client can fix (bad input, taken name, wrong password...)."""
 
 
@@ -57,26 +59,26 @@ class Store:
 
     def validate_design(self, design):
         if not isinstance(design, dict) or not isinstance(design.get('colors'), dict) or not isinstance(design.get('assignments'), dict):
-            raise Invalid('配色数据格式不对')
+            raise Invalid('配色数据格式不对', code='validation.1')
         colors, assignments = design['colors'], design['assignments']
         if self.part_ids and (set(colors) != self.part_ids or set(assignments) != self.part_ids):
-            raise Invalid('配色必须包含全部 %d 个零件' % len(self.part_ids))
+            raise Invalid('配色必须包含全部 %d 个零件' % len(self.part_ids), code='validation.2', params={'v0': len(self.part_ids)})
         for value in colors.values():
             if not (isinstance(value, str) and len(value) == 7 and value[0] == '#' and all(c in '0123456789abcdefABCDEF' for c in value[1:])):
-                raise Invalid('颜色格式不对')
+                raise Invalid('颜色格式不对', code='validation.18')
         for value in assignments.values():
             if value is not None and (not isinstance(value, str) or len(value) > 80):
-                raise Invalid('耗材编号格式不对')
+                raise Invalid('耗材编号格式不对', code='validation.19')
         finishes = design.get('finishes') or {}
         if not isinstance(finishes, dict) or any(v not in FINISHES for v in finishes.values()):
-            raise Invalid('质感格式不对')
+            raise Invalid('质感格式不对', code='validation.3')
         return {'colors': {k: v.upper() for k, v in colors.items()}, 'assignments': assignments, 'finishes': {k: v for k, v in finishes.items() if k in colors}}
 
     @staticmethod
     def _text(value, limit, field, required=True):
         value = str(value or '').strip()
         if required and not value:
-            raise Invalid(field + '不能为空')
+            raise Invalid(field + '不能为空', code='validation.4', params={'v0': field})
         return value[:limit]
 
     # ---- accounts ----
@@ -86,9 +88,9 @@ class Store:
     def register(self, name, password):
         name = self._text(name, 20, '昵称')
         if len(str(password or '')) < 4:
-            raise Invalid('密码至少 4 位')
+            raise Invalid('密码至少 4 位', code='auth.password_short')
         if self._q('SELECT 1 FROM users WHERE name=?', (name,), one=True):
-            raise Invalid('这个昵称已经有人用了，换一个吧')
+            raise Invalid('这个昵称已经有人用了，换一个吧', code='auth.name_taken')
         salt = secrets.token_hex(16)
         uid = 'u-' + secrets.token_hex(6)
         self._q('INSERT INTO users VALUES(?,?,?,?,?,?,?)', (uid, name, salt, self._hash(password, salt), secrets.choice(AVATARS), secrets.choice(COLORS), self._now()))
@@ -97,7 +99,7 @@ class Store:
     def login(self, name, password):
         row = self._q('SELECT * FROM users WHERE name=?', (str(name or '').strip(),), one=True)
         if not row or not secrets.compare_digest(row['pw_hash'], self._hash(str(password or ''), row['pw_salt'])):
-            raise Invalid('昵称或密码不对')
+            raise Invalid('昵称或密码不对', code='auth.invalid_credentials')
         return self._session(row['id'])
 
     def _session(self, uid):
@@ -118,15 +120,15 @@ class Store:
         row = self._q('SELECT * FROM users WHERE id=?', (uid,), one=True)
         name = self._text(data.get('name', row['name']), 20, '昵称')
         if name.lower() != row['name'].lower() and self._q('SELECT 1 FROM users WHERE name=?', (name,), one=True):
-            raise Invalid('这个昵称已经有人用了，换一个吧')
+            raise Invalid('这个昵称已经有人用了，换一个吧', code='auth.name_taken')
         avatar = data.get('avatar', row['avatar'])
         color = data.get('color', row['color'])
         if avatar not in AVATARS or color not in COLORS:
-            raise Invalid('头像或颜色不在可选范围内')
+            raise Invalid('头像或颜色不在可选范围内', code='validation.8')
         self._q('UPDATE users SET name=?, avatar=?, color=? WHERE id=?', (name, avatar, color, uid))
         if data.get('password'):
             if len(data['password']) < 4:
-                raise Invalid('密码至少 4 位')
+                raise Invalid('密码至少 4 位', code='auth.password_short')
             salt = secrets.token_hex(16)
             self._q('UPDATE users SET pw_salt=?, pw_hash=? WHERE id=?', (salt, self._hash(data['password'], salt), uid))
         return self.user_json(self._q('SELECT * FROM users WHERE id=?', (uid,), one=True))
@@ -142,16 +144,16 @@ class Store:
 
     def save_scheme(self, uid, sid, data):
         if not isinstance(sid, str) or not 1 <= len(sid) <= 64:
-            raise Invalid('方案编号不对')
+            raise Invalid('方案编号不对', code='validation.9')
         name = self._text(data.get('name'), 40, '方案名称')
         design = self.validate_design(data.get('design'))
         provenance = data.get('provenance')
         salt = int(data.get('voiceSalt') or 0)
         existing = self._q('SELECT user_id, created FROM schemes WHERE id=?', (sid,), one=True)
         if existing and existing['user_id'] != uid:
-            raise Invalid('这个方案不属于你')
+            raise Invalid('这个方案不属于你', code='schemes.not_owner')
         if not existing and self._q('SELECT COUNT(*) n FROM schemes WHERE user_id=?', (uid,), one=True)['n'] >= MAX_SCHEMES:
-            raise Invalid('最多保存 %d 套方案，先删掉一些' % MAX_SCHEMES)
+            raise Invalid('最多保存 %d 套方案，先删掉一些' % MAX_SCHEMES, code='validation.11', params={'v0': MAX_SCHEMES})
         now = self._now()
         self._q('INSERT INTO schemes VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, design=excluded.design, provenance=excluded.provenance, voice_salt=excluded.voice_salt, updated=excluded.updated',
                 (sid, uid, name, json.dumps(design), json.dumps(provenance, ensure_ascii=False) if provenance else None, salt, existing['created'] if existing else now, now))
@@ -182,14 +184,14 @@ class Store:
     def work(self, wid, viewer=None):
         row = self._q(self._WORK + ' WHERE works.id=?', (wid,), one=True)
         if not row:
-            raise Invalid('作品不存在')
+            raise Invalid('作品不存在', code='validation.12')
         return self.work_json(row, viewer)
 
     def publish(self, uid, data):
         title = self._text(data.get('title'), 40, '作品名称')
         design = self.validate_design(data.get('design'))
         if any(v is None for v in design['assignments'].values()):
-            raise Invalid('发布前请为全部零件匹配真实耗材')
+            raise Invalid('发布前请为全部零件匹配真实耗材', code='validation.13')
         parent = data.get('parentId')
         if parent and not self._q('SELECT 1 FROM works WHERE id=?', (parent,), one=True):
             parent = None
@@ -202,17 +204,17 @@ class Store:
     def delete_work(self, uid, wid):
         row = self._q('SELECT user_id FROM works WHERE id=?', (wid,), one=True)
         if not row or row['user_id'] != uid:
-            raise Invalid('只能删除自己的作品')
+            raise Invalid('只能删除自己的作品', code='validation.14')
         self._q('UPDATE works SET parent_id=NULL WHERE parent_id=?', (wid,))
         self._q('DELETE FROM works WHERE id=?', (wid,))
 
     def rate(self, uid, wid, stars):
         row = self._q('SELECT user_id FROM works WHERE id=?', (wid,), one=True)
         if not row:
-            raise Invalid('作品不存在')
+            raise Invalid('作品不存在', code='validation.15')
         if row['user_id'] == uid:
-            raise Invalid('不能给自己的作品评分')
+            raise Invalid('不能给自己的作品评分', code='validation.16')
         if not isinstance(stars, int) or not 1 <= stars <= 5:
-            raise Invalid('评分必须是 1 到 5 星')
+            raise Invalid('评分必须是 1 到 5 星', code='validation.17')
         self._q('INSERT INTO ratings VALUES(?,?,?) ON CONFLICT(work_id, user_id) DO UPDATE SET stars=excluded.stars', (wid, uid, stars))
         return self.work(wid, uid)

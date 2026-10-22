@@ -10,10 +10,11 @@ from urllib.parse import urlparse, parse_qs
 import argparse, json, os, re, sys, traceback, webbrowser
 
 from store import Store, Invalid
+from errors import payload as error_payload
 
 ROOT = Path(__file__).resolve().parent
 ASSETS = Path(os.environ.get('DUCK_ASSETS', ROOT.parent / 'assets'))
-VERSION = '3.0.0'
+VERSION = '3.1.0'
 MAX_BODY = 8_000_000  # 3MF export carries 13 rendered plate thumbnails
 
 try:  # The licensed asset pack powers export and strict design validation; the API still runs without it.
@@ -42,7 +43,7 @@ def health(h, user, body):
 @route('GET', '/api/catalog')
 def catalog(h, user, body):
     if not CATALOG:
-        raise Invalid('耗材色表未加载')
+        raise Invalid('耗材色表未加载', code='validation.29')
     return CATALOG
 
 # ---- accounts: nickname + simple password, bearer token sessions ----
@@ -72,11 +73,11 @@ def update_me(h, user, body):
 def list_schemes(h, user, body):
     return STORE.schemes(user['id'])
 
-@route('PUT', '/api/schemes/(?P<sid>[\\w-]{1,64})', auth=True)
+@route('PUT', '/api/schemes/(?P<sid>[\w-]{1,64})', auth=True)
 def put_scheme(h, user, body, sid):
     return STORE.save_scheme(user['id'], sid, body)
 
-@route('DELETE', '/api/schemes/(?P<sid>[\\w-]{1,64})', auth=True)
+@route('DELETE', '/api/schemes/(?P<sid>[\w-]{1,64})', auth=True)
 def delete_scheme(h, user, body, sid):
     STORE.delete_scheme(user['id'], sid)
     return {'ok': True}
@@ -87,7 +88,7 @@ def list_works(h, user, body):
     author = parse_qs(urlparse(h.path).query).get('author', [None])[0]
     return STORE.works(user and user['id'], author)
 
-@route('GET', '/api/works/(?P<wid>[\\w-]{1,64})')
+@route('GET', '/api/works/(?P<wid>[\w-]{1,64})')
 def get_work(h, user, body, wid):
     return STORE.work(wid, user and user['id'])
 
@@ -95,12 +96,12 @@ def get_work(h, user, body, wid):
 def publish(h, user, body):
     return STORE.publish(user['id'], body)
 
-@route('DELETE', '/api/works/(?P<wid>[\\w-]{1,64})', auth=True)
+@route('DELETE', '/api/works/(?P<wid>[\w-]{1,64})', auth=True)
 def delete_work(h, user, body, wid):
     STORE.delete_work(user['id'], wid)
     return {'ok': True}
 
-@route('PUT', '/api/works/(?P<wid>[\\w-]{1,64})/rating', auth=True)
+@route('PUT', '/api/works/(?P<wid>[\w-]{1,64})/rating', auth=True)
 def rate(h, user, body, wid):
     return STORE.rate(user['id'], wid, body.get('stars'))
 
@@ -108,13 +109,13 @@ def rate(h, user, body, wid):
 @route('POST', '/api/plan')
 def plan(h, user, body):
     if not exporter:
-        raise Invalid('服务器没有加载模型资产，暂时不能导出')
+        raise Invalid('服务器没有加载模型资产，暂时不能导出', code='validation.30')
     return exporter.plan(body)
 
 @route('POST', '/api/export')
 def export(h, user, body):
     if not exporter:
-        raise Invalid('服务器没有加载模型资产，暂时不能导出')
+        raise Invalid('服务器没有加载模型资产，暂时不能导出', code='validation.31')
     content, _ = exporter.export_3mf(body)
     return ('model/3mf', content, 'XGO-Duck-materials.3mf')
 
@@ -154,42 +155,42 @@ class Handler(SimpleHTTPRequestHandler):
                 continue
             user = STORE.user_for(self.token())
             if auth and not user:
-                return self.reply(401, {'error': '请先登录'})
+                return self.reply(401, {'error': '请先登录', 'code': 'auth.required', 'params': {}})
             body = {}
             if method in ('POST', 'PUT', 'PATCH'):
                 if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
-                    return self.reply(415, {'error': '需要 JSON 请求'})
+                    return self.reply(415, {'error': '需要 JSON 请求', 'code': 'request.content_type', 'params': {}})
                 length = int(self.headers.get('Content-Length', '0') or 0)
                 if not 0 <= length <= MAX_BODY:
-                    return self.reply(413, {'error': '请求太大'})
+                    return self.reply(413, {'error': '请求太大', 'code': 'request.too_large', 'params': {}})
                 try:
                     body = json.loads(self.rfile.read(length) or b'{}')
                 except ValueError:
-                    return self.reply(400, {'error': '请求不是有效的 JSON'})
+                    return self.reply(400, {'error': '请求不是有效的 JSON', 'code': 'request.json', 'params': {}})
                 if not isinstance(body, dict):
-                    return self.reply(400, {'error': '请求格式不对'})
+                    return self.reply(400, {'error': '请求格式不对', 'code': 'request.format', 'params': {}})
             try:
                 result = fn(self, user, body, **match.groupdict())
             except (Invalid, ValueError) as exc:
-                return self.reply(422, {'error': str(exc)})
+                return self.reply(422, error_payload(exc))
             except Exception:  # noqa: BLE001
                 traceback.print_exc()
-                return self.reply(500, {'error': '服务器出错了，请查看服务日志'})
+                return self.reply(500, {'error': '服务器出错了，请查看服务日志', 'code': 'server.failed', 'params': {}})
             if isinstance(result, tuple):
                 return self.reply(200, result[1], result[0], result[2])
             return self.reply(200, result)
-        return self.reply(404, {'error': '未知接口'})
+        return self.reply(404, {'error': '未知接口', 'code': 'request.not_found', 'params': {}})
 
     def do_GET(self):
         if self.path.startswith('/api/'):
             return self.api('GET')
         if not self.static:
-            return self.reply(404, {'error': '静态文件由前端服务提供'})
+            return self.reply(404, {'error': '静态文件由前端服务提供', 'code': 'request.static', 'params': {}})
         if self.path.startswith('/assets/'):
             name = urlparse(self.path).path[len('/assets/'):]
             target = (ASSETS / name).resolve()
             if ASSETS.resolve() not in target.parents or not target.is_file():
-                return self.reply(404, {'error': '资产不存在'})
+                return self.reply(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
             data = target.read_bytes()
             kind = 'application/json' if name.endswith('.json') else 'application/octet-stream'
             return self.reply(200, data, kind)

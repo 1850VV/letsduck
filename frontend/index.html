@@ -2,85 +2,87 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>涂鸭 · 涂装台</title>
+<title>DoodleDuck</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="./studio/studio.css"><link rel="stylesheet" href="./shared/poster.css"><link rel="stylesheet" href="./shared/profile.css"><link rel="stylesheet" href="./lib/quick-style.css">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+<link rel="stylesheet" href="./shared/i18n.css">
+<script type="module" src="./shared/language-menu.mjs"></script>
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="./gallery/" data-brand-slot title="去配色广场"></a>
+  <a class="brand" href="./gallery/" data-brand-slot title="去配色广场" data-i18n-title="text.0614"></a>
   <div class="scheme" id="scheme">
-    <button class="scheme-btn" id="scheme-btn" aria-haspopup="true" aria-expanded="false"><span class="scheme-name" id="scheme-name">我的机器鸭</span><small id="scheme-state">草稿</small><b>▾</b></button>
+    <button class="scheme-btn" id="scheme-btn" aria-haspopup="true" aria-expanded="false"><span class="scheme-name" id="scheme-name" data-i18n="text.0047">我的机器鸭</span><small id="scheme-state" data-i18n="text.0591">草稿</small><b>▾</b></button>
     <div class="scheme-menu" id="scheme-menu" hidden></div>
   </div>
-  <nav class="steps" id="steps" aria-label="涂装步骤">
-    <button data-step="1"><em>1</em><span>选个起点<small>白胚 · 经典 · 骰子</small></span></button>
+  <nav class="steps" id="steps" aria-label="涂装步骤" data-i18n-aria-label="text.0615">
+    <button data-step="1"><em>1</em><span><span data-i18n="text.0133">选个起点</span><small data-i18n="text.0592">白胚 · 经典 · 骰子</small></span></button>
     <i class="step-line"></i>
-    <button data-step="2"><em>2</em><span>细调部位<small>按部位改色</small></span></button>
+    <button data-step="2"><em>2</em><span><span data-i18n="text.0605">细调部位</span><small data-i18n="text.0593">按部位改色</small></span></button>
     <i class="step-line"></i>
-    <button data-step="3"><em>3</em><span>展示分享<small>海报 · 导出</small></span></button>
+    <button data-step="3"><em>3</em><span><span data-i18n="label.showshare">展示分享</span><small data-i18n="text.0594">海报 · 导出</small></span></button>
   </nav>
   <div class="top-actions">
     <span id="profile-slot"></span>
-    <button class="icon" id="undo" title="撤销 ⌘Z" aria-label="撤销" disabled>↶</button>
-    <button class="icon" id="redo" title="重做 ⇧⌘Z" aria-label="重做" disabled>↷</button>
-    <a class="ghost" href="./gallery/">配色广场</a>
+    <button class="icon" id="undo" title="撤销 ⌘Z" aria-label="撤销" disabled data-i18n-title="text.0616" data-i18n-aria-label="text.0348">↶</button>
+    <button class="icon" id="redo" title="重做 ⇧⌘Z" aria-label="重做" disabled data-i18n-title="text.0617" data-i18n-aria-label="text.0618">↷</button>
+    <a class="ghost" href="./gallery/" data-i18n="text.0392">配色广场</a>
   </div>
 </header>
 <main class="studio" id="studio" data-step="1">
-  <aside class="rail" id="rail" aria-label="涂装部位"></aside>
+  <aside class="rail" id="rail" aria-label="涂装部位" data-i18n-aria-label="text.0619"></aside>
   <section class="stage" id="stage" data-bg="soft">
-    <div class="loading" id="loading"><span></span>正在载入机器鸭…</div>
-    <div class="tools" id="tools" role="group" aria-label="涂装工具">
-      <button data-tool="select" class="on" title="选择 V"><b>↖</b>选择<kbd>V</kbd></button>
-      <button data-tool="brush" title="刷子 B"><b>●</b>刷子<kbd>B</kbd></button>
-      <button data-tool="pick" title="吸管 I"><b>◎</b>吸管<kbd>I</kbd></button>
+    <div class="loading" id="loading"><span></span><span data-i18n="label.loading">正在载入机器鸭…</span></div>
+    <div class="tools" id="tools" role="group" aria-label="涂装工具" data-i18n-aria-label="text.0620">
+      <button data-tool="select" class="on" title="选择 V" data-i18n-title="text.0621"><b>↖</b><span data-i18n="label.select">选择</span><kbd>V</kbd></button>
+      <button data-tool="brush" title="刷子 B" data-i18n-title="text.0622"><b>●</b><span data-i18n="label.brush">刷子</span><kbd>B</kbd></button>
+      <button data-tool="pick" title="吸管 I" data-i18n-title="text.0623"><b>◎</b><span data-i18n="label.pick">吸管</span><kbd>I</kbd></button>
       <span class="brush-chip" id="brush-chip" hidden></span>
       <i class="tools-sep"></i>
-      <button id="focus-toggle" title="拉近到所选部位，再按一次回到整机（F，也可双击模型）"><b id="focus-icon">⌖</b><span id="focus-text">聚焦</span><kbd>F</kbd></button>
-      <button id="side-toggle" aria-pressed="false" title="把所选零件放大，摆在鸭子旁边一起看，视角一起转（P）"><b>⧉</b>并排放大<kbd>P</kbd></button>
+      <button id="focus-toggle" title="拉近到所选部位，再按一次回到整机（F，也可双击模型）" data-i18n-title="text.0624"><b id="focus-icon">⌖</b><span id="focus-text" data-i18n="text.0259">聚焦</span><kbd>F</kbd></button>
+      <button id="side-toggle" aria-pressed="false" title="把所选零件放大，摆在鸭子旁边一起看，视角一起转（P）" data-i18n-title="text.0625"><b>⧉</b><span data-i18n="label.sidecopy">并排放大</span><kbd>P</kbd></button>
       <i class="tools-sep"></i>
-      <div class="seg wide tools-seg" id="layouts" role="group" aria-label="形态"><button data-layout="assembly" class="on" title="组装 1">组装</button><button data-layout="explode" title="散开 2">散开</button><button data-layout="arrange" title="排列 3">排列</button></div>
-      <button id="pose-toggle" aria-pressed="false" title="摆姿势：张嘴、转头、下蹲、抬脚"><b>🦴</b>姿态</button>
+      <div class="seg wide tools-seg" id="layouts" role="group" aria-label="形态" data-i18n-aria-label="text.0626"><button data-layout="assembly" class="on" title="组装 1" data-i18n="text.0595" data-i18n-title="text.0627">组装</button><button data-layout="explode" title="散开 2" data-i18n="text.0596" data-i18n-title="text.0628">散开</button><button data-layout="arrange" title="排列 3" data-i18n="text.0597" data-i18n-title="text.0629">排列</button></div>
+      <button id="pose-toggle" aria-pressed="false" title="摆姿势：张嘴、转头、下蹲、抬脚" data-i18n-title="text.0630"><b>🦴</b><span data-i18n="label.pose">姿态</span></button>
     </div>
-    <div class="split-labels" id="split-labels" hidden><span id="split-a">A</span><span>B · 当前</span></div>
+    <div class="split-labels" id="split-labels" hidden><span id="split-a">A</span><span data-i18n="text.0598">B · 当前</span></div>
     <div class="side-label" id="side-label" hidden></div>
     <div class="pose-panel" id="pose-panel" hidden></div>
     <div class="hint" id="hint"></div>
     <div class="part-tag" id="part-tag" hidden></div>
     <div class="dock" id="dock">
-      <div class="seg" id="views" role="group" aria-label="视角"><button data-view="hero" class="on">¾</button><button data-view="front">正</button><button data-view="side">侧</button><button data-view="back">背</button><button data-view="top">俯</button></div>
-      <button class="toggle" id="spin" aria-pressed="false">⟳ 转台</button>
-      <div class="compare"><button class="hold" id="hold" title="按住对比（空格）">按住对比</button><button class="cmp-pick" id="cmp-pick" aria-label="选择对比对象" aria-expanded="false">▾</button><div class="cmp-menu" id="cmp-menu" hidden></div></div>
-      <div class="bgs" id="bgs" role="group" aria-label="背景"><button data-bg="auto" class="on auto" title="自动：选中浅色零件时换成中灰，看得更清楚">A</button><button data-bg="soft" style="--c:#e9edf6" title="冷灰"></button><button data-bg="sand" style="--c:#f0dfc6" title="暖沙"></button><button data-bg="sage" style="--c:#cfe4dc" title="雾绿"></button><button data-bg="night" style="--c:#151b33" title="夜空"></button><button data-bg="custom" class="custom" id="bg-custom" title="自己调一个背景色"></button>
+      <div class="seg" id="views" role="group" aria-label="视角" data-i18n-aria-label="text.0631"><button data-view="hero" class="on">¾</button><button data-view="front" data-i18n="text.0429">正</button><button data-view="side" data-i18n="text.0430">侧</button><button data-view="back" data-i18n="text.0431">背</button><button data-view="top" data-i18n="text.0599">俯</button></div>
+      <button class="toggle" id="spin" aria-pressed="false" data-i18n="text.0441">⟳ 转台</button>
+      <div class="compare"><button class="hold" id="hold" title="按住对比（空格）" data-i18n="text.0600" data-i18n-title="text.0632">按住对比</button><button class="cmp-pick" id="cmp-pick" aria-label="选择对比对象" aria-expanded="false" data-i18n-aria-label="text.0633">▾</button><div class="cmp-menu" id="cmp-menu" hidden></div></div>
+      <div class="bgs" id="bgs" role="group" aria-label="背景" data-i18n-aria-label="text.0481"><button data-bg="auto" class="on auto" title="自动：选中浅色零件时换成中灰，看得更清楚" data-i18n-title="text.0634">A</button><button data-bg="soft" style="--c:#e9edf6" title="冷灰" data-i18n-title="text.0003"></button><button data-bg="sand" style="--c:#f0dfc6" title="暖沙" data-i18n-title="text.0635"></button><button data-bg="sage" style="--c:#cfe4dc" title="雾绿" data-i18n-title="text.0636"></button><button data-bg="night" style="--c:#151b33" title="夜空" data-i18n-title="text.0637"></button><button data-bg="custom" class="custom" id="bg-custom" title="自己调一个背景色" data-i18n-title="text.0638"></button>
         <div class="bg-pop" id="bg-pop" hidden>
-          <div class="bg-pop-head"><b>背景颜色</b><button id="bg-random" title="随机一个好看的背景">🎲 随机</button></div>
+          <div class="bg-pop-head"><b data-i18n="text.0601">背景颜色</b><button id="bg-random" title="随机一个好看的背景" data-i18n="text.0602" data-i18n-title="text.0639">🎲 随机</button></div>
           <div class="bg-swatches" id="bg-swatches"></div>
-          <label class="bg-slider">色相<input type="range" id="bg-h" min="0" max="360"></label>
-          <label class="bg-slider">浓淡<input type="range" id="bg-s" min="0" max="80"></label>
-          <label class="bg-slider">明暗<input type="range" id="bg-l" min="6" max="96"></label>
-          <div class="bg-hex"><i id="bg-chip"></i><input id="bg-hex" maxlength="7" aria-label="背景 HEX" autocomplete="off"></div>
+          <label class="bg-slider"><span data-i18n="label.hue">色相</span><input type="range" id="bg-h" min="0" max="360"></label>
+          <label class="bg-slider"><span data-i18n="label.saturation">浓淡</span><input type="range" id="bg-s" min="0" max="80"></label>
+          <label class="bg-slider"><span data-i18n="label.lightness">明暗</span><input type="range" id="bg-l" min="6" max="96"></label>
+          <div class="bg-hex"><i id="bg-chip"></i><input id="bg-hex" maxlength="7" aria-label="背景 HEX" autocomplete="off" data-i18n-aria-label="text.0640"></div>
         </div></div>
     </div>
   </section>
   <aside class="panel" id="panel"></aside>
 </main>
-<div class="coach" id="coach" hidden><div class="coach-card"><span class="eyebrow">第一次来？</span><h3>三步做出你的机器鸭</h3><ol><li><b>选个起点</b>白胚、经典配色或灵感骰子，点一张就行</li><li><b>细调部位</b>点模型上的部位，再点颜色</li><li><b>展示分享</b>摆个姿势、生成海报，保存或发布</li></ol><p class="coach-hint">不登录也能直接玩。登录（昵称 + 简单密码）后，方案存进账号，换台电脑也找得回，还能发布到配色广场。</p><button id="coach-go">开始 →</button><button class="coach-login" id="coach-login">已有账号 / 注册一个</button></div></div>
+<div class="coach" id="coach" hidden><div class="coach-card"><span class="eyebrow" data-i18n="text.0603">第一次来？</span><h3 data-i18n="text.0604">三步做出你的机器鸭</h3><ol><li><b data-i18n="text.0133"><span data-i18n="text.0133">选个起点</span></b>白胚、经典配色或灵感骰子，点一张就行</li><li><b data-i18n="text.0605"><span data-i18n="text.0605">细调部位</span></b>点模型上的部位，再点颜色</li><li><b data-i18n="text.0606"><span data-i18n="label.showshare">展示分享</span></b>摆个姿势、生成海报，保存或发布</li></ol><p class="coach-hint" data-i18n="text.0607">不登录也能直接玩。登录（昵称 + 简单密码）后，方案存进账号，换台电脑也找得回，还能发布到配色广场。</p><button id="coach-go" data-i18n="text.0608">开始 →</button><button class="coach-login" id="coach-login" data-i18n="text.0609">已有账号 / 注册一个</button></div></div>
 
-<dialog id="export-dialog" class="sheet" aria-label="导出 3MF"><div class="sheet-head"><div><span class="eyebrow">MATERIALS → 3MF</span><h2>把当前方案交给打印商</h2></div><button class="x" data-close>×</button></div><div id="export-body"></div></dialog>
-<dialog id="publish-dialog" class="sheet" aria-label="发布到配色广场"><form id="publish-form"><div class="sheet-head"><div><span class="eyebrow">PUBLISH</span><h2>发布到配色广场</h2></div><button type="button" class="x" data-close>×</button></div>
-  <div class="publish-grid"><img id="publish-preview" alt="当前方案预览"><div class="publish-fields">
+<dialog id="export-dialog" class="sheet" aria-label="导出 3MF" data-i18n-aria-label="text.0641"><div class="sheet-head"><div><span class="eyebrow">MATERIALS → 3MF</span><h2 data-i18n="text.0610">把当前方案交给打印商</h2></div><button class="x" data-close>×</button></div><div id="export-body"></div></dialog>
+<dialog id="publish-dialog" class="sheet" aria-label="发布到配色广场" data-i18n-aria-label="text.0611"><form id="publish-form"><div class="sheet-head"><div><span class="eyebrow">PUBLISH</span><h2 data-i18n="text.0611">发布到配色广场</h2></div><button type="button" class="x" data-close>×</button></div>
+  <div class="publish-grid"><img id="publish-preview" alt="当前方案预览" data-i18n-alt="text.0642"><div class="publish-fields">
     <label>方案名称<input id="publish-title" required maxlength="40"></label>
-    <label>设计说明<textarea id="publish-desc" maxlength="240" rows="3" placeholder="这套配色的灵感、搭配思路…"></textarea></label>
+    <label>设计说明<textarea id="publish-desc" maxlength="240" rows="3" placeholder="这套配色的灵感、搭配思路…" data-i18n-placeholder="text.0643"></textarea></label>
     <p class="publish-by" id="publish-by"></p>
     <p class="publish-source" id="publish-source"></p>
     <label class="check"><input type="checkbox" id="publish-consent" required> 允许其他人引用这个发布版本，继续修改配色</label>
     <label class="check"><input type="checkbox" id="publish-evolve" checked> 发布时播放「超进化」动画</label>
     <label class="check"><input type="checkbox" id="publish-sound" checked> 播放进化音效（原创合成音）</label>
-    <p class="publish-note">发布后所有人都能在配色广场看到并「做同款」。发布时会同时保存一份到「我的方案」；再次发布会创建新版本。</p>
+    <p class="publish-note" data-i18n="text.0612">发布后所有人都能在配色广场看到并「做同款」。发布时会同时保存一份到「我的方案」；再次发布会创建新版本。</p>
   </div></div>
-  <div class="sheet-foot"><button type="button" class="ghost-btn" data-close>取消</button><button class="primary" type="submit">发布</button></div></form></dialog>
+  <div class="sheet-foot"><button type="button" class="ghost-btn" data-close data-i18n="text.0078">取消</button><button class="primary" type="submit" data-i18n="text.0613">发布</button></div></form></dialog>
 <div class="toast" id="toast" role="status"></div>
 <script type="module" src="./studio/studio.mjs"></script>
 </body>

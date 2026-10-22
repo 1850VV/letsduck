@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {setLocale} from '../frontend/shared/i18n.mjs';
+setLocale('zh-Hans');
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {SLOTS,RECIPES,THEMES,quickDesign,rollSlots,themeSlots,slotsFromDesign,designNotes,encodeLook,decodeLook} from '../frontend/lib/quick-style.mjs';
