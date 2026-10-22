@@ -25,3 +25,5 @@ Review date: 2026-10-22. See [licensing research](docs/history/outputs/MicroDuck
 ## QR Code generator
 
 `frontend/vendor/qrcodegen.mjs` contains Project Nayuki's MIT-licensed QR Code generator, compiled from TypeScript. Source: [official library](https://www.nayuki.io/page/qr-code-generator-library), [JavaScript download](https://www.nayuki.io/res/qr-code-generator-library/qrcodegen.js), retrieved 2026-10-22. Download SHA-256: `2511bc17f40a3c41d4a0578995db956b38997334d3d20113a5d4dc5c49c69480`. The original MIT notice is retained in the file; the sole adaptation adds an ES module export. QR generation runs locally without an external image service.
+
+The screenshots and animated clips in `docs/media/` (used by the README) show renders of the separately licensed XGO Duck V2 model. The repository owner approved publishing them; they are not covered by the MIT licence. The people, works and ratings shown are sample data.

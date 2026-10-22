@@ -14,6 +14,8 @@ RULES={
     'credential-url':rb'https?://[^/\s:@]+:[^/\s@]+@',
 }
 LOCAL_ONLY={'source.3mf','geometry.bin','model.json','catalog.json','export-schema.json'}
+# README screenshots/clips show model renders; the owner approved publishing them (2026-10-23).
+MEDIA,MEDIA_MAX='docs/media/',3_000_000
 
 def audit():
     files=subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0')
@@ -21,7 +23,10 @@ def audit():
     for name in filter(None,files):
         count+=1;p=ROOT/name
         if p.is_symlink():findings.append({'file':name,'rule':'symlink'});continue
-        if p.name in LOCAL_ONLY or p.suffix.lower() in {'.3mf','.stl','.zip','.bin','.png','.jpg','.webm','.mp4','.pdf'}:
+        media=name.startswith(MEDIA) and p.suffix.lower() in {'.jpg','.gif'}
+        if media and p.stat().st_size>MEDIA_MAX:
+            findings.append({'file':name,'rule':'readme-media-too-large'})
+        if p.name in LOCAL_ONLY or (not media and p.suffix.lower() in {'.3mf','.stl','.zip','.bin','.png','.jpg','.gif','.webm','.mp4','.pdf'}):
             findings.append({'file':name,'rule':'local-only-or-unreviewed-binary'})
         if any(s in {'.env','.codex','.agents','.playwright-cli','.ryugi','node_modules','__pycache__'}for s in p.relative_to(ROOT).parts):
             findings.append({'file':name,'rule':'private-or-generated-path'})
