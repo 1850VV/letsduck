@@ -12,10 +12,24 @@ import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
 import { applyBrand } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
+import { loadEdition } from '../shared/edition.mjs';
 applyBrand();
 
 const $ = (s) => document.querySelector(s),$$ = (s) => [...document.querySelectorAll(s)];
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const edition = await loadEdition(), personal = edition === 'personal';
+document.body.dataset.edition = edition;
+function renderEdition() {
+  $('#edition-badge').hidden = !personal;
+  $('#import-code').hidden = !personal;
+  const brand = $('[data-brand-slot]');brand.href = personal ? './' : './gallery/';
+  brand.title = personal ? 'DoodleDuck' : _t('text.0614');
+  if (personal) {
+    $('#steps [data-step="3"] [data-i18n]').dataset.i18n = 'personal.show';
+    $('#steps [data-step="3"] [data-i18n]').textContent = _t('personal.show');
+  }
+}
+renderEdition();_onLocale(renderEdition);
 const duck = await loadDuck(),{ model, catalog, products } = duck,parts = model.parts,partById = new Map(parts.map((p) => [p.id, p]));
 const zoneOf = (id) => ZONES.find((z) => z.ids.includes(id));
 const match = (p, hex) => catalog.products.find((x) => x.series === p.material && x.hex.toUpperCase() === hex.toUpperCase())?.id || null;
@@ -47,14 +61,18 @@ const ZONE_ORDER = ZONES.flatMap((z) => z.ids);
 const clone = (x) => structuredClone(x),same = (a, b) => JSON.stringify(a.assignments) === JSON.stringify(b.assignments) && JSON.stringify(a.colors) === JSON.stringify(b.colors) && JSON.stringify(a.finishes || {}) === JSON.stringify(b.finishes || {});
 
 // ---------- local state: the draft always lives in this browser; schemes too until you sign in ----------
-const KEY = 'dd-studio',read = (k) => {try {return localStorage.getItem(k) ?? localStorage.getItem(k.replace('dd-studio', 'proto-studio-v2'));} catch {return null;}};
+const KEY = personal ? 'dd-studio-personal' : 'dd-studio',read = (k) => {try {return localStorage.getItem(k) ?? (!personal ? localStorage.getItem(k.replace('dd-studio', 'proto-studio-v2')) : null);} catch {return null;}};
 let saved = {};try {saved = JSON.parse(read(KEY)) || {};} catch {}
 let defaultName = !saved.draft?.name;
 let design = saved.draft?.design || clone(ORIGINAL),name = saved.draft?.name || _t("text.0047"),provenance = saved.draft?.provenance || null;
 let schemes = Array.isArray(saved.schemes) ? saved.schemes : [],owner = saved.owner || null,activeId = saved.draft?.activeId || null,recent = saved.recent || [],locks = new Set(saved.locks || []),voiceSalt = saved.draft?.voiceSalt || 0;
 const baseline = () => schemes.find((s) => s.id === activeId)?.design || ORIGINAL;
-const dirty = () => !same(design, baseline());
-function persist() {try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, voiceSalt }, schemes, owner, recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}}
+const dirty = () => {
+  const stored = personal && schemes.find(s => s.id === activeId);
+  return !same(design, baseline()) || !!(stored && (name !== stored.name || voiceSalt !== stored.voiceSalt
+    || JSON.stringify(provenance) !== JSON.stringify(stored.provenance)));
+};
+function persist() {try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, voiceSalt }, ...(!personal ? {schemes, owner} : {}), recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}}
 
 let step = 1,stepsDone = new Set(),slots = slotsFromDesign(products, design.assignments, themeSlots(products, THEMES[0])),recipe = '经典',slotLocks = {},openSlot = null,activeTheme = null,styleTab = 'themes',showTab = 'move';
 let sel = { zone: 'head-shell', scope: 'all', part: null, mirror: true },tool = 'select',brush = null,search = '',replaceFrom = null,finder = '#FF8A3D',takeFrom = 'original',source = 'bambu',dockTab = 'filament',freeFinish = 'basic',freeAuto = true,pickToFree = false,brushMirror = true,brushKind = 'PLA',brushHover = null,toolBefore = 'select';
@@ -88,6 +106,10 @@ $('#redo').onclick = () => {const h = redo.pop();if (!h) return;undo.push({ desi
 
 // ---------- schemes (named saves, max 30, private). Signed in: kept on the server, this browser keeps a cache. ----------
 const schemeBody = (s) => ({ name: s.name, design: s.design, provenance: s.provenance, voiceSalt: s.voiceSalt || 0 });
+async function personalWrite(method, id, body) {
+  try {return await api(method, '/schemes/' + encodeURIComponent(id), body);}
+  catch (error) {toast(_message('personal.saveFailed', {error: () => error.message}));return null;}
+}
 function pushScheme(s) {if (account.user) api('PUT', '/schemes/' + encodeURIComponent(s.id), schemeBody(s)).then((r) => {s.updated = r.updated;persist();}).catch((err) => toast(_message("text.0057", { v0: ()=>err.message })));}
 function dropScheme(id) {if (account.user) api('DELETE', '/schemes/' + encodeURIComponent(id)).catch((err) => toast(_message("text.0058", { v0: ()=>err.message })));}
 // On sign-in the account's schemes replace the local list. The local cache remembers whose it is (owner):
@@ -101,13 +123,28 @@ async function syncSchemes() {
     if (up) toast(_message("text.0059", { v0: up }));
   } catch (err) {toast(_message("text.0060", { v0: ()=>err.message }));}
 }
-const savedWhere = () => account.user ? '' : _t("text.0061");
+const savedWhere = () => personal ? _t('personal.savedWhere') : account.user ? '' : _t("text.0061");
 const newId = () => 's-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const when = (value) => {const minutes = Math.round((Date.now() - value) / 60000);return minutes < 1 ? _t('text.0062') : minutes < 60 ? relativeTime(-minutes, 'minute') : minutes < 1440 ? relativeTime(-Math.round(minutes / 60), 'hour') : relativeTime(-Math.round(minutes / 1440), 'day');};
-function saveScheme(asNew) {
+let savingScheme = false;
+async function saveScheme(asNew) {
+  if (personal) {
+    if (savingScheme) return false;
+    const old = !asNew && schemes.find(s => s.id === activeId);
+    if (!old && schemes.length >= 30) {toast(_message('text.0066'));return false;}
+    const candidate = {id: old ? old.id : newId(), name: asNew && activeId ? _t('text.0067', {v0:name}) : name,
+      design: clone(design), provenance, voiceSalt};
+    savingScheme = true;$('#scheme-state').textContent = _t('personal.saving');
+    const result = await personalWrite('PUT', candidate.id, schemeBody(candidate));
+    savingScheme = false;
+    if (!result) {renderHeader();return false;}
+    if (old) Object.assign(old, result);else schemes.unshift(result);
+    activeId = result.id;name = result.name;persist();renderAll();
+    toast(_message('text.0068', {v0:name, v1:savedWhere()}));return true;
+  }
   let s;if (!asNew && activeId && (s = schemes.find((s) => s.id === activeId))) Object.assign(s, { name, design: clone(design), provenance, voiceSalt, updated: Date.now() });else
   {if (schemes.length >= 30) return toast(_message("text.0066"));s = { id: newId(), name: asNew && activeId ? _t("text.0067", { v0: name }) : name, design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };schemes.unshift(s);activeId = s.id;name = s.name;}
-  persist();pushScheme(s);renderAll();toast(_message("text.0068", { v0: name, v1: savedWhere() }));
+  persist();pushScheme(s);renderAll();toast(_message("text.0068", { v0: name, v1: savedWhere() }));return true;
 }
 function openScheme(id) {
   const s = id === 'original' ? { get name() {return _t("text.0069");}, design: ORIGINAL, provenance: null } : schemes.find((s) => s.id === id);if (!s) return;
@@ -120,21 +157,24 @@ function renderMenu() {
   const strip = (d) => [...new Set(Object.values(d.colors))].slice(0, 5).map((c) => `<i style="--c:${c}"></i>`).join('');
   m.innerHTML = `<div class="sm-current"><label>${_t("text.0087")}<input id="sm-name" value="${esc(name)}" maxlength="40"></label><div class="sm-btns"><button class="primary-sm" id="sm-save">${activeId ? _t("text.0079") : _t("text.0080")}</button>${activeId ? `<button id="sm-saveas">${_t("text.0081")}</button>` : ''}</div>${provenance ? `<p class="sm-prov">${_t("text.0082", { v0: esc(provenance.title), v1: esc(provenance.author) })}</p>` : ''}</div>
   <div class="sm-list"><span class="sm-label">${_t("text.0088", { v4: schemes.length })}</span>${row('original', _t("text.0069"), _t("text.0083"), strip(ORIGINAL), false)}${schemes.map((s) => row(s.id, s.name, when(s.updated) + (s.provenance ? _t("text.0084") : ''), strip(s.design), s.id === activeId)).join('')}</div>
-  <div class="sm-paste"><label>${_t("text.0089")}<span><input id="sm-code" placeholder="${_attr(_t("text.0090"))}" autocomplete="off"><button id="sm-import">${_t("text.0091")}</button></span></label></div>
-  <p class="sm-foot">${_t("text.0092", { v7: account.user ? _t("text.0085") : _t("text.0086") })}</p>`;
+  <div class="sm-paste"><label>${_t(personal ? 'personal.code' : "text.0089")}<span><input id="sm-code" placeholder="${_attr(personal ? 'v1.…' : _t("text.0090"))}" autocomplete="off"><button id="sm-import">${_t("text.0091")}</button></span></label></div>
+  <p class="sm-foot">${personal ? _t('personal.storage') : _t("text.0092", { v7: account.user ? _t("text.0085") : _t("text.0086") })}</p>`;
 }
 $('#scheme-btn').onclick = (e) => {e.stopPropagation();menuOpen = !menuOpen;pendingOpen = null;renderMenu();};
+$('#import-code').onclick = e => {e.stopPropagation();menuOpen = true;pendingOpen = null;renderMenu();$('#sm-code').focus();};
 document.addEventListener('click', (e) => {if (menuOpen && !e.target.closest('#scheme')) {menuOpen = false;renderMenu();}if (!e.target.closest('.compare')) $('#cmp-menu').hidden = true;});
-$('#scheme-menu').addEventListener('click', (e) => {
+$('#scheme-menu').addEventListener('click', async (e) => {
   const t = e.target;
-  if (t.closest('#sm-import')) {const v = $('#sm-code').value;if (!v.trim()) return $('#sm-code').focus();try {const n = importLook(v);menuOpen = false;undo.length = 0;step = 2;renderAll();toast(_message("text.0093", { v0: n }));} catch (error) {toast(error.message);}return;}
+  if (t.closest('#sm-import')) {const v = $('#sm-code').value;if (!v.trim()) return $('#sm-code').focus();try {const n = await importLook(v);menuOpen = false;undo.length = 0;step = 2;renderAll();toast(_message("text.0093", { v0: n }));} catch (error) {toast(error.message);}return;}
   if (t.closest('#sm-save')) return saveScheme(false);if (t.closest('#sm-saveas')) return saveScheme(true);
   // Rename in place (native prompt/confirm are unavailable in embedded browsers); delete is undoable instead of confirmed.
   if (t.closest('#sm-rename')) return;
   const rn = t.closest('[data-rename]');if (rn) {renamingId = rn.dataset.rename;renderMenu();const i = $('#sm-rename');i.focus();i.select();return;}
-  const del = t.closest('[data-delete]');if (del) {const at = schemes.findIndex((s) => s.id === del.dataset.delete),s = schemes[at],wasActive = activeId === s.id;schemes = schemes.filter((x) => x !== s);if (wasActive) activeId = null;if (compareId === s.id) compareId = 'original';persist();dropScheme(s.id);renderAll();
-    return toast(_message("text.0094", { v0: s.name }), () => {schemes.splice(at, 0, s);if (wasActive) activeId = s.id;persist();pushScheme(s);renderAll();toast(_message("text.0095", { v0: ()=>s.name }));});}
-  const cf = t.closest('[data-confirm]');if (cf) {const id = pendingOpen;if (cf.dataset.confirm === 'cancel') {pendingOpen = null;return renderMenu();}if (cf.dataset.confirm === 'save') saveScheme(false);return openScheme(id);}
+  const del = t.closest('[data-delete]');if (del) {const at = schemes.findIndex((s) => s.id === del.dataset.delete),s = schemes[at],wasActive = activeId === s.id;
+    if (personal && !await personalWrite('DELETE', s.id)) return;
+    schemes = schemes.filter((x) => x !== s);if (wasActive) activeId = null;if (compareId === s.id) compareId = 'original';persist();if (!personal) dropScheme(s.id);renderAll();
+    return toast(_message("text.0094", { v0: s.name }), async () => {if (personal && !await personalWrite('PUT', s.id, schemeBody(s))) return;schemes.splice(at, 0, s);if (wasActive) activeId = s.id;persist();if (!personal) pushScheme(s);renderAll();toast(_message("text.0095", { v0: ()=>s.name }));});}
+  const cf = t.closest('[data-confirm]');if (cf) {const id = pendingOpen;if (cf.dataset.confirm === 'cancel') {pendingOpen = null;return renderMenu();}if (cf.dataset.confirm === 'save' && !await saveScheme(false)) return;return openScheme(id);}
   const op = t.closest('[data-open]');if (op) {const id = op.dataset.open;if (id === activeId || id === 'original' && !activeId && !dirty()) return;if (dirty()) {pendingOpen = id;return renderMenu();}return openScheme(id);}
 });
 $('#scheme-menu').addEventListener('keydown', (e) => {
@@ -142,7 +182,9 @@ $('#scheme-menu').addEventListener('keydown', (e) => {
   if (e.target.id === 'sm-rename') {if (e.key === 'Enter') {e.preventDefault();finishRename(true);}if (e.key === 'Escape') {e.preventDefault();e.stopPropagation();finishRename(false);}}
 });
 $('#scheme-menu').addEventListener('focusout', (e) => {if (e.target.id === 'sm-rename') finishRename(true);});
-function finishRename(save) {const s = schemes.find((x) => x.id === renamingId),v = $('#sm-rename')?.value.trim();renamingId = null;if (save && s && v && v !== s.name) {s.name = v.slice(0, 40);if (s.id === activeId) name = s.name;persist();pushScheme(s);renderAll();toast(_message("text.0096", { v0: ()=>s.name }));} else renderMenu();}
+async function finishRename(save) {const s = schemes.find((x) => x.id === renamingId),v = $('#sm-rename')?.value.trim();renamingId = null;if (save && s && v && v !== s.name) {
+  if (personal) {const result = await personalWrite('PUT', s.id, {...schemeBody(s), name:v.slice(0,40)});if (!result) return renderMenu();Object.assign(s,result);}else s.name = v.slice(0,40);
+  if (s.id === activeId) name = s.name;persist();if (!personal) pushScheme(s);renderAll();toast(_message("text.0096", { v0: ()=>s.name }));} else renderMenu();}
 $('#scheme-menu').addEventListener('input', (e) => {if (e.target.id === 'sm-name') {defaultName = false;name = e.target.value.trim() || _t("text.0047");$('#scheme-name').textContent = name;persist();}});
 
 // ---------- compare (hold or side by side) ----------
@@ -239,9 +281,11 @@ function applyStart(id) {
   const next = clone(design);for (const p of parts) if (!locks.has(p.id)) {next.colors[p.id] = s.design.colors[p.id];next.assignments[p.id] = s.design.assignments[p.id];}
   next.finishes = {};if (!activeId && (defaultName || startId)) name = id === 'blank' ? _t("text.0047") : s.name;stepsDone.add(1);commit(next, _message("text.0143", { v0: ()=>s.name }));
 }
-function keepDice(id) {
+async function keepDice(id) {
   const d = diceSet.find((x) => x.id === id);if (!d) return;if (schemes.length >= 30) return toast(_message("text.0144"));
-  const s = { id: newId(), name: d.name, design: clone(d.design), provenance: null, voiceSalt: 0, created: Date.now(), updated: Date.now() };schemes.unshift(s);persist();pushScheme(s);renderPanel();toast(_message("text.0145", { v0: d.name, v1: savedWhere() }));
+  const s = { id: newId(), name: d.name, design: clone(d.design), provenance: null, voiceSalt: 0, created: Date.now(), updated: Date.now() };
+  if (personal) {const result = await personalWrite('PUT', s.id, schemeBody(s));if (!result) return;Object.assign(s,result);}
+  schemes.unshift(s);persist();if (!personal) pushScheme(s);renderPanel();toast(_message("text.0145", { v0: d.name, v1: savedWhere() }));
 }
 const selKind = () => partKind(partById.get(ZONES.find((z) => z.id === sel.zone).ids[0]));
 // In 刷子 mode the swatches load the brush instead of painting a selection, so they list the brush's material.
@@ -347,9 +391,9 @@ function panelStep3() {
   const notes = designNotes(design.colors, design.assignments),list = used(),slotsNeeded = new Set([...Object.values(ORIGINAL.assignments), ...parts.map((p) => keyOf(p.id))]).size,code = lookCode({ ...design, name }, parts, products),okCode = code.startsWith('v1.');
   const pending = parts.filter((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo).length;
   const plates = [1, 2, 3, 4, 5, 6].map((n) => {const ps = parts.filter((p) => p.plate === n),ks = [...new Set(ps.map((p) => keyOf(p.id)))],tpu = ps[0].material === 'TPU 90A',warn = tpu && ks.length > 1 ? _t("text.0205") : !tpu && ks.length > 4 ? _t("text.0206") : '';return `<div class="plate ${warn ? 'warn' : ''}" title="${_attr(warn || _t("text.0207", { v0: ps.length, v1: ks.length }))}"><b>${_t("text.0208", { v2: n })}</b><span>${ks.map((k) => `<i style="--c:${keyHex(k)}"></i>`).join('')}</span><small>${_t("text.0209", { v4: ks.length, v5: tpu ? ' · TPU' : '' })}</small></div>`;}).join('');
-  return `<div class="panel-head compact tight"><div class="sel-line"><h2>${_t("text.0221")}</h2><span class="kind-tag">${_t("text.0222", { v0: notes.count, v1: notes.warnings.length ? ' · ⚠' : '' })}</span></div>${notes.warnings.length ? `<p class="lead warn-lead">⚠ ${esc(notes.warnings[0])}</p>` : ''}</div>
+  return `<div class="panel-head compact tight"><div class="sel-line"><h2>${_t(personal ? 'personal.show' : "text.0221")}</h2><span class="kind-tag">${_t("text.0222", { v0: notes.count, v1: notes.warnings.length ? ' · ⚠' : '' })}</span></div>${notes.warnings.length ? `<p class="lead warn-lead">⚠ ${esc(notes.warnings[0])}</p>` : ''}</div>
   <div class="cdock" id="pdock" data-tab="${showTab}">
-    <div class="dock-tabs three" role="tablist"><button data-ptab="move" role="tab">${_t("text.0223")}</button><button data-ptab="share" role="tab">${_t("text.0224")}</button><button data-ptab="print" role="tab">${_t("text.0225", { v4: pending ? '<sup>!</sup>' : '' })}</button><i class="ink"></i></div>
+    <div class="dock-tabs three" role="tablist"><button data-ptab="move" role="tab">${_t("text.0223")}</button><button data-ptab="share" role="tab">${_t(personal ? 'personal.share' : "text.0224")}</button><button data-ptab="print" role="tab">${_t("text.0225", { v4: pending ? '<sup>!</sup>' : '' })}</button><i class="ink"></i></div>
     <div class="panel-body dock-body fit">
       <section class="pane pane-move">
         <div class="voice-row slim"><span>${_t("text.0226")}<small id="voice-desc">${voiceDesc ? voiceDesc : _t("text.0210")}</small></span><button id="voice-dice" title="${_attr(_t("text.0227"))}">🎲</button>${voiceSalt ? `<button id="voice-reset" title="${_attr(_t("text.0211"))}">↺</button>` : ''}<label class="pill-check" title="${_attr(_t("text.0228"))}"><input type="checkbox" id="act-sound" ${actions.sound ? 'checked' : ''}>${_t("text.0229")}</label></div>
@@ -373,7 +417,7 @@ function panelStep3() {
       </section>
     </div>
   </div>
-  <div class="panel-foot finish"><button class="save-mine ${activeId && !dirty() ? 'done' : ''}" id="finish-save" title="${_attr(_t("text.0248"))}">${activeId && !dirty() ? _t("text.0219") : _t("text.0220")}</button><button class="primary" id="publish" title="${_attr(_t("text.0249"))}">${_t("text.0250")}</button></div>`;
+  <div class="panel-foot finish"><button class="save-mine ${activeId && !dirty() ? 'done' : ''}" id="finish-save" title="${_attr(_t(personal ? 'personal.saveTitle' : "text.0248"))}">${activeId && !dirty() ? _t("text.0219") : _t("text.0220")}</button>${personal ? '' : `<button class="primary" id="publish" title="${_attr(_t("text.0249"))}">${_t("text.0250")}</button>`}</div>`;
 }
 // The share tab shows the real poster, rendered once per design when the tab opens.
 let miniKey = '';
@@ -441,7 +485,7 @@ $('#steps').onclick = (e) => {const b = e.target.closest('[data-step]');if (b) g
 
 // ---------- events: panel ----------
 let previewing = false;
-$('#panel').addEventListener('click', (e) => {
+$('#panel').addEventListener('click', async (e) => {
   const t = e.target,go = t.closest('[data-go]');if (go) return goStep(+go.dataset.go);
   const ptab = t.closest('[data-ptab]');if (ptab) {showTab = ptab.dataset.ptab;$('#pdock').dataset.tab = showTab;if (showTab === 'share') fillPosterMini();return;}
   const keep = t.closest('[data-keep]');if (keep) {e.stopPropagation();keep.textContent = '★';return keepDice(keep.dataset.keep);}
@@ -484,7 +528,7 @@ $('#panel').addEventListener('click', (e) => {
   if (t.closest('#voice-reset')) {voiceSalt = 0;persist();renderPanel();updateVoice();return toast(_message("text.0211"));}
   if (t.closest('#act-show')) return actions.show();if (t.closest('#act-stop')) return actions.stop();
   if (t.closest('#export2')) return openExport();
-  if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_message("text.0268"));saveScheme(false);return renderPanel();}
+  if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_message(personal ? 'personal.saved' : "text.0268"));await saveScheme(false);return renderPanel();}
   if (t.closest('#publish')) return openPublish();
 });
 $('#panel').addEventListener('change', (e) => {
@@ -695,6 +739,7 @@ $$('dialog [data-close]').forEach((b) => b.onclick = () => b.closest('dialog').c
 // ---------- publish + evolution ceremony ----------
 const byline = () => account.user ? `${_t("text.0340", { v0: avatarHTML(account.user) })}<b>${esc(account.user.name)}</b>` : _t("text.0341");
 async function openPublish() {
+  if (personal) return;
   if (parts.some((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo)) {showTab = 'print';renderPanel();return toast(_message("text.0342"));}
   try {await requireLogin(_message("text.0343"));} catch {return;}
   $('#publish-preview').src = view.snapshot(640, 520, { angle: 'hero' }).toDataURL('image/png');$('#publish-title').value = name;$('#publish-by').innerHTML = byline();
@@ -741,25 +786,39 @@ function toast(msg,withUndo){lastToast={msg,withUndo};$('#toast').classList.add(
 const COACH = KEY + '-coach';let seen = !!read(COACH);
 // "做同款" from the gallery arrives as #look=<配色码>&src=<title>|<author>|<workId>.
 // Accepts a bare 配色码, a '#look=' fragment or a whole share link. Unsaved work is backed up first.
-function importLook(text, src = '') {
+async function importLook(text, src = '') {
   const raw = String(text).trim(),code = (raw.match(/#look=([^&\s]+)/) || [, raw])[1];
   const d = decodeLook(parts, products, code),[title, author, workId] = decodeURIComponent(src || '').split('|');
-  if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };schemes.unshift(s);pushScheme(s);setTimeout(() => toast(_message("text.0350")), 2200);}
+  if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };
+    if (personal) {const result = await personalWrite('PUT', s.id, schemeBody(s));if (!result) throw Error(_t('personal.loadFailed'));Object.assign(s,result);}
+    schemes.unshift(s);if (!personal) pushScheme(s);setTimeout(() => toast(_message("text.0350")), 2200);}
   design = { colors: d.colors, assignments: d.assignments };voiceSalt = 0;slots = slotsFromDesign(products, d.assignments, slots);name = _t("text.0351", { v0: d.name || title || _t("text.0352") });provenance = title ? { title, author: author || _t("text.0353"), ...(workId ? { workId } : {}) } : null;activeId = null;
   view.setColors(design.colors);stepsDone.add(1);persist();return d.name || title || _t("text.0354");
 }
-const accountUI = mountAccount($('#profile-slot'), { toast });
-if (await initAccount()) {accountUI.refresh();await syncSchemes();} else
-if (owner) {schemes = [];owner = null;activeId = null;persist();} // signed out elsewhere or session expired: hide that account's cache
-onAccount(() => syncSchemes());
+if (personal) {
+  try {
+    schemes = await api('GET', '/schemes');owner = null;
+    if (!saved.draft && schemes.length) {
+      const s = schemes[0];design = clone(s.design);name = s.name;provenance = s.provenance;voiceSalt = s.voiceSalt;activeId = s.id;
+      slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);
+    }
+    if (activeId && !schemes.some(s => s.id === activeId)) activeId = null;
+    persist();
+  } catch {schemes = [];activeId = null;toast(_message('personal.loadFailed'));}
+} else {
+  const accountUI = mountAccount($('#profile-slot'), { toast });
+  if (await initAccount()) {accountUI.refresh();await syncSchemes();} else
+  if (owner) {schemes = [];owner = null;activeId = null;persist();}
+  onAccount(() => syncSchemes());
+}
 const look = location.hash.match(/^#look=([^&]+)(?:&src=(.*))?$/),openId = location.hash.match(/^#scheme=(.+)$/);
-if (look) {try {const n = importLook(look[1], look[2]);step = 2;seen = true;setTimeout(() => toast(_message("text.0355", { v0: n })), 300);} catch (error) {toast(error.message);}history.replaceState(null, '', location.pathname);}
+if (look) {try {const n = await importLook(look[1], look[2]);step = 2;seen = true;setTimeout(() => toast(_message("text.0355", { v0: n })), 300);} catch (error) {toast(error.message);}history.replaceState(null, '', location.pathname);}
 // 我的方案 in the gallery opens a saved scheme here with #scheme=<id>.
 if (openId) {const s = schemes.find((x) => x.id === decodeURIComponent(openId[1]));if (s) {design = clone(s.design);name = s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = s.id;slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);stepsDone.add(1);step = 2;seen = true;persist();setTimeout(() => toast(_message("text.0071", { v0: s.name })), 300);}history.replaceState(null, '', location.pathname);}
-if (!seen || location.hash === '#coach') $('#coach').hidden = false;
+if (!personal && (!seen || location.hash === '#coach')) $('#coach').hidden = false;
 const coachDone = () => {$('#coach').hidden = true;try {localStorage.setItem(COACH, '1');} catch {}};
 $('#coach-go').onclick = coachDone;
-$('#coach-login').hidden = !!account.user;$('#coach-login').onclick = () => {coachDone();requireLogin('').catch(() => {});};
+$('#coach-login').hidden = personal || !!account.user;$('#coach-login').onclick = () => {coachDone();requireLogin('').catch(() => {});};
 renderAll();
 window.studioProto = { view, actions, get state() {return { step, sel, tool, brush, name, activeId, dirty: dirty(), schemes: schemes.length, locks: [...locks], undo: undo.length, layout: view.layout, sideOn, focused, splitOn, compareId, replaceFrom, colors: design.colors, provenance };} };_onLocale(() => {DEMO_BRANDS = [{ id: 'esun', name: 'eSUN', series: 'PLA+', colors: [[_t("text.0001"), '#F3EFE2'], [_t("text.0002"), '#1D1D1F'], [_t("text.0003"), '#8B8F95'], [_t("text.0004"), '#D3262D'], [_t("text.0005"), '#F07A22'], [_t("text.0006"), '#F5D42C'], [_t("text.0007"), '#4CA848'], [_t("text.0008"), '#8ED3B4'], [_t("text.0009"), '#4DA2DA'], [_t("text.0010"), '#1F3E8C'], [_t("text.0011"), '#6A3E9E'], [_t("text.0012"), '#F1A2BC']] }, { id: 'polymaker', name: 'Polymaker', series: 'PolyTerra PLA', colors: [[_t("text.0013"), '#ECE8DF'], [_t("text.0014"), '#2A2A2C'], [_t("text.0015"), '#9C9A93'], [_t("text.0016"), '#B53A2F'], [_t("text.0017"), '#E0813D'], [_t("text.0018"), '#E9C65A'], [_t("text.0019"), '#4F7A4A'], [_t("text.0020"), '#7FA9C9'], [_t("text.0021"), '#2C3E66'], [_t("text.0022"), '#A893C4'], [_t("text.0023"), '#D88A97'], [_t("text.0024"), '#A26A42']] }, { id: 'sunlu', name: 'SUNLU', series: 'PLA', colors: [[_t("text.0025"), '#F7F7F5'], [_t("text.0026"), '#161616'], [_t("text.0027"), '#B7B9BC'], [_t("text.0028"), '#E0242B'], [_t("text.0029"), '#F68A1E'], [_t("text.0030"), '#FBD11B'], [_t("text.0031"), '#79C043'], [_t("text.0032"), '#1E9FD0'], [_t("text.0033"), '#2350B4'], [_t("text.0034"), '#7A3FB0'], [_t("text.0035"), '#F27AA6'], [_t("text.0036"), '#DDE6EA']] }];BRANDS = [{ id: 'bambu', get short() {return _t("text.0038");} }, ...DEMO_BRANDS.map((b) => ({ id: b.id, short: b.name, demo: true }))];CLASSICS = [['original', _t("text.0117"), _t("text.0118"), ORIGINAL], ...[1, 2, 6].map((i) => ['theme-' + i, THEMES[i].name, _t("text.0119", { v0: _label(THEMES[i].recipe) }), quickDesign(parts, products, themeSlots(products, THEMES[i]), THEMES[i].recipe)])];DICE_STYLES = [['经典', _t("text.0120")], ['撞色', _t("text.0121")], ['双拼', _t("text.0122")], ['低调', _t("text.0123")]];POSE_SLIDERS = [[_t("text.0283"), 'jaw', _t("text.0284"), 0, 28, '°'], [_t("text.0283"), 'headPitch', _t("text.0285"), -30, 50, '°'], [_t("text.0283"), 'headYaw', _t("text.0286"), -45, 45, '°'], [_t("text.0283"), 'headRoll', _t("text.0287"), -15, 15, '°'], [_t("text.0283"), 'neck', _t("text.0288"), -20, 80, '°'], [_t("text.0289"), 'crouch', _t("text.0290"), 0, 100, '%'], [_t("text.0289"), 'trunk', _t("text.0291"), -15, 25, '°'], [_t("text.0292"), 'legL', _t("text.0293"), 0, 100, '%'], [_t("text.0292"), 'legR', _t("text.0294"), 0, 100, '%']];MOVE_POSES = [[_t("text.0284"), '😮', 1], [_t("text.0295"), '👇', 2], [_t("text.0293"), '🦵', 4], [_t("text.0287"), '🤔', 5]];POSE_PRESETS = [[_t("text.0296"), {}], [_t("text.0297"), { jaw: 24, headPitch: -20 }], [_t("text.0295"), { neck: 45, headPitch: 35 }], [_t("text.0298"), { crouch: 100, trunk: -15, neck: -8 }], [_t("text.0293"), { legL: 70, headRoll: 6 }], [_t("text.0299"), { headRoll: 12, headYaw: 20, jaw: 8 }]];});
 

@@ -9,9 +9,10 @@
 <link rel="stylesheet" href="./shared/i18n.css">
 <script type="module" src="./shared/language-menu.mjs"></script>
 </head>
-<body>
+<body data-edition="loading">
 <header class="top">
-  <a class="brand" href="./gallery/" data-brand-slot title="去配色广场" data-i18n-title="text.0614"></a>
+  <a class="brand" href="./" data-brand-slot title="DoodleDuck"></a>
+  <span class="edition-badge" id="edition-badge" hidden data-i18n="edition.personal"></span>
   <div class="scheme" id="scheme">
     <button class="scheme-btn" id="scheme-btn" aria-haspopup="true" aria-expanded="false"><span class="scheme-name" id="scheme-name" data-i18n="text.0047">我的机器鸭</span><small id="scheme-state" data-i18n="text.0591">草稿</small><b>▾</b></button>
     <div class="scheme-menu" id="scheme-menu" hidden></div>
@@ -24,10 +25,11 @@
     <button data-step="3"><em>3</em><span><span data-i18n="label.showshare">展示分享</span><small data-i18n="text.0594">海报 · 导出</small></span></button>
   </nav>
   <div class="top-actions">
-    <span id="profile-slot"></span>
+    <button class="ghost" id="import-code" hidden data-i18n="personal.import"></button>
+    <span id="profile-slot" data-community></span>
     <button class="icon" id="undo" title="撤销 ⌘Z" aria-label="撤销" disabled data-i18n-title="text.0616" data-i18n-aria-label="text.0348">↶</button>
     <button class="icon" id="redo" title="重做 ⇧⌘Z" aria-label="重做" disabled data-i18n-title="text.0617" data-i18n-aria-label="text.0618">↷</button>
-    <a class="ghost" href="./gallery/" data-i18n="text.0392">配色广场</a>
+    <a class="ghost" href="./gallery/" data-community data-i18n="text.0392">配色广场</a>
   </div>
 </header>
 <main class="studio" id="studio" data-step="1">

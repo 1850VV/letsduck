@@ -2,7 +2,8 @@
 import {catalogs} from '../locales/catalogs.mjs';
 import {sourceKeys} from '../locales/source-keys.mjs';
 import {extra} from '../locales/extra.mjs';
-for(const code of Object.keys(catalogs))Object.assign(catalogs[code],extra[code]);
+import {personalMessages} from '../locales/personal.mjs';
+for(const code of Object.keys(catalogs))Object.assign(catalogs[code],extra[code],personalMessages[code]);
 export {catalogs};
 export const LOCALES=[{code:'zh-Hans',name:'简体中文'},{code:'zh-Hant',name:'繁體中文'},{code:'en',name:'English'},{code:'ja',name:'日本語'},{code:'ko',name:'한국어'},{code:'fr',name:'Français'},{code:'de',name:'Deutsch'},{code:'es',name:'Español'},{code:'pt-BR',name:'Português (Brasil)'},{code:'ru',name:'Русский'},{code:'ar',name:'العربية'},{code:'hi',name:'हिन्दी'}];
 const supported=new Set(LOCALES.map(x=>x.code)),KEY='dd-locale';

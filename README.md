@@ -1,6 +1,6 @@
 # 涂鸭 DoodleDuck
 
-给 XGO Duck V2 机器鸭涂装的小工具，几个朋友一起玩：三步配好颜色，摆姿势、生成海报，发布到配色广场，互相打分、「做同款」接着改。配好的方案可以导出保留打印结构的改色 3MF 和耗材清单。
+给 XGO Duck V2 机器鸭涂装的小工具：三步配好颜色，摆姿势、生成海报，导出保留打印结构的改色 3MF 和耗材清单。默认是无需登录的个人使用版；服务器版还提供配色广场、评分和「做同款」。
 
 **这是源码发行版。仓库不附带模型、3MF、衍生网格或耗材数据包。** 它们有独立的第三方授权；MIT 不覆盖这些资产。运行需要自行合法持有完整本地资产包，单独一份 3MF 还不足以复现装配预览。详见 [本地资产说明](docs/local-assets.md)。
 
@@ -8,8 +8,8 @@
 
 - **涂装台（三步）**：① 选个起点（白胚、经典配色、可锁定/单张重掷的灵感骰子、我的方案）→ ② 细调部位（点模型选部位，耗材色卡或自由调色，刷子、吸管、聚焦、并排放大、A/B 对比、锁定部位）→ ③ 展示分享（姿势与 MicroDuck 经典动作和叫声、背景、海报、发布、打印导出）。
 - **真实耗材**：拓竹 PLA Basic / TPU 90A 色表；其他品牌色卡只是示意，发布和导出前会提示换成真实耗材。
-- **配色广场**：官方配色 + 所有人发布的作品；热门/最新/高分、色系与标签筛选、作品详情、评分、改编家族树、配色码粘贴预览、分享海报。
-- **账号**：昵称 + 简单密码。登录后「我的方案」存到服务器，换台电脑也能找回；不登录也能玩，方案先存在浏览器里，登录时自动同步进账号。
+- **个人使用版**：打开即可涂色，无账号、登录、广场或发布入口。「我的方案」保存在本机 SQLite，清除浏览器数据后仍可读取；支持保存、另存、改名、删除，以及粘贴配色码导入。
+- **服务器版**：提供官方配色和已发布作品的广场、评分、改编家族树及分享。昵称 + 简单密码登录后，私有方案存进账号；访客方案先存在浏览器，登录时同步。
 - **导出**：服务器核对 35 个零件的耗材分配，生成改色 3MF（重新渲染 6 块打印板缩略图）和 BOM。
 - **12 种语言**：简中、繁中、英、日、韩、法、德、西、巴西葡语、俄、阿拉伯语和印地语。右上角切换，默认跟随浏览器语言；手动选择保存在当前浏览器。不会翻译用户填写的名称，也不使用 IP 定位。见 [翻译维护](docs/i18n.md)。
 
@@ -25,11 +25,11 @@ backend/    API：server.py（路由）、store.py（双数据库：账号、方
 assets/     本地资产包（被 Git 忽略，部署时只读挂载）
 ```
 
-接口都在 `/api/` 下：`auth/register|login|logout`、`me`、`schemes`、`works`（含 `works/<id>/rating`）、`plan`、`export`、`health`。
+接口都在 `/api/` 下。个人版提供 `site`、`schemes`、`catalog`、`plan`、`export`、`health`；服务器版还提供 `auth/register|login|logout`、`me`、`works`（含 `works/<id>/rating`）。原有服务器接口和数据格式保持兼容。
 
-## 轻量部署（默认 SQLite）
+## 个人使用版（本机 Python + SQLite）
 
-需要 Python 3.12+。不需要安装 MySQL，SQLite 数据仍在 `backend/data/doodleduck.db`，保留旧版 `DUCK_DB` 配置。首次打开旧数据库前会自动生成一致性备份，再补充索引与昵称查询字段。
+需要 Python 3.12+，直接在本机运行。SQLite 数据在 `backend/data/doodleduck.db`，保留旧版 `DUCK_DB` 配置。首次打开旧数据库前会自动生成一致性备份，再补充索引与昵称查询字段。
 
 ```sh
 python3.12 -m venv .venv
@@ -38,30 +38,28 @@ python3 scripts/import_local_assets.py /path/to/assets
 .venv/bin/python run.py --no-open
 ```
 
-打开 `http://127.0.0.1:8876/`。本地运行仍需要前述独立资产包。数据库模式不会改变模型授权与复现边界。
+打开 `http://127.0.0.1:8876/` 即可使用，不需要登录。命名方案写入 SQLite 后才显示保存成功，最多 30 套。当前草稿、语言和背景偏好仍保存在浏览器。个人版仅供单人本机访问。
 
-## Docker 部署与服务器模式
+配色码可在顶部“导入配色码”或方案菜单中粘贴。它传递配色，不是完整数据库备份；自由色和示意品牌色仍需先匹配真实耗材。本地运行需要前述独立资产包。模式切换保留旧账号及其私有方案，访问旧账号需以 `DUCK_EDITION=server` 启动。
+
+## 服务器版（MySQL）
+
+服务器版保留账号、广场与发布功能。Docker 配置使用 Compose 2.24.4+；先在被 Git 忽略的 `.env` 设置不同的 `DUCK_MYSQL_PASSWORD` 和 `DUCK_MYSQL_ROOT_PASSWORD`。
 
 ```sh
 git clone git@github.com:1850VV/duck-palette.git
 cd duck-palette
 python3 scripts/import_local_assets.py /path/to/assets   # 把资产包放进 ./assets
-docker compose up -d --build
-```
-
-公开分享前，在 HTTPS 反向代理就绪后设置 `DUCK_PUBLIC_URL=https://你的正式域名`，并重新创建 backend 容器（例如 `DUCK_PUBLIC_URL=https://你的正式域名 docker compose up -d`）。只填写站点根地址，不含子路径、账号、查询或 hash。配置通过只读 `/api/site` 提供，复制链接和海报统一使用 `<DUCK_PUBLIC_URL>/gallery/#d/<作品ID>`；不会使用当前浏览器地址或代理请求头猜测正式域名。
-
-未配置、非 HTTPS、localhost 或 IP 地址均不生成作品链接与二维码。尚未部署时仍可本机涂色和保存普通海报，界面明确提示分享地址未配置。部署后请用另一台手机扫描保存的海报，核对作品标题、作者和配色；浏览器手机尺寸和 QR 解码不能替代此项实机验收。
-
-以上 Docker 命令也默认使用 SQLite。服务器使用 MySQL 时，先在被 Git 忽略的 `.env` 中设置 `DUCK_MYSQL_PASSWORD` 和 `DUCK_MYSQL_ROOT_PASSWORD`，再运行：
-
-```sh
 docker compose -f docker-compose.yml -f docker-compose.mysql.yml up -d --build
 ```
 
+公开分享前，在 HTTPS 反向代理就绪后把 `DUCK_PUBLIC_URL=https://你的正式域名` 写入 `.env`，并用上面的组合命令更新容器。只填写站点根地址，不含子路径、账号、查询或 hash。配置通过只读 `/api/site` 提供，复制链接和海报统一使用 `<DUCK_PUBLIC_URL>/gallery/#d/<作品ID>`；不会使用当前浏览器地址或代理请求头猜测正式域名。
+
+未配置、非 HTTPS、localhost 或 IP 地址均不生成作品链接与二维码。尚未部署时仍可本机涂色和保存普通海报，界面明确提示分享地址未配置。部署后请用另一台手机扫描保存的海报，核对作品标题、作者和配色；浏览器手机尺寸和 QR 解码不能替代此项实机验收。
+
 **切换配置不会自动搬迁数据。已有 SQLite 数据时，先按 [部署与迁移说明](docs/deployment.md) 停止写入、备份、迁移并核对，再启动 MySQL 模式。**
 
-打开 `http://<服务器地址>:8080/`。端口可用 `DUCK_PORT=80 docker compose up -d` 修改。
+打开 `http://<服务器地址>:8080/`。可在 `.env` 用 `DUCK_PORT=80` 修改端口，`DUCK_BIND` 指定监听地址。服务器配置默认监听 `0.0.0.0`；SQLite 基础配置保留用于已有部署兼容，默认仅监听 `127.0.0.1`。
 
 - `frontend`（nginx）提供静态页面和只读的 `/assets/`（不对外提供源 3MF），并把 `/api/` 转发给 `backend`。
 - SQLite 在 `duck-data` 卷的 `/data/doodleduck.db`；MySQL 在独立 `mysql-data` 卷。备份、回退和单机外部 MySQL 配置见 [部署与迁移说明](docs/deployment.md)。
@@ -95,6 +93,7 @@ python3 scripts/import_local_assets.py /path/to/assets
 .venv/bin/python -m unittest discover -s tests -p test_export_queue.py -v
 .venv/bin/python -m unittest discover -s tests -p test_migration.py -v
 .venv/bin/python -m unittest discover -s tests -p test_startup.py -v
+.venv/bin/python -m unittest discover -s tests -p test_personal.py -v
 ```
 
 导入资产包后的完整检查：

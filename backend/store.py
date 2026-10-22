@@ -26,6 +26,19 @@ class Store:
     def close(self):
         self.engine.dispose()
 
+    def personal_owner(self):
+        """A storage namespace, with no password or session usable through account APIs."""
+        uid = 'personal-owner'
+        with self.transaction(write=True) as conn:
+            if not conn.execute(select(users.c.id).where(users.c.id == uid)).first():
+                # Longer than the account API's 20-character nickname limit, and no
+                # usable password. Keep existing account-owned schemes separate.
+                name = 'personal-' + secrets.token_hex(20)
+                conn.execute(insert(users).values(id=uid, name=name, name_key=name,
+                    pw_salt=secrets.token_hex(16), pw_hash=secrets.token_hex(32),
+                    avatar='🦆', color=COLORS[0], created=self._now()))
+        return uid
+
     @contextmanager
     def transaction(self, write=False):
         with self.engine.connect() as conn:

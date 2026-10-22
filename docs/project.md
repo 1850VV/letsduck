@@ -9,6 +9,7 @@
 | `frontend/shared/duck-view.mjs` | Three.js 模型视图：选择、姿势骨架、材质、布局、截图与导出缩略图 |
 | `frontend/shared/duck-actions.mjs` · `duck-voice.mjs` | MicroDuck 经典动作与叫声合成器（JS 移植） |
 | `frontend/shared/api.mjs` · `profile.mjs` | API 客户端、登录注册与账号资料 |
+| `frontend/shared/edition.mjs` | 读取服务端版本配置，个人版屏蔽账号与广场入口 |
 | `frontend/shared/poster.mjs` | 分享海报与配色码 |
 | `frontend/lib/` | 配色规则：分区、套色与配色码、色彩工具、超进化动画 |
 | `backend/server.py` | API 路由；开发时也提供静态文件 |
@@ -22,7 +23,7 @@
 
 ## 数据放在哪里
 
-- 草稿、背景偏好在浏览器本地；未登录时「我的方案」也在本地，登录后同步到服务器，本地只留缓存。
+- 草稿、背景与语言偏好在浏览器本地。个人版命名方案存在 SQLite；服务器版未登录时方案先存浏览器，登录后同步到账号，本地保留缓存。
 - 账号是昵称 + 简单密码，服务器保存加盐哈希；面向几个朋友的小圈子，没有找回密码、邮箱或权限管理。
 - 发布的作品所有人可见；只有作者能删除，不能给自己评分。删除原作后，改编作品保留但不再挂在家族树下。
 
