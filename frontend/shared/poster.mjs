@@ -4,7 +4,7 @@ import { BRAND } from './brand.mjs';
 import { drawQR } from './qr.mjs';
 import { workURL, loadPublicSite, copyText, UNCONFIGURED_SHARE } from './work-links.mjs';
 
-const RATIOS = { '3:4': [1080, 1440, _t("text.0469")], '1:1': [1080, 1080, _t("text.0470")], '9:16': [1080, 1920, _t("text.0471")] };
+const RATIOS = { '3:4': [1080, 1440, "text.0469"], '1:1': [1080, 1080, "text.0470"], '9:16': [1080, 1920, "text.0471"] };
 const THEMES = { light: { bg: ['#f4f6fb', '#e3e8f5'], ink: '#17243c', muted: '#6b7891', brand: '#4d6bfe', card: '#ffffffcc' }, dark: { bg: ['#1a2140', '#0d1226'], ink: '#f3f5ff', muted: '#9aa6c6', brand: '#8fa2ff', card: '#ffffff14' } };
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 function mix(hex, to, t) {const a = parseInt(hex.slice(1), 16),b = parseInt(to.slice(1), 16),c = (s) => Math.round((a >> s & 255) * (1 - t) + (b >> s & 255) * t);return `rgb(${c(16)},${c(8)},${c(0)})`;}
@@ -54,7 +54,7 @@ export function createPosterDialog({ view, parts, products, compact = false }) {
 <div class="poster-actions"><button id="poster-save" disabled><span data-i18n="text.0807">${_t("text.0807")}</span></button><a id="poster-open-link" target="_blank" rel="noopener" hidden><span data-i18n="text.0808">${_t("text.0808")}</span></a></div>
 <p class="poster-note" id="poster-note"></p><p class="poster-status" id="poster-status" role="status"></p>
 <details class="poster-settings" ${compact ? '' : 'open'}><summary><span data-i18n="text.0809">${_t("text.0809")}</span></summary>
-<div class="poster-group"><span><span data-i18n="text.0480">${_t("text.0480")}</span></span><div class="poster-seg" id="poster-ratio">${Object.entries(RATIOS).map(([k, v]) => `<button data-v="${k}"><b>${k}</b><small>${v[2]}</small></button>`).join('')}</div></div>
+<div class="poster-group"><span><span data-i18n="text.0480">${_t("text.0480")}</span></span><div class="poster-seg" id="poster-ratio">${Object.entries(RATIOS).map(([k, v]) => `<button data-v="${k}"><b>${k}</b><small>${_t(v[2])}</small></button>`).join('')}</div></div>
 <div class="poster-group"><span><span data-i18n="text.0481">${_t("text.0481")}</span></span><div class="poster-seg small" id="poster-theme"><button data-v="light"><span data-i18n="text.0482">${_t("text.0482")}</span></button><button data-v="tint"><span data-i18n="text.0483">${_t("text.0483")}</span></button><button data-v="dark"><span data-i18n="text.0484">${_t("text.0484")}</span></button></div></div>
 <div class="poster-group"><span><span data-i18n="text.0485">${_t("text.0485")}</span></span><label><input type="checkbox" id="poster-materials" ${compact ? '' : 'checked'}> <span data-i18n="text.0486">${_t("text.0486")}</span></label><label><input type="checkbox" id="poster-compare"> <span data-i18n="text.0487">${_t("text.0487")}</span></label><label><input type="checkbox" id="poster-author" checked> <span data-i18n="text.0488">${_t("text.0488")}</span></label></div>
 <div class="poster-group"><span><span data-i18n="text.0241">${_t("text.0241")}</span> <small><span data-i18n="text.0242">${_t("text.0242")}</span></small></span><div class="poster-code"><code id="poster-code"></code><button id="poster-copy-code"><span data-i18n="text.0215">${_t("text.0215")}</span></button></div></div>
@@ -93,7 +93,7 @@ export function createPosterDialog({ view, parts, products, compact = false }) {
   };
   $('#poster-share').onclick = async () => {if (!blob) return;try {await navigator.share({ files: [new File([blob], fileName(), { type: 'image/png' })], title: current.design.name });} catch {}};
   _onLocale(() => {
-    dlg.querySelectorAll('#poster-ratio button').forEach((b) => b.querySelector('small').textContent = _label(RATIOS[b.dataset.v][2]));
+    dlg.querySelectorAll('#poster-ratio button').forEach((b) => b.querySelector('small').textContent = _t(RATIOS[b.dataset.v][2]));
     if (current) {$('#poster-title').textContent = _t('text.0816', { v0: current.design.name || _t('text.0047') });$('#poster-note').textContent = current.workUrl ? _t('text.0817') : current.workId ? UNCONFIGURED_SHARE() : _t('text.0818');render();}
   });
   return { async open(input) {

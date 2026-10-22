@@ -47,3 +47,16 @@ test('network failures expose a stable localized error instead of browser-native
   try{await assert.rejects(api('GET','/works'),error=>error.code==='request_failed'&&error.message!=='Failed to fetch');}
   finally{globalThis.fetch=original;}
 });
+
+test('source labels retain their identity when other languages share the same word',async()=>{
+  const {label,setLocale,translate}=await import('../frontend/shared/i18n.mjs');
+  for(const locale of ['en','ja','zh-Hans']){setLocale(locale);assert.equal(label('青色'),translate(locale,'text.0700'));}
+});
+
+test('stored notification descriptors translate again without changing user parameters',async()=>{
+  const {message,setLocale,translate}=await import('../frontend/shared/i18n.mjs');
+  assert.equal(typeof message,'function');
+  setLocale('en');const saved=message('common.saved',{name:'青色 <作品>'});
+  assert.equal(String(saved),'Saved “青色 <作品>”');
+  setLocale('fr');assert.equal(String(saved),translate('fr','common.saved',{name:'青色 <作品>'}));
+});

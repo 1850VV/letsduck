@@ -34,9 +34,13 @@ export function translate(locale,key,params={}){
   return message.replace(/\{(\w+)\}/g,(token,name)=>Object.hasOwn(params,name)?typeof params[name]==='number'?new Intl.NumberFormat(supported.has(locale)?locale:'en').format(params[name]):String(params[name]):token);
 }
 export const t=(key,params)=>translate(getLocale(),key,params);
+// A notification/history entry keeps its key and raw parameters until rendered.
+export function message(key,params={}){
+  const values={...params};
+  return Object.freeze({toString:()=>t(key,Object.fromEntries(Object.entries(values).map(([name,value])=>[name,typeof value==='function'?value():value])))});
+}
 // Only call for known system labels (part/catalog names, recipes), never user text.
 const labelKeys=new Map(Object.entries(sourceKeys));
-for(const messages of Object.values(catalogs))for(const [key,value] of Object.entries(messages))if(!value.includes('{'))labelKeys.set(value,key);
 export const label=source=>labelKeys.has(source)?t(labelKeys.get(source)):source;
 export const escapeAttribute=value=>String(value).replaceAll('"','&quot;').replaceAll("'",'&#39;');
 export const formatDate=(value,options)=>new Intl.DateTimeFormat(getLocale(),options).format(value);
