@@ -227,6 +227,7 @@ function renderRail() {
   $('#rail').innerHTML = `<div class="rail-head"><span class="eyebrow">${_t("text.0109")}</span><small>${_t("text.0110")}</small></div>` + ZONES.map((z) => {
     const on = sel.zone === z.id,locked = z.ids.every((id) => locks.has(id)),part = on && sel.part && sel.scope === 'one' ? partById.get(sel.part) : null;
     return `<div class="zone ${on ? 'on' : ''} ${z.internal ? 'internal' : ''}"><button class="zone-main" data-zone="${z.id}"><span class="zone-chips">${chips(z.ids)}</span><span class="zone-name">${esc(z.name)}<small>${_t("text.0115", { v5: z.ids.length, v6: partById.get(z.ids[0]).material === 'TPU 90A' ? _t("text.0111") : 'PLA' })}</small></span></button><button class="zone-lock ${locked ? 'on' : ''}" data-lock="${z.id}" title="${_attr(locked ? _t("text.0112") : _t("text.0113"))}" aria-label="${_attr(_t("text.0116", { v10: esc(z.name) }))}">${locked ? '🔒' : '🔓'}</button>${part ? `<div class="zone-part">${_t("text.0114", { v0: esc(part.name) })}</div>` : ''}</div>`;}).join('');
+  if (step === 2) $('#rail .zone.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 function swatch(k, { current, extra = '' } = {}) {return `<button class="sw ${current ? 'on' : ''} ${isHex(k) ? 'free' : ''}" data-key="${k}" style="--c:${keyHex(k)}" title="${_attr(esc(keyName(k) + ' · ' + keySub(k)))}"><i></i><span>${esc(keyName(k))}<small>${esc(keySub(k))}${extra}</small></span></button>`;}
 // Step 1 · 选个起点: one page, four kinds of starting points, every card previews on hover and applies on click.
@@ -266,7 +267,7 @@ function panelStep1() {
   <div class="panel-body starts one-screen" id="starts">
     <button class="blank-strip" data-start="blank"><i></i><span><b>${_t("text.0124")}</b><small>${_t("text.0135")}</small></span><em>→</em></button>
     <section><div class="strip"><span>${_t("text.0136")}</span></div><div class="mini-row">${CLASSICS.map((c) => startCard(c[0], c[1])).join('')}</div></section>
-    <section><div class="strip"><span>${_t("text.0137")} <small>${_t("text.0138")}</small></span><button class="reroll" id="dice"><span class="die">🎲</span> ${_t("text.0139")} <kbd>R</kbd></button></div><div class="mini-row" id="dice-grid">${diceCards()}</div></section>
+    <section><div class="strip"><span>${_t("text.0137")} <small class="hover-hint">${_t("text.0138")}</small></span><button class="reroll" id="dice"><span class="die">🎲</span> ${_t("text.0139")} <kbd>R</kbd></button></div><div class="mini-row" id="dice-grid">${diceCards()}</div></section>
     <section><div class="strip"><span>${_t("text.0140")}</span>${schemes.length ? `<small>${_t("text.0129", { v0: schemes.length })}</small>` : ''}</div><div class="mini-row">${mine.map((m) => startCard('scheme-' + m.id, m.name)).join('')}${more > 1 ? `<button class="mini more" id="more-schemes"><b>+${more}</b><span>${_t("text.0130")}</span></button>` : ''}${schemes.length ? '' : `<div class="mini-empty">${_t("text.0131")}</div>`}</div></section>
   </div>
   <div class="panel-foot"><button class="primary" data-go="2" id="start-go"></button></div>`;
@@ -323,7 +324,7 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
     <div class="panel-body dock-body fit">
       <div id="replace-slot"></div>
       <section class="pane pane-filament">
-        <div class="strip"><span>${_t("text.0169")} <small>${tool === 'brush' ? _t("text.0161") : _t("text.0162")}</small></span><button class="link-btn" id="take-open" title="${_attr(_t("text.0170"))}">${_t("text.0171")}</button></div>
+        <div class="strip"><span>${_t("text.0169")} <small${tool === 'brush' ? '' : ' class="hover-hint"'}>${tool === 'brush' ? _t("text.0161") : _t("text.0162")}</small></span><button class="link-btn" id="take-open" title="${_attr(_t("text.0170"))}">${_t("text.0171")}</button></div>
         <div class="chips one-line" id="inuse-row"></div>
         <div class="take-pop" id="take-pop" hidden></div>
         <div class="brand-row" role="group" aria-label="${_attr(_t("text.0172"))}">${BRANDS.map((b) => `<button data-brand="${b.id}" class="${source === b.id ? 'on' : ''}" title="${_attr(b.demo ? _t("text.0163") : '')}">${b.short}${b.demo ? `<sup>${_t("text.0037")}</sup>` : ''}</button>`).join('')}<label class="mini-search"><span>⌕</span><input id="search" placeholder="${_attr(_t("text.0173"))}" value="${esc(search)}" autocomplete="off"></label></div>
@@ -355,7 +356,7 @@ function hoverInfo(k) {
   const el = $('#hover-info');if (!el) return;
   if (k) {el.innerHTML = `<i style="--c:${keyHex(k)}"></i><span><b>${esc(keyName(k))}</b><small>${esc(keySub(k))}</small></span><kbd>${_t("text.0186")}</kbd>`;el.classList.add('live');return;}
   const keys = tool === 'brush' ? [brush] : [...new Set(targetIds().map(keyOf))];el.classList.remove('live');
-  el.innerHTML = keys.length === 1 && keys[0] ? `<i style="--c:${keyHex(keys[0])}"></i><span><b>${tool === 'brush' ? _t("text.0187") : _t("text.0188")}${esc(keyName(keys[0]))}</b><small>${esc(keySub(keys[0]))}${targetIds().some((id) => locks.has(id)) && tool !== 'brush' ? _t("text.0189") : ''}</small></span><kbd>${_t("text.0190")}</kbd>` : `<span class="muted">${_t("text.0191", { v0: keys.length })}</span>`;
+  el.innerHTML = keys.length === 1 && keys[0] ? `<i style="--c:${keyHex(keys[0])}"></i><span><b>${tool === 'brush' ? _t("text.0187") : _t("text.0188")}${esc(keyName(keys[0]))}</b><small>${esc(keySub(keys[0]))}${targetIds().some((id) => locks.has(id)) && tool !== 'brush' ? _t("text.0189") : ''}</small></span><kbd class="hover-hint">${_t("text.0190")}</kbd>` : `<span class="muted">${_t("text.0191", { v0: keys.length })}</span>`;
 }
 function updateStep2() {
   const ids = targetIds(),keys = [...new Set(ids.map(keyOf))],one = tool === 'brush' ? brush : keys.length === 1 ? keys[0] : null,kind = gridKind();
@@ -427,9 +428,11 @@ function fillPosterMini() {
   setTimeout(() => requestAnimationFrame(() => {const cv = drawPoster({ view, design: { ...design, name, author: account.user?.name || '' }, parts, products, before: ORIGINAL, opts: { ratio: '3:4', theme: 'light', materials: true, compare: false, author: true } }),small = document.createElement('canvas');small.width = 270;small.height = 360;small.getContext('2d').drawImage(cv, 0, 0, 270, 360);miniKey = key;img.dataset.src = small.toDataURL('image/png');if ($('#poster-mini') === img) {img.src = img.dataset.src;img.parentElement.classList.add('ready');}}), 60);
 }
 function renderPanel() {
-  const panel = $('#panel'),top = $('#panel .panel-body')?.scrollTop || 0,again = panel.dataset.step === String(step);
+  const panel = $('#panel'),top = $('#panel .panel-body')?.scrollTop || 0,outer = panel.scrollTop,again = panel.dataset.step === String(step);
   panel.innerHTML = step === 1 ? panelStep1() : step === 2 ? panelStep2() : panelStep3();panel.dataset.step = step;
   if (again && $('#panel .panel-body')) $('#panel .panel-body').scrollTop = top;
+  // On phones the panel itself scrolls under the pinned duck: keep the spot within a step, start a new step at the top.
+  panel.scrollTop = again ? outer : 0;
   // A new step slides its content in; re-renders within a step stay still.
   if (!again) {panel.classList.remove('enter');void panel.offsetWidth;panel.classList.add('enter');}
   if (step === 3 && showTab === 'share') fillPosterMini();
@@ -595,7 +598,8 @@ function stageClick(e) {
   if (!entering && sel.zone === z.id && sel.scope !== 'one' && !z.internal && view.layout !== 'arrange') select(z.id, { part: id });else select(z.id, { part: id, scope: z.internal || view.layout === 'arrange' ? 'one' : 'all' });
 }
 stage.addEventListener('pointerup', (e) => {
-  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) {down = null;return;}down = null;
+  // A fingertip wobbles more than a mouse, so touch gets a looser tap radius before it counts as an orbit drag.
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > (e.pointerType === 'touch' ? 12 : 5)) {down = null;return;}down = null;
   stageClick(e);
 });
 // Double-click focuses whatever the two clicks selected; double-clicking again returns to the whole duck.

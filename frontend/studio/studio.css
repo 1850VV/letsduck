@@ -185,15 +185,14 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #a9b8
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}.toast button{border:0;background:#ffffff22;color:#fff;border-radius:7px;padding:4px 9px;font-size:12px}
 
 @media (max-width:900px){
-  .scheme-btn{max-width:150px}.scheme-btn small{display:none}.scheme-menu{width:min(340px,calc(100vw - 32px))}.tools{flex-wrap:wrap;max-width:calc(100% - 28px)}.publish-grid{grid-template-columns:1fr}.studio[data-step="2"] .split-labels{top:110px}
-  body{height:auto;overflow:auto}
-  .top{height:auto;flex-wrap:wrap;padding:10px 16px;gap:10px}.steps{order:3;width:100%;justify-content:space-between;margin:0}.steps small,.step-line{display:none}.design-name{width:120px}.top-actions .ghost{display:none}
+  .scheme-btn{max-width:150px}.scheme-btn small{display:none}.scheme-menu{width:min(340px,calc(100vw - 32px))}.publish-grid{grid-template-columns:1fr}.studio[data-step="2"] .split-labels{top:110px}
+  .top{height:auto;flex-wrap:wrap;padding:6px 12px;gap:6px}.steps{order:3;width:100%;justify-content:space-between;margin:0}.steps small,.step-line{display:none}.design-name{width:120px}.top-actions .ghost{display:none}
   .studio,.studio[data-step="2"],.studio[data-step="3"]{display:flex;flex-direction:column}
-  .stage{height:56vh;margin:10px 16px;flex:none}
-  .rail{display:none}.studio[data-step="2"] .rail{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;border:0;order:-1;background:transparent}
+  .stage{flex:0 0 clamp(230px,42dvh,420px);margin:6px 12px}
+  .rail{display:none}.studio[data-step="2"] .rail{display:flex;gap:6px;overflow-x:auto;padding:4px 12px;border:0;order:-1;background:transparent;flex:none}
   .studio[data-step="2"] .rail .rail-head{display:none}.studio[data-step="2"] .zone{flex:none;margin:0}.zone-main{padding-right:30px}
-  .panel{border:0}.panel-body{overflow:visible}
-  .dock{max-width:calc(100% - 20px);overflow-x:auto}.hint{display:none}
+  .panel{border:0}
+  .hint{display:none}
 }
 
 /* ---------- step 2 colour dock ---------- */
@@ -344,7 +343,6 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #a9b8
 .pose-row input{min-width:0;width:100%;margin:0;-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;background:linear-gradient(to right,var(--blue) var(--p,0%),#e3e8f3 var(--p,0%));cursor:pointer}
 .pose-row input::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--blue);box-shadow:0 2px 5px #1d295033;transition:transform .12s}.pose-row input:active::-webkit-slider-thumb{transform:scale(1.2)}
 .pose-note{margin:0;font-size:10px;color:#a2acbf;line-height:1.5}
-@media (max-width:900px){.pose-panel{top:auto;bottom:70px;left:10px;right:10px;width:auto;max-height:45%}}
 
 .tools-seg{margin:0 2px}.tools-seg button{height:28px}
 .pose-inline{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fbfcff;display:flex;flex-direction:column;gap:10px}
@@ -486,3 +484,38 @@ body[data-edition="personal"] .panel-foot.finish .save-mine{flex:1}
 @media(max-width:760px){.edition-badge{font-size:9px;padding:3px 5px}body[data-edition="personal"] .top-actions #import-code{display:block;padding:6px;font-size:11px}}
 .pose-row.joint{grid-template-columns:52px minmax(0,1fr) 30px;gap:5px;font-size:11px}.pose-row.joint span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pose-row.joint em{font-size:10px}
 @media (max-height:680px){.voice-row.slim small{display:none}.dock-body.fit .pane{gap:6px}.act.move{min-height:38px;padding:4px 2px}.joint-grid{gap:2px 12px}}
+
+/* ---------- phone / small tablet: one screen, duck pinned on top ---------- */
+/* The stage keeps a fixed share of the screen and only the panel scrolls, so colours, cards and poses always act on a visible duck. */
+@media (max-width:900px){
+  body{height:100dvh}
+  body .top{padding:6px 12px!important;gap:6px!important;min-height:0}
+  .top .scheme{flex:1;min-width:0}.scheme-btn{max-width:100%}
+  .scheme-menu{position:fixed;top:50px;left:12px;right:12px;width:auto;max-height:calc(100dvh - 62px);overflow-y:auto}
+  .top-actions .icon{width:32px;height:32px}
+  .top .steps button{padding:4px 6px}.top .steps em{width:22px;height:22px}
+  .panel{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .panel>*,.panel .panel-body{flex:none}
+  .panel-foot,.panel-foot.finish{position:sticky;bottom:0;z-index:2;background:#fff;padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .stage .tools{top:6px;left:6px;right:6px;width:auto;max-width:none;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:3px}
+  .stage .tools::-webkit-scrollbar{display:none}
+  .stage .tools kbd{display:none}.stage .tools button{flex:none;padding:6px 8px;font-size:12px}.stage .tools .brush-chip,.stage .tools .seg{flex:none;white-space:nowrap}
+  .stage .dock{bottom:6px;left:6px;right:6px;transform:none;flex-wrap:nowrap;justify-content:space-between;gap:4px;padding:4px}
+  .dock .seg{padding:2px}.dock .seg button{width:27px;height:28px}
+  .dock .toggle,.dock .hold{height:32px;padding:0 8px}
+  .compare{flex:1;min-width:0}.compare .hold{flex:1;min-width:0;max-width:none}
+  .pose-panel{position:fixed;top:auto;bottom:0;left:0;right:0;width:auto;max-height:40dvh;border-radius:18px 18px 0 0;z-index:20;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .toast{top:calc(8px + env(safe-area-inset-top));bottom:auto;transform:translate(-50%,-20px);max-width:calc(100vw - 24px);white-space:nowrap}.toast.show{transform:translate(-50%,0)}
+}
+@media (max-width:600px){
+  .top .brand .wordmark{display:none}
+  .top .language-trigger{padding:0 9px;height:32px}.top .language-trigger bdi,.top .language-trigger span:last-child{display:none}
+  .top-actions #profile-slot .profile-chip.guest{padding:6px 9px;font-size:11px}
+}
+/* Touch screens have no hover: show the controls that hover used to reveal, drop the hover-only hints. */
+@media (hover:none){
+  .hover-hint{display:none}
+  .dice-ctl,.dice-cell.locked .dice-ctl span{opacity:1;transform:none}
+  .keep,.sw-replace,.sm-act{opacity:1}
+  .chip-rep{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+}
