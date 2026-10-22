@@ -1,6 +1,9 @@
 <p align="right"><b>简体中文</b> · <a href="README.en.md">English</a></p>
 
-# 涂鸭 DoodleDuck
+# 来做鸭 / letsduck
+
+<p align="center"><img src="frontend/shared/brand/avatar.png" width="230" alt="来做鸭 letsduck"><br><img src="frontend/shared/brand/wordmark-display.svg" width="240" alt="来做鸭"><br><img src="frontend/shared/brand/wordmark-en.svg" width="150" alt="letsduck"></p>
+
 
 给 XGO Duck V2 机器鸭涂装的小工具：三步配好颜色，让它点头、嘎嘎叫、摇摆，生成海报分享给朋友，再导出保留打印结构的改色 3MF 交给代打服务商。分两个版本：双击即用的**个人使用版**，和带配色广场、评分、「做同款」的**服务器版**。
 
@@ -78,8 +81,8 @@ assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器
 
 1. 把资产包放进 `assets/`：`python3 scripts/import_local_assets.py /path/to/assets`（Windows：`py -3 scripts\import_local_assets.py C:\path\to\assets`）。
 2. 双击启动：
-   - **macOS**：`启动涂鸭.command`。用系统自带的 Python 3 就行；没有的话会弹出「安装命令行开发者工具」，点安装即可。第一次若提示无法验证开发者：在 Finder 里右键 → 打开。
-   - **Windows**：`启动涂鸭.bat`。没有 Python 时会询问是否用 winget 安装 Python 3.12，或打开 python.org 下载页（安装时勾选 Add python.exe to PATH）。
+   - **macOS**：`启动来做鸭.command`。用系统自带的 Python 3 就行；没有的话会弹出「安装命令行开发者工具」，点安装即可。第一次若提示无法验证开发者：在 Finder 里右键 → 打开。
+   - **Windows**：`启动来做鸭.bat`。没有 Python 时会询问是否用 winget 安装 Python 3.12，或打开 python.org 下载页（安装时勾选 Add python.exe to PATH）。
 3. 浏览器自动打开 `http://127.0.0.1:8876/`（端口被占用时自动换下一个）。关闭启动窗口即退出。
 
 也可以在终端运行 `python3 run.py`（`--port` 改端口，`--no-open` 不自动开浏览器）。
@@ -93,8 +96,8 @@ assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器
 1 核 2 GB 的云服务器就够用（见下面「小服务器建议」）。三个容器空闲时合计约 250–330 MB 内存；3D 渲染和涂色都在用户浏览器里完成，服务器只存数据和导出 3MF。
 
 ```sh
-git clone git@github.com:1850VV/duck-palette.git
-cd duck-palette
+git clone git@github.com:1850VV/letsduck.git
+cd letsduck
 python3 scripts/import_local_assets.py /path/to/assets   # 资产包只挂载，不打进镜像；同时生成更小的 geometry.pack.bin
 cp .env.example .env                                      # 填两个不同的随机长密码
 docker compose up -d --build
@@ -167,4 +170,4 @@ node --test tests/*.mjs
 
 ## 开源范围
 
-原创代码和文档采用 [MIT](LICENSE)。Three.js 保留其 [MIT 声明](frontend/vendor/THREE-LICENSE.txt)；MicroDuck 叫声合成器移植保留 [Apache-2.0 声明](frontend/shared/MICRODUCK-LICENSE.txt)。模型、制造商数据和品牌名称不因本仓库而获得新的授权；`docs/media/` 里的截图和动图画有该模型，同样不在 MIT 范围内。涂鸭不是 Luwu Dynamics、Pollen Robotics、Bambu Lab 或 DeepSeek 的官方产品，也不表示这些项目认可本工具。
+原创代码和文档采用 [MIT](LICENSE)。Three.js 保留其 [MIT 声明](frontend/vendor/THREE-LICENSE.txt)；MicroDuck 叫声合成器移植保留 [Apache-2.0 声明](frontend/shared/MICRODUCK-LICENSE.txt)。模型、制造商数据和品牌名称不因本仓库而获得新的授权；`docs/media/` 里的截图和动图画有该模型，同样不在 MIT 范围内。来做鸭不是 Luwu Dynamics、Pollen Robotics、Bambu Lab 或 DeepSeek 的官方产品，也不表示这些项目认可本工具。

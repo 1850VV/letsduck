@@ -1,12 +1,12 @@
-"""涂鸭 DoodleDuck personal edition launcher: `python3 run.py` (Windows: `py -3 run.py`).
+"""来做鸭 letsduck personal edition launcher: `python3 run.py` (Windows: `py -3 run.py`).
 
-Needs only Python 3.9+; nothing to install. Double-click 启动涂鸭.command (macOS) or 启动涂鸭.bat (Windows)
+Needs only Python 3.9+; nothing to install. Double-click 启动来做鸭.command (macOS) or 启动来做鸭.bat (Windows)
 to run it. The server edition (accounts + 配色广场) is deployed with Docker; see docs/deployment.md.
 """
 import sys
 
 if sys.version_info < (3, 9):
-    print('涂鸭需要 Python 3.9 或更新版本，当前是 %d.%d。DoodleDuck needs Python 3.9+.' % sys.version_info[:2])
+    print('来做鸭需要 Python 3.9 或更新版本，当前是 %d.%d。letsduck needs Python 3.9+.' % sys.version_info[:2])
     raise SystemExit(1)
 
 from pathlib import Path

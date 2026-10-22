@@ -6,7 +6,7 @@
 
 `frontend/shared/duck-voice.mjs` is a JavaScript port of MicroDuck's voice synthesizer (`sounds/src/rng.rs`, `synth.rs`, `personality.rs`, `voices.rs`), Copyright Pollen Robotics, under the [Apache License 2.0](frontend/shared/MICRODUCK-LICENSE.txt). Source: [pollen-robotics/microduck at 942e58e](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567/sounds). Changes: translated from Rust to JavaScript, with u64 arithmetic and f32 rounding emulated; WAV output, the hardware seed and the chorale/stream modules are not ported. The earlier Python original (`apirrone/microduck_sounds`) carries no license and is not used. No MicroDuck scores or recordings are included.
 
-DoodleDuck's (formerly DuckPalette) original software and documentation are MIT licensed. Imported libraries retain their own notices. Historical research documents quote and link external sources; those sources and trademarks do not become DuckPalette's intellectual property.
+letsduck's (formerly DoodleDuck / DuckPalette) original software and documentation are MIT licensed. Imported libraries retain their own notices. Historical research documents quote and link external sources; those sources and trademarks do not become letsduck's intellectual property.
 
 ## Not distributed
 
@@ -27,3 +27,7 @@ Review date: 2026-10-22. See [licensing research](docs/history/outputs/MicroDuck
 `frontend/vendor/qrcodegen.mjs` contains Project Nayuki's MIT-licensed QR Code generator, compiled from TypeScript. Source: [official library](https://www.nayuki.io/page/qr-code-generator-library), [JavaScript download](https://www.nayuki.io/res/qr-code-generator-library/qrcodegen.js), retrieved 2026-10-22. Download SHA-256: `2511bc17f40a3c41d4a0578995db956b38997334d3d20113a5d4dc5c49c69480`. The original MIT notice is retained in the file; the sole adaptation adds an ES module export. QR generation runs locally without an external image service.
 
 The screenshots and animated clips in `docs/media/` (used by the README) show renders of the separately licensed XGO Duck V2 model. The repository owner approved publishing them; they are not covered by the MIT licence. The people, works and ratings shown are sample data.
+
+## Project avatar
+
+The owner selected frontend/shared/brand/avatar.png on 2026-10-23 for 来做鸭 / letsduck. It is an AI-generated adaptation of the [official MicroDuck head illustration](https://pollen-robotics.com/assets/microduck/stickers/duck-head-mark.webp), using an [official product photo](https://pollen-robotics.com/assets/microduck/gallery/closeup.webp) as a supporting reference. The adaptation adds black sunglasses and a paintbrush. It is not an official Pollen Robotics mark and is not covered by this repository's MIT licence; underlying design rights are not reassigned by the generation or the project rename. No new public redistribution permission is asserted here. The custom vector wordmarks are project artwork.

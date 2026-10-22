@@ -1,6 +1,6 @@
 # 项目结构与边界
 
-涂鸭 DoodleDuck 专注 XGO Duck V2 的配色、展示与分享，不支持任意机器人或任意 3MF 导入。
+来做鸭 letsduck 专注 XGO Duck V2 的配色、展示与分享，不支持任意机器人或任意 3MF 导入。
 
 | 入口 | 职责 |
 | --- | --- |
@@ -12,7 +12,7 @@
 | `frontend/shared/edition.mjs` | 读取服务端版本配置，个人版屏蔽账号与广场入口 |
 | `frontend/shared/poster.mjs` | 分享海报与配色码 |
 | `frontend/lib/` | 配色规则：分区、套色与配色码、色彩工具、超进化动画 |
-| `run.py` · `启动涂鸭.command` · `启动涂鸭.bat` | 个人版启动：检查 Python 3.9+ 与资产包，打开浏览器 |
+| `run.py` · `启动来做鸭.command` · `启动来做鸭.bat` | 个人版启动：检查 Python 3.9+ 与资产包，打开浏览器 |
 | `personal/app.py` · `schemes.py` | 个人版服务（标准库）：静态文件、资产、方案与导出接口，本机 SQLite |
 | `backend/server.py` | 服务器版 API 路由（FastAPI）；开发时也提供静态文件 |
 | `backend/store.py` · `database.py` | 服务器版存储：MySQL（测试与迁移也用 SQLite）——账号、私有方案、作品、评分与批量广场统计 |
