@@ -52,7 +52,7 @@ function pump(){if(pumping)return;pumping=true;requestAnimationFrame(function st
 const img=(d,angle='hero',cls='',lazy=false)=>{const key=d.id+angle,src=lazy?thumbs.get(key)||'':thumb(d,angle);return `<img class="${cls} ${src?'ready':''}" data-thumb="${key}" src="${src}" alt="${esc(d.title)}">`;};
 
 // ---------- state ----------
-let sort='hot',fam='all',tags=new Set(),query='',listTab=null,detailId=null,returnHash='#',confirmDelete=null;
+let sort='hot',fam='all',tags=new Set(),query='',listTab=null,detailId=null,returnHash='#',confirmDelete=null,routeVersion=0;
 const score=d=>(d.rating*d.count+3.5*3)/(d.count+3);
 const heat=d=>d.official?(d.forks*2)/40:(d.forks*2+d.count*d.rating/2+1)/(d.days+3);
 function filtered(){
@@ -112,8 +112,25 @@ function rateUI(d){
   return `<div class="rate"><span>${account.user?'你觉得这套配色几分？':'登录后可以评分'}</span><div id="stars">${[1,2,3,4,5].map(n=>`<button data-rate="${n}" class="${n<=d.mineVote?'on':''}" aria-label="${n} 星">★</button>`).join('')}</div></div>`;
 }
 const statsHTML=d=>`<div><b>${d.official?'—':d.count?d.rating.toFixed(1):'—'}<em>★</em></b><small>${d.official?'官方配色':d.count+' 人评分'}</small></div><div><b>${d.forks}</b><small>次做同款</small></div><div><b>${used(d).length}</b><small>种耗材${plaCount(d)<=4?' · AMS 一次打完':''}</small></div>`;
-function detail(id){
-  const d=byId(id);if(!d){missingDetail();return;}
+async function detail(id,version=routeVersion){
+  let d=byId(id);
+  if(!d){
+    if(!/^[A-Za-z0-9_-]{1,64}$/.test(id)||id.startsWith('official-')){missingDetail();return;}
+    detailId='loading';view.setTurntable(false);
+    const ov=$('#detail');ov.hidden=false;ov.classList.add('open');document.body.classList.add('locked');
+    $('#detail-body').innerHTML='<section class="missing-work"><h1>正在读取作品…</h1><button class="primary" id="loading-home">返回配色广场</button></section>';
+    $('#loading-home').onclick=()=>{location.hash='#';};
+    try{
+      // The gallery feed is capped; a permanent link must also resolve older works.
+      const work=await api('GET','/works/'+encodeURIComponent(id));
+      if(version!==routeVersion)return;
+      d=fromWork(work);
+      if(d.id!==id||!complete(d)){missingDetail();return;}
+      d.family=family(d.colors);d.mine=!!account.user&&d.author.id===account.user.id;
+      designs.push(d);
+      for(const design of designs)design.forks=designs.filter(k=>k.parent===design.id).length;
+    }catch(err){if(version===routeVersion)missingDetail(![404,422].includes(err.status));return;}
+  }
   if(detailId!==id)confirmDelete=null;
   detailId=id;const parent=d.parent&&byId(d.parent),list=used(d),i=visible.findIndex(x=>x.id===id),prev=i>0?visible[i-1]:null,next=i>=0?visible[i+1]:null;
   const ov=$('#detail');ov.hidden=false;document.body.classList.add('locked');requestAnimationFrame(()=>ov.classList.add('open'));
@@ -136,10 +153,10 @@ function detail(id){
   $('#share').onclick=()=>poster.open({workId:d.id,design:{...d,name:d.title,author:d.author.name},before:parent?{colors:parent.colors}:original});
   $('#dclose').onclick=closeDetail;$('#dprev').onclick=()=>prev&&(location.hash='#d/'+prev.id);$('#dnext').onclick=()=>next&&(location.hash='#d/'+next.id);
 }
-function missingDetail(){
+function missingDetail(unavailable=false){
   detailId='missing';view.setTurntable(false);
   const ov=$('#detail');ov.hidden=false;ov.classList.add('open');document.body.classList.add('locked');
-  $('#detail-body').innerHTML=`<section class="missing-work"><h1>${loadError?'暂时无法读取这件作品':'这件作品暂时看不到了'}</h1><p>${loadError?'连接失败，请稍后重试。':'作品可能已被删除，或链接不完整。'}</p><button class="primary" id="missing-home">返回配色广场</button>${loadError?'<button class="ghost" id="missing-retry">重试</button>':''}</section>`;
+  $('#detail-body').innerHTML=`<section class="missing-work"><h1>${unavailable?'暂时无法读取这件作品':'这件作品暂时看不到了'}</h1><p>${unavailable?'连接失败，请稍后重试。':'作品可能已被删除，或链接不完整。'}</p><button class="primary" id="missing-home">返回配色广场</button>${unavailable?'<button class="ghost" id="missing-retry">重试</button>':''}</section>`;
   $('#missing-home').onclick=()=>{location.hash='#';};
   if($('#missing-retry'))$('#missing-retry').onclick=refresh;
 }
@@ -165,10 +182,11 @@ function hideDetail(){const ov=$('#detail');if(ov.hidden)return;ov.classList.rem
 
 // ---------- routing: list tabs stay mounted underneath the detail overlay ----------
 function route(force){
+  const version=++routeVersion;
   const h=location.hash,m=h.match(/^#d\/(.+)$/),tab=h==='#mine'?'mine':m?(listTab||'home'):'home';
   if(force||tab!==listTab){listTab=tab;tab==='mine'?mine():home();$$('[data-nav]').forEach(a=>a.classList.toggle('on',a.dataset.nav===tab));}
   if(!m)returnHash=tab==='mine'?'#mine':'#';
-  if(m){try{detail(decodeURIComponent(m[1]));}catch{missingDetail();}}else hideDetail();
+  if(m){try{detail(decodeURIComponent(m[1]),version);}catch{missingDetail();}}else hideDetail();
 }
 async function refresh(){await load();route(true);}
 addEventListener('hashchange',()=>route());
