@@ -22,10 +22,14 @@ services:
         condition: service_healthy
     environment:
       DUCK_DB_ENGINE: mysql
+      DUCK_EDITION: server
       DUCK_DB_HOST: mysql
       DUCK_DB_PORT: "3306"
       DUCK_DB_USER: duck
       DUCK_DB_PASSWORD: "${DUCK_MYSQL_PASSWORD:?Set DUCK_MYSQL_PASSWORD}"
       DUCK_DB_NAME: doodleduck
+  frontend:
+    ports: !override
+      - "${DUCK_BIND:-0.0.0.0}:${DUCK_PORT:-8080}:80"
 volumes:
   mysql-data:

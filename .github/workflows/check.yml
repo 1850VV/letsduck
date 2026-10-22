@@ -36,6 +36,7 @@ jobs:
           python3 -m unittest discover -s tests -p test_export_queue.py -v
           python3 -m unittest discover -s tests -p test_migration.py -v
           python3 -m unittest discover -s tests -p test_startup.py -v
+          python3 -m unittest discover -s tests -p test_personal.py -v
           python3 -m unittest discover -s tests -p test_mysql.py -v
       - name: Check Python and browser module syntax
         run: |

@@ -6,9 +6,14 @@ import { createPosterDialog, lookCode } from '../shared/poster.mjs';
 import { applyBrand } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
+import { loadEdition } from '../shared/edition.mjs';
 import { loadPublicSite, copyWorkLink, parseWorkLink } from '../shared/work-links.mjs';
 import { ZONES } from '../lib/duck-workbench.mjs';
 import { THEMES, quickDesign, themeSlots, hsl, isNeutral, decodeLook } from '../lib/quick-style.mjs';
+if (await loadEdition() === 'personal') {
+  location.replace('../');
+  await new Promise(() => {});
+}
 applyBrand();
 
 const $ = (s) => document.querySelector(s),$$ = (s) => [...document.querySelectorAll(s)];

@@ -8,6 +8,7 @@ services:
       DUCK_QUIET: "1"
       DUCK_PUBLIC_URL: "${DUCK_PUBLIC_URL:-}"
       DUCK_DB_ENGINE: sqlite
+      DUCK_EDITION: "${DUCK_EDITION:-personal}"
       DUCK_EXPORT_WORKERS: "${DUCK_EXPORT_WORKERS:-1}"
       DUCK_EXPORT_QUEUE: "${DUCK_EXPORT_QUEUE:-2}"
       DUCK_HTTP_LIMIT: "${DUCK_HTTP_LIMIT:-64}"
@@ -21,7 +22,7 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "${DUCK_PORT:-8080}:80"
+      - "${DUCK_BIND:-127.0.0.1}:${DUCK_PORT:-8080}:80"
     volumes:
       - ./assets:/assets:ro
 volumes:

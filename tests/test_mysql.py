@@ -75,7 +75,7 @@ class MySQLApiTest(test_api.ApiTest):
         test_migration.legacy_database(source)
         with patch.dict(os.environ, {'DUCK_DB': str(source)}):
             with self.assertRaisesRegex(RuntimeError, 'migrate_database'):
-                with TestClient(server.create_app(database_url=URL)):
+                with TestClient(server.create_app(database_url=URL, edition='server')):
                     pass
 
 

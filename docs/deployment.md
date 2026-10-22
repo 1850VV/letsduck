@@ -1,14 +1,23 @@
 # 部署、数据迁移与回退
 
-两种模式共用 FastAPI、Uvicorn 和同一套 `/api/`。前端接口、Bearer 登录会话、方案/作品 ID、密码哈希、时间戳、评分与改编关系保持原样。
+两种版本共用 FastAPI、Uvicorn 和方案、导出接口。服务器版保留 Bearer 登录会话、方案/作品 ID、密码哈希、时间戳、评分与改编关系。个人版屏蔽账号与广场接口，方案无需登录即可保存到本机 SQLite。
 
 | 模式 | 启动 | 数据库 | 适用 |
 | --- | --- | --- | --- |
-| 本机轻量 | 安装后端依赖后 `python run.py` | SQLite，自动创建 | 克隆项目、本机体验 |
-| Docker 轻量 | `docker compose up -d --build` | SQLite，`duck-data` 卷 | 单机小规模部署 |
-| Docker 服务器 | 叠加 `docker-compose.mysql.yml` | MySQL 8.4，`mysql-data` 卷 | 服务器部署 |
+| 个人使用版 | 安装后端依赖后 `python run.py` | SQLite，自动创建 | 单人本机使用，打开即用 |
+| 服务器版 | 叠加 `docker-compose.mysql.yml` | MySQL 8.4，`mysql-data` 卷 | 账号、广场与发布 |
 
-运行仍需自行合法持有完整资产包；参见 `local-assets.md`。本机默认仅监听回环地址。Docker 对外提供 8080，HTTPS 由站点入口反向代理提供。MySQL 不映射宿主机端口。
+运行仍需自行合法持有完整资产包；参见 `local-assets.md`。本机个人版默认仅监听回环地址。Docker 服务器版对外提供 8080，HTTPS 由站点入口反向代理提供。MySQL 不映射宿主机端口。Compose 版本需 2.24.4+。
+
+## 个人版与服务器版切换
+
+`DUCK_EDITION=personal|server` 选择功能。默认 `personal`，要求 SQLite；MySQL Compose 预设 `server`。个人版直接运行本机 Python。部署配置仍保留，以便现有部署继续使用。
+
+个人版的命名方案写入 SQLite，最多 30 套。清除浏览器数据、换一个浏览器或重启应用后仍可重开；草稿与界面偏好留在浏览器。保存失败时显示错误并保留未保存状态。顶部及方案菜单可以导入配色码，海报和打印导出继续可用。
+
+个人版在现有数据库中使用独立的内部存储归属，不产生登录会话，也不公开原账号的私有方案。切换版本不会删除数据库或原有浏览器缓存。旧账号方案需用 `DUCK_EDITION=server` 访问；旧版浏览器访客方案仍留在原浏览器缓存，可在服务器版读取，再用配色码转入个人版。
+
+若需在 SQLite 上保留原有账号功能，可运行 `DUCK_EDITION=server python run.py`。个人版只有一个本机方案空间，不能作为有账号隔离的多人服务。
 
 ## 选择数据库
 
@@ -17,6 +26,7 @@
 外部 MySQL 使用以下环境变量。密码按普通字符串传递，无需 URL 转义：
 
 ```dotenv
+DUCK_EDITION=server
 DUCK_DB_ENGINE=mysql
 DUCK_DB_HOST=your-database-host
 DUCK_DB_PORT=3306
