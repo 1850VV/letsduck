@@ -1,6 +1,6 @@
-"""Development launcher: one local process serves the frontend, the local asset pack and the API.
+"""Lightweight launcher: FastAPI/Uvicorn serves the frontend, local assets and API.
 
-Production uses Docker instead (see docker-compose.yml): nginx for the frontend, backend/server.py for /api.
+SQLite is the default. MySQL is selected explicitly by deployment configuration.
 """
 from pathlib import Path
 import os, subprocess, sys
