@@ -1,4 +1,4 @@
-# DuckPalette development
+# letsduck development
 
 This public source repository is separate from any private deployment or original asset bundle. Use README.md as the current entry point. Historical paths are redacted placeholders.
 

@@ -268,7 +268,7 @@ def open_when_ready(url):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='DoodleDuck FastAPI server')
+    parser = argparse.ArgumentParser(description='letsduck FastAPI server')
     parser.add_argument('--host', default=os.environ.get('HOST', '127.0.0.1'))
     parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '8876')))
     parser.add_argument('--static', help='serve the frontend directory too (lightweight deployment)')

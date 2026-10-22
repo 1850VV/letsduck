@@ -1,4 +1,4 @@
-# DoodleDuck frontend: static files behind nginx, which also proxies /api to the backend.
+# letsduck frontend: static files behind nginx, which also proxies /api to the backend.
 # Stage 1 stamps content hashes and preload links into the pages (stamp.py, standard library only).
 FROM python:3.12-slim AS stamp
 WORKDIR /site
