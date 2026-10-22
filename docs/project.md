@@ -8,6 +8,8 @@ DuckPalette 专注 XGO Duck V2 的配色及模型展示，尚不支持任意机�
 | `app.js` | Three.js 场景、方案、耗材绑定及功能集成 |
 | `focus-workspace.mjs` | 单视窗整机/部件、联动旋转、模式视角记忆、浮动色盘 |
 | `color-workflows.mjs` | 项目色盘、连续点涂、就近调色、命名保存 |
+| `quick-style.mjs` | 一键套色、主题预设、灵感骰子、分享链接与海报 |
+| `evolution.mjs` | 发布时的原创超进化动画与合成音效 |
 | `duck-workbench.mjs` | 专用分区、展示与操作范围 |
 | `community-store.mjs` | 本地社区版本、评分和引用规则 |
 | `exporter.py` | 固定源 3MF 的材料分配与保留校验 |
