@@ -56,9 +56,11 @@ function addLights(scene) {
 
 export function createDuckView({ model, binary }) {
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));renderer.outputColorSpace = THREE.SRGBColorSpace;renderer.toneMapping = THREE.ACESFilmicToneMapping;renderer.toneMappingExposure = 1.05;renderer.setClearColor(0, 0);
+  // Phones: a lighter pixel ratio keeps the frame rate up, and firmer damping/slower rotation keep the duck under the finger on a short stage.
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.5 : 1.75));renderer.outputColorSpace = THREE.SRGBColorSpace;renderer.toneMapping = THREE.ACESFilmicToneMapping;renderer.toneMappingExposure = 1.05;renderer.setClearColor(0, 0);
   const scene = new THREE.Scene(),camera = new THREE.PerspectiveCamera(31, 1, 1, 5000),meshes = new Map(),root = new THREE.Group();scene.add(root);
-  const controls = new OrbitControls(camera, renderer.domElement);controls.enableDamping = true;controls.enablePan = false;controls.minDistance = 60;controls.maxDistance = 1600;controls.target.copy(TARGET);
+  const controls = new OrbitControls(camera, renderer.domElement);controls.enableDamping = true;if (coarse) {controls.dampingFactor = .2;controls.rotateSpeed = .6;}controls.enablePan = false;controls.minDistance = 60;controls.maxDistance = 1600;controls.target.copy(TARGET);
   const pmrem = new THREE.PMREMGenerator(renderer),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04);scene.environment = env.texture;scene.environmentIntensity = .65;room.dispose();pmrem.dispose();
   addLights(scene);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(105, 48), new THREE.MeshBasicMaterial({ color: 0x1b2440, transparent: true, opacity: .05, depthWrite: false }));shadow.rotation.x = -Math.PI / 2;shadow.position.set(0, -2, 15);scene.add(shadow);
