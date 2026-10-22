@@ -32,3 +32,18 @@ test('translations preserve interpolated user text and expose complete consisten
     }
   }
 });
+
+test('anatomical side selection never depends on translated display names',async()=>{
+  const {sideParts}=await import('../frontend/lib/color-workflows.mjs');
+  const parts=[{id:'P2-03',pair:'P2-04',material:'PLA Basic',name:'A'},{id:'P2-04',pair:'P2-03',material:'PLA Basic',name:'B'}];
+  assert.deepEqual(sideParts(parts,['P2-03','P2-04'],'left'),['P2-04']);
+  assert.deepEqual(sideParts(parts,['P2-03','P2-04'],'right'),['P2-03']);
+});
+
+test('network failures expose a stable localized error instead of browser-native English',async()=>{
+  const {api}=await import('../frontend/shared/api.mjs');
+  const original=globalThis.fetch;
+  globalThis.fetch=async()=>{throw new TypeError('Failed to fetch');};
+  try{await assert.rejects(api('GET','/works'),error=>error.code==='request_failed'&&error.message!=='Failed to fetch');}
+  finally{globalThis.fetch=original;}
+});
