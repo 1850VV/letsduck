@@ -1,18 +1,50 @@
-# 涂鸭 DoodleDuck: `docker compose up -d --build`, then open http://<server>:8080/
-# ./assets must hold the separately licensed asset pack (see docs/local-assets.md); it is never baked into an image.
+# 涂鸭 DoodleDuck server edition (accounts + 配色广场): nginx frontend, FastAPI backend, MySQL 8.4.
+#   cp .env.example .env   # then set the two MySQL passwords
+#   docker compose up -d --build
+# Sized for a 2-core / 4 GB server. ./assets must hold the separately licensed asset pack
+# (docs/local-assets.md); it is mounted read-only and never baked into an image.
+# The personal edition does not use Docker: double-click 启动涂鸭.command / 启动涂鸭.bat instead.
 services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    # Small-server tuning: ~256 MB buffer pool, no performance_schema (saves ~400 MB), few connections.
+    command: >-
+      --innodb-buffer-pool-size=256M --performance-schema=OFF --max-connections=60
+      --skip-name-resolve --character-set-server=utf8mb4 --collation-server=utf8mb4_bin
+    environment:
+      MYSQL_DATABASE: doodleduck
+      MYSQL_USER: duck
+      MYSQL_PASSWORD: "${DUCK_MYSQL_PASSWORD:?Set DUCK_MYSQL_PASSWORD in .env}"
+      MYSQL_ROOT_PASSWORD: "${DUCK_MYSQL_ROOT_PASSWORD:?Set DUCK_MYSQL_ROOT_PASSWORD in .env}"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$${MYSQL_PASSWORD}\" mysql --protocol=TCP -h127.0.0.1 -u\"$${MYSQL_USER}\" \"$${MYSQL_DATABASE}\" -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
   backend:
     build: ./backend
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
     environment:
       DUCK_QUIET: "1"
       DUCK_PUBLIC_URL: "${DUCK_PUBLIC_URL:-}"
-      DUCK_DB_ENGINE: sqlite
-      DUCK_EDITION: "${DUCK_EDITION:-personal}"
+      DUCK_DB_ENGINE: mysql
+      DUCK_DB_HOST: mysql
+      DUCK_DB_PORT: "3306"
+      DUCK_DB_USER: duck
+      DUCK_DB_PASSWORD: "${DUCK_MYSQL_PASSWORD:?Set DUCK_MYSQL_PASSWORD in .env}"
+      DUCK_DB_NAME: doodleduck
       DUCK_EXPORT_WORKERS: "${DUCK_EXPORT_WORKERS:-1}"
       DUCK_EXPORT_QUEUE: "${DUCK_EXPORT_QUEUE:-2}"
       DUCK_HTTP_LIMIT: "${DUCK_HTTP_LIMIT:-64}"
     volumes:
+      # /data only matters when upgrading an older SQLite deployment (see docs/deployment.md).
       - duck-data:/data
       - ./assets:/assets:ro
   frontend:
@@ -22,8 +54,9 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "${DUCK_BIND:-127.0.0.1}:${DUCK_PORT:-8080}:80"
+      - "${DUCK_BIND:-0.0.0.0}:${DUCK_PORT:-8080}:80"
     volumes:
       - ./assets:/assets:ro
 volumes:
+  mysql-data:
   duck-data:

@@ -1,2 +1,4 @@
 # Preserve vendored upstream formatting; project files still get whitespace checks.
-assets/vendor/** -whitespace
+frontend/vendor/** -whitespace
+*.bat text eol=crlf
+*.command text eol=lf

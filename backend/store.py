@@ -1,4 +1,4 @@
-"""Accounts, schemes, works and ratings on SQLite (local) or MySQL (server)."""
+"""Server edition storage: accounts, schemes, works and ratings on MySQL (SQLite for tests and migration)."""
 import hashlib
 import json
 import secrets
@@ -10,13 +10,7 @@ from database import name_key, open_database, ratings, schemes, sessions, users,
 
 AVATARS = ['🦆', '🐤', '🐥', '🪿', '🐣', '🦢', '🐧', '🦜']
 COLORS = ['#4d6bfe', '#ff7a59', '#2fb37a', '#f2b51d', '#9b6bff', '#ef5da8', '#2aa8c9', '#5c6a85']
-FINISHES = {'basic', 'matte', 'silk', 'translucent', 'tpu'}
-MAX_SCHEMES = 30
-
-from errors import LocalizedError
-
-class Invalid(LocalizedError):
-    """A request the client can fix."""
+from rules import FINISHES, MAX_SCHEMES, Invalid, scheme_values, text, validate_design
 
 class Store:
     def __init__(self, path=None, part_ids=None, *, database_url=None):
@@ -25,19 +19,6 @@ class Store:
 
     def close(self):
         self.engine.dispose()
-
-    def personal_owner(self):
-        """A storage namespace, with no password or session usable through account APIs."""
-        uid = 'personal-owner'
-        with self.transaction(write=True) as conn:
-            if not conn.execute(select(users.c.id).where(users.c.id == uid)).first():
-                # Longer than the account API's 20-character nickname limit, and no
-                # usable password. Keep existing account-owned schemes separate.
-                name = 'personal-' + secrets.token_hex(20)
-                conn.execute(insert(users).values(id=uid, name=name, name_key=name,
-                    pw_salt=secrets.token_hex(16), pw_hash=secrets.token_hex(32),
-                    avatar='🦆', color=COLORS[0], created=self._now()))
-        return uid
 
     @contextmanager
     def transaction(self, write=False):
@@ -60,29 +41,11 @@ class Store:
         return int(time.time() * 1000)
 
     def validate_design(self, design):
-        if not isinstance(design, dict) or not isinstance(design.get('colors'), dict) or not isinstance(design.get('assignments'), dict):
-            raise Invalid('配色数据格式不对', code='validation.1')
-        colors, assignments = design['colors'], design['assignments']
-        if self.part_ids and (set(colors) != self.part_ids or set(assignments) != self.part_ids):
-            raise Invalid('配色必须包含全部 %d 个零件' % len(self.part_ids), code='validation.2', params={'v0':len(self.part_ids)})
-        for value in colors.values():
-            if not (isinstance(value, str) and len(value) == 7 and value[0] == '#' and all(c in '0123456789abcdefABCDEF' for c in value[1:])):
-                raise Invalid('颜色格式不对', code='validation.18')
-        for value in assignments.values():
-            if value is not None and (not isinstance(value, str) or len(value) > 80):
-                raise Invalid('耗材编号格式不对', code='validation.19')
-        finishes = design.get('finishes') or {}
-        if not isinstance(finishes, dict) or any(v not in FINISHES for v in finishes.values()):
-            raise Invalid('质感格式不对', code='validation.3')
-        return {'colors': {k: v.upper() for k, v in colors.items()}, 'assignments': assignments,
-                'finishes': {k: v for k, v in finishes.items() if k in colors}}
+        return validate_design(design, self.part_ids)
 
     @staticmethod
     def _text(value, limit, field, required=True):
-        value = str(value or '').strip()
-        if required and not value:
-            raise Invalid(field + '不能为空', code='validation.4', params={'v0':field})
-        return value[:limit]
+        return text(value, limit, field, required)
 
     @staticmethod
     def user_json(row):
@@ -161,13 +124,10 @@ class Store:
                 .order_by(schemes.c.updated.desc(), schemes.c.id.desc())).mappings()]
 
     def save_scheme(self, uid, sid, data):
-        if not isinstance(sid, str) or not 1 <= len(sid) <= 64:
-            raise Invalid('方案编号不对', code='validation.9')
-        name = self._text(data.get('name'), 40, '方案名称')
-        design = self.validate_design(data.get('design'))
-        values = dict(name=name, design=json.dumps(design),
-            provenance=json.dumps(data['provenance'], ensure_ascii=False) if data.get('provenance') else None,
-            voice_salt=int(data.get('voiceSalt') or 0), updated=self._now())
+        v = scheme_values(sid, data, self.part_ids)
+        values = dict(name=v['name'], design=json.dumps(v['design']),
+            provenance=json.dumps(v['provenance'], ensure_ascii=False) if v['provenance'] else None,
+            voice_salt=v['voiceSalt'], updated=self._now())
         try:
             with self.transaction(write=True) as conn:
                 conn.execute(select(users.c.id).where(users.c.id == uid).with_for_update()).one()

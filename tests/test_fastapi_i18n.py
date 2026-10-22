@@ -13,7 +13,7 @@ class BusyExports:
 class FastApiLocaleTests(unittest.TestCase):
     def test_queue_busy_and_pagination_preserve_status_code_and_retry(self):
         with tempfile.TemporaryDirectory() as tmp:
-            with TestClient(server.create_app(database_url='sqlite:///'+tmp+'/i18n.db',exports=BusyExports(),edition='server')) as client:
+            with TestClient(server.create_app(database_url='sqlite:///'+tmp+'/i18n.db',exports=BusyExports())) as client:
                 payload={'source_sha256':exporter.MODEL['source_sha256'],'assignments':{p['id']:next(x['id'] for x in exporter.PRODUCTS.values() if x['series']==p['material'] and x['hex']==p['color']) for p in exporter.PARTS.values()}}
                 response=client.post('/api/export',json=payload)
                 self.assertEqual(response.status_code,503)
