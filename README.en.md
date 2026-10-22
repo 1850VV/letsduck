@@ -95,7 +95,7 @@ A 1-core / 2 GB cloud server is enough (see "Small servers" below). The three co
 ```sh
 git clone git@github.com:1850VV/duck-palette.git
 cd duck-palette
-python3 scripts/import_local_assets.py /path/to/assets   # the asset pack is mounted, never baked into an image
+python3 scripts/import_local_assets.py /path/to/assets   # mounted, never baked into an image; also writes the smaller geometry.pack.bin
 cp .env.example .env                                      # set two different long random passwords
 docker compose up -d --build
 ```

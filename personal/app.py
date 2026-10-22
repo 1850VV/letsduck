@@ -32,7 +32,7 @@ from schemes import PersonalStore  # noqa: E402
 VERSION = '3.1.0'
 MAX_BODY = 8_000_000
 ID = re.compile(r'^[\w-]{1,64}$')
-PUBLIC_ASSETS = {'model.json', 'catalog.json', 'geometry.bin', 'export-schema.json'}
+PUBLIC_ASSETS = {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'export-schema.json'}
 NOT_FOUND = {'error': '未知接口', 'code': 'request.not_found', 'params': {}}
 log = logging.getLogger('doodleduck')
 
