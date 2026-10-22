@@ -1,12 +1,15 @@
 <p align="right"><a href="README.md">简体中文</a> · <b>English</b></p>
 
-# DoodleDuck 涂鸭
+# letsduck · 来做鸭
+
+<p align="center"><img src="frontend/shared/brand/avatar.png" width="230" alt="来做鸭 letsduck"><br><img src="frontend/shared/brand/wordmark-display.svg" width="240" alt="来做鸭"><br><img src="frontend/shared/brand/wordmark-en.svg" width="150" alt="letsduck"></p>
+
 
 A painting studio for the XGO Duck V2 robot duck: pick colours in three steps, make it nod, quack and sway, share a poster with friends, then export a recoloured 3MF (print structure preserved) for a print service. It comes in two editions: a double-click **personal edition**, and a **server edition** with a colour gallery, ratings and remixes.
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Click a card and the duck changes its colours"></p>
 
-**This is a source release. The model, 3MF, derived meshes and filament data are not included.** They are separately licensed; MIT does not cover them. Running DoodleDuck requires a complete local asset pack that you are entitled to use; a single 3MF is not enough to reproduce the assembled preview. See [local assets](docs/local-assets.md) (Chinese).
+**This is a source release. The model, 3MF, derived meshes and filament data are not included.** They are separately licensed; MIT does not cover them. Running letsduck requires a complete local asset pack that you are entitled to use; a single 3MF is not enough to reproduce the assembled preview. See [local assets](docs/local-assets.md) (Chinese).
 
 ## Three steps
 
@@ -78,8 +81,8 @@ assets/     local asset pack (git-ignored; read directly by the personal edition
 
 1. Put the asset pack in `assets/`: `python3 scripts/import_local_assets.py /path/to/assets` (Windows: `py -3 scripts\import_local_assets.py C:\path\to\assets`).
 2. Double-click:
-   - **macOS**: `启动涂鸭.command`. The system Python 3 is enough; if there is none, macOS offers to install the Command Line Developer Tools. If macOS says the developer cannot be verified, right-click the file in Finder → Open.
-   - **Windows**: `启动涂鸭.bat`. Without Python it offers to install Python 3.12 with winget, or opens python.org (tick "Add python.exe to PATH" when installing).
+   - **macOS**: `启动来做鸭.command`. The system Python 3 is enough; if there is none, macOS offers to install the Command Line Developer Tools. If macOS says the developer cannot be verified, right-click the file in Finder → Open.
+   - **Windows**: `启动来做鸭.bat`. Without Python it offers to install Python 3.12 with winget, or opens python.org (tick "Add python.exe to PATH" when installing).
 3. Your browser opens `http://127.0.0.1:8876/` (the next free port if that one is taken). Close the launcher window to quit.
 
 Or run `python3 run.py` in a terminal (`--port` to change the port, `--no-open` to skip opening the browser).
@@ -93,8 +96,8 @@ Or run `python3 run.py` in a terminal (`--port` to change the port, `--no-open` 
 A 1-core / 2 GB cloud server is enough (see "Small servers" below). The three containers use about 250–330 MB of memory when idle; 3D rendering and painting run in each visitor's browser, the server only stores data and exports 3MF.
 
 ```sh
-git clone git@github.com:1850VV/duck-palette.git
-cd duck-palette
+git clone git@github.com:1850VV/letsduck.git
+cd letsduck
 python3 scripts/import_local_assets.py /path/to/assets   # mounted, never baked into an image; also writes the smaller geometry.pack.bin
 cp .env.example .env                                      # set two different long random passwords
 docker compose up -d --build
@@ -169,4 +172,4 @@ Most project documents are in Chinese.
 
 ## Licence
 
-Original code and documentation are [MIT](LICENSE). Three.js keeps its [MIT notice](frontend/vendor/THREE-LICENSE.txt); the MicroDuck voice synthesizer port keeps its [Apache-2.0 notice](frontend/shared/MICRODUCK-LICENSE.txt). The model, manufacturer data and brand names gain no new licence from this repository; the screenshots and clips in `docs/media/` show that model and are not covered by MIT either. DoodleDuck is not an official product of Luwu Dynamics, Pollen Robotics, Bambu Lab or DeepSeek, and is not endorsed by them.
+Original code and documentation are [MIT](LICENSE). Three.js keeps its [MIT notice](frontend/vendor/THREE-LICENSE.txt); the MicroDuck voice synthesizer port keeps its [Apache-2.0 notice](frontend/shared/MICRODUCK-LICENSE.txt). The model, manufacturer data and brand names gain no new licence from this repository; the screenshots and clips in `docs/media/` show that model and are not covered by MIT either. letsduck is not an official product of Luwu Dynamics, Pollen Robotics, Bambu Lab or DeepSeek, and is not endorsed by them.

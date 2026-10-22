@@ -3,7 +3,7 @@ import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.
 // trees and the shared poster dialog. Works, ratings and 我的方案 come from the API.
 import { loadDuck, createDuckView } from '../shared/duck-view.mjs';
 import { createPosterDialog, lookCode } from '../shared/poster.mjs';
-import { applyBrand } from '../shared/brand.mjs';
+import { applyBrand, logoSVG } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
 import { loadEdition } from '../shared/edition.mjs';
@@ -28,6 +28,9 @@ const FAMILY_NAMES = { get all() {return _t("text.0356");}, get blue() {return _
 const FAMILY_DOT = { blue: '#0056B8', green: '#3F8E43', warm: '#FF6A13', purple: '#5E43B7', mono: '#545454' };
 function family(colors) {const ext = ['P4-01', 'P5-06', 'P5-07', 'P5-01', 'P5-02', 'P2-06', 'P2-03'];const hues = ext.map((id) => colors[id]).filter((c) => c && !isNeutral(c)).map((c) => hsl(c).h);if (!hues.length) return 'mono';const h = hues[0];return h < 75 || h >= 335 ? 'warm' : h < 175 ? 'green' : h < 245 ? 'blue' : 'purple';}
 const OFFICIAL = { id: 'official', get name() {return _t("text.0362");}, avatar: '🦆', color: '#4d6bfe' };
+const authorAvatar = (author, cls = '') => author === OFFICIAL
+  ? `<span class="avatar official-avatar ${cls}">${logoSVG()}</span>`
+  : avatarHTML(author, cls);
 const complete = (d) => parts.every((p) => products.has(d.assignments[p.id]));
 
 // ---------- data: official starting points (local) + published works and my schemes (server) ----------
@@ -73,7 +76,7 @@ function strip(d) {return `<span class="strip">${used(d).filter((p) => p.series 
 const stars = (d) => d.official ? `<span class="star muted">${_t("text.0370")}</span>` : d.count ? `<span class="star">★ ${d.rating.toFixed(1)} <small>(${d.count})</small></span>` : `<span class="star muted">${_t("text.0371")}</span>`;
 function card(d) {
   return `<article class="card ${d.mine ? 'mine' : ''}" data-id="${d.id}"><a class="visual" href="#d/${d.id}">${img(d, 'hero', 'a')}${img(d, 'back', 'b', true)}<span class="badges">${d.mine ? `<b class="me">${_t("text.0372")}</b>` : ''}${d.official ? `<b class="off">${_t("text.0373")}</b>` : ''}${d.parent ? `<b>${_t("text.0374")}</b>` : ''}</span><span class="quick">${d.mine && d.schemeId ? `<button data-edit="${d.schemeId}">${_t("text.0375")}</button>` : `<button data-same="${d.id}">${_t("text.0376")}</button>`}</span></a>
-  <div class="body"><div class="row"><h3><a href="#d/${d.id}">${esc(d.title)}</a></h3>${strip(d)}</div><div class="author">${avatarHTML(d.author, 'sm')}${esc(d.author.name)}<span>· ${ago(d.days)}</span></div>
+  <div class="body"><div class="row"><h3><a href="#d/${d.id}">${esc(d.title)}</a></h3>${strip(d)}</div><div class="author">${authorAvatar(d.author, 'sm')}${esc(d.author.name)}<span>· ${ago(d.days)}</span></div>
   <div class="foot">${stars(d)}<span>${_t("text.0782", { v16: d.forks })}</span><span class="${plaCount(d) <= 4 ? 'ams' : ''}" title="${_attr(plaCount(d) <= 4 ? _t("text.0377") : '')}">${_t("text.0783", { v19: used(d).length })}</span></div><div class="card-actions"><button data-copy-link="${d.id}" aria-label="${_attr(_t("text.0784", { v21: esc(d.title) }))}">${_t("text.0785")}</button><button data-share="${d.id}" aria-label="${_attr(_t("text.0786", { v23: esc(d.title) }))}">${_t("text.0443")}</button></div></div></article>`;
 }
 function home() {
@@ -143,7 +146,7 @@ async function detail(id, version = routeVersion, { preserveView = false } = {})
   const source = parent ? `${_t("text.0428")} <a href="#d/${parent.id}">「${esc(parent.title)}」· ${esc(parent.author.name)}</a>` : d.provenance ? `${_t("text.0082", { v0: esc(d.provenance.title), v1: esc(d.provenance.author) })}` : d.official ? _t("text.0370") : _t("text.0345");
   $('#detail-body').innerHTML = `<div class="dhead"><button class="dclose" id="dclose" aria-label="${_attr(_t("text.0438"))}">←</button><span>${i >= 0 ? `${i + 1} / ${visible.length}` : ''}</span><div class="dnav"><button id="dprev" ${prev ? '' : 'disabled'} aria-label="${_attr(_t("text.0439"))}">‹</button><button id="dnext" ${next ? '' : 'disabled'} aria-label="${_attr(_t("text.0440"))}">›</button></div></div>
   <section class="detail"><div class="viewer" id="viewer"><div class="vdock"><div class="seg" id="views">${[['hero', '¾'], ['front', _t("text.0429")], ['side', _t("text.0430")], ['back', _t("text.0431")]].map(([k, l], j) => `<button data-view="${k}" class="${j ? '' : 'on'}">${l}</button>`).join('')}</div><button class="toggle" id="spin" aria-pressed="true">${_t("text.0441")}</button><button class="hold" id="hold">${_t("text.0442", { v4: parent ? _t("text.0412") : _t("text.0069") })}</button></div></div>
-  <aside class="info"><span class="eyebrow">${d.mine ? _t("text.0432") : ''}${d.official ? _t("text.0370") : _t("text.0433", { v0: ago(d.days) })}</span><h1>${esc(d.title)}</h1><div class="author big">${avatarHTML(d.author)}<span>${esc(d.author.name)}<small>${source}</small></span></div>
+  <aside class="info"><span class="eyebrow">${d.mine ? _t("text.0432") : ''}${d.official ? _t("text.0370") : _t("text.0433", { v0: ago(d.days) })}</span><h1>${esc(d.title)}</h1><div class="author big">${authorAvatar(d.author)}<span>${esc(d.author.name)}<small>${source}</small></span></div>
   <p class="desc">${esc(d.desc)}</p>${parent ? `<div class="changes"><span>${_t("text.0435")}</span>${diff(d, parent) || `<span class="chg">${_t("text.0434")}</span>`}</div>` : ''}
   <div class="stats" id="stats">${statsHTML(d)}</div>
   <div class="cta">${d.mine && d.schemeId ? `<a class="primary big" href="../#scheme=${encodeURIComponent(d.schemeId)}">${_t("text.0375")}</a>` : `<a class="primary big" href="${sameHref(d)}">${_t("text.0436")}</a>`}<button class="ghost big" id="copy-link">${_t("text.0785")}</button><button class="ghost big" id="share">${_t("text.0443")}</button></div>

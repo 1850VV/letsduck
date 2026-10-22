@@ -1,4 +1,4 @@
-"""涂鸭 DoodleDuck personal edition: one local process serves the studio, the asset pack and a small API.
+"""来做鸭 letsduck personal edition: one local process serves the studio, the asset pack and a small API.
 
 Python standard library only (3.9+), so it starts without installing anything. No accounts and no
 配色广场: named schemes are saved to a local SQLite file. The full server edition is ../backend (Docker).
@@ -53,7 +53,7 @@ class Download(bytes):
 
 
 class Handler(SimpleHTTPRequestHandler):
-    server_version = 'DoodleDuck'
+    server_version = 'letsduck'
     protocol_version = 'HTTP/1.1'  # keep-alive: every response below carries Content-Length
     # Explicit types: on Windows the registry can map .js/.mjs to text/plain, which breaks ES modules.
     extensions_map = {'': 'application/octet-stream', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript',
@@ -217,7 +217,7 @@ def create_server(host='127.0.0.1', port=8876, db=None, legacy=None, search=20):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='涂鸭 DoodleDuck personal edition')
+    parser = argparse.ArgumentParser(description='来做鸭 letsduck personal edition')
     parser.add_argument('--host', default=os.environ.get('HOST', '127.0.0.1'))
     parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '8876')))
     parser.add_argument('--no-open', action='store_true', help='do not open the browser')
@@ -227,7 +227,7 @@ def main(argv=None):
     server = create_server(args.host, args.port, legacy=legacy)
     host = '127.0.0.1' if args.host in ('0.0.0.0', '') else args.host
     url = 'http://%s:%d/' % (host, server.server_address[1])
-    print('涂鸭 DoodleDuck 个人版已启动：' + url, flush=True)
+    print('来做鸭 letsduck 个人版已启动：' + url, flush=True)
     print('方案保存在：' + str(server.store.path), flush=True)
     if server.store.imported:
         print('已从旧版本带入 %d 套方案。' % server.store.imported, flush=True)

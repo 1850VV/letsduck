@@ -1,10 +1,10 @@
 # 部署、数据迁移与回退
 
-涂鸭分两个版本，代码和部署方式分开：
+来做鸭分两个版本，代码和部署方式分开：
 
 | 版本 | 代码 | 启动 | 数据库 |
 | --- | --- | --- | --- |
-| 个人使用版 | `personal/`，Python 标准库 | 双击 `启动涂鸭.command`（macOS）/ `启动涂鸭.bat`（Windows），或 `python3 run.py` | 本机 SQLite 文件 |
+| 个人使用版 | `personal/`，Python 标准库 | 双击 `启动来做鸭.command`（macOS）/ `启动来做鸭.bat`（Windows），或 `python3 run.py` | 本机 SQLite 文件 |
 | 服务器版 | `backend/`，FastAPI + SQLAlchemy | `docker compose up -d --build` | MySQL 8.4（`mysql-data` 卷） |
 
 两者共用 `frontend/`、`backend/rules.py`（配色校验）和 `backend/exporter.py`（3MF 导出）。前端读 `/api/site` 的 `edition` 决定是否显示登录、配色广场和发布。运行都需要自行合法持有完整资产包，见 `local-assets.md`。
@@ -13,7 +13,7 @@
 
 - 只需要 Python 3.9+（macOS 自带的即可），不安装任何第三方包。启动脚本找不到合适的 Python 时：macOS 触发「命令行开发者工具」安装或打开 python.org；Windows 询问是否用 winget 安装 Python 3.12，或打开 python.org。
 - 只监听 `127.0.0.1`，默认端口 8876，被占用时依次尝试后面 20 个端口。`--host`、`--port`、`--no-open` 可调整。
-- 方案文件：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，Linux `~/.local/share/doodleduck/personal.db`，或环境变量 `DUCK_PERSONAL_DB`。它不在应用文件夹里，升级时解压新版本覆盖即可。备份：关闭涂鸭后复制这个文件。
+- 方案文件：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，Linux `~/.local/share/doodleduck/personal.db`，或环境变量 `DUCK_PERSONAL_DB`。它不在应用文件夹里，升级时解压新版本覆盖即可。备份：关闭来做鸭后复制这个文件。
 - 接口：`/api/health`、`/api/site`、`/api/catalog`、`/api/schemes`（无需登录）、`/api/plan`、`/api/export`；账号、作品和评分接口返回 404，`/gallery/` 跳回首页。错误格式和校验码与服务器版相同。
 - 首次启动时，若旧版个人模式数据库（`backend/data/doodleduck.db` 或 `DUCK_DB`）里有个人方案，只读地带入一次。
 

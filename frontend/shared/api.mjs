@@ -1,4 +1,4 @@
-// Thin client for the DoodleDuck API (same origin: nginx proxies /api in production, run.py in development).
+// Thin client for the letsduck API (same origin: nginx proxies /api in production, run.py in development).
 import {errorText} from './i18n.mjs';
 const KEY='dd-token';
 let token=null;try{token=localStorage.getItem(KEY);}catch{}

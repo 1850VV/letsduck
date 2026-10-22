@@ -37,7 +37,7 @@ def snapshot_sqlite(source, backup=None):
             data = {name: [dict(r) for r in conn.execute('SELECT ' + ','.join(columns) + ' FROM ' + name)]
                     for name, columns in COLUMNS.items()}
         except sqlite3.DatabaseError as exc:
-            raise ValueError('Source is not a complete DoodleDuck database; backup retained') from exc
+            raise ValueError('Source is not a complete letsduck database; backup retained') from exc
     return backup, data
 
 

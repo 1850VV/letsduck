@@ -40,3 +40,6 @@ storage-state*.json
 /backend/data/
 *.db
 *.db-*
+
+# User-selected project avatar only; see THIRD_PARTY_NOTICES.md.
+!/frontend/shared/brand/avatar.png

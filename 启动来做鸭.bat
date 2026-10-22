@@ -1,5 +1,5 @@
 @echo off
-rem 涂鸭 DoodleDuck 个人版（Windows）：双击启动。只需要 Python 3.9+，不用安装其他东西。
+rem 来做鸭 letsduck 个人版（Windows）：双击启动。只需要 Python 3.9+，不用安装其他东西。
 chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
@@ -19,7 +19,7 @@ choice /c YN /m "现在用 winget 安装 Python 3.12 吗"
 if errorlevel 2 goto download
 winget install -e --id Python.Python.3.12
 echo.
-echo 安装完成后，请关闭这个窗口，再重新双击「启动涂鸭.bat」。
+echo 安装完成后，请关闭这个窗口，再重新双击「启动来做鸭.bat」。
 pause
 exit /b
 
