@@ -21,6 +21,8 @@
 | `backend/migrate_database.py` | SQLite 一致性备份、事务导入和全字段核对 |
 | `backend/exporter.py` | 固定源 3MF 的材料分配与保留校验（标准库，两个版本共用） |
 | `docker-compose.yml` · `.env.example` | 服务器版：nginx + FastAPI/Uvicorn + MySQL 8.4 |
+| `docker-compose.https.yml` · `deploy/Caddyfile` | 可选 HTTPS：Caddy 自动证书 |
+| `frontend/stamp.py` | 构建前端镜像时给代码地址加内容哈希、写入 import map 与预加载 |
 | `tests/` | 规则、导出、存储、资产导入 |
 | `docs/history/` · `tools/history/` | 脱敏研究记录与早期处理脚本 |
 
