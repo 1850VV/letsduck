@@ -11,11 +11,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Check publication boundary
         run: python3 scripts/publication_audit.py
-      - name: Test local asset importer with synthetic fixtures
-        run: python3 -m unittest discover -s tests -p test_local_assets.py -v
-      - name: Check browser module syntax
+      - name: Test local asset importer and the account store with synthetic fixtures
         run: |
-          for file in app.js color-workflows.mjs duck-workbench.mjs community-store.mjs focus-workspace.mjs focus-rules.mjs community-prototype/app.mjs community-prototype/model-view.mjs; do
+          python3 -m unittest discover -s tests -p test_local_assets.py -v
+          python3 -m unittest discover -s tests -p test_store.py -v
+      - name: Check Python and browser module syntax
+        run: |
+          python3 -m py_compile backend/server.py backend/store.py backend/exporter.py run.py
+          for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs; do
             node --check "$file"
           done
       - name: State the validation boundary

@@ -1,7 +1,7 @@
 """Run: python3 -m unittest discover -s tests -v"""
 import base64, copy, hashlib, io, json, struct, sys, unittest, zipfile, zlib
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'backend'))
 import exporter as e
 
 def png():

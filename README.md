@@ -1,63 +1,79 @@
-# DuckPalette · 鸭子调色台
+# 涂鸭 DoodleDuck
 
-为 XGO Duck V2 设计的本地 3D 配色工作台：看整机、选零件、配真实耗材，并导出保留打印结构的改色 3MF。
+给 XGO Duck V2 机器鸭涂装的小工具，几个朋友一起玩：三步配好颜色，摆姿势、生成海报，发布到配色广场，互相打分、「做同款」接着改。配好的方案可以导出保留打印结构的改色 3MF 和耗材清单。
 
-**这是源码发行版。仓库不附带模型、3MF、衍生网格或耗材数据包。** 它们有独立的第三方授权；MIT 不覆盖这些资产。运行现有真实模型需要自行合法持有完整本地资产包，单独一份 3MF 还不足以复现当前装配预览。详见 [本地资产说明](docs/local-assets.md)。
+**这是源码发行版。仓库不附带模型、3MF、衍生网格或耗材数据包。** 它们有独立的第三方授权；MIT 不覆盖这些资产。运行需要自行合法持有完整本地资产包，单独一份 3MF 还不足以复现装配预览。详见 [本地资产说明](docs/local-assets.md)。
 
-## 已有能力
+## 能做什么
 
-- 固定 XGO Duck V2：6 个打印板、35 个零件实例；原材料与打印结构受保护。
-- 项目色盘、连续点涂、就近调色，左右单件或配对上色，锁定与撤销。
-- 同一视窗显示整机和所选部件；旋转默认联动，可关闭；移动和缩放独立。
-- 模型下方直接切换组装、散开和排列；收回整机恢复之前的视角。
-- HSV / HEX 目标色与真实耗材绑定；PLA Basic 和 TPU 90A 分开处理。
-- 命名保存、方案对比、BOM 和可编辑 3MF 导出。
-- 一键套色：主色、辅色、点缀色、软垫色四个角色自动分配到 8 个部位；4 种分配方式、8 套主题预设、可锁定颜色的灵感骰子、耗材数量与相邻撞色提醒。
-- 分享链接（只含零件与耗材色号，不含模型）和分享海报；打开链接即可一键带入配色。
-- 模拟发布时可播放原创的「超进化」动画，画面与音效均为代码绘制/合成，不含任何动画原曲或素材。
-- 本地社区演示：版本快照、评分与引用规则。**不是已上线的多用户后端。**
+- **涂装台（三步）**：① 选个起点（白胚、经典配色、可锁定/单张重掷的灵感骰子、我的方案）→ ② 细调部位（点模型选部位，耗材色卡或自由调色，刷子、吸管、聚焦、并排放大、A/B 对比、锁定部位）→ ③ 展示分享（姿势与 MicroDuck 经典动作和叫声、背景、海报、发布、打印导出）。
+- **真实耗材**：拓竹 PLA Basic / TPU 90A 色表；其他品牌色卡只是示意，发布和导出前会提示换成真实耗材。
+- **配色广场**：官方配色 + 所有人发布的作品；热门/最新/高分、色系与标签筛选、作品详情、评分、改编家族树、配色码粘贴预览、分享海报。
+- **账号**：昵称 + 简单密码。登录后「我的方案」存到服务器，换台电脑也能找回；不登录也能玩，方案先存在浏览器里，登录时自动同步进账号。
+- **导出**：服务器核对 35 个零件的耗材分配，生成改色 3MF（重新渲染 6 块打印板缩略图）和 BOM。
 
-模型装配使用既有配准结果；踝轴等位置有示意成分。屏幕颜色不是实物色差保证，尚未验证装配公差或实物打印。MCP 尚未接入。
+屏幕颜色不是实物色差保证；踝轴等装配位置有示意成分，尚未验证装配公差。海报上的二维码目前只是装饰，分享靠配色码。
 
-## 本地运行
+## 结构
 
-需要 Python 3.9+、支持 WebGL 2 的浏览器；开发检查还需要 Node.js 22+。核心运行使用 Python 标准库和随仓库提供的 Three.js，不需要 npm 安装。
+前后端分离，后端只用 Python 标准库，前端是不需要构建的静态文件。
+
+```
+frontend/   静态前端：index.html（涂装台）、gallery/（配色广场）、shared/、lib/、vendor/（Three.js）
+backend/    API：server.py（路由）、store.py（SQLite：账号、方案、作品、评分）、exporter.py（3MF 导出）
+assets/     本地资产包（被 Git 忽略，部署时只读挂载）
+```
+
+接口都在 `/api/` 下：`auth/register|login|logout`、`me`、`schemes`、`works`（含 `works/<id>/rating`）、`plan`、`export`、`health`。
+
+## 用 Docker 部署到自己的服务器
 
 ```sh
-git clone https://github.com/1850VV/duck-palette.git
+git clone git@github.com:1850VV/duck-palette.git
 cd duck-palette
-python3 scripts/import_local_assets.py /path/to/existing-workbench/assets
-python3 run.py --no-open
+python3 scripts/import_local_assets.py /path/to/assets   # 把资产包放进 ./assets
+docker compose up -d --build
 ```
 
-访问 `http://127.0.0.1:8876/`，进入「专注涂装」。服务仅监听本机；停止终端中的程序即可停止服务。Windows 可将 `python3` 换成 `py -3`。
+打开 `http://<服务器地址>:8080/`。端口可用 `DUCK_PORT=80 docker compose up -d` 修改。
 
-资产只复制到被 Git 忽略的位置；导入工具校验源文件哈希且不覆盖不同的已有资产。不要把这台本地服务直接暴露到公网。
+- `frontend`（nginx）提供静态页面和只读的 `/assets/`（不对外提供源 3MF），并把 `/api/` 转发给 `backend`。
+- `backend` 的数据库在 `duck-data` 卷里（`/data/doodleduck.db`）。备份：`docker compose cp backend:/data/doodleduck.db ./backup.db`。
+- 资产包只挂载、不打进镜像。没有 HTTPS；要公网访问，建议放在已有的反向代理（Caddy / nginx + 证书）后面。
 
-## 开发验证
+## 本地开发
 
-不需要模型的公开检查：
+需要 Python 3.9+ 和支持 WebGL 2 的浏览器；跑前端测试还需要 Node.js 22+。不需要 npm 安装。
 
 ```sh
-python3 -m unittest discover -s tests -p test_local_assets.py -v
-python3 scripts/publication_audit.py
-node --check app.js
-node --check focus-workspace.mjs
+python3 scripts/import_local_assets.py /path/to/assets
+python3 run.py
 ```
 
-导入完整资产后执行真实模型检查：
+`run.py` 用一个进程同时提供前端、资产和 API（默认 `http://127.0.0.1:8876/`，`--port` 可改，`--no-open` 不自动开浏览器）。开发数据库在 `backend/data/`（被 Git 忽略），可用环境变量 `DUCK_DB` 指到别处。
+
+## 验证
+
+不需要资产包的检查（CI 会跑）：
+
+```sh
+python3 scripts/publication_audit.py
+python3 -m unittest discover -s tests -p test_local_assets.py -v
+python3 -m unittest discover -s tests -p test_store.py -v
+```
+
+导入资产包后的完整检查：
 
 ```sh
 python3 -m unittest discover -s tests -v
-node --test tests/test_workflows.mjs tests/test_workbench.mjs tests/test_community.mjs tests/test_focus.mjs
+node --test tests/*.mjs
 ```
 
-浏览器回归入口为 `tests/focus-b-browser.js`，通过独立 Playwright CLI 会话运行 `run-code --filename=tests/focus-b-browser.js`；它要求 8876 上运行本项目，并只操作测试浏览器自己的存储。测试后关闭该会话。CI 不持有模型资产，不能替代完整模型、导出或浏览器验收。
+CI 不持有模型资产，不能替代真实模型、导出和浏览器验收。
 
-## 文档导航
+## 文档
 
-- [完整操作手册](docs/workbench-manual.txt)
-- [项目结构与工作流](docs/project.md)
+- [项目结构与边界](docs/project.md)
 - [本地资产与复现边界](docs/local-assets.md)
 - [第三方来源与许可证](THIRD_PARTY_NOTICES.md)
 - [公开发行检查与排除项](docs/publication.md)
@@ -66,4 +82,4 @@ node --test tests/test_workflows.mjs tests/test_workbench.mjs tests/test_communi
 
 ## 开源范围
 
-原创代码和文档采用 [MIT](LICENSE)。Three.js 保留其 [MIT 声明](assets/vendor/THREE-LICENSE.txt)。模型、制造商数据和品牌名称不因本仓库而获得新的授权。DuckPalette 不是 Luwu Dynamics、Pollen Robotics、Bambu Lab 或 DeepSeek 的官方产品，也不表示这些项目认可本工具。
+原创代码和文档采用 [MIT](LICENSE)。Three.js 保留其 [MIT 声明](frontend/vendor/THREE-LICENSE.txt)；MicroDuck 叫声合成器移植保留 [Apache-2.0 声明](frontend/shared/MICRODUCK-LICENSE.txt)。模型、制造商数据和品牌名称不因本仓库而获得新的授权。涂鸭不是 Luwu Dynamics、Pollen Robotics、Bambu Lab 或 DeepSeek 的官方产品，也不表示这些项目认可本工具。

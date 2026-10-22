@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {SLOTS,RECIPES,THEMES,quickDesign,rollSlots,themeSlots,slotsFromDesign,designNotes,encodeLook,decodeLook} from '../quick-style.mjs';
+import {SLOTS,RECIPES,THEMES,quickDesign,rollSlots,themeSlots,slotsFromDesign,designNotes,encodeLook,decodeLook} from '../frontend/lib/quick-style.mjs';
 const {parts}=JSON.parse(readFileSync(new URL('../assets/model.json',import.meta.url)));
 const {products:entries}=JSON.parse(readFileSync(new URL('../assets/catalog.json',import.meta.url)));
 const products=new Map(entries.map(p=>[p.id,p]));

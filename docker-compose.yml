@@ -1,0 +1,21 @@
+# 涂鸭 DoodleDuck: `docker compose up -d --build`, then open http://<server>:8080/
+# ./assets must hold the separately licensed asset pack (see docs/local-assets.md); it is never baked into an image.
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DUCK_QUIET: "1"
+    volumes:
+      - duck-data:/data
+      - ./assets:/assets:ro
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on: [backend]
+    ports:
+      - "${DUCK_PORT:-8080}:80"
+    volumes:
+      - ./assets:/assets:ro
+volumes:
+  duck-data:

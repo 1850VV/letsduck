@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {detailRegion,gridSlots,hsvToHex,hexToHsv} from '../focus-rules.mjs';
+import {detailRegion,gridSlots,hsvToHex,hexToHsv} from '../frontend/lib/focus-rules.mjs';
 const parts=JSON.parse(readFileSync(new URL('../assets/model.json',import.meta.url))).parts;
 test('every real instance opens a nonempty region containing itself',()=>{
   for(const p of parts){const region=detailRegion(parts,p.id);assert.ok(region.ids.includes(p.id));assert.equal(new Set(region.ids).size,region.ids.length);assert.ok(region.ids.every(id=>parts.some(p=>p.id===id)));}

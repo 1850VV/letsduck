@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {SOURCE,ZONES,editableIds,schemePatch} from '../duck-workbench.mjs';
+import {SOURCE,ZONES,editableIds,schemePatch} from '../frontend/lib/duck-workbench.mjs';
 const {parts,source_sha256}=JSON.parse(readFileSync(new URL('../assets/model.json',import.meta.url)));
 const {products:entries}=JSON.parse(readFileSync(new URL('../assets/catalog.json',import.meta.url)));
 const products=new Map(entries.map(p=>[p.id,p]));
