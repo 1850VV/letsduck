@@ -28,6 +28,6 @@ Review date: 2026-10-22. See [licensing research](docs/history/outputs/MicroDuck
 
 The screenshots and animated clips in `docs/media/` (used by the README) show renders of the separately licensed XGO Duck V2 model. The repository owner approved publishing them; they are not covered by the MIT licence. The people, works and ratings shown are sample data.
 
-## Project avatar
+## Project mark
 
-The owner selected frontend/shared/brand/avatar.png on 2026-10-23 for 来做鸭 / letsduck. It is an AI-generated adaptation of the [official MicroDuck head illustration](https://pollen-robotics.com/assets/microduck/stickers/duck-head-mark.webp), using an [official product photo](https://pollen-robotics.com/assets/microduck/gallery/closeup.webp) as a supporting reference. The adaptation adds black sunglasses and a paintbrush. It is not an official Pollen Robotics mark and is not covered by this repository's MIT licence; underlying design rights are not reassigned by the generation or the project rename. No new public redistribution permission is asserted here. The custom vector wordmarks are project artwork.
+The 来做鸭 / letsduck mark (`frontend/shared/brand/logo.svg`, drawn inline by `frontend/shared/brand.mjs`) is original project artwork under this repository's MIT licence: a duck head in one stroke whose jaw is a paintbrush. The name is set in the visitor's system font; no font files are shipped. The earlier avatar image (2026-10-23, an AI-generated adaptation of Pollen Robotics' MicroDuck head illustration) and its vector wordmarks were removed from the current tree.

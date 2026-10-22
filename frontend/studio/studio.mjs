@@ -9,7 +9,7 @@ import { sideParts, paintTargets } from '../lib/color-workflows.mjs';
 import { createEvolution } from '../lib/evolution.mjs';
 import { createActionPlayer, ACTIONS, VOICES, describeVoice, seedFromText } from '../shared/duck-actions.mjs';
 import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
-import { applyBrand, BRAND } from '../shared/brand.mjs';
+import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
 import { loadEdition } from '../shared/edition.mjs';
@@ -23,7 +23,7 @@ function renderEdition() {
   $('#edition-badge').hidden = !personal;
   $('#import-code').hidden = !personal;
   const brand = $('[data-brand-slot]');brand.href = personal ? './' : './gallery/';
-  brand.title = personal ? BRAND.zh + ' / ' + BRAND.en : _t('text.0614');
+  brand.title = personal ? brandName() + ' / ' + BRAND.en : _t('text.0614');
   if (personal) {
     $('#steps [data-step="3"] [data-i18n]').dataset.i18n = 'personal.show';
     $('#steps [data-step="3"] [data-i18n]').textContent = _t('personal.show');

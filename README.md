@@ -2,7 +2,7 @@
 
 # 来做鸭 / letsduck
 
-<p align="center"><img src="frontend/shared/brand/avatar.png" width="230" alt="来做鸭 letsduck"><br><img src="frontend/shared/brand/wordmark-display.svg" width="240" alt="来做鸭"><br><img src="frontend/shared/brand/wordmark-en.svg" width="150" alt="letsduck"></p>
+<p align="center"><img src="frontend/shared/brand/logo.svg" width="128" alt="来做鸭 letsduck"></p>
 
 
 给 XGO Duck V2 机器鸭涂装的小工具：三步配好颜色，让它点头、嘎嘎叫、摇摆，生成海报分享给朋友，再导出保留打印结构的改色 3MF 交给代打服务商。分两个版本：双击即用的**个人使用版**，和带配色广场、评分、「做同款」的**服务器版**。

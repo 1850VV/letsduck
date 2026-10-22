@@ -2,7 +2,7 @@
 
 # letsduck · 来做鸭
 
-<p align="center"><img src="frontend/shared/brand/avatar.png" width="230" alt="来做鸭 letsduck"><br><img src="frontend/shared/brand/wordmark-display.svg" width="240" alt="来做鸭"><br><img src="frontend/shared/brand/wordmark-en.svg" width="150" alt="letsduck"></p>
+<p align="center"><img src="frontend/shared/brand/logo.svg" width="128" alt="来做鸭 letsduck"></p>
 
 
 A painting studio for the XGO Duck V2 robot duck: pick colours in three steps, make it nod, quack and sway, share a poster with friends, then export a recoloured 3MF (print structure preserved) for a print service. It comes in two editions: a double-click **personal edition**, and a **server edition** with a colour gallery, ratings and remixes.
