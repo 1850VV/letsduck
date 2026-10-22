@@ -26,7 +26,8 @@ jobs:
       - name: Personal edition with no third-party packages installed
         run: |
           python3 -I -m unittest discover -s tests -p test_personal.py -v
-          python3 -I -m compileall -q personal run.py backend/rules.py backend/errors.py backend/exporter.py
+          python3 -I -m unittest discover -s tests -p test_stamp.py -v
+          python3 -I -m compileall -q personal run.py frontend/stamp.py backend/rules.py backend/errors.py backend/exporter.py
       - name: Install pinned backend and test dependencies
         run: python3 -m pip install -r requirements-dev.txt
       - name: Check publication boundary

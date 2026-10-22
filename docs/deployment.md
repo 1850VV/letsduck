@@ -36,6 +36,8 @@ docker compose up -d --build
 
 MySQL 以 `--innodb-buffer-pool-size=${DUCK_MYSQL_BUFFER_POOL:-128M} --performance-schema=OFF --max-connections=60` 启动；4 GB 内存可在 `.env` 设 `DUCK_MYSQL_BUFFER_POOL=256M`。测试环境（Ubuntu 24.04，Docker 29）中实测内存：MySQL 约 165 MB（128M 缓冲池，刚启动）到 265 MB（256M，跑过测试流量；缓冲池按使用逐步占满）、后端 63 MB、nginx 5 MB；每个 3MF 导出进程峰值约 60 MB。1 核 2 GB 合计约 800 MB（含系统与 Docker），建议另开 2 GB swap（命令见 README）。3MF 导出在独立进程计算，保持 `DUCK_EXPORT_WORKERS=1`。
 
+前端镜像构建时运行 `frontend/stamp.py`（标准库）：每个 `.mjs/.js/.css` 的地址加上内容哈希 `?v=`，页面里写入一个 import map（把模块的原始路径映射到带哈希的地址，模块内部的相对 import 不用改）、整张模块依赖图的 `modulepreload` 和模型文件的 `preload`，浏览器一打开就并行下载全部模块和模型。带 `?v=` 的代码 nginx 发 `Cache-Control: public, max-age=31536000, immutable`，不带的仍是 `no-cache`；HTML 每次核对。个人版和开发模式直接用源码，不经过这一步。
+
 nginx 对 `/assets/`（模型几何、色表）发送 `Cache-Control: public, max-age=604800`，过期后用 ETag / Last-Modified 重新验证。更换资产包后，7 天内访问过的浏览器可能仍用旧文件，需要强制刷新。页面和脚本仍是 `no-cache`，每次都会核对是否有新版本。
 
 ### 外部 MySQL
