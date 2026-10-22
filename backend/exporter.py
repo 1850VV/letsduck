@@ -7,8 +7,11 @@ from datetime import datetime, timezone
 import base64, copy, hashlib, io, json, re, struct, zipfile
 import xml.etree.ElementTree as ET
 
+import os
+
 ROOT = Path(__file__).resolve().parent
-ASSETS = ROOT / 'assets'
+# Separately licensed local asset pack; mounted in Docker, ../assets during development.
+ASSETS = Path(os.environ.get('DUCK_ASSETS', ROOT.parent / 'assets'))
 MODEL = json.loads((ASSETS / 'model.json').read_text())
 CATALOG = json.loads((ASSETS / 'catalog.json').read_text())
 SCHEMA = json.loads((ASSETS / 'export-schema.json').read_text())

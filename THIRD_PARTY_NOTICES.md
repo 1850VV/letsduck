@@ -2,9 +2,11 @@
 
 ## Included source
 
-`assets/vendor/` contains Three.js revision 180: `three.core.js`, `three.module.js`, `OrbitControls.js`, `BufferGeometryUtils.js`, and `RoomEnvironment.js`. Copyright remains with the Three.js authors. These files retain the accompanying [MIT license](assets/vendor/THREE-LICENSE.txt). Source: [mrdoob/three.js, r180](https://github.com/mrdoob/three.js/tree/r180).
+`frontend/vendor/` contains Three.js revision 180: `three.core.js`, `three.module.js`, `OrbitControls.js`, `BufferGeometryUtils.js`, and `RoomEnvironment.js`. Copyright remains with the Three.js authors. These files retain the accompanying [MIT license](assets/vendor/THREE-LICENSE.txt). Source: [mrdoob/three.js, r180](https://github.com/mrdoob/three.js/tree/r180).
 
-DuckPalette's original software and documentation are MIT licensed. Imported libraries retain their own notices. Historical research documents quote and link external sources; those sources and trademarks do not become DuckPalette's intellectual property.
+`frontend/shared/duck-voice.mjs` is a JavaScript port of MicroDuck's voice synthesizer (`sounds/src/rng.rs`, `synth.rs`, `personality.rs`, `voices.rs`), Copyright Pollen Robotics, under the [Apache License 2.0](frontend/shared/MICRODUCK-LICENSE.txt). Source: [pollen-robotics/microduck at 942e58e](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567/sounds). Changes: translated from Rust to JavaScript, with u64 arithmetic and f32 rounding emulated; WAV output, the hardware seed and the chorale/stream modules are not ported. The earlier Python original (`apirrone/microduck_sounds`) carries no license and is not used. No MicroDuck scores or recordings are included.
+
+DoodleDuck's (formerly DuckPalette) original software and documentation are MIT licensed. Imported libraries retain their own notices. Historical research documents quote and link external sources; those sources and trademarks do not become DuckPalette's intellectual property.
 
 ## Not distributed
 

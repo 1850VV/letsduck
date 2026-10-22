@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {groupPalette,paintTargets,pairedParts,sideParts,validDesign} from '../color-workflows.mjs';
+import {groupPalette,paintTargets,pairedParts,sideParts,validDesign} from '../frontend/lib/color-workflows.mjs';
 const root=new URL('../',import.meta.url);
 const {parts}=JSON.parse(readFileSync(new URL('assets/model.json',root)));
 const {products:entries}=JSON.parse(readFileSync(new URL('assets/catalog.json',root)));

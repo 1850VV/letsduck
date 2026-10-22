@@ -4,7 +4,7 @@
 /assets/model.json
 /assets/catalog.json
 /assets/export-schema.json
-/design/focus-b-study/assets/
+
 *.3mf
 *.stl
 *.step
@@ -33,3 +33,7 @@ node_modules/
 *.log
 browser-state*.json
 storage-state*.json
+# Runtime database (development); Docker keeps it in the duck-data volume.
+/backend/data/
+*.db
+*.db-*

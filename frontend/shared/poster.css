@@ -1,0 +1,28 @@
+.poster-dialog{border:0;padding:0;border-radius:22px;width:min(1040px,calc(100vw - 32px));max-height:calc(100vh - 32px);box-shadow:0 30px 80px #0f17333a;color:#18253e;background:#fff}
+.poster-dialog::backdrop{background:#121a33a6;backdrop-filter:blur(4px)}
+.poster-wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);max-height:calc(100vh - 32px)}
+.poster-stage{background:#eef1f8;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;min-height:420px}
+.poster-stage img{max-width:100%;max-height:calc(100vh - 100px);border-radius:12px;box-shadow:0 14px 40px #1b264a2b;background:#fff}
+.poster-busy{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:#18253e;color:#fff;font-size:12px;padding:6px 12px;border-radius:99px}
+.poster-busy[hidden]{display:none}
+.poster-side{padding:26px 26px 22px;overflow:auto;display:flex;flex-direction:column;gap:16px}
+.poster-head{display:flex;justify-content:space-between;align-items:flex-start}
+.poster-head h2{margin:6px 0 0;font-size:22px}
+.poster-eyebrow{font-size:10px;letter-spacing:2.4px;color:#8c9cb7;font-weight:650}
+.poster-x{border:0;background:#f0f2f8;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer;color:#596782}
+.poster-group{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.poster-group>span{font-size:12px;font-weight:650;color:#5c6a85}
+.poster-group>span small{font-weight:400;color:#97a2b6;margin-left:6px}
+.poster-group label{display:flex;gap:8px;align-items:center;color:#3c4a66;cursor:pointer}
+.poster-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.poster-seg button{border:1px solid #e3e7f1;background:#fff;border-radius:10px;padding:9px 6px;cursor:pointer;display:flex;flex-direction:column;gap:2px;font-size:13px;color:#3c4a66}
+.poster-seg button small{font-size:10px;color:#97a2b6}
+.poster-seg button.on{border-color:#4d6bfe;background:#f0f3ff;color:#3150d8;box-shadow:0 0 0 1px #4d6bfe inset}
+.poster-code{display:flex;gap:6px;align-items:stretch}
+.poster-code code{flex:1;min-width:0;font-size:11px;background:#f4f6fb;border:1px solid #e6e9f2;border-radius:8px;padding:8px 10px;word-break:break-all;color:#4b5a77;line-height:1.5}
+.poster-code button,.poster-actions button{border:1px solid #e0e5f0;background:#fff;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;color:#2f3d5a}
+.poster-note{font-size:11px;line-height:1.7;color:#9a8a5a;background:#fff8e6;border-radius:8px;padding:8px 10px;margin:0}
+.poster-actions{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}
+.poster-actions .poster-primary{background:#4d6bfe;border-color:#4d6bfe;color:#fff;font-weight:650;flex:1}
+.poster-status{min-height:18px;margin:0;font-size:12px;color:#3d9a5b}
+@media (max-width:760px){.poster-wrap{grid-template-columns:1fr;overflow:auto}.poster-stage{min-height:0;padding:16px}.poster-stage img{max-height:55vh}.poster-side{overflow:visible}}
