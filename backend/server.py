@@ -46,6 +46,11 @@ def catalog(h, user, body):
         raise Invalid('耗材色表未加载', code='validation.29')
     return CATALOG
 
+@route('GET', '/api/site')
+def site(h, user, body):
+    # Explicit deployment configuration, never request Host/forwarded headers.
+    return {'publicUrl': os.environ.get('DUCK_PUBLIC_URL', '')}
+
 # ---- accounts: nickname + simple password, bearer token sessions ----
 @route('POST', '/api/auth/register')
 def register(h, user, body):

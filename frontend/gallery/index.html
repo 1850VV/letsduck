@@ -13,11 +13,12 @@
 <header class="top">
   <a class="brand" href="#" data-brand-slot></a>
   <nav><a href="#" data-nav="home" data-i18n="text.0392">配色广场</a><a href="#mine" data-nav="mine" data-i18n="text.0140">我的方案</a><a href="../" data-i18n="text.0644">涂装台</a></nav>
-  <label class="search"><span>⌕</span><input id="q" placeholder="搜配色、作者或颜色" data-i18n-placeholder="text.0647"><kbd>/</kbd></label>
+  <div class="search-tools"><label class="search"><span>⌕</span><input id="q" aria-label="搜索配色" placeholder="搜配色、作者或颜色" data-i18n-aria-label="text.0822" data-i18n-placeholder="text.0647"><kbd>/</kbd></label>
   <div class="paste"><button class="ghost-btn" id="paste-btn" data-i18n="text.0645">粘贴配色码</button><div class="paste-pop" id="paste-pop" hidden><label><span data-i18n="label.paste">粘贴配色码或分享链接</span><input id="paste-input" placeholder="v1.731b5be4.…" autocomplete="off"></label><div id="paste-preview"></div></div></div>
-  <span id="profile-slot"></span>
+  </div><span id="profile-slot"></span>
   <a class="publish" href="../" data-i18n="text.0646">＋ 配一只</a>
 </header>
+<nav class="mobile-nav" aria-label="广场导航" data-i18n-aria-label="text.0823"><a href="#" data-nav="home" data-i18n="text.0392">配色广场</a><a href="#mine" data-nav="mine" data-i18n="text.0140">我的方案</a><a href="../" data-i18n="text.0644">涂装台</a></nav>
 <main id="app"><p class="loading"><span></span><span data-i18n="label.loading">正在载入机器鸭…</span></p></main>
 <div class="detail-overlay" id="detail" hidden><div class="detail-sheet" id="detail-body"></div></div>
 <div class="toast" id="toast" role="status"></div>

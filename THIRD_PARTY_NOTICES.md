@@ -21,3 +21,7 @@ Asset filenames in code, hashes, citations and historical verification records d
 XGO-Duck by Luwu Dynamics builds on the MicroDuck ecosystem by Pollen Robotics. The workspace references Bambu Lab product color identifiers. The blue-white-black design uses a DeepSeek brand-blue reference. These names identify compatibility and inspiration, not endorsement, affiliation, or trademark permission.
 
 Review date: 2026-10-22. See [licensing research](docs/history/outputs/MicroDuck-XGODuck-授权核查-2026-10-22.md) for the recorded evidence and remaining uncertainty. This is an engineering release boundary, not legal advice.
+
+## QR Code generator
+
+`frontend/vendor/qrcodegen.mjs` contains Project Nayuki's MIT-licensed QR Code generator, compiled from TypeScript. Source: [official library](https://www.nayuki.io/page/qr-code-generator-library), [JavaScript download](https://www.nayuki.io/res/qr-code-generator-library/qrcodegen.js), retrieved 2026-10-22. Download SHA-256: `2511bc17f40a3c41d4a0578995db956b38997334d3d20113a5d4dc5c49c69480`. The original MIT notice is retained in the file; the sole adaptation adds an ES module export. QR generation runs locally without an external image service.

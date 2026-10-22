@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
     environment:
       DUCK_QUIET: "1"
+      DUCK_PUBLIC_URL: "${DUCK_PUBLIC_URL:-}"
     volumes:
       - duck-data:/data
       - ./assets:/assets:ro
