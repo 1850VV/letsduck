@@ -7,9 +7,12 @@ test('canonical published work links use configured HTTPS origin, never browser 
   assert.equal(workURL('https://duck.example.com', 'official-2'), 'https://duck.example.com/gallery/#d/official-2');
 });
 test('missing, local, private or malformed origins cannot produce share links', () => {
+  // Synthetic URL credentials exercise rejection; no account or secret is used.
+  const credentialed = new URL('https://duck.example.com');
+  credentialed.username = 'test-user'; credentialed.password = 'test-password';
   for (const origin of ['', null, 'http://duck.example.com', 'https://localhost', 'https://127.0.0.1',
     'https://[::1]', 'https://192.168.1.5', 'https://duck.local', 'https://duck',
-    'https://user:pass@duck.example.com', 'https://duck.example.com/path', 'https://duck.example.com/?x=y', 'https://duck.example.com/#x']) {
+    credentialed.href, 'https://duck.example.com/path', 'https://duck.example.com/?x=y', 'https://duck.example.com/#x']) {
     assert.equal(publicOrigin(origin), null, String(origin));
     assert.equal(workURL(origin, 'work-123'), null);
   }

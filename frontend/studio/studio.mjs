@@ -709,7 +709,7 @@ $('#publish-form').onsubmit=async e=>{
   $('#publish-dialog').close();
   const goGallery=()=>{location.href='./gallery/#d/'+work.id;};
   if(!$('#publish-evolve').checked){toast('已发布「'+title+'」，正在打开广场');setTimeout(goGallery,700);return;}
-  evolution.play({name:title,author:account.user.name,before:ORIGINAL,after:design,sound:$('#publish-sound').checked,onDone:goGallery,onPoster:()=>poster.open({design:{...design,name:title,author:account.user.name},before:ORIGINAL})});
+  evolution.play({name:title,author:account.user.name,before:ORIGINAL,after:design,sound:$('#publish-sound').checked,onDone:goGallery,onPoster:()=>poster.open({workId:work.id,design:{...work.design,name:work.title,author:work.author.name},before:ORIGINAL})});
 };
 
 // ---------- keyboard ----------
