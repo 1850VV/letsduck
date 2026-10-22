@@ -1,238 +1,286 @@
-"""DoodleDuck API server. Python standard library only.
-
-Production: serves /api only; nginx serves the static frontend and proxies /api here.
-Development (`python3 run.py`): also serves ../frontend and the local /assets pack from one process.
-"""
-from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+"""FastAPI API with optional local static hosting; Uvicorn owns HTTP lifecycle."""
+import argparse
+from contextlib import asynccontextmanager
+import json
+import logging
+import os
 from pathlib import Path
-from functools import partial
-from urllib.parse import urlparse, parse_qs
-import argparse, json, os, re, sys, traceback, webbrowser
+import re
+import sqlite3
+import threading
+import time
+from urllib.error import URLError
+from urllib.request import urlopen
+import webbrowser
 
-from store import Store, Invalid
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse, Response
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.staticfiles import StaticFiles
+from sqlalchemy import func, select, text
+import uvicorn
+
 from errors import payload as error_payload
+from export_jobs import ExportBusy, ExportManager
+from database import users
+from store import Invalid, Store
 
 ROOT = Path(__file__).resolve().parent
 ASSETS = Path(os.environ.get('DUCK_ASSETS', ROOT.parent / 'assets'))
 VERSION = '3.1.0'
-MAX_BODY = 8_000_000  # 3MF export carries 13 rendered plate thumbnails
-
-try:  # The licensed asset pack powers export and strict design validation; the API still runs without it.
-    import exporter
-    MODEL, CATALOG = exporter.MODEL, exporter.CATALOG
-except Exception as exc:  # noqa: BLE001 - report and continue without export
-    exporter = None
-    MODEL = CATALOG = None
-    print('Asset pack not loaded (%s): export is disabled until DUCK_ASSETS points at it.' % exc, file=sys.stderr)
-
-STORE = Store(part_ids=[p['id'] for p in MODEL['parts']] if MODEL else None)
-ROUTES = []
+MAX_BODY = 8_000_000
+ID = re.compile(r'^[\w-]{1,64}$')
 
 
-def route(method, pattern, auth=False):
-    def wrap(fn):
-        ROUTES.append((method, re.compile('^' + pattern + '$'), auth, fn))
-        return fn
-    return wrap
+def token(request):
+    value = request.headers.get('authorization', '')
+    return value[7:].strip() if value.startswith('Bearer ') else None
 
 
-@route('GET', '/api/health')
-def health(h, user, body):
-    return {'version': VERSION, 'export': bool(exporter), 'source_sha256': MODEL['source_sha256'] if MODEL else None}
+def optional_user(request: Request):
+    return request.app.state.store.user_for(token(request))
 
-@route('GET', '/api/catalog')
-def catalog(h, user, body):
-    if not CATALOG:
-        raise Invalid('耗材色表未加载', code='validation.29')
-    return CATALOG
 
-@route('GET', '/api/site')
-def site(h, user, body):
-    # Explicit deployment configuration, never request Host/forwarded headers.
-    return {'publicUrl': os.environ.get('DUCK_PUBLIC_URL', '')}
-
-# ---- accounts: nickname + simple password, bearer token sessions ----
-@route('POST', '/api/auth/register')
-def register(h, user, body):
-    return STORE.register(body.get('name'), body.get('password'))
-
-@route('POST', '/api/auth/login')
-def login(h, user, body):
-    return STORE.login(body.get('name'), body.get('password'))
-
-@route('POST', '/api/auth/logout', auth=True)
-def logout(h, user, body):
-    STORE.logout(h.token())
-    return {'ok': True}
-
-@route('GET', '/api/me', auth=True)
-def me(h, user, body):
+def require_user(user=Depends(optional_user)):
+    if not user:
+        raise HTTPException(401, {'error': '请先登录', 'code': 'auth.required', 'params': {}})
     return user
 
-@route('PATCH', '/api/me', auth=True)
-def update_me(h, user, body):
-    return STORE.update_user(user['id'], body)
 
-# ---- private schemes ----
-@route('GET', '/api/schemes', auth=True)
-def list_schemes(h, user, body):
-    return STORE.schemes(user['id'])
-
-@route('PUT', '/api/schemes/(?P<sid>[\w-]{1,64})', auth=True)
-def put_scheme(h, user, body, sid):
-    return STORE.save_scheme(user['id'], sid, body)
-
-@route('DELETE', '/api/schemes/(?P<sid>[\w-]{1,64})', auth=True)
-def delete_scheme(h, user, body, sid):
-    STORE.delete_scheme(user['id'], sid)
-    return {'ok': True}
-
-# ---- published works ----
-@route('GET', '/api/works')
-def list_works(h, user, body):
-    author = parse_qs(urlparse(h.path).query).get('author', [None])[0]
-    return STORE.works(user and user['id'], author)
-
-@route('GET', '/api/works/(?P<wid>[\w-]{1,64})')
-def get_work(h, user, body, wid):
-    return STORE.work(wid, user and user['id'])
-
-@route('POST', '/api/works', auth=True)
-def publish(h, user, body):
-    return STORE.publish(user['id'], body)
-
-@route('DELETE', '/api/works/(?P<wid>[\w-]{1,64})', auth=True)
-def delete_work(h, user, body, wid):
-    STORE.delete_work(user['id'], wid)
-    return {'ok': True}
-
-@route('PUT', '/api/works/(?P<wid>[\w-]{1,64})/rating', auth=True)
-def rate(h, user, body, wid):
-    return STORE.rate(user['id'], wid, body.get('stars'))
-
-# ---- 3MF export (needs the asset pack) ----
-@route('POST', '/api/plan')
-def plan(h, user, body):
-    if not exporter:
-        raise Invalid('服务器没有加载模型资产，暂时不能导出', code='validation.30')
-    return exporter.plan(body)
-
-@route('POST', '/api/export')
-def export(h, user, body):
-    if not exporter:
-        raise Invalid('服务器没有加载模型资产，暂时不能导出', code='validation.31')
-    content, _ = exporter.export_3mf(body)
-    return ('model/3mf', content, 'XGO-Duck-materials.3mf')
+async def read_json(request: Request):
+    if request.headers.get('content-type', '').split(';')[0] != 'application/json':
+        raise HTTPException(415, {'error': '需要 JSON 请求', 'code': 'request.content_type', 'params': {}})
+    try:
+        length = int(request.headers.get('content-length', '0'))
+    except ValueError:
+        raise HTTPException(400, {'error': '请求格式不对', 'code': 'request.format', 'params': {}})
+    if not 0 <= length <= MAX_BODY:
+        raise HTTPException(413, {'error': '请求太大', 'code': 'request.too_large', 'params': {}})
+    chunks, size = [], 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > MAX_BODY:
+            raise HTTPException(413, {'error': '请求太大', 'code': 'request.too_large', 'params': {}})
+        chunks.append(chunk)
+    try:
+        result = json.loads(b''.join(chunks) or b'{}')
+    except (ValueError, UnicodeError):
+        raise HTTPException(400, {'error': '请求不是有效的 JSON', 'code': 'request.json', 'params': {}})
+    if not isinstance(result, dict):
+        raise HTTPException(400, {'error': '请求格式不对', 'code': 'request.format', 'params': {}})
+    return result
 
 
-class Handler(SimpleHTTPRequestHandler):
-    static = False
+def valid_id(value):
+    if not ID.fullmatch(value):
+        raise HTTPException(404, {'error': '未知接口', 'code': 'request.not_found', 'params': {}})
+    return value
 
-    def end_headers(self):
-        self.send_header('Cache-Control', 'no-store')
-        self.send_header('X-Content-Type-Options', 'nosniff')
-        super().end_headers()
 
-    def log_message(self, fmt, *args):
-        if os.environ.get('DUCK_QUIET') != '1':
-            super().log_message(fmt, *args)
+class PublicAssets(StaticFiles):
+    async def get_response(self, path, scope):
+        if path not in {'model.json', 'catalog.json', 'geometry.bin', 'export-schema.json'}:
+            raise HTTPException(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
+        return await super().get_response(path, scope)
 
-    def token(self):
-        value = self.headers.get('Authorization', '')
-        return value[7:].strip() if value.startswith('Bearer ') else None
 
-    def reply(self, status, data, content_type='application/json; charset=utf-8', filename=None):
-        if not isinstance(data, bytes):
-            data = json.dumps(data, ensure_ascii=False).encode()
-        self.send_response(status)
-        self.send_header('Content-Type', content_type)
-        self.send_header('Content-Length', str(len(data)))
-        if filename:
-            self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
-        self.end_headers()
-        self.wfile.write(data)
+def create_app(database_url=None, static=None, exports=None):
+    @asynccontextmanager
+    async def lifespan(app):
+        try:
+            import exporter
+        except (OSError, ValueError, AssertionError):
+            exporter = None
+        app.state.exporter = exporter
+        app.state.store = Store(database_url=database_url,
+            part_ids=[p['id'] for p in exporter.MODEL['parts']] if exporter else None)
+        app.state.exports = exports or ExportManager(
+            workers=int(os.environ.get('DUCK_EXPORT_WORKERS', '1')),
+            queue_size=int(os.environ.get('DUCK_EXPORT_QUEUE', '2')))
+        try:
+            # A mode switch must not silently present an empty site over existing local accounts.
+            legacy = Path(os.environ.get('DUCK_DB', ROOT / 'data' / 'doodleduck.db')).resolve()
+            if app.state.store.engine.dialect.name == 'mysql' and legacy.is_file():
+                with sqlite3.connect(legacy.as_uri() + '?mode=ro', uri=True) as conn:
+                    old_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+                with app.state.store.engine.connect() as conn:
+                    new_users = conn.scalar(select(func.count()).select_from(users))
+                if old_users and not new_users:
+                    raise RuntimeError('Existing SQLite accounts require migrate_database.py before MySQL startup')
+            yield
+        finally:
+            await app.state.exports.close()
+            app.state.store.close()
 
-    def api(self, method):
-        path = urlparse(self.path).path
-        for m, pattern, auth, fn in ROUTES:
-            match = pattern.match(path)
-            if m != method or not match:
-                continue
-            user = STORE.user_for(self.token())
-            if auth and not user:
-                return self.reply(401, {'error': '请先登录', 'code': 'auth.required', 'params': {}})
-            body = {}
-            if method in ('POST', 'PUT', 'PATCH'):
-                if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
-                    return self.reply(415, {'error': '需要 JSON 请求', 'code': 'request.content_type', 'params': {}})
-                length = int(self.headers.get('Content-Length', '0') or 0)
-                if not 0 <= length <= MAX_BODY:
-                    return self.reply(413, {'error': '请求太大', 'code': 'request.too_large', 'params': {}})
-                try:
-                    body = json.loads(self.rfile.read(length) or b'{}')
-                except ValueError:
-                    return self.reply(400, {'error': '请求不是有效的 JSON', 'code': 'request.json', 'params': {}})
-                if not isinstance(body, dict):
-                    return self.reply(400, {'error': '请求格式不对', 'code': 'request.format', 'params': {}})
-            try:
-                result = fn(self, user, body, **match.groupdict())
-            except (Invalid, ValueError) as exc:
-                return self.reply(422, error_payload(exc))
-            except Exception:  # noqa: BLE001
-                traceback.print_exc()
-                return self.reply(500, {'error': '服务器出错了，请查看服务日志', 'code': 'server.failed', 'params': {}})
-            if isinstance(result, tuple):
-                return self.reply(200, result[1], result[0], result[2])
-            return self.reply(200, result)
-        return self.reply(404, {'error': '未知接口', 'code': 'request.not_found', 'params': {}})
+    app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
-    def do_GET(self):
-        if self.path.startswith('/api/'):
-            return self.api('GET')
-        if not self.static:
-            return self.reply(404, {'error': '静态文件由前端服务提供', 'code': 'request.static', 'params': {}})
-        if self.path.startswith('/assets/'):
-            name = urlparse(self.path).path[len('/assets/'):]
-            target = (ASSETS / name).resolve()
-            if ASSETS.resolve() not in target.parents or not target.is_file():
-                return self.reply(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
-            data = target.read_bytes()
-            kind = 'application/json' if name.endswith('.json') else 'application/octet-stream'
-            return self.reply(200, data, kind)
-        super().do_GET()
+    @app.middleware('http')
+    async def response_headers(request, call_next):
+        response = await call_next(request)
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
 
-    def do_POST(self):
-        self.api('POST')
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request, exc):
+        status = 404 if exc.status_code == 405 else exc.status_code
+        detail={'error':'未知接口','code':'request.not_found','params':{}} if status==404 else exc.detail
+        body=detail if isinstance(detail,dict) else {'error':detail,'code':'request_failed','params':{}}
+        return JSONResponse(body, status_code=status, headers=exc.headers)
 
-    def do_PUT(self):
-        self.api('PUT')
+    @app.exception_handler(Invalid)
+    @app.exception_handler(ValueError)
+    async def invalid_error(request, exc):
+        return JSONResponse(error_payload(exc), status_code=422)
 
-    def do_PATCH(self):
-        self.api('PATCH')
+    @app.exception_handler(ExportBusy)
+    async def export_busy(request, exc):
+        return JSONResponse({'error':str(exc),'code':'export.busy','params':{}}, status_code=503, headers={'Retry-After': '2'})
 
-    def do_DELETE(self):
-        self.api('DELETE')
+    @app.exception_handler(Exception)
+    async def unexpected_error(request, exc):
+        logging.getLogger(__name__).error('Unhandled API failure: %s', type(exc).__name__)
+        return JSONResponse({'error':'服务器出错了，请查看服务日志','code':'server.failed','params':{}}, status_code=500,
+            headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+
+    @app.get('/api/health')
+    def health(request: Request):
+        with request.app.state.store.engine.connect() as conn:
+            conn.execute(text('SELECT 1'))
+        e = request.app.state.exporter
+        return {'version': VERSION, 'export': bool(e), 'source_sha256': e.MODEL['source_sha256'] if e else None}
+
+    @app.get('/api/site')
+    def site():
+        return {'publicUrl': os.environ.get('DUCK_PUBLIC_URL', '')}
+
+    @app.get('/api/catalog')
+    def catalog(request: Request):
+        e = request.app.state.exporter
+        if not e:
+            raise Invalid('耗材色表未加载', code='validation.29')
+        return e.CATALOG
+
+    @app.post('/api/auth/register')
+    def register(request: Request, body=Depends(read_json)):
+        return request.app.state.store.register(body.get('name'), body.get('password'))
+
+    @app.post('/api/auth/login')
+    def login(request: Request, body=Depends(read_json)):
+        return request.app.state.store.login(body.get('name'), body.get('password'))
+
+    @app.post('/api/auth/logout')
+    def logout(request: Request, user=Depends(require_user), body=Depends(read_json)):
+        request.app.state.store.logout(token(request))
+        return {'ok': True}
+
+    @app.get('/api/me')
+    def me(user=Depends(require_user)):
+        return user
+
+    @app.patch('/api/me')
+    def update_me(request: Request, user=Depends(require_user), body=Depends(read_json)):
+        return request.app.state.store.update_user(user['id'], body)
+
+    @app.get('/api/schemes')
+    def list_schemes(request: Request, user=Depends(require_user)):
+        return request.app.state.store.schemes(user['id'])
+
+    @app.put('/api/schemes/{sid}')
+    def put_scheme(sid: str, request: Request, user=Depends(require_user), body=Depends(read_json)):
+        return request.app.state.store.save_scheme(user['id'], valid_id(sid), body)
+
+    @app.delete('/api/schemes/{sid}')
+    def delete_scheme(sid: str, request: Request, user=Depends(require_user)):
+        request.app.state.store.delete_scheme(user['id'], valid_id(sid))
+        return {'ok': True}
+
+    @app.get('/api/works')
+    def list_works(request: Request, user=Depends(optional_user)):
+        try:
+            limit = int(request.query_params.get('limit', '200'))
+            offset = int(request.query_params.get('offset', '0'))
+        except ValueError:
+            raise Invalid('分页范围不对', code='request.pagination')
+        return request.app.state.store.works(user and user['id'], request.query_params.get('author'), limit, offset)
+
+    @app.get('/api/works/{wid}')
+    def get_work(wid: str, request: Request, user=Depends(optional_user)):
+        return request.app.state.store.work(valid_id(wid), user and user['id'])
+
+    @app.post('/api/works')
+    def publish(request: Request, user=Depends(require_user), body=Depends(read_json)):
+        return request.app.state.store.publish(user['id'], body)
+
+    @app.delete('/api/works/{wid}')
+    def delete_work(wid: str, request: Request, user=Depends(require_user)):
+        request.app.state.store.delete_work(user['id'], valid_id(wid))
+        return {'ok': True}
+
+    @app.put('/api/works/{wid}/rating')
+    def rate(wid: str, request: Request, user=Depends(require_user), body=Depends(read_json)):
+        return request.app.state.store.rate(user['id'], valid_id(wid), body.get('stars'))
+
+    def exporter_for(request):
+        e = request.app.state.exporter
+        if not e:
+            raise Invalid('服务器没有加载模型资产，暂时不能导出', code='validation.31')
+        return e
+
+    @app.post('/api/plan')
+    def plan(request: Request, body=Depends(read_json)):
+        return exporter_for(request).plan(body)
+
+    @app.post('/api/export')
+    async def export(request: Request, body=Depends(read_json)):
+        # Keep the existing blocking download contract; no job IDs or UI changes required.
+        exporter_for(request).plan(body)
+        content, _ = await request.app.state.exports.run(body)
+        return Response(content, media_type='model/3mf',
+            headers={'Content-Disposition': 'attachment; filename="XGO-Duck-materials.3mf"'})
+
+    @app.api_route('/api/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'])
+    def missing_api(path: str):
+        raise HTTPException(404, {'error': '未知接口', 'code': 'request.not_found', 'params': {}})
+
+    if static:
+        app.mount('/assets', PublicAssets(directory=str(ASSETS), check_dir=False))
+        app.mount('/', StaticFiles(directory=static, html=True))
+    return app
+
+
+app = create_app()
+
+
+def open_when_ready(url):
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        try:
+            with urlopen(url.rstrip('/') + '/api/health', timeout=1) as response:
+                if response.status == 200:
+                    webbrowser.open(url)
+                    return
+        except (OSError, URLError):
+            pass
+        time.sleep(0.05)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='DoodleDuck API server')
+    parser = argparse.ArgumentParser(description='DoodleDuck FastAPI server')
     parser.add_argument('--host', default=os.environ.get('HOST', '127.0.0.1'))
-    parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', 8876)))
-    parser.add_argument('--static', help='also serve this frontend directory (development)')
-    parser.add_argument('--open', action='store_true', help='open the browser (development)')
+    parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '8876')))
+    parser.add_argument('--static', help='serve the frontend directory too (lightweight deployment)')
+    parser.add_argument('--open', action='store_true')
     args = parser.parse_args()
-    handler = type('DevHandler', (Handler,), {'static': bool(args.static)})
-    server = ThreadingHTTPServer((args.host, args.port), partial(handler, directory=args.static or str(ROOT)))
-    url = f'http://{"127.0.0.1" if args.host in ("0.0.0.0", "") else args.host}:{args.port}/'
-    print(('涂鸭 DoodleDuck：' if args.static else '涂鸭 API：') + url, flush=True)
     if args.open:
-        webbrowser.open(url)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+        host = '127.0.0.1' if args.host == '0.0.0.0' else args.host
+        if ':' in host:
+            host = '[' + host + ']'
+        threading.Thread(target=open_when_ready, args=(f'http://{host}:{args.port}/',), daemon=True).start()
+    # One API process owns the export limit. Scale export processes with DUCK_EXPORT_WORKERS.
+    uvicorn.run(create_app(static=args.static), host=args.host, port=args.port, workers=1,
+        limit_concurrency=int(os.environ.get('DUCK_HTTP_LIMIT', '64')), timeout_keep_alive=5,
+        timeout_graceful_shutdown=60, access_log=os.environ.get('DUCK_QUIET') != '1')
 
 
 if __name__ == '__main__':

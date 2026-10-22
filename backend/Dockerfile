@@ -1,8 +1,10 @@
-# DoodleDuck API: Python standard library only, SQLite on a volume.
+# One Uvicorn API process owns a bounded export process pool.
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     HOST=0.0.0.0 PORT=8876 DUCK_DB=/data/doodleduck.db DUCK_ASSETS=/assets
 WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 COPY *.py ./
 RUN useradd --system --uid 10001 duck && mkdir -p /data && chown duck /data
 USER duck

@@ -10,4 +10,4 @@ class LocalizedErrors(unittest.TestCase):
             for action,code in [(lambda:store.login('unknown','wrong'),'auth.invalid_credentials'),(lambda:store.register('abc','x'),'auth.password_short')]:
                 with self.assertRaises(Invalid) as caught:action()
                 self.assertEqual(getattr(caught.exception,'code',None),code)
-            store.db.close()
+            store.close()

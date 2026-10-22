@@ -60,3 +60,9 @@ test('stored notification descriptors translate again without changing user para
   assert.equal(String(saved),'Saved “青色 <作品>”');
   setLocale('fr');assert.equal(String(saved),translate('fr','common.saved',{name:'青色 <作品>'}));
 });
+
+test('new backend queue and pagination errors have localized messages',async()=>{
+  const {errorText,setLocale}=await import('../frontend/shared/i18n.mjs');
+  setLocale('en');assert.match(errorText({code:'export.busy'}),/export.*busy/i);
+  assert.match(errorText({code:'request.pagination'}),/page/i);
+});

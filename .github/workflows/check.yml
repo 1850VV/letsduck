@@ -7,17 +7,39 @@ permissions:
 jobs:
   source:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-test-password
+          MYSQL_ROOT_HOST: '%'
+          MYSQL_DATABASE: duck_test_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pci-test-password --silent"
+          --health-interval=5s --health-timeout=3s --health-retries=30
+    env:
+      DUCK_TEST_DATABASE_URL: mysql+pymysql://root:ci-test-password@127.0.0.1:3306/duck_test_ci?charset=utf8mb4
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install pinned backend and test dependencies
+        run: python3 -m pip install -r requirements-dev.txt
       - name: Check publication boundary
         run: python3 scripts/publication_audit.py
       - name: Test local asset importer and the account store with synthetic fixtures
         run: |
           python3 -m unittest discover -s tests -p test_local_assets.py -v
           python3 -m unittest discover -s tests -p test_store.py -v
+          python3 -m unittest discover -s tests -p test_api.py -v
+          python3 -m unittest discover -s tests -p test_store_scaling.py -v
+          python3 -m unittest discover -s tests -p test_export_queue.py -v
+          python3 -m unittest discover -s tests -p test_migration.py -v
+          python3 -m unittest discover -s tests -p test_startup.py -v
+          python3 -m unittest discover -s tests -p test_mysql.py -v
       - name: Check Python and browser module syntax
         run: |
-          python3 -m py_compile backend/server.py backend/store.py backend/exporter.py run.py
+          python3 -m compileall -q backend run.py
           for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs; do
             node --check "$file"
           done
