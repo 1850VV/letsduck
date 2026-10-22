@@ -103,7 +103,17 @@ docker compose up -d --build
 打开 `http://<服务器地址>:8080/`（`.env` 里 `DUCK_PORT` / `DUCK_BIND` 可改）。
 
 - `frontend`（nginx）提供静态页面、gzip 压缩和只读的 `/assets/`（不对外提供源 3MF），并把 `/api/` 转发给 `backend`；`backend` 只在内部网络，MySQL 不映射宿主机端口。
-- 本身不带 HTTPS：放在 Caddy 或 nginx + 证书的反向代理后面。HTTPS 就绪后在 `.env` 设置 `DUCK_PUBLIC_URL=https://你的域名`，再 `docker compose up -d`，复制链接和海报二维码才会生成（指向 `<DUCK_PUBLIC_URL>/gallery/#d/<作品ID>`）。未配置、非 HTTPS、localhost 或 IP 地址都不会生成分享链接。部署后请用另一台手机扫一下海报核对。
+- **HTTPS（自动证书）**：把域名和 `www.` 都解析到服务器、放行 80 和 443 端口，然后在 `.env` 里设置：
+
+  ```dotenv
+  DUCK_DOMAIN=你的域名
+  DUCK_PUBLIC_URL=https://你的域名
+  DUCK_BIND=127.0.0.1
+  DUCK_PORT=8080
+  COMPOSE_FILE=docker-compose.yml:docker-compose.https.yml
+  ```
+
+  再 `docker compose up -d`。`docker-compose.https.yml` 加一个 Caddy 容器，自动申请和续期 Let's Encrypt 证书，HTTP 跳转 HTTPS，`www.` 跳转到主域名。设置 `DUCK_PUBLIC_URL` 后，复制链接和海报二维码才会生成（指向 `<DUCK_PUBLIC_URL>/gallery/#d/<作品ID>`）；未配置、非 HTTPS、localhost 或 IP 地址都不会生成分享链接。也可以改用你已有的反向代理。
 - 备份：`docker compose exec -T mysql sh -c 'mysqldump --single-transaction -uduck -p"$MYSQL_PASSWORD" doodleduck' > backup.sql`。从旧的 SQLite 部署升级、回退和外部 MySQL 见 [部署与迁移说明](docs/deployment.md)。
 
 ### 小服务器建议（1 核 2 GB）

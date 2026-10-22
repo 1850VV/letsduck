@@ -1,0 +1,23 @@
+# HTTPS with automatic certificates: add to docker-compose.yml once DUCK_DOMAIN points at this server.
+#   .env: DUCK_DOMAIN=example.com  DUCK_PUBLIC_URL=https://example.com  DUCK_BIND=127.0.0.1  DUCK_PORT=8080
+#         COMPOSE_FILE=docker-compose.yml:docker-compose.https.yml   (so plain `docker compose ...` includes this file)
+#   docker compose up -d
+# Caddy takes ports 80 and 443; nginx then listens only on 127.0.0.1 (DUCK_BIND) behind it.
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on: [frontend]
+    environment:
+      DUCK_DOMAIN: "${DUCK_DOMAIN:?Set DUCK_DOMAIN in .env}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data      # certificates and keys: keep this volume
+      - caddy-config:/config
+volumes:
+  caddy-data:
+  caddy-config:
