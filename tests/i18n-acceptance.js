@@ -11,7 +11,7 @@ async page=>{
   await page.setViewportSize({width:1440,height:950});
   const choose=async code=>{if(await page.locator('#language-menu').isHidden())await page.locator('#language-trigger').click();await page.locator('[data-locale="'+code+'"]').click();};
   await choose('en');await page.locator('[data-start="blank"]').click();await page.locator('[data-step="2"]').click();
-  await page.locator('[data-zone="head-shell"]').click();await page.locator('[data-lock="head-shell"]').click();
+  await page.locator('[data-zone="head-shell"]').click();if(!(await page.evaluate(()=>studioProto.state.locks.length)))await page.locator('[data-lock="head-shell"]').click();
   await page.evaluate(()=>window._originalLocaleCanvas=studioProto.view.canvas);
   const baseline=await page.evaluate(()=>studioProto.state);
   const codes=await page.evaluate(async()=>(await import('/shared/i18n.mjs')).LOCALES.map(x=>x.code));

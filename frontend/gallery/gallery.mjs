@@ -1,4 +1,4 @@
-import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, formatDate, relativeTime } from '../shared/i18n.mjs';
+import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, formatDate, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 配色广场: official themes plus every work published from the studio, with ratings, remix family
 // trees and the shared poster dialog. Works, ratings and 我的方案 come from the API.
 import { loadDuck, createDuckView } from '../shared/duck-view.mjs';
@@ -162,16 +162,16 @@ function missingDetail(unavailable = false) {
   if ($('#missing-retry')) $('#missing-retry').onclick = refresh;
 }
 async function rate(d, stars) {
-  try {await requireLogin(_t("text.0446"));} catch {return;}
-  if (d.mine) {detail(d.id);return toast(_t("text.0419"));}
+  try {await requireLogin(_message("text.0446"));} catch {return;}
+  if (d.mine) {detail(d.id);return toast(_message("text.0419"));}
   try {const w = await api('PUT', '/works/' + encodeURIComponent(d.id) + '/rating', { stars });Object.assign(d, { rating: w.rating.average, count: w.rating.count, mineVote: w.rating.mine });
-    $('#stats').innerHTML = statsHTML(d);$('#rate-slot').innerHTML = rateUI(d);toast(_t("text.0447", { v0: stars }));}
-  catch (err) {toast(_t("text.0448", { v0: err.message }));}
+    $('#stats').innerHTML = statsHTML(d);$('#rate-slot').innerHTML = rateUI(d);toast(_message("text.0447", { v0: stars }));}
+  catch (err) {toast(_message("text.0448", { v0: ()=>err.message }));}
 }
 async function deleteWork(d) {
   if (confirmDelete !== d.id) {confirmDelete = d.id;$('#rate-slot').innerHTML = rateUI(d);return;}
-  try {await api('DELETE', '/works/' + encodeURIComponent(d.id));} catch (err) {return toast(_t("text.0449", { v0: err.message }));}
-  confirmDelete = null;detailId = null;location.hash = returnHash;await refresh();toast(_t("text.0094", { v0: d.title }));
+  try {await api('DELETE', '/works/' + encodeURIComponent(d.id));} catch (err) {return toast(_message("text.0449", { v0: ()=>err.message }));}
+  confirmDelete = null;detailId = null;location.hash = returnHash;await refresh();toast(_message("text.0094", { v0: d.title }));
 }
 $('#detail-body').addEventListener('click', (e) => {
   const d = byId(detailId);if (!d) return;
@@ -226,7 +226,7 @@ $('#paste-input').oninput = (e) => {
   try {const d = decodeLook(parts, products, code),name = d.name || _t("text.0450");out.innerHTML = `<img src="${view.snapshot(320, 240, { colors: d.colors, angle: 'hero' }).toDataURL('image/png')}" alt=""><b>${esc(name)}</b><a class="primary" href="../#look=${code}">${_t("text.0451")}</a>`;}
   catch (err) {out.innerHTML = `<small class="warn">${esc(err.message)}</small>`;}
 };
-let toastTimer;function toast(m) {const t = $('#toast');t.textContent = m;t.classList.add('show');clearTimeout(toastTimer);toastTimer = setTimeout(() => t.classList.remove('show'), 3200);}
+let toastTimer,lastToast;function toast(m) {lastToast=m;const t = $('#toast');t.textContent = typeof m==='function'?m():m;t.classList.add('show');clearTimeout(toastTimer);toastTimer = setTimeout(() => t.classList.remove('show'), 3200);}
 const accountUI = mountAccount($('#profile-slot'), { toast });
 if (await initAccount()) accountUI.refresh();
 onAccount(refresh);
@@ -236,5 +236,5 @@ window.gallery = { get designs() {return designs;} };
 _onLocale(() => {
   const scroll = scrollY,detailScroll = $('#detail').scrollTop,spin = view.turntable;
   route(true, { preserveView: true });if (detailId) {view.setTurntable(spin);$('#spin')?.setAttribute('aria-pressed', String(spin));$('#detail').scrollTop = detailScroll;}
-  scrollTo(0, scroll);bindTranslations();
+  scrollTo(0, scroll);bindTranslations();if(lastToast)$('#toast').textContent=typeof lastToast==='function'?lastToast():lastToast;
 });

@@ -1,4 +1,4 @@
-import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
+import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 涂装台: one stage, three steps (style → refine → showcase), plus schemes, A/B compare, group replace, close-up, arrange, colour finder, plates check,
 // export review and publish ceremony. Colour rules are imported from the shipping modules.
 import { loadDuck, createDuckView, renderExportThumbnails } from '../shared/duck-view.mjs';
@@ -30,7 +30,7 @@ let DEMO_BRANDS = [
 { id: 'sunlu', name: 'SUNLU', series: 'PLA', colors: [[_t("text.0025"), '#F7F7F5'], [_t("text.0026"), '#161616'], [_t("text.0027"), '#B7B9BC'], [_t("text.0028"), '#E0242B'], [_t("text.0029"), '#F68A1E'], [_t("text.0030"), '#FBD11B'], [_t("text.0031"), '#79C043'], [_t("text.0032"), '#1E9FD0'], [_t("text.0033"), '#2350B4'], [_t("text.0034"), '#7A3FB0'], [_t("text.0035"), '#F27AA6'], [_t("text.0036"), '#DDE6EA']] }];
 
 DEMO_BRANDS[1].finish = 'matte';
-for (const b of DEMO_BRANDS) b.colors.forEach(([n, hex], i) => products.set(`demo-${b.id}-${i}`, { id: `demo-${b.id}-${i}`, brand: b.name, series: b.series, material: 'PLA', get colorCode() {return _t("text.0037");}, get name() {return _label(n);}, hex, demo: true, finish: b.id === 'sunlu' && i === 11 ? 'translucent' : b.finish }));
+for (const b of DEMO_BRANDS) b.colors.forEach(([n, hex], i) => products.set(`demo-${b.id}-${i}`, { id: `demo-${b.id}-${i}`, brand: b.name, series: b.series, material: 'PLA', get colorCode() {return _t("text.0037");}, get name() {return DEMO_BRANDS.find((x) => x.id === b.id).colors[i][0];}, hex, demo: true, finish: b.id === 'sunlu' && i === 11 ? 'translucent' : b.finish }));
 let BRANDS = [{ id: 'bambu', get short() {return _t("text.0038");} }, ...DEMO_BRANDS.map((b) => ({ id: b.id, short: b.name, demo: true }))];
 const FIN_LABEL = { get basic() {return _t("text.0039");}, get matte() {return _t("text.0040");}, get silk() {return _t("text.0041");}, get translucent() {return _t("text.0042");}, get tpu() {return _t("text.0043");} };
 // A colour on a part is a "key": a product id, or 'hex:#RRGGBB[|finish]' for a free colour with no filament yet.
@@ -49,12 +49,12 @@ const clone = (x) => structuredClone(x),same = (a, b) => JSON.stringify(a.assign
 // ---------- local state: the draft always lives in this browser; schemes too until you sign in ----------
 const KEY = 'dd-studio',read = (k) => {try {return localStorage.getItem(k) ?? localStorage.getItem(k.replace('dd-studio', 'proto-studio-v2'));} catch {return null;}};
 let saved = {};try {saved = JSON.parse(read(KEY)) || {};} catch {}
-let defaultName=!saved.draft?.name;
+let defaultName = !saved.draft?.name;
 let design = saved.draft?.design || clone(ORIGINAL),name = saved.draft?.name || _t("text.0047"),provenance = saved.draft?.provenance || null;
 let schemes = Array.isArray(saved.schemes) ? saved.schemes : [],owner = saved.owner || null,activeId = saved.draft?.activeId || null,recent = saved.recent || [],locks = new Set(saved.locks || []),voiceSalt = saved.draft?.voiceSalt || 0;
 const baseline = () => schemes.find((s) => s.id === activeId)?.design || ORIGINAL;
 const dirty = () => !same(design, baseline());
-function persist() {try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, voiceSalt }, schemes, owner, recent, locks: [...locks] }));} catch {toast(_t("text.0048"));}}
+function persist() {try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, voiceSalt }, schemes, owner, recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}}
 
 let step = 1,stepsDone = new Set(),slots = slotsFromDesign(products, design.assignments, themeSlots(products, THEMES[0])),recipe = '经典',slotLocks = {},openSlot = null,activeTheme = null,styleTab = 'themes',showTab = 'move';
 let sel = { zone: 'head-shell', scope: 'all', part: null, mirror: true },tool = 'select',brush = null,search = '',replaceFrom = null,finder = '#FF8A3D',takeFrom = 'original',source = 'bambu',dockTab = 'filament',freeFinish = 'basic',freeAuto = true,pickToFree = false,brushMirror = true,brushKind = 'PLA',brushHover = null,toolBefore = 'select';
@@ -77,19 +77,19 @@ const keyOf = (id) => design.assignments[id] || 'hex:' + design.colors[id].toUpp
 // Paints a filament (kept to the part's material) or a free colour (any part; filament chosen later).
 function paint(ids, key, label) {
   const ok = ids.filter((id) => !locks.has(id) && fits(id, key)),skipped = ids.length - ok.length;
-  if (!ok.length) {toast(skipped ? _t("text.0049") : _t("text.0050"));return;}
+  if (!ok.length) {toast(() => skipped ? _message("text.0049") : _message("text.0050"));return;}
   const hex = keyHex(key).toUpperCase(),fin = hexFinish(key),next = clone(design);next.finishes = { ...(next.finishes || {}) };for (const id of ok) {next.colors[id] = hex;next.assignments[id] = isHex(key) ? null : key;if (fin) next.finishes[id] = fin;else delete next.finishes[id];}remember(key);
-  commit(next, _t("text.0051", { v0: label || _t("text.0052"), v1: keyName(key), v2: ok.length, v3: skipped ? _t("text.0053", { v0: skipped }) : '' }));
+  commit(next, _message("text.0051", { v0: label || _message("text.0052"), v1: ()=>keyName(key), v2: ok.length, v3: skipped ? _message("text.0053", { v0: skipped }) : '' }));
 }
 function applyQuick(label) {const d = quickDesign(parts, products, slots, recipe),next = clone(design);for (const id of Object.keys(d.colors)) if (!locks.has(id)) {next.colors[id] = d.colors[id];next.assignments[id] = d.assignments[id];}stepsDone.add(1);commit(next, label);}
 function restore(h, label) {design = h.design;view.setColors(design.colors);persist();renderAll(true);toast(label);}
-$('#undo').onclick = () => {const h = undo.pop();if (!h) return;redo.push({ design: clone(design), label: h.label });restore(h, _t("text.0054", { v0: h.label || _t("text.0055") }));};
-$('#redo').onclick = () => {const h = redo.pop();if (!h) return;undo.push({ design: clone(design), label: h.label });restore(h, _t("text.0056"));};
+$('#undo').onclick = () => {const h = undo.pop();if (!h) return;redo.push({ design: clone(design), label: h.label });restore(h, _message("text.0054", { v0: h.label || _message("text.0055") }));};
+$('#redo').onclick = () => {const h = redo.pop();if (!h) return;undo.push({ design: clone(design), label: h.label });restore(h, _message("text.0056"));};
 
 // ---------- schemes (named saves, max 30, private). Signed in: kept on the server, this browser keeps a cache. ----------
 const schemeBody = (s) => ({ name: s.name, design: s.design, provenance: s.provenance, voiceSalt: s.voiceSalt || 0 });
-function pushScheme(s) {if (account.user) api('PUT', '/schemes/' + encodeURIComponent(s.id), schemeBody(s)).then((r) => {s.updated = r.updated;persist();}).catch((err) => toast(_t("text.0057", { v0: err.message })));}
-function dropScheme(id) {if (account.user) api('DELETE', '/schemes/' + encodeURIComponent(id)).catch((err) => toast(_t("text.0058", { v0: err.message })));}
+function pushScheme(s) {if (account.user) api('PUT', '/schemes/' + encodeURIComponent(s.id), schemeBody(s)).then((r) => {s.updated = r.updated;persist();}).catch((err) => toast(_message("text.0057", { v0: ()=>err.message })));}
+function dropScheme(id) {if (account.user) api('DELETE', '/schemes/' + encodeURIComponent(id)).catch((err) => toast(_message("text.0058", { v0: ()=>err.message })));}
 // On sign-in the account's schemes replace the local list. The local cache remembers whose it is (owner):
 // only schemes made as a guest are uploaded, never a cache left behind by another account.
 async function syncSchemes() {
@@ -98,21 +98,21 @@ async function syncSchemes() {
     const remote = await api('GET', '/schemes'),ids = new Set(remote.map((s) => s.id)),local = schemes.filter((s) => !ids.has(s.id) && (!owner || owner === account.user.id));let up = 0;
     for (const s of local) {try {remote.push(await api('PUT', '/schemes/' + encodeURIComponent(s.id), schemeBody(s)));up++;} catch (err) {if (err.code !== 'schemes.not_owner') remote.push(s);}} // keep it to retry later, unless it is another account's
     schemes = remote.sort((a, b) => b.updated - a.updated);owner = account.user.id;if (activeId && !schemes.some((s) => s.id === activeId)) activeId = null;persist();renderAll();
-    if (up) toast(_t("text.0059", { v0: up }));
-  } catch (err) {toast(_t("text.0060", { v0: err.message }));}
+    if (up) toast(_message("text.0059", { v0: up }));
+  } catch (err) {toast(_message("text.0060", { v0: ()=>err.message }));}
 }
 const savedWhere = () => account.user ? '' : _t("text.0061");
 const newId = () => 's-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const when = value => {const minutes=Math.round((Date.now()-value)/60000);return minutes<1?_t('text.0062'):minutes<60?relativeTime(-minutes,'minute'):minutes<1440?relativeTime(-Math.round(minutes/60),'hour'):relativeTime(-Math.round(minutes/1440),'day');};
+const when = (value) => {const minutes = Math.round((Date.now() - value) / 60000);return minutes < 1 ? _t('text.0062') : minutes < 60 ? relativeTime(-minutes, 'minute') : minutes < 1440 ? relativeTime(-Math.round(minutes / 60), 'hour') : relativeTime(-Math.round(minutes / 1440), 'day');};
 function saveScheme(asNew) {
   let s;if (!asNew && activeId && (s = schemes.find((s) => s.id === activeId))) Object.assign(s, { name, design: clone(design), provenance, voiceSalt, updated: Date.now() });else
-  {if (schemes.length >= 30) return toast(_t("text.0066"));s = { id: newId(), name: asNew && activeId ? _t("text.0067", { v0: name }) : name, design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };schemes.unshift(s);activeId = s.id;name = s.name;}
-  persist();pushScheme(s);renderAll();toast(_t("text.0068", { v0: name, v1: savedWhere() }));
+  {if (schemes.length >= 30) return toast(_message("text.0066"));s = { id: newId(), name: asNew && activeId ? _t("text.0067", { v0: name }) : name, design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };schemes.unshift(s);activeId = s.id;name = s.name;}
+  persist();pushScheme(s);renderAll();toast(_message("text.0068", { v0: name, v1: savedWhere() }));
 }
 function openScheme(id) {
   const s = id === 'original' ? { get name() {return _t("text.0069");}, design: ORIGINAL, provenance: null } : schemes.find((s) => s.id === id);if (!s) return;
   undo.push({ design: clone(design), get label() {return _t("text.0070");} });design = clone(s.design);name = id === 'original' ? _t("text.0047") : s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = id === 'original' ? null : id;
-  slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);pendingOpen = null;menuOpen = false;persist();renderAll();toast(_t("text.0071", { v0: s.name }));
+  slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);pendingOpen = null;menuOpen = false;persist();renderAll();toast(_message("text.0071", { v0: ()=>s.name }));
 }
 function renderMenu() {
   const m = $('#scheme-menu');m.hidden = !menuOpen;$('#scheme-btn').setAttribute('aria-expanded', menuOpen);if (!menuOpen) return;
@@ -127,13 +127,13 @@ $('#scheme-btn').onclick = (e) => {e.stopPropagation();menuOpen = !menuOpen;pend
 document.addEventListener('click', (e) => {if (menuOpen && !e.target.closest('#scheme')) {menuOpen = false;renderMenu();}if (!e.target.closest('.compare')) $('#cmp-menu').hidden = true;});
 $('#scheme-menu').addEventListener('click', (e) => {
   const t = e.target;
-  if (t.closest('#sm-import')) {const v = $('#sm-code').value;if (!v.trim()) return $('#sm-code').focus();try {const n = importLook(v);menuOpen = false;undo.length = 0;step = 2;renderAll();toast(_t("text.0093", { v0: n }));} catch (error) {toast(error.message);}return;}
+  if (t.closest('#sm-import')) {const v = $('#sm-code').value;if (!v.trim()) return $('#sm-code').focus();try {const n = importLook(v);menuOpen = false;undo.length = 0;step = 2;renderAll();toast(_message("text.0093", { v0: n }));} catch (error) {toast(error.message);}return;}
   if (t.closest('#sm-save')) return saveScheme(false);if (t.closest('#sm-saveas')) return saveScheme(true);
   // Rename in place (native prompt/confirm are unavailable in embedded browsers); delete is undoable instead of confirmed.
   if (t.closest('#sm-rename')) return;
   const rn = t.closest('[data-rename]');if (rn) {renamingId = rn.dataset.rename;renderMenu();const i = $('#sm-rename');i.focus();i.select();return;}
   const del = t.closest('[data-delete]');if (del) {const at = schemes.findIndex((s) => s.id === del.dataset.delete),s = schemes[at],wasActive = activeId === s.id;schemes = schemes.filter((x) => x !== s);if (wasActive) activeId = null;if (compareId === s.id) compareId = 'original';persist();dropScheme(s.id);renderAll();
-    return toast(_t("text.0094", { v0: s.name }), () => {schemes.splice(at, 0, s);if (wasActive) activeId = s.id;persist();pushScheme(s);renderAll();toast(_t("text.0095", { v0: s.name }));});}
+    return toast(_message("text.0094", { v0: s.name }), () => {schemes.splice(at, 0, s);if (wasActive) activeId = s.id;persist();pushScheme(s);renderAll();toast(_message("text.0095", { v0: ()=>s.name }));});}
   const cf = t.closest('[data-confirm]');if (cf) {const id = pendingOpen;if (cf.dataset.confirm === 'cancel') {pendingOpen = null;return renderMenu();}if (cf.dataset.confirm === 'save') saveScheme(false);return openScheme(id);}
   const op = t.closest('[data-open]');if (op) {const id = op.dataset.open;if (id === activeId || id === 'original' && !activeId && !dirty()) return;if (dirty()) {pendingOpen = id;return renderMenu();}return openScheme(id);}
 });
@@ -142,8 +142,8 @@ $('#scheme-menu').addEventListener('keydown', (e) => {
   if (e.target.id === 'sm-rename') {if (e.key === 'Enter') {e.preventDefault();finishRename(true);}if (e.key === 'Escape') {e.preventDefault();e.stopPropagation();finishRename(false);}}
 });
 $('#scheme-menu').addEventListener('focusout', (e) => {if (e.target.id === 'sm-rename') finishRename(true);});
-function finishRename(save) {const s = schemes.find((x) => x.id === renamingId),v = $('#sm-rename')?.value.trim();renamingId = null;if (save && s && v && v !== s.name) {s.name = v.slice(0, 40);if (s.id === activeId) name = s.name;persist();pushScheme(s);renderAll();toast(_t("text.0096", { v0: s.name }));} else renderMenu();}
-$('#scheme-menu').addEventListener('input', (e) => {if (e.target.id === 'sm-name') {defaultName=false;name = e.target.value.trim() || _t("text.0047");$('#scheme-name').textContent = name;persist();}});
+function finishRename(save) {const s = schemes.find((x) => x.id === renamingId),v = $('#sm-rename')?.value.trim();renamingId = null;if (save && s && v && v !== s.name) {s.name = v.slice(0, 40);if (s.id === activeId) name = s.name;persist();pushScheme(s);renderAll();toast(_message("text.0096", { v0: ()=>s.name }));} else renderMenu();}
+$('#scheme-menu').addEventListener('input', (e) => {if (e.target.id === 'sm-name') {defaultName = false;name = e.target.value.trim() || _t("text.0047");$('#scheme-name').textContent = name;persist();}});
 
 // ---------- compare (hold or side by side) ----------
 const compareTargets = () => [['original', _t("text.0069")], ...schemes.filter((s) => s.id !== activeId).map((s) => [s.id, s.name]), ...(activeId && dirty() ? [['saved', _t("text.0097")]] : [])];
@@ -195,19 +195,19 @@ let CLASSICS = [['original', _t("text.0117"), _t("text.0118"), ORIGINAL], ...[1,
 let DICE_STYLES = [['经典', _t("text.0120")], ['撞色', _t("text.0121")], ['双拼', _t("text.0122")], ['低调', _t("text.0123")]];
 // Dice cards are drawn like hextech cards: each slot keeps its style, can be locked, rerolled alone, or saved.
 let diceDraw = 0,diceSet = [],startId = null;
-function drawCard(i) {const [r, hint] = DICE_STYLES[i],sl = rollSlots(products, slots, r, { recipe: true }).slots,id = `dice-${++diceDraw}`,design = quickDesign(parts, products, sl, r);thumbCache.set(id, view.thumbnail(design.colors, 320, 240));return { id, name: r + ' #' + diceDraw, hint, recipe: r, design, locked: false };}
+function drawCard(i) {const [r, hint] = DICE_STYLES[i],sl = rollSlots(products, slots, r, { recipe: true }).slots,id = `dice-${++diceDraw}`,design = quickDesign(parts, products, sl, r);thumbCache.set(id, view.thumbnail(design.colors, 320, 240));const number = diceDraw;return { id, get name() {return _label(r) + ' #' + number;}, get hint() {return DICE_STYLES[i][1];}, recipe: r, design, locked: false };}
 function rollDice() {diceSet = DICE_STYLES.map((_, i) => drawCard(i));}
 function startOf(id) {
   if (id === 'blank') return { get name() {return _t("text.0124");}, design: BLANK };
-  const c = CLASSICS.find((x) => x[0] === id);if (c) return { name: c[1], design: c[3] };
-  const d = diceSet.find((x) => x.id === id);if (d) return { name: d.name, design: d.design };
+  const c = CLASSICS.find((x) => x[0] === id);if (c) return { get name() {return CLASSICS.find((x) => x[0] === id)[1];}, design: c[3] };
+  const d = diceSet.find((x) => x.id === id);if (d) return { get name() {return d.name;}, design: d.design };
   const sc = id.startsWith('scheme-') && schemes.find((x) => x.id === id.slice(7));if (sc) return { name: sc.name, design: sc.design, scheme: sc };
   return null;
 }
 // Everything fits one screen: a slim 白胚 strip, then three rows of four small cards. The model on the
 // left is the big preview (hover a card), so the cards only need to be recognisable.
 const startCard = (id, title, extra = '') => `<button class="mini" role="option" data-start="${id}" title="${_attr(esc(title))}"><img data-thumb="${id}" alt=""><span>${esc(title)}</span>${extra}</button>`;
-const diceCell = (d, i) => `<div class="dice-cell ${d.locked ? 'locked' : ''}" data-dice-cell="${i}"><button class="mini" role="option" data-start="${d.id}" title="${_attr(esc(_label(d.recipe) + ' · ' + _label(d.hint)))}"><img src="${thumbCache.get(d.id) || ''}" class="ready" alt=""><span>${esc(_label(d.recipe))}</span></button>
+const diceCell = (d, i) => `<div class="dice-cell ${d.locked ? 'locked' : ''}" data-dice-cell="${i}"><button class="mini" role="option" data-start="${d.id}" title="${_attr(esc(_label(d.recipe) + ' · ' + d.hint))}"><img src="${thumbCache.get(d.id) || ''}" class="ready" alt=""><span>${esc(_label(d.recipe))}</span></button>
   <div class="dice-ctl"><button data-dice-lock="${i}" aria-pressed="${d.locked}" title="${_attr(d.locked ? _t("text.0112") : _t("text.0125"))}">${d.locked ? '🔒' : '🔓'}</button><span><button data-dice-one="${i}" ${d.locked ? 'disabled' : ''} title="${_attr(_t("text.0126"))}">↻</button><button data-keep="${d.id}" title="${_attr(_t("text.0127"))}">☆</button></span></div></div>`;
 const diceCards = () => diceSet.map(diceCell).join('');
 // Flip: turn the card edge-on, swap in the new draw while it is invisible, turn it back with a glint.
@@ -216,7 +216,7 @@ function flipCard(i, delay = 0) {
     setTimeout(() => {diceSet[i] = drawCard(i);const fresh = document.createElement('div');fresh.innerHTML = diceCell(diceSet[i], i);const nc = fresh.firstElementChild;nc.classList.add('flip-in');cell.replaceWith(nc);updateStep1();setTimeout(() => nc.classList.remove('flip-in'), 520);}, 180);
   }, delay);
 }
-function rerollAll() {const open = diceSet.map((d, i) => d.locked ? null : i).filter((i) => i !== null);if (!open.length) return toast(_t("text.0128"));open.forEach((i, k) => flipCard(i, k * 85));}
+function rerollAll() {const open = diceSet.map((d, i) => d.locked ? null : i).filter((i) => i !== null);if (!open.length) return toast(_message("text.0128"));open.forEach((i, k) => flipCard(i, k * 85));}
 function panelStep1() {
   if (!diceSet.length) rollDice();
   const more = schemes.length - 3,mine = schemes.slice(0, more > 1 ? 3 : 4);
@@ -237,11 +237,11 @@ function applyStart(id) {
   const s = startOf(id);if (!s) return;startId = id;
   if (s.scheme) {openScheme(s.scheme.id);return;}
   const next = clone(design);for (const p of parts) if (!locks.has(p.id)) {next.colors[p.id] = s.design.colors[p.id];next.assignments[p.id] = s.design.assignments[p.id];}
-  next.finishes = {};if (!activeId && (defaultName || startId)) name = id === 'blank' ? _t("text.0047") : s.name;stepsDone.add(1);commit(next, _t("text.0143", { v0: s.name }));
+  next.finishes = {};if (!activeId && (defaultName || startId)) name = id === 'blank' ? _t("text.0047") : s.name;stepsDone.add(1);commit(next, _message("text.0143", { v0: ()=>s.name }));
 }
 function keepDice(id) {
-  const d = diceSet.find((x) => x.id === id);if (!d) return;if (schemes.length >= 30) return toast(_t("text.0144"));
-  const s = { id: newId(), name: d.name, design: clone(d.design), provenance: null, voiceSalt: 0, created: Date.now(), updated: Date.now() };schemes.unshift(s);persist();pushScheme(s);renderPanel();toast(_t("text.0145", { v0: d.name, v1: savedWhere() }));
+  const d = diceSet.find((x) => x.id === id);if (!d) return;if (schemes.length >= 30) return toast(_message("text.0144"));
+  const s = { id: newId(), name: d.name, design: clone(d.design), provenance: null, voiceSalt: 0, created: Date.now(), updated: Date.now() };schemes.unshift(s);persist();pushScheme(s);renderPanel();toast(_message("text.0145", { v0: d.name, v1: savedWhere() }));
 }
 const selKind = () => partKind(partById.get(ZONES.find((z) => z.id === sel.zone).ids[0]));
 // In 刷子 mode the swatches load the brush instead of painting a selection, so they list the brush's material.
@@ -301,7 +301,7 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
 const matchSearch = (p) => !search || (p.name + p.colorCode + (p.nameEn || '') + (p.brand || '')).toLowerCase().includes(search.toLowerCase());
 function buildGrid() {
   const g = $('#lib-grid');if (!g) return;const list = brandList(source, gridKind()).filter(matchSearch);
-  g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex}" aria-label="${_attr(esc(_label(p.name)))} ${_attr(esc(p.colorCode))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
+  g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex}" aria-label="${_attr(esc(p.name))} ${_attr(esc(p.colorCode))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
   search ? _t("text.0184") : _t("text.0185")}</p>`;
   markGrid();
 }
@@ -336,7 +336,7 @@ function syncFree() {
 let freeFrame = 0;
 function setFree(hex, { hsv, preview = true } = {}) {finder = hex.toUpperCase();freeHsv = hsv || hexToHsv(finder);cancelAnimationFrame(freeFrame);freeFrame = requestAnimationFrame(() => {syncFree();if (tool === 'brush' && preview) setInk(freeKey());else if (preview) previewFree();});}
 function previewFree() {const ids = targetIds().filter((id) => !locks.has(id));previewing = true;view.setColors({ ...design.colors, ...Object.fromEntries(ids.map((id) => [id, finder])) });}
-function commitFree() {previewing = false;if (tool === 'brush') return setInk(freeKey());paint(targetIds(), freeKey(), _t("text.0052"));}
+function commitFree() {previewing = false;if (tool === 'brush') return setInk(freeKey());paint(targetIds(), freeKey(), _message("text.0052"));}
 function plateCheck() {
   return [1, 2, 3, 4, 5, 6].map((n) => {const ps = parts.filter((p) => p.plate === n),ids = [...new Set(ps.map((p) => keyOf(p.id)))],tpu = ps[0].material === 'TPU 90A';
     const warn = tpu && ids.length > 1 ? _t("text.0200") : !tpu && ids.length > 4 ? _t("text.0201") : '';
@@ -455,7 +455,7 @@ $('#panel').addEventListener('click', (e) => {
   const sw = t.closest('[data-key]');
   if (sw && step === 2) {
     previewing = false;const pid = sw.dataset.key;
-    if (replaceFrom) {const from = replaceFrom,ids = parts.filter((p) => keyOf(p.id) === from).map((p) => p.id);replaceFrom = null;return paint(ids, pid, _t("text.0260", { v0: keyName(from) }));}
+    if (replaceFrom) {const from = replaceFrom,ids = parts.filter((p) => keyOf(p.id) === from).map((p) => p.id);replaceFrom = null;return paint(ids, pid, _message("text.0260", { v0: ()=>keyName(from) }));}
     sw.classList.remove('pop');void sw.offsetWidth;sw.classList.add('pop');
     if (tool === 'brush') {if (isHex(pid)) {setFree(keyHex(pid), { preview: false });if (hexFinish(pid)) freeFinish = hexFinish(pid);}return setInk(pid);}
     if (isHex(pid)) {setFree(keyHex(pid), { preview: false });if (hexFinish(pid)) freeFinish = hexFinish(pid);}
@@ -465,7 +465,7 @@ $('#panel').addEventListener('click', (e) => {
   const br = t.closest('[data-brand]');if (br) {source = br.dataset.brand;$$('[data-brand]').forEach((x) => x.classList.toggle('on', x === br));return buildGrid();}
   const fin = t.closest('[data-finish]');if (fin) {freeFinish = fin.dataset.finish;syncFree();if (freeAuto || tool === 'brush') commitFree();return;}
   if (t.closest('#free-apply')) return commitFree();
-  if (t.closest('#free-pick')) {pickToFree = true;setTool('pick');return toast(_t("text.0261"));}
+  if (t.closest('#free-pick')) {pickToFree = true;setTool('pick');return toast(_message("text.0261"));}
   const st = t.closest('[data-set-tool]');if (st) return setTool(st.dataset.setTool);
   const bk = t.closest('[data-brush-kind]');if (bk) {brushKind = bk.dataset.brushKind;if (brush && !isHex(brush) && kindOf(products.get(brush)) !== brushKind) brush = recent.find((k) => !isHex(k) && products.has(k) && kindOf(products.get(k)) === brushKind) || brandList('bambu', brushKind)[0].id;return renderAll();}
   const sc = t.closest('[data-scope]');if (sc) {sel.scope = sc.dataset.scope;return renderAll();}
@@ -474,17 +474,17 @@ $('#panel').addEventListener('click', (e) => {
     takeFrom = tk.dataset.takeZone || tk.dataset.takeAll;const src = takeFrom === 'original' ? ORIGINAL : schemes.find((s) => s.id === takeFrom)?.design;if (!src) return;
     const ids = tk.dataset.takeAll ? parts.map((p) => p.id) : targetIds(),patch = schemePatch(parts, ids, [...locks], src, products),next = clone(design);
     Object.assign(next.colors, patch.colors);Object.assign(next.assignments, patch.assignments);
-    return commit(next, _t("text.0264", { v0: takeFrom === 'original' ? _t("text.0069") : schemes.find((s) => s.id === takeFrom).name, v1: Object.keys(patch.colors).length }));
+    return commit(next, _message("text.0264", { v0: takeFrom === 'original' ? _message("text.0069") : schemes.find((s) => s.id === takeFrom).name, v1: Object.keys(patch.colors).length }));
   }
   if (t.closest('#open-poster')) return poster.open({ design: { ...design, name, author: account.user?.name || '' }, before: ORIGINAL });
-  if (t.closest('#copy-code')) {navigator.clipboard?.writeText(lookCode({ ...design, name }, parts, products)).then(() => toast(_t("text.0265")), () => toast(_t("text.0266")));return;}
+  if (t.closest('#copy-code')) {navigator.clipboard?.writeText(lookCode({ ...design, name }, parts, products)).then(() => toast(_message("text.0265")), () => toast(_message("text.0266")));return;}
   const act = t.closest('[data-act]');if (act) return actions.play(act.dataset.act);
   const vc = t.closest('[data-voice]');if (vc) {vc.classList.remove('pop');void vc.offsetWidth;vc.classList.add('pop');return actions.say(vc.dataset.voice);}
-  if (t.closest('#voice-dice')) {voiceSalt = 1 + Math.floor(Math.random() * 99999);persist();renderPanel();updateVoice();return toast(_t("text.0267"));}
-  if (t.closest('#voice-reset')) {voiceSalt = 0;persist();renderPanel();updateVoice();return toast(_t("text.0211"));}
+  if (t.closest('#voice-dice')) {voiceSalt = 1 + Math.floor(Math.random() * 99999);persist();renderPanel();updateVoice();return toast(_message("text.0267"));}
+  if (t.closest('#voice-reset')) {voiceSalt = 0;persist();renderPanel();updateVoice();return toast(_message("text.0211"));}
   if (t.closest('#act-show')) return actions.show();if (t.closest('#act-stop')) return actions.stop();
   if (t.closest('#export2')) return openExport();
-  if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_t("text.0268"));saveScheme(false);return renderPanel();}
+  if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_message("text.0268"));saveScheme(false);return renderPanel();}
   if (t.closest('#publish')) return openPublish();
 });
 $('#panel').addEventListener('change', (e) => {
@@ -529,7 +529,7 @@ $('#panel').addEventListener('keyup', (e) => {if (e.target.id === 'sv' && e.key.
 function moveSV(e) {const b = $('#sv').getBoundingClientRect();freeHsv = { ...freeHsv, s: Math.min(1, Math.max(0, (e.clientX - b.left) / b.width)), v: 1 - Math.min(1, Math.max(0, (e.clientY - b.top) / b.height)) };setFree(hsvToHex(freeHsv.h, freeHsv.s, freeHsv.v), { hsv: freeHsv });}
 
 // ---------- events: rail ----------
-$('#rail').addEventListener('click', (e) => {const lk = e.target.closest('[data-lock]');if (lk) {const z = ZONES.find((z) => z.id === lk.dataset.lock),all = z.ids.every((id) => locks.has(id));z.ids.forEach((id) => all ? locks.delete(id) : locks.add(id));persist();toast((all ? _t("text.0269") : _t("text.0270")) + z.name + (all ? '' : _t("text.0271")));return renderAll();}const zb = e.target.closest('[data-zone]');if (zb) {if (step !== 2) step = 2;select(zb.dataset.zone);}});
+$('#rail').addEventListener('click', (e) => {const lk = e.target.closest('[data-lock]');if (lk) {const z = ZONES.find((z) => z.id === lk.dataset.lock),all = z.ids.every((id) => locks.has(id));z.ids.forEach((id) => all ? locks.delete(id) : locks.add(id));persist();toast(() => (all ? _message("text.0269") : _message("text.0270")) + z.name + (all ? '' : _message("text.0271")));return renderAll();}const zb = e.target.closest('[data-zone]');if (zb) {if (step !== 2) step = 2;select(zb.dataset.zone);}});
 $('#rail').addEventListener('dblclick', (e) => {if (e.target.closest('[data-zone]')) setFocused(!focused);});
 $('#rail').addEventListener('pointerover', (e) => {const zb = e.target.closest('[data-zone]');if (zb && zb.dataset.zone !== sel.zone) view.setHighlight(targetIds(), ZONES.find((z) => z.id === zb.dataset.zone).ids);});
 $('#rail').addEventListener('pointerleave', () => renderStage());
@@ -540,10 +540,10 @@ stage.addEventListener('pointerdown', (e) => {if (e.target === view.canvas) down
 function stageClick(e) {
   const id = view.pick(e.clientX, e.clientY);if (!id) {if (step === 2 && tool === 'select' && !replaceFrom) {sel.part = null;sel.scope = 'all';renderAll();}return;}
   const z = zoneOf(id),p = partById.get(id);
-  if (step === 2 && tool === 'brush') {const ids = brushTargets(id);if (!ids.length) return toast(locks.has(id) ? _t("text.0272", { v0: p.name }) : _t("text.0273", { v0: p.name, v1: p.material, v2: keyName(brush) }));brushHover = null;return paint(ids, brush, _t("text.0274"));}
+  if (step === 2 && tool === 'brush') {const ids = brushTargets(id);if (!ids.length) return toast(() => locks.has(id) ? _message("text.0272", { v0: p.name }) : _message("text.0273", { v0: p.name, v1: p.material, v2: keyName(brush) }));brushHover = null;return paint(ids, brush, _message("text.0274"));}
   if (step === 2 && tool === 'pick') {
     const k = keyOf(id),back = pickToFree ? toolBefore : 'brush';if (isHex(k) && hexFinish(k)) freeFinish = hexFinish(k);setFree(design.colors[id], { preview: false });brush = k;if (!isHex(k)) brushKind = kindOf(products.get(k));
-    pickToFree = false;tool = back;renderAll();return toast(_t("text.0275", { v0: keyName(k), v1: back === 'brush' ? _t("text.0276") : _t("text.0277") }));
+    pickToFree = false;tool = back;renderAll();return toast(_message("text.0275", { v0: keyName(k), v1: back === 'brush' ? _message("text.0276") : _message("text.0277") }));
   }
   const entering = step !== 2;
   if (entering) {step = 2;stepsDone.add(1);if (view.turntable) {view.setTurntable(false);}}
@@ -564,11 +564,11 @@ stage.addEventListener('pointermove', (e) => {
     tag.hidden = false;tag.style.transform = `translate(${e.clientX - b.left + 14}px,${e.clientY - b.top + 14}px)`;
     if (step === 2 && tool === 'brush') {
       const ids = brushTargets(id),key = ids.join(',');
-      tag.innerHTML = ids.length ? `<i style="--c:${keyHex(brush)}"></i><span><b>${_t("text.0279", { v1: esc(keyName(brush)) })}</b><small>${esc(_label(p.name))}${ids.length > 1 ? _t("text.0278") : ''}</small></span>` : `<i style="--c:${design.colors[id]}"></i><span><b>${esc(_label(p.name))}</b><small>${locks.has(id) ? _t("text.0280") : _t("text.0281")}</small></span>`;
+      tag.innerHTML = ids.length ? `<i style="--c:${keyHex(brush)}"></i><span><b>${_t("text.0279", { v1: esc(keyName(brush)) })}</b><small>${esc(p.name)}${ids.length > 1 ? _t("text.0278") : ''}</small></span>` : `<i style="--c:${design.colors[id]}"></i><span><b>${esc(p.name)}</b><small>${locks.has(id) ? _t("text.0280") : _t("text.0281")}</small></span>`;
       if (key !== brushHover) {brushHover = key || null;view.setColors({ ...design.colors, ...Object.fromEntries(ids.map((x) => [x, keyHex(brush)])) });view.setHighlight([], ids.length ? ids : [id]);}
       return;
     }
-    if (step === 2 && tool === 'pick') {tag.innerHTML = `<i style="--c:${design.colors[id]}"></i><span><b>${_t("text.0282", { v1: esc(prodName) })}</b><small>${esc(_label(p.name))}</small></span>`;view.setHighlight([], [id]);return;}
+    if (step === 2 && tool === 'pick') {tag.innerHTML = `<i style="--c:${design.colors[id]}"></i><span><b>${_t("text.0282", { v1: esc(prodName) })}</b><small>${esc(p.name)}</small></span>`;view.setHighlight([], [id]);return;}
     tag.innerHTML = `<i style="--c:${design.colors[id]}"></i><span><b>${esc(step === 2 && sel.zone === z.id || view.layout === 'arrange' ? p.name : z.name)}</b><small>${esc(prodName)} ${locks.has(id) ? '· 🔒' : ''}</small></span>`;
     if (step === 2 && !replaceFrom) view.setHighlight(targetIds(), tool === 'select' && sel.zone !== z.id && view.layout !== 'arrange' ? z.ids : [id]);});
 });
@@ -621,7 +621,7 @@ for (const root of [$('#pose-panel'), $('#panel')]) {
 $('#side-toggle').onclick = () => toggleSide();
 $('#views').onclick = (e) => {const b = e.target.closest('[data-view]');if (!b) return;focused = false;focusKey = '';$$('#views button').forEach((x) => x.classList.toggle('on', x === b));view.view(b.dataset.view);};
 $('#layouts').onclick = (e) => {const b = e.target.closest('[data-layout]');if (b) setLayout(b.dataset.layout);};
-$('#spin').onclick = () => {if (view.layout === 'arrange') return toast(_t("text.0305"));const on = !view.turntable;view.setTurntable(on);if (!on) view.resetSpin();renderStage();};
+$('#spin').onclick = () => {if (view.layout === 'arrange') return toast(_message("text.0305"));const on = !view.turntable;view.setTurntable(on);if (!on) view.resetSpin();renderStage();};
 // ---------- background: four distinct presets, 自动, and a picker for any colour ----------
 const BG_SWATCHES = ['#F4F1EA', '#F3E3CF', '#F9DCD3', '#F6E9A8', '#DCEBD6', '#D2E8E2', '#D6E4F5', '#E3DDF4', '#B9C3D6', '#6F7789', '#2B3A55', '#1B1D24'];
 function hexToHsl(hex) {const n = parseInt(hex.slice(1), 16),r = (n >> 16 & 255) / 255,g = (n >> 8 & 255) / 255,b = (n & 255) / 255,mx = Math.max(r, g, b),mn = Math.min(r, g, b),l = (mx + mn) / 2,d = mx - mn;let h = 0,s = 0;if (d) {s = d / (1 - Math.abs(2 * l - 1));h = (mx === r ? (g - b) / d % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60;if (h < 0) h += 360;}return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };}
@@ -660,11 +660,11 @@ async function openExport() {
       <ul class="bom">${keys.map((k) => {const n = nearestBambu(keyHex(k), kindOf(products.get(k) || { material: partKind(partById.get(pending.find((p) => keyOf(p.id) === k).id)) === 'TPU' ? 'TPU' : 'PLA' }));return `<li><i style="--c:${keyHex(k)}"></i><span>${esc(keyName(k))}<small>${_t("text.0307", { v2: countOf(k), v3: esc(n.name), v4: n.colorCode })}</small></span><b style="--c:${n.hex}" class="to-chip"></b></li>`;}).join('')}</ul>
       <div class="sheet-foot"><button class="ghost-btn" data-close-export>${_t("text.0309")}</button><button class="primary" id="match-bambu">${_t("text.0310")}</button></div>`;
     body.querySelector('[data-close-export]').onclick = () => dlg.close();
-    $('#match-bambu').onclick = () => {const next = clone(design);for (const p of pending) {const n = nearestBambu(design.colors[p.id], partKind(p));next.colors[p.id] = n.hex.toUpperCase();next.assignments[p.id] = n.id;}commit(next, _t("text.0311", { v0: pending.length }));openExport();};
+    $('#match-bambu').onclick = () => {const next = clone(design);for (const p of pending) {const n = nearestBambu(design.colors[p.id], partKind(p));next.colors[p.id] = n.hex.toUpperCase();next.assignments[p.id] = n.id;}commit(next, _message("text.0311", { v0: pending.length }));openExport();};
     return;
   }
   try {
-    plan = await api('POST','/plan',{source_sha256:model.source_sha256,name,assignments:design.assignments});const usedSlots = plan.slots.filter((s) => s.used);
+    plan = await api('POST', '/plan', { source_sha256: model.source_sha256, name, assignments: design.assignments });const usedSlots = plan.slots.filter((s) => s.used);
     body.innerHTML = `<div class="ex-stats"><span><b>6</b>${_t("text.0245")}</span><span><b>35</b>${_t("text.0315")}</span><span><b>${usedSlots.length}</b>${_t("text.0316")}</span><span><b>${plan.slots.length}</b>${_t("text.0317")}</span></div>
     <div class="ex-products">${usedSlots.map((s) => {const p = s.product,n = plan.parts.filter((x) => x.slot === s.slot).length;return `<div class="ex-p"><i style="--c:${p.hex}"></i><span><b>${p.series} · ${esc(_label(p.name))}</b><small>${_t("text.0313", { v3: p.colorCode, v4: n, v5: s.slot })}</small></span><a href="${p.productUrl}" target="_blank" rel="noreferrer">${_t("text.0314")}</a></div>`;}).join('')}</div>
     <details class="ex-parts"><summary>${_t("text.0318")}</summary><table><thead><tr><th>${_t("text.0319")}</th><th>${_t("text.0315")}</th><th>${_t("text.0243")}</th><th>${_t("text.0320")}</th></tr></thead><tbody>${plan.parts.map((p) => `<tr><td>${p.plate}</td><td>${p.id} ${esc(_label(p.name))}</td><td>${esc(_label(p.product.name))} ${p.product.colorCode}</td><td>${p.slot}</td></tr>`).join('')}</tbody></table></details>
@@ -695,8 +695,8 @@ $$('dialog [data-close]').forEach((b) => b.onclick = () => b.closest('dialog').c
 // ---------- publish + evolution ceremony ----------
 const byline = () => account.user ? `${_t("text.0340", { v0: avatarHTML(account.user) })}<b>${esc(account.user.name)}</b>` : _t("text.0341");
 async function openPublish() {
-  if (parts.some((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo)) {showTab = 'print';renderPanel();return toast(_t("text.0342"));}
-  try {await requireLogin(_t("text.0343"));} catch {return;}
+  if (parts.some((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo)) {showTab = 'print';renderPanel();return toast(_message("text.0342"));}
+  try {await requireLogin(_message("text.0343"));} catch {return;}
   $('#publish-preview').src = view.snapshot(640, 520, { angle: 'hero' }).toDataURL('image/png');$('#publish-title').value = name;$('#publish-by').innerHTML = byline();
   $('#publish-source').textContent = provenance ? _t("text.0344", { v0: provenance.title, v1: provenance.author }) : _t("text.0345");$('#publish-dialog').showModal();
 }
@@ -705,12 +705,12 @@ $('#publish-form').onsubmit = async (e) => {
   // Publishing also keeps a private copy in 我的方案; the work itself is a new public version.
   let work;
   try {name = title;saveScheme(false);work = await api('POST', '/works', { title, description: $('#publish-desc').value.trim(), design: { colors: clone(design.colors), assignments: clone(design.assignments), finishes: clone(design.finishes || {}) }, provenance, parentId: provenance?.workId || null, schemeId: activeId });}
-  catch (err) {toast(_t("text.0346", { v0: err.message }));return;} finally
+  catch (err) {toast(_message("text.0346", { v0: ()=>err.message }));return;} finally
   {if (btn) btn.disabled = false;}
   $('#publish-dialog').close();
   const goGallery = () => {location.href = './gallery/#d/' + work.id;};
-  if (!$('#publish-evolve').checked) {toast(_t("text.0347", { v0: title }));setTimeout(goGallery, 700);return;}
-  evolution.play({ name: title, author: account.user.name, before: ORIGINAL, after: design, sound: $('#publish-sound').checked, onDone: goGallery, onPoster: () => poster.open({ workId:work.id, design: { ...work.design, name: work.title, author: work.author.name }, before: ORIGINAL }) });
+  if (!$('#publish-evolve').checked) {toast(_message("text.0347", { v0: title }));setTimeout(goGallery, 700);return;}
+  evolution.play({ name: title, author: account.user.name, before: ORIGINAL, after: design, sound: $('#publish-sound').checked, onDone: goGallery, onPoster: () => poster.open({ workId: work.id, design: { ...work.design, name: work.title, author: work.author.name }, before: ORIGINAL }) });
 };
 
 // ---------- keyboard ----------
@@ -731,14 +731,20 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => {if (e.code === 'Space') holdOff();});
 
 // ---------- misc ----------
-let toastTimer;function toast(msg, withUndo) {const t = $('#toast');t.innerHTML = esc(msg) + (withUndo ? ` <button id="toast-undo">${_t("text.0348")}</button>` : '');t.classList.add('show');clearTimeout(toastTimer);toastTimer = setTimeout(() => t.classList.remove('show'), 3600);$('#toast-undo')?.addEventListener('click', () => {typeof withUndo === 'function' ? withUndo() : $('#undo').click();t.classList.remove('show');});}
+let toastTimer,lastToast;
+function renderToast(){
+ const t=$('#toast');if(!lastToast||!t.classList.contains('show'))return;
+ const {msg,withUndo}=lastToast;t.innerHTML=esc(typeof msg==='function'?msg():msg)+(withUndo?` <button id="toast-undo">${_t('text.0348')}</button>`:'');
+ $('#toast-undo')?.addEventListener('click',()=>{typeof withUndo==='function'?withUndo():$('#undo').click();t.classList.remove('show');});
+}
+function toast(msg,withUndo){lastToast={msg,withUndo};$('#toast').classList.add('show');renderToast();clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3600);}
 const COACH = KEY + '-coach';let seen = !!read(COACH);
 // "做同款" from the gallery arrives as #look=<配色码>&src=<title>|<author>|<workId>.
 // Accepts a bare 配色码, a '#look=' fragment or a whole share link. Unsaved work is backed up first.
 function importLook(text, src = '') {
   const raw = String(text).trim(),code = (raw.match(/#look=([^&\s]+)/) || [, raw])[1];
   const d = decodeLook(parts, products, code),[title, author, workId] = decodeURIComponent(src || '').split('|');
-  if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };schemes.unshift(s);pushScheme(s);setTimeout(() => toast(_t("text.0350")), 2200);}
+  if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };schemes.unshift(s);pushScheme(s);setTimeout(() => toast(_message("text.0350")), 2200);}
   design = { colors: d.colors, assignments: d.assignments };voiceSalt = 0;slots = slotsFromDesign(products, d.assignments, slots);name = _t("text.0351", { v0: d.name || title || _t("text.0352") });provenance = title ? { title, author: author || _t("text.0353"), ...(workId ? { workId } : {}) } : null;activeId = null;
   view.setColors(design.colors);stepsDone.add(1);persist();return d.name || title || _t("text.0354");
 }
@@ -747,9 +753,9 @@ if (await initAccount()) {accountUI.refresh();await syncSchemes();} else
 if (owner) {schemes = [];owner = null;activeId = null;persist();} // signed out elsewhere or session expired: hide that account's cache
 onAccount(() => syncSchemes());
 const look = location.hash.match(/^#look=([^&]+)(?:&src=(.*))?$/),openId = location.hash.match(/^#scheme=(.+)$/);
-if (look) {try {const n = importLook(look[1], look[2]);step = 2;seen = true;setTimeout(() => toast(_t("text.0355", { v0: n })), 300);} catch (error) {toast(error.message);}history.replaceState(null, '', location.pathname);}
+if (look) {try {const n = importLook(look[1], look[2]);step = 2;seen = true;setTimeout(() => toast(_message("text.0355", { v0: n })), 300);} catch (error) {toast(error.message);}history.replaceState(null, '', location.pathname);}
 // 我的方案 in the gallery opens a saved scheme here with #scheme=<id>.
-if (openId) {const s = schemes.find((x) => x.id === decodeURIComponent(openId[1]));if (s) {design = clone(s.design);name = s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = s.id;slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);stepsDone.add(1);step = 2;seen = true;persist();setTimeout(() => toast(_t("text.0071", { v0: s.name })), 300);}history.replaceState(null, '', location.pathname);}
+if (openId) {const s = schemes.find((x) => x.id === decodeURIComponent(openId[1]));if (s) {design = clone(s.design);name = s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = s.id;slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);stepsDone.add(1);step = 2;seen = true;persist();setTimeout(() => toast(_message("text.0071", { v0: s.name })), 300);}history.replaceState(null, '', location.pathname);}
 if (!seen || location.hash === '#coach') $('#coach').hidden = false;
 const coachDone = () => {$('#coach').hidden = true;try {localStorage.setItem(COACH, '1');} catch {}};
 $('#coach-go').onclick = coachDone;
@@ -761,8 +767,10 @@ _onLocale(() => {
   const active = document.activeElement,focusId = active?.id;
   const inputs = [...document.querySelectorAll('#panel input,#panel textarea,#panel select')].map((e) => ({ id: e.id, value: e.value, checked: e.checked }));
   voiceKey = '';miniKey = '';renderAll();bindTranslations();renderHeader();renderStage();
-  if($('#export-dialog').open&&!$('#dl-3mf')?.disabled)openExport();
-  if($('#publish-dialog').open){$('#publish-by').innerHTML=byline();$('#publish-source').textContent=provenance?_t('text.0344',{v0:provenance.title,v1:provenance.author}):_t('text.0345');}
+  if (poseOpen) buildPose();
+  renderToast();
+  if ($('#export-dialog').open && !$('#dl-3mf')?.disabled) openExport();
+  if ($('#publish-dialog').open) {$('#publish-by').innerHTML = byline();$('#publish-source').textContent = provenance ? _t('text.0344', { v0: provenance.title, v1: provenance.author }) : _t('text.0345');}
   for (const old of inputs) {const e = old.id && document.getElementById(old.id);if (e) {e.value = old.value;e.checked = old.checked;}}
   if (focusId) document.getElementById(focusId)?.focus();
 });

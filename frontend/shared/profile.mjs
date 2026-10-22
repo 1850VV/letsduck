@@ -1,4 +1,4 @@
-import { escapeAttribute as _attr } from "./i18n.mjs";import { t as _t, label as _label, onLocale as _onLocale } from "./i18n.mjs"; // Accounts: a nickname and a simple password. The account is how 我的方案 and published works know
+import { message as _message } from "./i18n.mjs";import { escapeAttribute as _attr } from "./i18n.mjs";import { t as _t, label as _label, onLocale as _onLocale } from "./i18n.mjs"; // Accounts: a nickname and a simple password. The account is how 我的方案 and published works know
 // they are yours on any device; the server keeps a salted hash, never the password itself.
 import { api, getToken, setToken } from './api.mjs';
 
@@ -12,7 +12,7 @@ export const onAccount = (fn) => {listeners.add(fn);return () => listeners.delet
 const changed = () => listeners.forEach((fn) => fn(account.user));
 export async function initAccount() {if (!getToken()) return null;try {account.user = await api('GET', '/me');} catch {account.user = null;}return account.user;}
 
-let ui = null;
+let ui = null,loginReason='';
 // Resolves with the user once signed in; opens the sign-in dialog when needed (rejects if dismissed).
 export function requireLogin(reason) {return account.user ? Promise.resolve(account.user) : ui ? ui.ask(reason) : Promise.reject(new Error(_t("text.0452")));}
 
@@ -39,7 +39,7 @@ export function mountAccount(slot, { toast = () => {} } = {}) {
   const authDlg = $('#auth-dialog'),profDlg = $('#profile-dialog');let mode = 'login',pending = null,draft = null,lastAuthError = null,lastProfileError = null;
   function chip() {slot.innerHTML = account.user ? `<button class="profile-chip" type="button" title="${_attr(_t("text.0460"))}" data-i18n-title="text.0460">${avatarHTML(account.user)}<span>${esc(account.user.name)}</span></button>` : `<button class="profile-chip guest" type="button"><span data-i18n="text.0382">${_t("text.0382")}</span></button>`;}
   function setMode(m) {mode = m;$$('#auth-dialog [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));$('#auth-submit').textContent = m === 'login' ? _t("text.0455") : _t("text.0465");$('#auth-pass').autocomplete = m === 'login' ? 'current-password' : 'new-password';$('#auth-hint').hidden = m === 'login';$('#auth-error').textContent = '';}
-  function ask(reason) {$('#auth-reason').textContent = reason || '';$('#auth-reason').hidden = !reason;setMode('login');authDlg.showModal();setTimeout(() => $('#auth-name').focus(), 30);return new Promise((resolve, reject) => {pending?.reject(new Error(_t("text.0078")));pending = { resolve, reject };});}
+  function ask(reason) {loginReason=reason;$('#auth-reason').textContent = reason || '';$('#auth-reason').hidden = !reason;setMode('login');authDlg.showModal();setTimeout(() => $('#auth-name').focus(), 30);return new Promise((resolve, reject) => {pending?.reject(new Error(_t("text.0078")));pending = { resolve, reject };});}
   function paint() {$('#pf-avatar').innerHTML = avatarHTML(draft, 'big');$$('[data-avatar]').forEach((b) => b.classList.toggle('on', b.dataset.avatar === draft.avatar));$$('[data-color]').forEach((b) => b.classList.toggle('on', b.dataset.color === draft.color));}
   function openProfile() {draft = { ...account.user };$('#pf-name').value = draft.name;$('#pf-pass').value = '';$('#pf-error').textContent = '';paint();profDlg.showModal();}
   slot.addEventListener('click', () => account.user ? openProfile() : ask('').catch(() => {}));
@@ -48,7 +48,7 @@ export function mountAccount(slot, { toast = () => {} } = {}) {
   authDlg.addEventListener('close', () => {if (pending && !account.user) {pending.reject(new Error(_t("text.0078")));pending = null;}});
   $('#auth-form').onsubmit = async (e) => {
     e.preventDefault();$('#auth-submit').disabled = true;$('#auth-error').textContent = '';
-    try {const r = await api('POST', '/auth/' + mode, { name: $('#auth-name').value, password: $('#auth-pass').value });setToken(r.token);account.user = r.user;authDlg.close();chip();changed();toast((mode === 'login' ? _t("text.0466") : _t("text.0467")) + r.user.name);pending?.resolve(r.user);pending = null;}
+    try {const r = await api('POST', '/auth/' + mode, { name: $('#auth-name').value, password: $('#auth-pass').value });setToken(r.token);account.user = r.user;authDlg.close();chip();changed();toast(() => (mode === 'login' ? _message("text.0466") : _message("text.0467")) + r.user.name);pending?.resolve(r.user);pending = null;}
     catch (err) {lastAuthError = err;$('#auth-error').textContent = err.message;} finally
     {$('#auth-submit').disabled = false;}
   };
@@ -57,10 +57,10 @@ export function mountAccount(slot, { toast = () => {} } = {}) {
   profDlg.querySelector('[data-close]').onclick = () => profDlg.close();
   $('#profile-form').onsubmit = async (e) => {
     e.preventDefault();const body = { name: $('#pf-name').value.trim(), avatar: draft.avatar, color: draft.color };if ($('#pf-pass').value) body.password = $('#pf-pass').value;
-    try {account.user = await api('PATCH', '/me', body);profDlg.close();chip();changed();toast(_t("text.0107"));} catch (err) {lastProfileError = err;$('#pf-error').textContent = err.message;}
+    try {account.user = await api('PATCH', '/me', body);profDlg.close();chip();changed();toast(_message("text.0107"));} catch (err) {lastProfileError = err;$('#pf-error').textContent = err.message;}
   };
-  $('#pf-logout').onclick = async () => {try {await api('POST', '/auth/logout', {});} catch {}setToken(null);account.user = null;profDlg.close();chip();changed();toast(_t("text.0468"));};
-  _onLocale(() => {chip();$('#auth-reason').textContent=_label($('#auth-reason').textContent);$('#auth-submit').textContent = mode === 'login' ? _t('text.0455') : _t('text.0465');if (lastAuthError) $('#auth-error').textContent = lastAuthError.message;if (lastProfileError) $('#pf-error').textContent = lastProfileError.message;});
+  $('#pf-logout').onclick = async () => {try {await api('POST', '/auth/logout', {});} catch {}setToken(null);account.user = null;profDlg.close();chip();changed();toast(_message("text.0468"));};
+  _onLocale(() => {chip();$('#auth-reason').textContent = loginReason || '';$('#auth-submit').textContent = mode === 'login' ? _t('text.0455') : _t('text.0465');if (lastAuthError) $('#auth-error').textContent = lastAuthError.message;if (lastProfileError) $('#pf-error').textContent = lastProfileError.message;});
   chip();
   ui = { ask, refresh: chip };
   return ui;
