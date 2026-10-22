@@ -1,4 +1,4 @@
-import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, formatDate, getLocale, relativeTime } from '../shared/i18n.mjs';
+import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, formatDate, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 配色广场: official themes plus every work published from the studio, with ratings, remix family
 // trees and the shared poster dialog. Works, ratings and 我的方案 come from the API.
 import { loadDuck, createDuckView } from '../shared/duck-view.mjs';
@@ -6,14 +6,16 @@ import { createPosterDialog, lookCode } from '../shared/poster.mjs';
 import { applyBrand } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
+import { loadPublicSite, copyWorkLink, parseWorkLink } from '../shared/work-links.mjs';
 import { ZONES } from '../lib/duck-workbench.mjs';
 import { THEMES, quickDesign, themeSlots, hsl, isNeutral, decodeLook } from '../lib/quick-style.mjs';
 applyBrand();
 
 const $ = (s) => document.querySelector(s),$$ = (s) => [...document.querySelectorAll(s)];
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const publicSite = await loadPublicSite();
 const duck = await loadDuck(),{ model, catalog, products } = duck,parts = model.parts;
-const view = createDuckView(duck),poster = createPosterDialog({ view, parts, products });
+const view = createDuckView(duck),poster = createPosterDialog({ view, parts, products, compact: true });
 const match = (p, hex) => catalog.products.find((x) => x.series === p.material && x.hex.toUpperCase() === hex.toUpperCase())?.id || null;
 const original = { colors: Object.fromEntries(parts.map((p) => [p.id, p.color.toUpperCase()])), assignments: Object.fromEntries(parts.map((p) => [p.id, match(p, p.color)])) };
 
@@ -25,10 +27,10 @@ const complete = (d) => parts.every((p) => products.has(d.assignments[p.id]));
 
 // ---------- data: official starting points (local) + published works and my schemes (server) ----------
 const officials = [{ id: 'official-0', get title() {return _t("text.0117");}, ...original, get desc() {return _t("text.0363");} },
-...THEMES.map((t, i) => ({ id: 'official-' + (i + 1), get title(){return t.name;}, ...quickDesign(parts, products, themeSlots(products, t), t.recipe), get desc(){return _t("text.0364", { v0: _label(t.recipe) });} }))].
-filter(complete).map((d) => ({ ...d, get title(){return d.title;},get desc(){return d.desc;}, official: true, author: OFFICIAL, rating: 0, count: 0, mineVote: 0, days: null, created: 0 }));
+...THEMES.map((t, i) => ({ id: 'official-' + (i + 1), get title() {return t.name;}, ...quickDesign(parts, products, themeSlots(products, t), t.recipe), get desc() {return _t("text.0364", { v0: _label(t.recipe) });} }))].
+filter(complete).map((d) => ({ ...d, get title() {return d.title;}, get desc() {return d.desc;}, official: true, author: OFFICIAL, rating: 0, count: 0, mineVote: 0, days: null, created: 0 }));
 let designs = [],schemes = [],loadError = null;
-const fromWork = (w) => ({ id: w.id, title: w.title, get desc(){return w.description || _t("text.0365");}, author: w.author, colors: w.design.colors, assignments: w.design.assignments,
+const fromWork = (w) => ({ id: w.id, title: w.title, get desc() {return w.description || _t("text.0365");}, author: w.author, colors: w.design.colors, assignments: w.design.assignments,
   // A remix of an official theme keeps that theme as its parent; works point at works through parentId.
   parent: w.parentId || (/^official-\d+$/.test(w.provenance?.workId || '') ? w.provenance.workId : null), provenance: w.provenance,
   rating: w.rating.average, count: w.rating.count, mineVote: w.rating.mine, created: w.created, days: Math.floor((Date.now() - w.created) / 864e5), schemeId: w.schemeId });
@@ -36,13 +38,13 @@ async function load() {
   let works = [];loadError = null;
   try {works = await api('GET', '/works');} catch (err) {loadError = err;}
   try {schemes = account.user ? await api('GET', '/schemes') : [];} catch {schemes = [];}
-  designs = [...works.map(fromWork).filter(complete), ...officials.map((d) => ({ ...d,get title(){return d.title;},get desc(){return d.desc;} }))];
+  designs = [...works.map(fromWork).filter(complete), ...officials.map((d) => ({ ...d, get title() {return d.title;}, get desc() {return d.desc;} }))];
   for (const d of designs) {d.family = family(d.colors);d.mine = !!account.user && d.author.id === account.user.id;}
   for (const d of designs) d.forks = designs.filter((k) => k.parent === d.id).length;
 }
 const used = (d) => [...new Set(parts.map((p) => d.assignments[p.id]))].map((id) => products.get(id)).filter(Boolean);
 const plaCount = (d) => used(d).filter((p) => p.series === 'PLA Basic').length;
-const ago = days => days===null?_t('text.0366'):days<7?relativeTime(-days,'day'):days<30?relativeTime(-Math.floor(days/7),'week'):relativeTime(-Math.floor(days/30),'month');
+const ago = (days) => days === null ? _t('text.0366') : days < 7 ? relativeTime(-days, 'day') : days < 30 ? relativeTime(-Math.floor(days / 7), 'week') : relativeTime(-Math.floor(days / 30), 'month');
 
 // ---------- thumbnails (rendered progressively from the real model) ----------
 const thumbs = new Map(),queue = [];let pumping = false;
@@ -51,7 +53,7 @@ function pump() {if (pumping) return;pumping = true;requestAnimationFrame(functi
 const img = (d, angle = 'hero', cls = '', lazy = false) => {const key = d.id + angle,src = lazy ? thumbs.get(key) || '' : thumb(d, angle);return `<img class="${cls} ${src ? 'ready' : ''}" data-thumb="${key}" src="${src}" alt="${_attr(esc(d.title))}">`;};
 
 // ---------- state ----------
-let sort = 'hot',fam = 'all',tags = new Set(),query = '',listTab = null,detailId = null,returnHash = '#',confirmDelete = null;
+let sort = 'hot',fam = 'all',tags = new Set(),query = '',listTab = null,detailId = null,returnHash = '#',confirmDelete = null,routeVersion = 0;
 const score = (d) => (d.rating * d.count + 3.5 * 3) / (d.count + 3);
 const heat = (d) => d.official ? d.forks * 2 / 40 : (d.forks * 2 + d.count * d.rating / 2 + 1) / (d.days + 3);
 function filtered() {
@@ -65,9 +67,9 @@ let visible = [];
 function strip(d) {return `<span class="strip">${used(d).filter((p) => p.series === 'PLA Basic').slice(0, 5).map((p) => `<i style="--c:${p.hex}"></i>`).join('')}</span>`;}
 const stars = (d) => d.official ? `<span class="star muted">${_t("text.0370")}</span>` : d.count ? `<span class="star">★ ${d.rating.toFixed(1)} <small>(${d.count})</small></span>` : `<span class="star muted">${_t("text.0371")}</span>`;
 function card(d) {
-  return `<article class="card ${d.mine ? 'mine' : ''}" data-id="${d.id}"><a class="visual" href="#d/${d.id}">${img(d, 'hero', 'a')}${img(d, 'back', 'b', true)}<span class="badges">${d.mine ? `<b class="me">${_t("text.0372")}</b>` : ''}${d.official ? `<b class="off">${_t("text.0373")}</b>` : ''}${d.parent ? `<b>${_t("text.0374")}</b>` : ''}</span><span class="quick">${d.mine && d.schemeId ? `<button data-edit="${d.schemeId}">${_t("text.0375")}</button>` : `<button data-same="${d.id}">${_t("text.0376")}</button>`}<button data-share="${d.id}">${_t("text.0224")}</button></span></a>
+  return `<article class="card ${d.mine ? 'mine' : ''}" data-id="${d.id}"><a class="visual" href="#d/${d.id}">${img(d, 'hero', 'a')}${img(d, 'back', 'b', true)}<span class="badges">${d.mine ? `<b class="me">${_t("text.0372")}</b>` : ''}${d.official ? `<b class="off">${_t("text.0373")}</b>` : ''}${d.parent ? `<b>${_t("text.0374")}</b>` : ''}</span><span class="quick">${d.mine && d.schemeId ? `<button data-edit="${d.schemeId}">${_t("text.0375")}</button>` : `<button data-same="${d.id}">${_t("text.0376")}</button>`}</span></a>
   <div class="body"><div class="row"><h3><a href="#d/${d.id}">${esc(d.title)}</a></h3>${strip(d)}</div><div class="author">${avatarHTML(d.author, 'sm')}${esc(d.author.name)}<span>· ${ago(d.days)}</span></div>
-  <div class="foot">${stars(d)}<span>${_t("text.0378", { v17: d.forks })}</span><span class="${plaCount(d) <= 4 ? 'ams' : ''}" title="${_attr(plaCount(d) <= 4 ? _t("text.0377") : '')}">${_t("text.0379", { v20: used(d).length })}</span></div></div></article>`;
+  <div class="foot">${stars(d)}<span>${_t("text.0782", { v16: d.forks })}</span><span class="${plaCount(d) <= 4 ? 'ams' : ''}" title="${_attr(plaCount(d) <= 4 ? _t("text.0377") : '')}">${_t("text.0783", { v19: used(d).length })}</span></div><div class="card-actions"><button data-copy-link="${d.id}" aria-label="${_attr(_t("text.0784", { v21: esc(d.title) }))}">${_t("text.0785")}</button><button data-share="${d.id}" aria-label="${_attr(_t("text.0786", { v23: esc(d.title) }))}">${_t("text.0443")}</button></div></div></article>`;
 }
 function home() {
   const works = designs.filter((d) => !d.official),authors = new Set(works.map((d) => d.author.id)).size,picks = [...(works.length >= 3 ? works : designs)].sort((a, b) => heat(b) - heat(a)).slice(0, 3),mineCount = works.filter((d) => d.mine).length;
@@ -111,8 +113,25 @@ function rateUI(d) {
   return `<div class="rate"><span>${account.user ? _t("text.0420") : _t("text.0421")}</span><div id="stars">${[1, 2, 3, 4, 5].map((n) => `<button data-rate="${n}" class="${n <= d.mineVote ? 'on' : ''}" aria-label="${_attr(_t("text.0422", { v2: n }))}">★</button>`).join('')}</div></div>`;
 }
 const statsHTML = (d) => `<div><b>${d.official ? '—' : d.count ? d.rating.toFixed(1) : '—'}<em>★</em></b><small>${d.official ? _t("text.0370") : _t("text.0423", { v0: d.count })}</small></div><div><b>${d.forks}</b><small>${_t("text.0425")}</small></div><div><b>${used(d).length}</b><small>${_t("text.0426", { v4: plaCount(d) <= 4 ? _t("text.0424") : '' })}</small></div>`;
-function detail(id, {preserveView=false}={}) {
-  const d = byId(id);if (!d) {if (designs.length) {toast(_t("text.0427"));closeDetail();}return;}
+async function detail(id, version = routeVersion, { preserveView = false } = {}) {
+  let d = byId(id);
+  if (!d) {
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(id) || id.startsWith('official-')) {missingDetail();return;}
+    detailId = 'loading';view.setTurntable(false);
+    const ov = $('#detail');ov.hidden = false;ov.classList.add('open');document.body.classList.add('locked');
+    $('#detail-body').innerHTML = `<section class="missing-work"><h1>${_t("text.0787")}</h1><button class="primary" id="loading-home">${_t("text.0788")}</button></section>`;
+    $('#loading-home').onclick = () => {location.hash = '#';};
+    try {
+      // The gallery feed is capped; a permanent link must also resolve older works.
+      const work = await api('GET', '/works/' + encodeURIComponent(id));
+      if (version !== routeVersion) return;
+      d = fromWork(work);
+      if (d.id !== id || !complete(d)) {missingDetail();return;}
+      d.family = family(d.colors);d.mine = !!account.user && d.author.id === account.user.id;
+      designs.push(d);
+      for (const design of designs) design.forks = designs.filter((k) => k.parent === design.id).length;
+    } catch (err) {if (version === routeVersion) missingDetail(![404, 422].includes(err.status));return;}
+  }
   if (detailId !== id) confirmDelete = null;
   detailId = id;const parent = d.parent && byId(d.parent),list = used(d),i = visible.findIndex((x) => x.id === id),prev = i > 0 ? visible[i - 1] : null,next = i >= 0 ? visible[i + 1] : null;
   const ov = $('#detail');ov.hidden = false;document.body.classList.add('locked');requestAnimationFrame(() => ov.classList.add('open'));
@@ -122,17 +141,25 @@ function detail(id, {preserveView=false}={}) {
   <aside class="info"><span class="eyebrow">${d.mine ? _t("text.0432") : ''}${d.official ? _t("text.0370") : _t("text.0433", { v0: ago(d.days) })}</span><h1>${esc(d.title)}</h1><div class="author big">${avatarHTML(d.author)}<span>${esc(d.author.name)}<small>${source}</small></span></div>
   <p class="desc">${esc(d.desc)}</p>${parent ? `<div class="changes"><span>${_t("text.0435")}</span>${diff(d, parent) || `<span class="chg">${_t("text.0434")}</span>`}</div>` : ''}
   <div class="stats" id="stats">${statsHTML(d)}</div>
-  <div class="cta">${d.mine && d.schemeId ? `<a class="primary big" href="../#scheme=${encodeURIComponent(d.schemeId)}">${_t("text.0375")}</a>` : `<a class="primary big" href="${sameHref(d)}">${_t("text.0436")}</a>`}<button class="ghost big" id="share">${_t("text.0443")}</button></div>
+  <div class="cta">${d.mine && d.schemeId ? `<a class="primary big" href="../#scheme=${encodeURIComponent(d.schemeId)}">${_t("text.0375")}</a>` : `<a class="primary big" href="${sameHref(d)}">${_t("text.0436")}</a>`}<button class="ghost big" id="copy-link">${_t("text.0785")}</button><button class="ghost big" id="share">${_t("text.0443")}</button></div>
   <div id="rate-slot">${rateUI(d)}</div>
   <details class="bom"><summary>${_t("text.0444", { v16: list.length })}<span>＋</span></summary><ul>${list.map((p) => `<li><i style="--c:${p.hex}"></i><span>${esc(p.name)}<small>${p.series} · ${p.colorCode}</small></span><b>${_t("text.0437", { v4: parts.filter((x) => d.assignments[x.id] === p.id).length })}</b></li>`).join('')}</ul></details></aside></section>
   <section class="tabs"><div class="tabbar"><button class="on">${_t("text.0445")}</button></div><div class="tabbody">${tree(d)}</div></section>`;
-  $('#detail').scrollTop = 0;view.mount($('#viewer'),{preserveView});view.setColors(d.colors);view.setTurntable(true);
+  $('#detail').scrollTop = 0;view.mount($('#viewer'), { preserveView });view.setColors(d.colors);view.setTurntable(true);
   $('#views').onclick = (e) => {const b = e.target.closest('[data-view]');if (!b) return;$$('#views button').forEach((x) => x.classList.toggle('on', x === b));view.view(b.dataset.view);};
   $('#spin').onclick = (e) => {const on = !view.turntable;view.setTurntable(on);if (!on) view.resetSpin();e.currentTarget.setAttribute('aria-pressed', on);};
   const holdOn = () => {view.setColors(parent ? parent.colors : original.colors);$('#hold').classList.add('on');},holdOff = () => {view.setColors(d.colors);$('#hold').classList.remove('on');};
   $('#hold').onpointerdown = holdOn;$('#hold').onpointerup = holdOff;$('#hold').onpointerleave = holdOff;
-  $('#share').onclick = () => poster.open({ design: { ...d, name: d.title, author: d.author.name }, before: parent ? { colors: parent.colors } : original });
+  $('#copy-link').onclick = () => copyWorkLink(publicSite, d.id, toast);
+  $('#share').onclick = () => poster.open({ workId: d.id, design: { ...d, name: d.title, author: d.author.name }, before: parent ? { colors: parent.colors } : original });
   $('#dclose').onclick = closeDetail;$('#dprev').onclick = () => prev && (location.hash = '#d/' + prev.id);$('#dnext').onclick = () => next && (location.hash = '#d/' + next.id);
+}
+function missingDetail(unavailable = false) {
+  detailId = 'missing';view.setTurntable(false);
+  const ov = $('#detail');ov.hidden = false;ov.classList.add('open');document.body.classList.add('locked');
+  $('#detail-body').innerHTML = `<section class="missing-work"><h1>${unavailable ? _t("text.0789") : _t("text.0790")}</h1><p>${unavailable ? _t("text.0791") : _t("text.0792")}</p><button class="primary" id="missing-home">${_t("text.0788")}</button>${unavailable ? `<button class="ghost" id="missing-retry">${_t("text.0793")}</button>` : ''}</section>`;
+  $('#missing-home').onclick = () => {location.hash = '#';};
+  if ($('#missing-retry')) $('#missing-retry').onclick = refresh;
 }
 async function rate(d, stars) {
   try {await requireLogin(_t("text.0446"));} catch {return;}
@@ -155,11 +182,12 @@ function closeDetail() {location.hash = returnHash;}
 function hideDetail() {const ov = $('#detail');if (ov.hidden) return;ov.classList.remove('open');document.body.classList.remove('locked');view.setTurntable(false);detailId = null;setTimeout(() => {if (!detailId) ov.hidden = true;}, 260);}
 
 // ---------- routing: list tabs stay mounted underneath the detail overlay ----------
-function route(force, options={}) {
+function route(force, options = {}) {
+  const version = ++routeVersion;
   const h = location.hash,m = h.match(/^#d\/(.+)$/),tab = h === '#mine' ? 'mine' : m ? listTab || 'home' : 'home';
   if (force || tab !== listTab) {listTab = tab;tab === 'mine' ? mine() : home();$$('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === tab));}
   if (!m) returnHash = tab === 'mine' ? '#mine' : '#';
-  if (m) detail(decodeURIComponent(m[1]),options);else hideDetail();
+  if (m) {try {detail(decodeURIComponent(m[1]), version, options);} catch {missingDetail();}} else hideDetail();
 }
 async function refresh() {await load();route(true);}
 addEventListener('hashchange', () => route());
@@ -178,7 +206,8 @@ $('#app').addEventListener('click', (e) => {
   if (t.closest('#clear')) {fam = 'all';tags.clear();query = '';$('#q').value = '';return home();}
   const ed = t.closest('[data-edit]');if (ed) {e.preventDefault();location.href = '../#scheme=' + encodeURIComponent(ed.dataset.edit);return;}
   const same = t.closest('[data-same]');if (same) {e.preventDefault();location.href = sameHref(byId(same.dataset.same));return;}
-  const sh = t.closest('[data-share]');if (sh) {e.preventDefault();const d = byId(sh.dataset.share),p = d.parent && byId(d.parent);return poster.open({ design: { ...d, name: d.title, author: d.author.name }, before: p ? { colors: p.colors } : original });}
+  const cp = t.closest('[data-copy-link]');if (cp) {e.preventDefault();return copyWorkLink(publicSite, cp.dataset.copyLink, toast);}
+  const sh = t.closest('[data-share]');if (sh) {e.preventDefault();const d = byId(sh.dataset.share),p = d.parent && byId(d.parent);return poster.open({ workId: d.id, design: { ...d, name: d.title, author: d.author.name }, before: p ? { colors: p.colors } : original });}
 });
 // Hovering a card warms its back-view thumbnail so the swap is instant.
 $('#app').addEventListener('pointerover', (e) => {const c = e.target.closest('.card:not(.priv)');if (c) thumb(byId(c.dataset.id), 'back');});
@@ -191,6 +220,9 @@ document.addEventListener('click', (e) => {if (!e.target.closest('#paste-pop,#pa
 $('#paste-input').oninput = (e) => {
   const raw = e.target.value.trim(),code = (raw.match(/#look=([^&\s]+)/) || [, raw])[1],out = $('#paste-preview');
   if (!raw) {out.innerHTML = '';return;}
+  const workId = parseWorkLink(raw, publicSite);
+  if (workId) {const d = byId(workId);out.innerHTML = `<b>${d ? esc(d.title) : _t("text.0794")}</b><a class="primary" href="#d/${encodeURIComponent(workId)}" id="paste-work">${_t("text.0795")}</a>`;$('#paste-work').onclick = () => {pasteBox.hidden = true;};return;}
+
   try {const d = decodeLook(parts, products, code),name = d.name || _t("text.0450");out.innerHTML = `<img src="${view.snapshot(320, 240, { colors: d.colors, angle: 'hero' }).toDataURL('image/png')}" alt=""><b>${esc(name)}</b><a class="primary" href="../#look=${code}">${_t("text.0451")}</a>`;}
   catch (err) {out.innerHTML = `<small class="warn">${esc(err.message)}</small>`;}
 };
@@ -203,6 +235,6 @@ window.gallery = { get designs() {return designs;} };
 
 _onLocale(() => {
   const scroll = scrollY,detailScroll = $('#detail').scrollTop,spin = view.turntable;
-  route(true,{preserveView:true});if (detailId) {view.setTurntable(spin);$('#detail').scrollTop = detailScroll;}
+  route(true, { preserveView: true });if (detailId) {view.setTurntable(spin);$('#spin')?.setAttribute('aria-pressed', String(spin));$('#detail').scrollTop = detailScroll;}
   scrollTo(0, scroll);bindTranslations();
 });

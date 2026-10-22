@@ -26,3 +26,34 @@
 .poster-actions .poster-primary{background:#4d6bfe;border-color:#4d6bfe;color:#fff;font-weight:650;flex:1}
 .poster-status{min-height:18px;margin:0;font-size:12px;color:#3d9a5b}
 @media (max-width:760px){.poster-wrap{grid-template-columns:1fr;overflow:auto}.poster-stage{min-height:0;padding:16px}.poster-stage img{max-height:55vh}.poster-side{overflow:visible}}
+
+.poster-dialog [hidden]{display:none!important}
+.poster-dialog>.poster-head{padding:16px 20px;border-bottom:1px solid #e5e9f2;align-items:center;gap:12px}
+.poster-dialog>.poster-head h2{font-size:18px;margin:0;min-width:0;overflow-wrap:anywhere}
+.poster-wrap{max-height:calc(100dvh - 110px)}.poster-side{gap:12px;min-width:0}
+.poster-intro{font-size:12px;color:#75829a;line-height:1.8;margin:0}
+.poster-link{border:1px solid #4d6bfe;border-radius:10px;background:#4d6bfe;color:white;font-size:13px;font-weight:600;padding:13px;cursor:pointer}
+.poster-dialog button:disabled{opacity:.5;cursor:default}
+.poster-actions{margin-top:0}.poster-actions>a,.poster-actions>button{flex:1;text-align:center;white-space:nowrap;min-width:0}
+.poster-actions>a{border:1px solid #e0e5f0;border-radius:10px;padding:10px 8px;font-size:13px;text-decoration:none;color:#2f3d5a}
+.poster-settings{border-top:1px solid #e5e9f2;padding-top:12px;font-size:12px;color:#75829a}
+.poster-settings summary{cursor:pointer}.poster-settings .poster-group,.poster-settings .poster-actions{margin-top:16px}
+.poster-manual{background:#f7f9ff;border:1px solid #d9e1f4;border-radius:10px;padding:10px}
+.poster-manual p{font-size:12px;color:#65758e;line-height:1.6;margin:0 0 8px}
+.poster-manual input{width:100%;box-sizing:border-box;min-width:0;border:1px solid #e5e9f2;border-radius:8px;padding:10px;font-size:11px}
+.work-link-dialog{box-sizing:border-box;width:min(440px,calc(100vw - 32px));border:1px solid #e5e9f2;border-radius:18px;padding:22px;color:#17243c}
+.work-link-dialog::backdrop{background:#17243c70}.work-link-dialog h2{font-size:18px}.work-link-dialog p{font-size:12px;line-height:1.8;color:#75829a}
+.work-link-dialog input{box-sizing:border-box;width:100%;min-width:0;padding:12px;border:1px solid #d9e1f4;border-radius:8px;font-size:12px}
+.work-link-dialog button{display:block;margin:14px 0 0 auto;border:0;border-radius:10px;background:#4d6bfe;color:white;padding:10px 20px}
+.poster-dialog.compact{width:min(850px,calc(100vw - 32px))}.compact .poster-wrap{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.compact .poster-stage{padding:22px;min-height:0}.compact .poster-stage img{width:100%;max-height:70vh;object-fit:contain}
+.compact .poster-side{justify-content:center}
+@media(max-width:760px){
+ .poster-wrap{max-height:calc(100dvh - 105px)}.poster-dialog .poster-side{padding:18px}
+ .poster-seg button{min-width:0}.poster-seg button small{overflow-wrap:anywhere}
+ .poster-dialog.compact{width:100%;max-width:100%;max-height:94dvh;margin:auto 0 0;border-radius:22px 22px 0 0}
+ .compact .poster-wrap{display:block;overflow:auto;max-height:calc(94dvh - 64px)}
+ .compact .poster-stage{padding:16px 18px 0;background:#fff}.compact .poster-stage img{width:auto;max-width:100%;max-height:295px;border:12px solid #eef1f7;box-sizing:content-box}
+ .compact .poster-side{padding:16px 18px 22px}.compact .poster-intro{text-align:center;font-size:11px}
+ .compact .poster-note{font-size:10px}.compact .poster-link{min-height:44px}
+}
