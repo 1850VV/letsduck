@@ -60,7 +60,7 @@ export function mountAccount(slot, { toast = () => {} } = {}) {
     try {account.user = await api('PATCH', '/me', body);profDlg.close();chip();changed();toast(_t("text.0107"));} catch (err) {lastProfileError = err;$('#pf-error').textContent = err.message;}
   };
   $('#pf-logout').onclick = async () => {try {await api('POST', '/auth/logout', {});} catch {}setToken(null);account.user = null;profDlg.close();chip();changed();toast(_t("text.0468"));};
-  _onLocale(() => {chip();$('#auth-submit').textContent = mode === 'login' ? _t('text.0455') : _t('text.0465');if (lastAuthError) $('#auth-error').textContent = lastAuthError.message;if (lastProfileError) $('#pf-error').textContent = lastProfileError.message;});
+  _onLocale(() => {chip();$('#auth-reason').textContent=_label($('#auth-reason').textContent);$('#auth-submit').textContent = mode === 'login' ? _t('text.0455') : _t('text.0465');if (lastAuthError) $('#auth-error').textContent = lastAuthError.message;if (lastProfileError) $('#pf-error').textContent = lastProfileError.message;});
   chip();
   ui = { ask, refresh: chip };
   return ui;

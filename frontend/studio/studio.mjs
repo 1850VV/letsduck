@@ -664,8 +664,7 @@ async function openExport() {
     return;
   }
   try {
-    const r = await fetch('/api/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source_sha256: model.source_sha256, name, assignments: design.assignments }) });
-    if (!r.ok) throw Error(errorText(await r.json()));plan = await r.json();const usedSlots = plan.slots.filter((s) => s.used);
+    plan = await api('POST','/plan',{source_sha256:model.source_sha256,name,assignments:design.assignments});const usedSlots = plan.slots.filter((s) => s.used);
     body.innerHTML = `<div class="ex-stats"><span><b>6</b>${_t("text.0245")}</span><span><b>35</b>${_t("text.0315")}</span><span><b>${usedSlots.length}</b>${_t("text.0316")}</span><span><b>${plan.slots.length}</b>${_t("text.0317")}</span></div>
     <div class="ex-products">${usedSlots.map((s) => {const p = s.product,n = plan.parts.filter((x) => x.slot === s.slot).length;return `<div class="ex-p"><i style="--c:${p.hex}"></i><span><b>${p.series} · ${esc(_label(p.name))}</b><small>${_t("text.0313", { v3: p.colorCode, v4: n, v5: s.slot })}</small></span><a href="${p.productUrl}" target="_blank" rel="noreferrer">${_t("text.0314")}</a></div>`;}).join('')}</div>
     <details class="ex-parts"><summary>${_t("text.0318")}</summary><table><thead><tr><th>${_t("text.0319")}</th><th>${_t("text.0315")}</th><th>${_t("text.0243")}</th><th>${_t("text.0320")}</th></tr></thead><tbody>${plan.parts.map((p) => `<tr><td>${p.plate}</td><td>${p.id} ${esc(_label(p.name))}</td><td>${esc(_label(p.product.name))} ${p.product.colorCode}</td><td>${p.slot}</td></tr>`).join('')}</tbody></table></details>
@@ -762,6 +761,8 @@ _onLocale(() => {
   const active = document.activeElement,focusId = active?.id;
   const inputs = [...document.querySelectorAll('#panel input,#panel textarea,#panel select')].map((e) => ({ id: e.id, value: e.value, checked: e.checked }));
   voiceKey = '';miniKey = '';renderAll();bindTranslations();renderHeader();renderStage();
+  if($('#export-dialog').open&&!$('#dl-3mf')?.disabled)openExport();
+  if($('#publish-dialog').open){$('#publish-by').innerHTML=byline();$('#publish-source').textContent=provenance?_t('text.0344',{v0:provenance.title,v1:provenance.author}):_t('text.0345');}
   for (const old of inputs) {const e = old.id && document.getElementById(old.id);if (e) {e.value = old.value;e.checked = old.checked;}}
   if (focusId) document.getElementById(focusId)?.focus();
 });
