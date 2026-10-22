@@ -1,0 +1,135 @@
+{
+  "date": "2026-10-22",
+  "task": "Independent left/right coloring for current XGO Duck V2",
+  "acceptance": [
+    {
+      "criterion": "Single-part coloring is the default and the mode is visible beside all three palettes",
+      "status": "passed",
+      "evidence": "Fresh browser, legacy preference migration, editor/dock/popup controls"
+    },
+    {
+      "criterion": "Left, right, and both selections affect the intended parts only",
+      "status": "passed",
+      "evidence": "Actual canvas click, project palette and context palette; left/right colors, products and rendered mesh colors checked"
+    },
+    {
+      "criterion": "Grouped regions can select one side and individual children can override synchronization",
+      "status": "passed",
+      "evidence": "Body left excludes center panels, three left leg parts, feet individual child, mobile 800/390 widths"
+    },
+    {
+      "criterion": "Material, locks, undo and persisted colors remain correct",
+      "status": "passed",
+      "evidence": "Independent PLA and TPU bindings, locked left foot retained, atomic undo, preference/draft reload"
+    },
+    {
+      "criterion": "Asymmetric 3MF preserves the source structure and assignments",
+      "status": "passed",
+      "evidence": {
+        "sourceSha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+        "geometryEntriesByteIdentical": 27,
+        "plates": 6,
+        "objects": 25,
+        "parts": 35,
+        "all35ColorAndProductBindingsMatchBrowser": true,
+        "all35XmlExtruderSlotsMatchManifest": true,
+        "asymmetricPLASlots": {
+          "P2-04": 6,
+          "P2-03": 3
+        },
+        "asymmetricTPUSlots": {
+          "P1-04": 5,
+          "P1-03": 4
+        }
+      }
+    },
+    {
+      "criterion": "Visual inspection of scope controls",
+      "status": "passed",
+      "evidence": [
+        "output/playwright/duck-sides/desktop.png",
+        "output/playwright/duck-sides/mobile.png"
+      ]
+    },
+    {
+      "criterion": "User acceptance and physical print",
+      "status": "not executed",
+      "evidence": "Awaiting user use; no physical print or new native slicer round-trip in this UI iteration"
+    }
+  ],
+  "tests": {
+    "pythonExporter": 8,
+    "nodeRules": 14,
+    "syntaxChecks": [
+      "app.js",
+      "color-workflows.mjs",
+      "duck-workbench.mjs"
+    ],
+    "browser": {
+      "passed": 39,
+      "checks": [
+        "fresh default paints only the selected part",
+        "joined eye-frame limitation visible",
+        "left shortcut narrows an entire pair to the left foot",
+        "project palette modifies left foot only",
+        "left and right retain separate real product bindings",
+        "rendered left and right colors are independent",
+        "right shortcut leaves red left foot unchanged",
+        "explicit both shortcut recolors both feet",
+        "undo restores asymmetric colors in one action",
+        "individual region child overrides previously enabled synchronization",
+        "body left shortcut excludes right shell, back, and battery",
+        "left leg selects three left parts only",
+        "left leg group color leaves all right parts unchanged",
+        "pair sync respects independently locked left foot",
+        "continuous dock visibly starts in single-part mode",
+        "real canvas click paints isolated left foot without right change",
+        "dock and editor scope controls stay synchronized",
+        "continuous paint explicitly synchronizes the pair",
+        "continuous single mode isolates right-side edits",
+        "near-part palette includes scope controls",
+        "near-part left shortcut changes left only",
+        "near-part both shortcut changes the pair",
+        "A/B pair keeps source names rather than inventing left/right",
+        "TPU left sole changes independently with TPU binding",
+        "TPU controls never offer PLA",
+        "explicit pair preference and asymmetric draft survive reload",
+        "explicit single preference survives reload",
+        "legacy automatic pair default migrates to single without changing any colors",
+        "asymmetric design export still includes all 35 parts",
+        "asymmetric 3MF download succeeds",
+        "no horizontal overflow at 800",
+        "mobile right-side shortcut works at 800",
+        "mobile individual part access works at 800",
+        "floating palette with new scope controls fits at 800",
+        "no horizontal overflow at 390",
+        "mobile right-side shortcut works at 390",
+        "mobile individual part access works at 390",
+        "floating palette with new scope controls fits at 390",
+        "no browser application errors"
+      ],
+      "applicationErrors": [],
+      "consoleErrors": 0
+    }
+  },
+  "testDevelopmentNote": "Initial browser script timed out on a mode toggle hidden during exact group selection; corrected test to use the visible pair chooser and reran all 39 checks successfully.",
+  "limitations": [
+    "P2-06 and P3-01 each remain whole parts, with joined-side notice in UI. No per-face painting or mesh splitting.",
+    "Neck connector A/B uses original labels; never relabeled left/right."
+  ],
+  "qaDirectory": "<project>/output/playwright/duck-sides",
+  "browserCleanup": {
+    "session": "duck-sides",
+    "allOwnedProcessesExited": true,
+    "pids": [
+      68022,
+      68027,
+      68047,
+      68048,
+      68050,
+      68052,
+      68054,
+      68055
+    ]
+  }
+}

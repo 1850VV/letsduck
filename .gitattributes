@@ -1,0 +1,2 @@
+# Preserve vendored upstream formatting; project files still get whitespace checks.
+assets/vendor/** -whitespace

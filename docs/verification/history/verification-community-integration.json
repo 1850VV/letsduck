@@ -1,0 +1,422 @@
+{
+  "date": "2026-10-22",
+  "timezone": "Asia/Shanghai",
+  "status": "local_technical_validation_passed",
+  "appDirectory": "<local-workbench>",
+  "contextDirectory": "<project>",
+  "urls": {
+    "workbench": "http://127.0.0.1:8876/",
+    "community": "http://127.0.0.1:8876/community-prototype/"
+  },
+  "scope": "Local prototype integration only; XGO Duck V2; demo community data; existing full workbench remains sole paint editor",
+  "runtime": {
+    "originalListenerPid": 56775,
+    "listenerUnchanged": true,
+    "restarted": false,
+    "gitRepository": false,
+    "committed": false
+  },
+  "tests": {
+    "python": {
+      "passed": 8,
+      "failed": 0,
+      "log": "<project>/output/playwright/duck-community-integration/python-tests.log"
+    },
+    "node": {
+      "passed": 25,
+      "failed": 0,
+      "log": "<project>/output/playwright/duck-community-integration/node-tests.log"
+    },
+    "syntax": {
+      "passed": 6,
+      "failed": 0
+    },
+    "whitespace": {
+      "checkedFiles": 11,
+      "method": "git diff --no-index --check /dev/null <owned file>"
+    },
+    "browser": {
+      "passed": 160,
+      "failed": 0,
+      "groups": {
+        "gallery": {
+          "passed": 17,
+          "checks": [
+            "at least eight complete community mesh schemes",
+            "eight distinct real-geometry thumbnails",
+            "sample rank combines full precision score and voter count",
+            "search has a usable empty state and reset",
+            "family filter selects both green samples",
+            "filter survives refresh",
+            "latest sort respects release time",
+            "keyboard enters actual geometry detail",
+            "detail supports real-model rotation",
+            "keyboard vote adds one demo voter",
+            "changing vote does not add a second voter",
+            "edited demo vote survives refresh",
+            "detail always labels ratings and authors as demo data",
+            "390px detail has no horizontal overflow",
+            "390px detail exposes import action",
+            "390px gallery has no horizontal overflow",
+            "gallery has no browser runtime errors"
+          ],
+          "errors": []
+        },
+        "integration": {
+          "passed": 61,
+          "checks": [
+            "workbench exposes a visible community entry",
+            "full workbench labels local community demo identity",
+            "saving a local scheme defaults to private",
+            "existing dirty draft has an independently locked left foot",
+            "a hidden edited draft remains while viewing the baseline",
+            "keyboard import persists an identifiable source-version request",
+            "cancel preserves the hidden dirty draft and existing private library",
+            "cancel does not count a completed community reference",
+            "import applies all 35 source colors and actual consumable bindings exactly",
+            "new complete private copy starts with an independent empty lock state",
+            "private copy retains exact source version and author",
+            "pre-import backup preserves the hidden draft and its original lock",
+            "earlier private scheme and the original draft remain intact",
+            "completed reference is counted once with its receipt",
+            "opening retained backup restores its original lock",
+            "opening community copy restores its separate empty locks",
+            "reopening a completed request does not create or count another copy",
+            "project workflow changes the left foot independently",
+            "editing a referenced private scheme retains lineage in its new draft",
+            "editing the copy does not mutate its saved source snapshot",
+            "project color-group replacement stays in its complete selected color group",
+            "continuous painting retains independent left/right scope",
+            "continuous painting still supports explicit pair synchronization",
+            "existing near-part workflow remains available after community import",
+            "near-part workflow produces an asymmetric left/right design",
+            "pair synchronization skips the separately locked left foot",
+            "TPU sole edits preserve material and right-side binding",
+            "TPU controls offer no PLA products",
+            "full workbench compares current asymmetric draft against original private copy",
+            "private save keeps lineage without publishing to the gallery",
+            "private save includes this scheme lock context",
+            "private scheme, lineage and lock state survive refresh",
+            "my schemes opens the same complete private scheme with lineage and locks",
+            "opening a private scheme is not counted as another community reference",
+            "publish confirmation previews the actual saved model geometry",
+            "publication requires a fresh explicit sharing consent",
+            "closing publish confirmation leaves the scheme private",
+            "published snapshot retains attribution and begins with no inherited rating",
+            "own published version cannot receive a demo self vote",
+            "published title renders user text without HTML interpretation",
+            "editing after publishing starts a new private draft",
+            "published version remains immutable after later edits",
+            "unsaved draft must be saved privately before publication preview",
+            "republishing creates a fresh version with independent zero ratings",
+            "republishing does not replace the previous immutable public snapshot",
+            "republished derivative automatically retains original source version",
+            "both immutable versions are independently discoverable in the gallery",
+            "390px integrated gallery has no horizontal overflow",
+            "390px published detail has no horizontal overflow",
+            "newly saved scheme captures its selected lock",
+            "explicit update of a saved scheme replaces its lock snapshot without reviving stale locks",
+            "390px complete workbench has no horizontal overflow",
+            "390px workbench retains a finite camera and visible model",
+            "390px complete workbench supports right-side selection",
+            "390px individual part selection remains accessible",
+            "desktop resize retains the actual complete mesh preview",
+            "final export exercises asymmetric PLA and TPU bindings",
+            "community derivative export plan includes every one of the 35 parts",
+            "real community-derived 3MF downloads successfully",
+            "integration preserves the prior isolated prototype store",
+            "integrated flow has no browser runtime errors"
+          ],
+          "errors": []
+        },
+        "failureRecovery": {
+          "passed": 8,
+          "checks": [
+            "receipt write failure restores the previous active design",
+            "failed import restores private library and all lock contexts",
+            "failed import retains original operation identity and never counts the fork",
+            "failed receipt is not reported as complete",
+            "same failed operation can be retried into one complete private copy",
+            "private save failure stays visible and does not add a phantom scheme",
+            "legacy global lock migration retains locks for a hidden draft",
+            "legacy hidden draft backup keeps its lock while new fork is independent"
+          ],
+          "errors": []
+        },
+        "preview": {
+          "passed": 74,
+          "checks": [
+            "desktop initial assembly: camera, target and projected model bounds remain finite",
+            "desktop initial assembly: real model renders more than 200000 triangles",
+            "desktop initial assembly: full model fits inside its camera viewport",
+            "desktop assembly: test reaches a genuine zero-size viewport",
+            "desktop assembly: zero-size observation does not poison the camera",
+            "desktop assembly: restored viewport: camera, target and projected model bounds remain finite",
+            "desktop assembly: restored viewport: real model renders more than 200000 triangles",
+            "desktop assembly: restored viewport: full model fits inside its camera viewport",
+            "1440px assembly: camera, target and projected model bounds remain finite",
+            "1440px assembly: real model renders more than 200000 triangles",
+            "1440px assembly: full model fits inside its camera viewport",
+            "1440px compare: camera, target and projected model bounds remain finite",
+            "1440px compare: real model renders more than 200000 triangles",
+            "1440px compare: full model fits inside its camera viewport",
+            "1440px compare: test reaches a genuine zero-size viewport",
+            "1440px compare: zero-size observation does not poison the camera",
+            "1440px compare: restored viewport: camera, target and projected model bounds remain finite",
+            "1440px compare: restored viewport: real model renders more than 200000 triangles",
+            "1440px compare: restored viewport: full model fits inside its camera viewport",
+            "1440px return to assembly: camera, target and projected model bounds remain finite",
+            "1440px return to assembly: real model renders more than 200000 triangles",
+            "1440px return to assembly: full model fits inside its camera viewport",
+            "1440px presentation: camera, target and projected model bounds remain finite",
+            "1440px presentation: real model renders more than 200000 triangles",
+            "1440px presentation: full model fits inside its camera viewport",
+            "1440px exit presentation: camera, target and projected model bounds remain finite",
+            "1440px exit presentation: real model renders more than 200000 triangles",
+            "1440px exit presentation: full model fits inside its camera viewport",
+            "1440px keyboard exit presentation: camera, target and projected model bounds remain finite",
+            "1440px keyboard exit presentation: real model renders more than 200000 triangles",
+            "1440px keyboard exit presentation: full model fits inside its camera viewport",
+            "1440px dragging rotates the actual rendered model",
+            "1440px after drag: camera, target and projected model bounds remain finite",
+            "1440px after drag: real model renders more than 200000 triangles",
+            "1440px after drag: full model fits inside its camera viewport",
+            "1440px after full-page screenshot: camera, target and projected model bounds remain finite",
+            "1440px after full-page screenshot: real model renders more than 200000 triangles",
+            "1440px after full-page screenshot: full model fits inside its camera viewport",
+            "1440px root page has no horizontal overflow",
+            "390px assembly: camera, target and projected model bounds remain finite",
+            "390px assembly: real model renders more than 200000 triangles",
+            "390px assembly: full model fits inside its camera viewport",
+            "390px compare: camera, target and projected model bounds remain finite",
+            "390px compare: real model renders more than 200000 triangles",
+            "390px compare: full model fits inside its camera viewport",
+            "390px compare: test reaches a genuine zero-size viewport",
+            "390px compare: zero-size observation does not poison the camera",
+            "390px compare: restored viewport: camera, target and projected model bounds remain finite",
+            "390px compare: restored viewport: real model renders more than 200000 triangles",
+            "390px compare: restored viewport: full model fits inside its camera viewport",
+            "390px return to assembly: camera, target and projected model bounds remain finite",
+            "390px return to assembly: real model renders more than 200000 triangles",
+            "390px return to assembly: full model fits inside its camera viewport",
+            "390px presentation: camera, target and projected model bounds remain finite",
+            "390px presentation: real model renders more than 200000 triangles",
+            "390px presentation: full model fits inside its camera viewport",
+            "390px exit presentation: camera, target and projected model bounds remain finite",
+            "390px exit presentation: real model renders more than 200000 triangles",
+            "390px exit presentation: full model fits inside its camera viewport",
+            "390px keyboard exit presentation: camera, target and projected model bounds remain finite",
+            "390px keyboard exit presentation: real model renders more than 200000 triangles",
+            "390px keyboard exit presentation: full model fits inside its camera viewport",
+            "390px dragging rotates the actual rendered model",
+            "390px after drag: camera, target and projected model bounds remain finite",
+            "390px after drag: real model renders more than 200000 triangles",
+            "390px after drag: full model fits inside its camera viewport",
+            "390px after full-page screenshot: camera, target and projected model bounds remain finite",
+            "390px after full-page screenshot: real model renders more than 200000 triangles",
+            "390px after full-page screenshot: full model fits inside its camera viewport",
+            "390px root page has no horizontal overflow",
+            "390px community detail starts at page top before capture",
+            "390px community detail model also renders and rotates",
+            "390px community detail has no horizontal overflow",
+            "preview resize and mode transitions emit no browser runtime errors"
+          ],
+          "errors": []
+        }
+      }
+    }
+  },
+  "acceptanceCriteria": [
+    {
+      "id": 1,
+      "criterion": "工作台与广场往返，刷新与返回保留可解释状态",
+      "status": "passed_local",
+      "evidence": [
+        "gallery: refresh restores filters",
+        "integration: workbench entry, private open, repeat request idempotency"
+      ]
+    },
+    {
+      "id": 2,
+      "criterion": "8 套真实网格示例，完整 35 件与原材料",
+      "status": "passed_local",
+      "evidence": [
+        "gallery: eight distinct actual geometry thumbnails",
+        "community unit: exact ID/UUID/material/hardness mapping for all seeds"
+      ]
+    },
+    {
+      "id": 3,
+      "criterion": "搜索、颜色筛选、高分与最新排序、空态",
+      "status": "passed_local",
+      "evidence": [
+        "gallery: all controls passed",
+        "community unit: full precision Bayesian rank, voter count, hue classification"
+      ]
+    },
+    {
+      "id": 4,
+      "criterion": "改票不增加人数、禁止自评、刷新恢复、演示标识",
+      "status": "passed_local",
+      "evidence": [
+        "gallery: first vote128 to129; replacement remains129; refresh preserves vote",
+        "integration: five self-vote buttons disabled",
+        "community unit: self-vote rejected in data layer"
+      ]
+    },
+    {
+      "id": 5,
+      "criterion": "引用严格校验并新建完整副本，保留原作、草稿及私有方案",
+      "status": "passed_local",
+      "evidence": [
+        "integration: exact35colors/bindings; hidden draft backup with lock; unchanged original saved copy",
+        "failureRecovery: receipt failure restores all state; same request retry counted once",
+        "community unit: incompatible hash/model/schema/UUID/material/product/missing/extra rejected"
+      ]
+    },
+    {
+      "id": 6,
+      "criterion": "左右独立，三个上色工作流、项目色组、分区、锁定和对比保留",
+      "status": "passed_local",
+      "evidence": [
+        "integration: project, continuous paint and near-part workflows; pair sync; lock exclusion; TPU-only palette; original source comparison",
+        "integration: save update replaces target lock snapshot; source color mapping immutable"
+      ]
+    },
+    {
+      "id": 7,
+      "criterion": "默认私有、可重开、显式模拟发布、来源继承与独立版本评分",
+      "status": "passed_local",
+      "evidence": [
+        "integration: private reopen with metadata; cancel publish remains private; consent required",
+        "integration: two discoverable immutable versions retain source and independent zero scores",
+        "failureRecovery: save failure does not add phantom entry"
+      ]
+    },
+    {
+      "id": 8,
+      "criterion": "真实 3MF 保留不对称逐件分配、6 板/25 对象/35 件和材料参数",
+      "status": "passed_local",
+      "evidence": [
+        "downloaded community-asymmetric.3mf independently verified",
+        "27 source 3D entries byte identical; all35 browser colors/products/XML slots match",
+        "745 original material parameter chunks unchanged; PLA Basic and TPU90A hardness preserved"
+      ]
+    },
+    {
+      "id": 9,
+      "criterion": "桌面与390px主流程、键盘详情/评分/引用/关闭，无横向溢出",
+      "status": "passed_local",
+      "evidence": [
+        "gallery+integration: desktop and390px, keyboard Enter and Escape",
+        "preview:74 assertions for finite camera, whole-model bounds, actual rendering, mode transitions, zero-size recovery; screenshots inspected"
+      ]
+    },
+    {
+      "id": 10,
+      "criterion": "README全部检查与浏览器验收，区分技术与真实多人验收",
+      "status": "passed_local",
+      "evidence": [
+        "Python8 passed; Node25 passed; JavaScript syntax6 passed; whitespace11 files passed",
+        "160 browser assertions passed; owned browser and daemon all exited",
+        "user acceptance, real accounts, multiplayer service, public upload, deployment, slicer round trip and physical print remain unverified/out of scope"
+      ]
+    }
+  ],
+  "export": {
+    "sourceSha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+    "geometryEntriesByteIdentical": 27,
+    "plates": 6,
+    "objects": 25,
+    "parts": 35,
+    "all35ColorsProductsAndXmlSlotsMatchBrowser": true,
+    "allOriginalMaterialSeriesAndHardnessPreserved": true,
+    "sourceMaterialParameterChunksCompared": 745,
+    "allNonMaterialObjectMetadataUnchanged": true,
+    "asymmetricPLASlots": {
+      "P2-04": 1,
+      "P2-03": 3
+    },
+    "asymmetricTPUSlots": {
+      "P1-04": 5,
+      "P1-03": 4
+    },
+    "slicerRoundTripExecuted": false,
+    "physicalPrintVerified": false
+  },
+  "browserCleanup": {
+    "session": "duck-community-integration",
+    "managedChromium": true,
+    "beforeClose": [
+      {
+        "pid": 72879,
+        "ppid": 1,
+        "command": "/opt/homebrew/Cellar/node@22/22.22.0/bin/node <local-path> duck-community-integration --browser=chromium"
+      },
+      {
+        "pid": 72880,
+        "ppid": 72879,
+        "command": "<local-path> Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,NetworkTimeServiceQuerying,AimEnabled,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --disable-blink-features=AutomationControlled --user-data-dir=<temporary-path> --remote-debugging-pipe --no-startup-window"
+      },
+      {
+        "pid": 72888,
+        "ppid": 72880,
+        "command": "<local-path> Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/155.0.8059.12/Helpers/Google Chrome for Testing Helper (GPU).app/Contents/MacOS/Google Chrome for Testing Helper (GPU) --type=gpu-process --gpu-recent-crash-count=0 --disable-breakpad --headless --enable-unsafe-swiftshader --noerrdialogs --user-data-dir=<temporary-path> --start-stack-profiler --gpu-preferences=WAAAAAAAAAAgAAAEAAAAAAAAAAAAAGAAQAAAAAAAAAADAAAAAAAAADgAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAoAAAAAAAAAAgAAAAAAAAADAAAAAEAAAAAAAAAAAAAAAgAAAAAAAAACAAAAAAAAAA= --shared-files --field-trial-handle=1718379636,r,14268858439861327227,8864481872752644145,262144 --enable-features=CDPScreenshotNewSurface,SingleAxisScrollContainers --disable-features=AimEnabled,AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,NetworkTimeServiceQuerying,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1935764596,r,5939023390224448296,8686773441149210895,4 --trace-process-track-uuid=3190708988185955192 --seatbelt-client=28"
+      },
+      {
+        "pid": 72889,
+        "ppid": 72880,
+        "command": "<local-path> Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/155.0.8059.12/Helpers/Google Chrome for Testing Helper.app/Contents/MacOS/Google Chrome for Testing Helper --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-type=network --mute-audio --noerrdialogs --user-data-dir=<temporary-path> --start-stack-profiler --shared-files --field-trial-handle=1718379636,r,14268858439861327227,8864481872752644145,262144 --enable-features=CDPScreenshotNewSurface,SingleAxisScrollContainers --disable-features=AimEnabled,AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,NetworkTimeServiceQuerying,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1935764596,r,5939023390224448296,8686773441149210895,4 --trace-process-track-uuid=3190708989122997041 --seatbelt-client=28"
+      },
+      {
+        "pid": 72890,
+        "ppid": 72880,
+        "command": "<local-path> Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/155.0.8059.12/Helpers/Google Chrome for Testing Helper.app/Contents/MacOS/Google Chrome for Testing Helper --type=utility --utility-sub-type=storage.mojom.StorageService --lang=zh-CN --service-sandbox-type=service --mute-audio --noerrdialogs --user-data-dir=<temporary-path> --shared-files --field-trial-handle=1718379636,r,14268858439861327227,8864481872752644145,262144 --enable-features=CDPScreenshotNewSurface,SingleAxisScrollContainers --disable-features=AimEnabled,AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,NetworkTimeServiceQuerying,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1935764596,r,5939023390224448296,8686773441149210895,4 --trace-process-track-uuid=3190708990060038890 --seatbelt-client=50"
+      },
+      {
+        "pid": 72930,
+        "ppid": 72880,
+        "command": "<local-path> Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/155.0.8059.12/Helpers/Google Chrome for Testing Helper (Renderer).app/Contents/MacOS/Google Chrome for Testing Helper (Renderer) --type=renderer --top-chrome-webui --noerrdialogs --user-data-dir=<temporary-path> --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --disable-blink-features=AutomationControlled --lang=zh-CN --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=6 --launch-time-ticks=2334725789512 --shared-files --field-trial-handle=1718379636,r,14268858439861327227,8864481872752644145,262144 --enable-features=CDPScreenshotNewSurface,SingleAxisScrollContainers --disable-features=AimEnabled,AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,NetworkTimeServiceQuerying,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1935764596,r,5939023390224448296,8686773441149210895,4 --trace-process-track-uuid=3190708991934122588 --seatbelt-client=83"
+      },
+      {
+        "pid": 72932,
+        "ppid": 72880,
+        "command": "<local-path> Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/155.0.8059.12/Helpers/Google Chrome for Testing Helper (Renderer).app/Contents/MacOS/Google Chrome for Testing Helper (Renderer) --type=renderer --noerrdialogs --user-data-dir=<temporary-path> --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --disable-blink-features=AutomationControlled --lang=zh-CN --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=8 --launch-time-ticks=2334725849420 --shared-files --field-trial-handle=1718379636,r,14268858439861327227,8864481872752644145,262144 --enable-features=CDPScreenshotNewSurface,SingleAxisScrollContainers --disable-features=AimEnabled,AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,NetworkTimeServiceQuerying,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1935764596,r,5939023390224448296,8686773441149210895,4 --trace-process-track-uuid=3190708993808206286 --seatbelt-client=83"
+      },
+      {
+        "pid": 72933,
+        "ppid": 72880,
+        "command": "<local-path> Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/155.0.8059.12/Helpers/Google Chrome for Testing Helper (Renderer).app/Contents/MacOS/Google Chrome for Testing Helper (Renderer) --type=renderer --noerrdialogs --user-data-dir=<temporary-path> --disable-back-forward-cache --disable-background-timer-throttling --disable-breakpad --force-color-profile=srgb --remote-debugging-pipe --allow-pre-commit-input --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --disable-blink-features=AutomationControlled --lang=zh-CN --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=7 --launch-time-ticks=2334725853011 --shared-files --field-trial-handle=1718379636,r,14268858439861327227,8864481872752644145,262144 --enable-features=CDPScreenshotNewSurface,SingleAxisScrollContainers --disable-features=AimEnabled,AutoDeElevate,AvoidUnnecessaryBeforeUnloadCheckSync,BlockOriginHeaderModificationOnRedirect,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,NetworkTimeServiceQuerying,OptimizationHints,PaintHolding,ThirdPartyStoragePartitioning,Translate,msEdgeUpdateLaunchServicesPreferredVersion,msForceBrowserSignIn --variations-seed-version --pseudonymization-salt-handle=1935764596,r,5939023390224448296,8686773441149210895,4 --trace-process-track-uuid=3190708992871164437 --seatbelt-client=83"
+      }
+    ],
+    "afterCloseStillAlive": [],
+    "browserAndDaemonExited": true
+  },
+  "screenshots": {
+    "galleryDesktop": "<project>/output/playwright/duck-community-integration/gallery-desktop.png",
+    "workbenchDesktop": "<project>/output/playwright/duck-community-integration/integrated-workbench-desktop.png",
+    "workbenchMobile": "<project>/output/playwright/duck-community-integration/integrated-workbench-mobile.png",
+    "detailMobile": "<project>/output/playwright/duck-community-integration/integrated-detail-mobile.png",
+    "publishPreview": "<project>/output/playwright/duck-community-integration/publish-smoke.png"
+  },
+  "executionFindings": [
+    {
+      "finding": "Initial gallery QA expected older rating label",
+      "resolution": "Updated assertion to include 演示; rating state confirmed129 voters and replacement vote; final17 checks passed"
+    },
+    {
+      "finding": "Visual review found blank main viewport after layout changes despite interaction state checks",
+      "cause": "Zero-size resize could set aspect0; frame calculation divides by0 and corrupts camera coordinates",
+      "resolution": "Guard positive dimensions/aspect and finite framing result, including community viewer; add real zero-size, desktop/mobile, compare/presentation and actual render checks; final74 preview checks and61 integration checks passed"
+    }
+  ],
+  "unverified": [
+    "User visual acceptance of integrated prototype",
+    "Real account and multiuser authorization/scoring/consistency",
+    "Public upload and deployment",
+    "MCP integration",
+    "New slicer round trip, slicing output or physical printing"
+  ],
+  "evidenceDirectory": "<project>/output/playwright/duck-community-integration",
+  "originalBackupDirectory": "<project>/work/community-integration-backup"
+}

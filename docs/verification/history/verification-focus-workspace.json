@@ -1,0 +1,1827 @@
+{
+  "createdAt": "2026-10-22T06:06:59.476948+00:00",
+  "url": "http://127.0.0.1:8876/",
+  "source": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+  "acceptance": [
+    {
+      "criterion": "同一视窗展示真实整机与部件副本",
+      "status": "passed",
+      "evidence": "一个可见 canvas；整机 35 件；副本共用原 assembly 几何与材质；头部 8 件，颈部/身体/左右腿脚按源实例分组"
+    },
+    {
+      "criterion": "整机与部件分别旋转、移动和缩放",
+      "status": "passed",
+      "evidence": "拖动两种实例及各自名称，另一实例变换保持不变；滚轮局部缩放；拖动不产生上色历史；可交换位置和复位"
+    },
+    {
+      "criterion": "浮动调色盘直接点涂",
+      "status": "passed",
+      "evidence": "色盘拖动/收起、HSV 键盘、HEX、真实产品筛选、项目色、吸管、模型和排列名称点涂、撤销全部验证"
+    },
+    {
+      "criterion": "单侧、同步、锁定与原材料保护",
+      "status": "passed",
+      "evidence": "左脚单独改色；显式同步修改两脚；锁定不改；PLA 笔刷不能涂 TPU；吸管携带硬度/材料；左右 TPU 允许不同产品"
+    },
+    {
+      "criterion": "组装、散开与排列",
+      "status": "passed",
+      "evidence": "两实例独立选择布局；全部 35 件排列网格都找到可点击表面；35 个名称按钮可选件/涂装；单件查看不影响整机"
+    },
+    {
+      "criterion": "命名保存并返回基础涂装",
+      "status": "passed",
+      "evidence": "取消或模拟存储失败留在专注；成功存储完整 35 件方案后返回整机基础视图；重新加载方案保留"
+    },
+    {
+      "criterion": "3MF 与原工作流保持正确",
+      "status": "passed",
+      "evidence": "实际网页下载左右异色 3MF/BOM；35 件颜色、产品、XML 槽位一致；27 个 3D/ 条目字节相同；149 个材料参数字段沿用对应模板；基础对比、纯展示和社区导航通过"
+    },
+    {
+      "criterion": "用户视觉与操作满意度",
+      "status": "pending_user_review",
+      "evidence": "已提供真实页面截图和可点击本地工作台；技术检查不代替用户体验确认"
+    },
+    {
+      "criterion": "原生切片器回读、实物打印和装配运动",
+      "status": "not_executed",
+      "evidence": "本轮未重新进行；踝轴沿用既有示意定位"
+    }
+  ],
+  "automated": {
+    "pythonTests": 8,
+    "nodeTests": 29,
+    "browserAssertions": 98,
+    "exportAssertions": 224,
+    "syntaxChecks": 8,
+    "commands": [
+      "python3 -m unittest discover -s tests -v",
+      "node --test tests/test_workflows.mjs tests/test_workbench.mjs tests/test_community.mjs tests/test_focus.mjs",
+      "node --check for app.js, color-workflows.mjs, duck-workbench.mjs, community-store.mjs, community-prototype/app.mjs, community-prototype/model-view.mjs, focus-workspace.mjs, focus-rules.mjs"
+    ],
+    "pageErrors": [],
+    "browserChecks": [
+      {
+        "name": "one canvas, shared real source geometry and material",
+        "pass": true
+      },
+      {
+        "name": "head duplicate retains main head",
+        "pass": true
+      },
+      {
+        "name": "single-side default",
+        "pass": true
+      },
+      {
+        "name": "raycast detail P4-01",
+        "pass": true,
+        "detail": {
+          "x": 279.70571976477356,
+          "y": 487.3050952343629
+        }
+      },
+      {
+        "name": "painting detail changes only head cover",
+        "pass": true
+      },
+      {
+        "name": "original and both copies update",
+        "pass": true
+      },
+      {
+        "name": "exact filament bound",
+        "pass": true
+      },
+      {
+        "name": "detail rotates independently",
+        "pass": true
+      },
+      {
+        "name": "rotation does not paint",
+        "pass": true
+      },
+      {
+        "name": "whole moves independently",
+        "pass": true
+      },
+      {
+        "name": "detail moves independently",
+        "pass": true
+      },
+      {
+        "name": "floating palette moves",
+        "pass": true
+      },
+      {
+        "name": "whole array retains 35 parts",
+        "pass": true
+      },
+      {
+        "name": "raycast whole P2-04",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980196,
+          "y": 408.4246887186773
+        }
+      },
+      {
+        "name": "raycast whole P2-04",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980196,
+          "y": 408.4246887186773
+        }
+      },
+      {
+        "name": "left foot changes without right",
+        "pass": true
+      },
+      {
+        "name": "raycast whole P2-04",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980196,
+          "y": 408.4246887186773
+        }
+      },
+      {
+        "name": "explicit pair toggle paints both",
+        "pass": true
+      },
+      {
+        "name": "raycast whole P2-04",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980196,
+          "y": 408.4246887186773
+        }
+      },
+      {
+        "name": "locked selected part cannot change",
+        "pass": true
+      },
+      {
+        "name": "raycast whole P1-04",
+        "pass": true,
+        "detail": {
+          "x": 820.8,
+          "y": 318.69201545135064
+        }
+      },
+      {
+        "name": "PLA brush cannot paint TPU",
+        "pass": true
+      },
+      {
+        "name": "raycast whole P1-04",
+        "pass": true,
+        "detail": {
+          "x": 820.8,
+          "y": 318.69201545135064
+        }
+      },
+      {
+        "name": "eyedropper carries TPU binding",
+        "pass": true
+      },
+      {
+        "name": "raycast whole P4-01",
+        "pass": true,
+        "detail": {
+          "x": 731.0673267326732,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "custom target remains unbound",
+        "pass": true
+      },
+      {
+        "name": "undo restores exact product",
+        "pass": true
+      },
+      {
+        "name": "raycast whole P4-01",
+        "pass": true,
+        "detail": {
+          "x": 731.0673267326732,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "real catalog selection binds product",
+        "pass": true
+      },
+      {
+        "name": "exploded mode works",
+        "pass": true
+      },
+      {
+        "name": "detail layout independent",
+        "pass": true
+      },
+      {
+        "name": "single-part inspection preserves entire main",
+        "pass": true
+      },
+      {
+        "name": "positions swap",
+        "pass": true
+      },
+      {
+        "name": "cancel save stays focused",
+        "pass": true
+      },
+      {
+        "name": "named save returns to basic assembly",
+        "pass": true
+      },
+      {
+        "name": "saved full scheme",
+        "pass": true
+      },
+      {
+        "name": "saved scheme persists after reload",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true,
+        "detail": []
+      },
+      {
+        "name": "array mesh accessible P1-01",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980196,
+          "y": 318.6920154513507
+        }
+      },
+      {
+        "name": "array mesh accessible P1-02",
+        "pass": true,
+        "detail": {
+          "x": 641.3346534653465,
+          "y": 318.69201545135064
+        }
+      },
+      {
+        "name": "array mesh accessible P1-03",
+        "pass": true,
+        "detail": {
+          "x": 731.0673267326732,
+          "y": 318.69201545135064
+        }
+      },
+      {
+        "name": "array mesh accessible P1-04",
+        "pass": true,
+        "detail": {
+          "x": 820.8,
+          "y": 318.69201545135064
+        }
+      },
+      {
+        "name": "array mesh accessible P2-01",
+        "pass": true,
+        "detail": {
+          "x": 910.5326732673266,
+          "y": 328.69201545135064
+        }
+      },
+      {
+        "name": "array mesh accessible P2-02",
+        "pass": true,
+        "detail": {
+          "x": 1000.2653465346534,
+          "y": 318.69201545135064
+        }
+      },
+      {
+        "name": "array mesh accessible P2-03",
+        "pass": true,
+        "detail": {
+          "x": 1089.9980198019803,
+          "y": 318.69201545135064
+        }
+      },
+      {
+        "name": "array mesh accessible P2-04",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980196,
+          "y": 408.4246887186773
+        }
+      },
+      {
+        "name": "array mesh accessible P2-05",
+        "pass": true,
+        "detail": {
+          "x": 641.3346534653465,
+          "y": 408.4246887186773
+        }
+      },
+      {
+        "name": "array mesh accessible P2-06",
+        "pass": true,
+        "detail": {
+          "x": 736.0673267326732,
+          "y": 413.42468871867726
+        }
+      },
+      {
+        "name": "array mesh accessible P2-07",
+        "pass": true,
+        "detail": {
+          "x": 820.8,
+          "y": 408.4246887186774
+        }
+      },
+      {
+        "name": "array mesh accessible P3-01",
+        "pass": true,
+        "detail": {
+          "x": 910.5326732673266,
+          "y": 408.4246887186773
+        }
+      },
+      {
+        "name": "array mesh accessible P3-02",
+        "pass": true,
+        "detail": {
+          "x": 1000.2653465346534,
+          "y": 408.4246887186774
+        }
+      },
+      {
+        "name": "array mesh accessible P3-03",
+        "pass": true,
+        "detail": {
+          "x": 1089.9980198019803,
+          "y": 408.4246887186774
+        }
+      },
+      {
+        "name": "array mesh accessible P3-04",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980196,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "array mesh accessible P3-05",
+        "pass": true,
+        "detail": {
+          "x": 641.3346534653465,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "array mesh accessible P4-01",
+        "pass": true,
+        "detail": {
+          "x": 731.0673267326732,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "array mesh accessible P4-02",
+        "pass": true,
+        "detail": {
+          "x": 820.8,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "array mesh accessible P4-03",
+        "pass": true,
+        "detail": {
+          "x": 910.5326732673266,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "array mesh accessible P5-01",
+        "pass": true,
+        "detail": {
+          "x": 1000.2653465346534,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "array mesh accessible P5-02",
+        "pass": true,
+        "detail": {
+          "x": 1089.9980198019803,
+          "y": 498.1573619860041
+        }
+      },
+      {
+        "name": "array mesh accessible P5-03",
+        "pass": true,
+        "detail": {
+          "x": 551.6019801980198,
+          "y": 587.8900352533309
+        }
+      },
+      {
+        "name": "array mesh accessible P5-04",
+        "pass": true,
+        "detail": {
+          "x": 641.3346534653465,
+          "y": 587.8900352533309
+        }
+      },
+      {
+        "name": "array mesh accessible P5-05",
+        "pass": true,
+        "detail": {
+          "x": 731.0673267326732,
+          "y": 587.8900352533309
+        }
+      },
+      {
+        "name": "array mesh accessible P5-06",
+        "pass": true,
+        "detail": {
+          "x": 820.8,
+          "y": 587.8900352533308
+        }
+      },
+      {
+        "name": "array mesh accessible P5-07",
+        "pass": true,
+        "detail": {
+          "x": 910.5326732673266,
+          "y": 587.8900352533308
+        }
+      },
+      {
+        "name": "array mesh accessible P6-01",
+        "pass": true,
+        "detail": {
+          "x": 1000.2653465346534,
+          "y": 582.8900352533308
+        }
+      },
+      {
+        "name": "array mesh accessible P6-02",
+        "pass": true,
+        "detail": {
+          "x": 1094.9980198019803,
+          "y": 592.8900352533308
+        }
+      },
+      {
+        "name": "array mesh accessible P6-03",
+        "pass": true,
+        "detail": {
+          "x": 556.6019801980196,
+          "y": 682.6227085206576
+        }
+      },
+      {
+        "name": "array mesh accessible P6-04",
+        "pass": true,
+        "detail": {
+          "x": 641.3346534653465,
+          "y": 677.6227085206576
+        }
+      },
+      {
+        "name": "array mesh accessible P6-05",
+        "pass": true,
+        "detail": {
+          "x": 731.0673267326732,
+          "y": 677.6227085206575
+        }
+      },
+      {
+        "name": "array mesh accessible P6-06",
+        "pass": true,
+        "detail": {
+          "x": 820.8,
+          "y": 677.6227085206576
+        }
+      },
+      {
+        "name": "array mesh accessible P6-07",
+        "pass": true,
+        "detail": {
+          "x": 910.5326732673266,
+          "y": 677.6227085206575
+        }
+      },
+      {
+        "name": "array mesh accessible P6-08",
+        "pass": true,
+        "detail": {
+          "x": 1000.2653465346534,
+          "y": 677.6227085206575
+        }
+      },
+      {
+        "name": "array mesh accessible P6-09",
+        "pass": true,
+        "detail": {
+          "x": 1084.9980198019803,
+          "y": 677.6227085206575
+        }
+      },
+      {
+        "name": "35 clickable named array labels",
+        "pass": true
+      },
+      {
+        "name": "array label paints exact left instance",
+        "pass": true
+      },
+      {
+        "name": "TPU left can differ from right with same hardness",
+        "pass": true
+      },
+      {
+        "name": "main head clickable",
+        "pass": true,
+        "detail": {
+          "x": 840.7095354371284,
+          "y": 220.1621186182796
+        }
+      },
+      {
+        "name": "main rotation leaves detail unchanged",
+        "pass": true
+      },
+      {
+        "name": "detail zoom independent",
+        "pass": true
+      },
+      {
+        "name": "HSV keyboard makes paint target",
+        "pass": true
+      },
+      {
+        "name": "unbound target blocks 3MF",
+        "pass": true
+      },
+      {
+        "name": "save failure remains in focus and does not create scheme",
+        "pass": true
+      },
+      {
+        "name": "narrow viewport finite transforms",
+        "pass": true
+      },
+      {
+        "name": "zero-size resize recovers",
+        "pass": true
+      },
+      {
+        "name": "final named save returns to editable basic view",
+        "pass": true
+      },
+      {
+        "name": "3MF downloaded",
+        "pass": true
+      },
+      {
+        "name": "BOM downloaded",
+        "pass": true
+      },
+      {
+        "name": "basic comparison still available",
+        "pass": true
+      },
+      {
+        "name": "pure showcase still available",
+        "pass": true
+      },
+      {
+        "name": "community link still works",
+        "pass": true
+      },
+      {
+        "name": "no page/console errors",
+        "pass": true,
+        "detail": []
+      },
+      {
+        "name": "compact desktop uses same canvas",
+        "pass": true
+      },
+      {
+        "name": "palette catalogue remains reachable at 800px height",
+        "pass": true
+      },
+      {
+        "name": "final layout keeps 35 named controls",
+        "pass": true
+      },
+      {
+        "name": "final layout left region isolates left instance",
+        "pass": true
+      },
+      {
+        "name": "final colors retain baseline",
+        "pass": true
+      },
+      {
+        "name": "basic controls restored",
+        "pass": true
+      },
+      {
+        "name": "same source and finite basic camera",
+        "pass": true
+      }
+    ]
+  },
+  "export": {
+    "checks": [
+      {
+        "name": "All original 3D entries byte-identical",
+        "pass_": true,
+        "detail": 27
+      },
+      {
+        "name": "Source sha verified",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "6 plates,25 objects,35 parts preserved",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P1-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P1-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P1-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P1-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P1-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P1-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P1-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P1-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P2-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P2-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P2-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P2-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P2-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P2-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P2-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P2-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P2-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P2-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P2-06",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P2-06",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P2-07",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P2-07",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P3-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P3-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P3-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P3-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P3-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P3-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P3-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P3-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P3-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P3-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P4-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P4-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P4-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P4-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P4-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P4-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P5-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P5-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P5-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P5-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P5-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P5-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P5-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P5-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P5-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P5-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P5-06",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P5-06",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P5-07",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P5-07",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-01",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-02",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-03",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-04",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-05",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-06",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-06",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-07",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-07",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-08",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-08",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Export color and product P6-09",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "XML slot and color P6-09",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_enable_overhang_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile eng_plate_temp",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retraction_distances_when_cut",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile default_filament_colour",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_scarf_gap",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile eng_plate_temp_initial_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile hot_plate_temp",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile enable_overhang_bridge_fan",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_wipe_distance",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_ams_drying_temperature",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_overhang_totally_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_chamber_drying_bed_temperature",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile during_print_exhaust_fan_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile temperature_vitrification",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retract_when_changing_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile nozzle_temperature",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retraction_minimum_travel",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_overhang_4_4_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile cooling_perimeter_transition_distance",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_is_mixed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_pre_cooling_temperature_nc",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_scarf_height",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile fan_min_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_drying_softening_temperature",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_extruder_variant",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_map",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_prime_volume",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile impact_strength_z",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile supertack_plate_temp",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile activate_air_filtration",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retract_restart_extra",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile chamber_temperatures",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile counter_coef_1",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile complete_print_exhaust_fan_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile fan_cooling_layer_time",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_density",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_tower_interface_purge_volume",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_mixed_components",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile textured_plate_temp",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retraction_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_ramming_travel_time",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile required_nozzle_HRC",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile retraction_distances_when_ec",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_flush_temp",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile counter_limit_max",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_pre_cooling_temperature",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile pressure_advance",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_bridge_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_ramming_volumetric_speed_nc",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_mixed_gradient_curve",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile textured_plate_temp_initial_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retract_before_wipe",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile nozzle_temperature_range_low",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_flush_volumetric_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retraction_length",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile overhang_fan_threshold",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_drying_cooling_temperature",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_long_retractions_when_cut",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_overhang_3_4_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_cooling_before_tower",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_max_volumetric_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile close_additional_fan_first_x_layers",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_metal_stickiness",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_wipe",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_ams_drying_time",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile hole_coef_2",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_flow_ratio",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile hole_limit_min",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_mixed_gradient_per_part",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile slow_down_layer_time",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_adhesiveness_category",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_overhang_1_4_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_chamber_drying_time",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_velocity_adaptation_factor",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile supertack_plate_temp_initial_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile hole_coef_1",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile first_x_layer_fan_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_mixed_gradient",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_is_support",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile diameter_limit",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile overhang_threshold_participating_cooling",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile reduce_fan_stop_start_freq",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_preheat_temperature_delta",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_extruder_compatibility",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_overhang_2_4_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_diameter",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile slow_down_min_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile long_retractions_when_ec",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile hole_limit_max",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile cool_plate_temp",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_minimal_purge_on_wipe_tower",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile volumetric_speed_coefficients",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_mixed_sublayer_ratios",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile additional_cooling_fan_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile nozzle_temperature_initial_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_change_length_nc",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_end_gcode",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile counter_limit_min",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_colour_type",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile first_x_layer_part_fan_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile fan_max_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile ironing_fan_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_adaptive_volumetric_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_ids",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_settings_id",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile enable_pressure_advance",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_retract_length_nc",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_ams_drying_heat_distortion_temperature",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile close_fan_the_first_x_layers",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_ramming_volumetric_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_tower_ironing_area",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_soluble",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile cooling_slowdown_logic",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile cool_plate_temp_initial_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile counter_coef_3",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_change_length",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_z_hop",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_volume_map",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_scarf_length",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile hole_coef_3",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_printable",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_vendor",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_prime_volume_nc",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile no_slow_down_for_cooling_on_outwalls",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_mixed_gradient_range",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_cost",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile slow_down_for_layer_cooling",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_tower_interface_pre_extrusion_length",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile counter_coef_2",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_tower_interface_print_temp",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_scarf_seam_type",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_shrink",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile pre_start_fan_time",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile overhang_fan_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_deretraction_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_tower_interface_pre_extrusion_dist",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_start_gcode",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile override_process_overhang_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_ramming_travel_time_nc",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile full_fan_speed_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_z_hop_types",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_flush_temp_fast",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_nozzle_map",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile hot_plate_temp_initial_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile circle_compensation_speed",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile nozzle_temperature_range_high",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_type",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile additional_fan_full_speed_layer",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Original material profile filament_dev_ams_drying_ams_limitations",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Asymmetric PLA preserved",
+        "pass_": true,
+        "detail": null
+      },
+      {
+        "name": "Asymmetric TPU preserved",
+        "pass_": true,
+        "detail": null
+      }
+    ],
+    "sourceEntryCount": 27,
+    "materialProfileFieldCount": 149,
+    "slots": 6,
+    "source": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+    "notVerified": [
+      "Native slicer reimport this turn",
+      "Physical printing and motion tolerance"
+    ]
+  },
+  "sourceFiles": {
+    "app.js": "299a62e48f3e30e68db7ef0143a91447c9915e97dbddd0f23630b20e6b595693",
+    "index.html": "ed2ab94c7c881f5a7391451b5111b0a438b1d2912b43e6b6433222aca2dd7230",
+    "color-workflows.mjs": "6ff7beeaa7c821cf487ba2ece2d8990a95c45daf43af15c3e2dd6f39cf0bafca",
+    "duck-workbench.mjs": "3a1ee6b3ba5f7286fd255c2371220c12f92fc131ad40dd92b7f3e83d0a252ff2",
+    "focus-workspace.mjs": "059258850d72d9b7665d39b2fad1c0c654077b70a4197dfcab9c8b2d70122417",
+    "focus-rules.mjs": "a1e16397ec8730eb8b98a50204204000ebf46f436aca4be7afcf67df06bb8c0e",
+    "focus-workspace.css": "e738f3c75e52f80636ccfe6f9a8ce72ba24fc83d051eafb6bf9d2c16f9211205",
+    "tests/test_focus.mjs": "4f3b94d0eac8bdde617b658aab223823fee8b197031fedbe34004ae8fad1ff35",
+    "README.txt": "f3495e0c9da4f8ba73a30d13cc99e0946d601e659df483db32ac57c06fe91e5f"
+  },
+  "artifacts": {
+    "preview-final.png": "<project>/output/playwright/duck-focus-live/preview-final.png",
+    "preview-array-final.png": "<project>/output/playwright/duck-focus-live/preview-array-final.png",
+    "mobile.png": "<project>/output/playwright/duck-focus-live/mobile.png",
+    "focus-asymmetric.3mf": "<project>/output/playwright/duck-focus-live/focus-asymmetric.3mf",
+    "focus-asymmetric.csv": "<project>/output/playwright/duck-focus-live/focus-asymmetric.csv",
+    "interactions-final.json": "<project>/output/playwright/duck-focus-live/interactions-final.json",
+    "layout-export.json": "<project>/output/playwright/duck-focus-live/layout-export.json",
+    "final-smoke.json": "<project>/output/playwright/duck-focus-live/final-smoke.json",
+    "export-verification.json": "<project>/output/playwright/duck-focus-live/export-verification.json"
+  },
+  "resolvedTestHarnessIssue": {
+    "initialFailure": "Final smoke tried to fill a collapsed catalogue search input and timed out after 30000ms.",
+    "resolution": "Moved the fill before collapsing the catalogue; all seven final smoke checks passed.",
+    "log": "<project>/output/playwright/duck-focus-live/final-smoke-harness-timeout.log"
+  },
+  "lifecycle": {
+    "ownedSession": "duck-focus-live",
+    "browser": "Playwright managed Chromium 1247",
+    "closed": true,
+    "ownedPids": [
+      78737,
+      78738,
+      78754,
+      78755,
+      78756,
+      78763,
+      78765,
+      78766
+    ],
+    "remainingPids": [],
+    "existingServicePid": 56775,
+    "health": {
+      "version": "2.0.0",
+      "source_sha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+      "productCount": 36
+    },
+    "userBrowser": "Not controlled or refreshed; user can refresh the existing workbench tab."
+  },
+  "notImplemented": [
+    "MCP"
+  ],
+  "geometryNote": "Display-only transforms. No original source geometry or printing placement edited."
+}

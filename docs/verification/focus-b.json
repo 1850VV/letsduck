@@ -1,0 +1,251 @@
+{
+  "final": {
+    "checks": [
+      {
+        "name": "new and legacy sessions default to linked rotation",
+        "pass": true
+      },
+      {
+        "name": "whole drag rotates both to exactly the same new angle",
+        "pass": true
+      },
+      {
+        "name": "mode bar and rotation toggle are present",
+        "pass": true
+      },
+      {
+        "name": "unlink preserves the other angle",
+        "pass": true
+      },
+      {
+        "name": "relink aligns detail to current whole angle",
+        "pass": true
+      },
+      {
+        "name": "detail drag links back to whole",
+        "pass": true
+      },
+      {
+        "name": "linked rotation does not link movement",
+        "pass": true
+      },
+      {
+        "name": "linked rotation does not link zoom",
+        "pass": true
+      },
+      {
+        "name": "array exposes all 35 parts",
+        "pass": true
+      },
+      {
+        "name": "return restores assembly angle zoom and position",
+        "pass": true
+      },
+      {
+        "name": "explode array assembly round trip preserves pose",
+        "pass": true
+      },
+      {
+        "name": "B bar sits below models and return is adjacent",
+        "pass": true
+      },
+      {
+        "name": "shortcut 3 enters array",
+        "pass": true
+      },
+      {
+        "name": "shortcut 1 restores assembly",
+        "pass": true
+      },
+      {
+        "name": "color typing does not switch modes",
+        "pass": true
+      },
+      {
+        "name": "bar follows swapped whole-model slot",
+        "pass": true
+      },
+      {
+        "name": "off preference survives reload",
+        "pass": true
+      },
+      {
+        "name": "return view survives leaving and reload",
+        "pass": true
+      },
+      {
+        "name": "palette cannot intercept mode buttons at 390x650",
+        "pass": true
+      },
+      {
+        "name": "palette cannot intercept mode buttons at 390x700",
+        "pass": true
+      },
+      {
+        "name": "palette cannot intercept mode buttons at 640x700",
+        "pass": true
+      },
+      {
+        "name": "palette cannot intercept mode buttons at 1024x650",
+        "pass": true
+      },
+      {
+        "name": "display still shares real geometry and materials",
+        "pass": true
+      },
+      {
+        "name": "no runtime errors",
+        "pass": true,
+        "detail": []
+      }
+    ],
+    "errors": [],
+    "failed": []
+  },
+  "regression": {
+    "checks": [
+      {
+        "name": "paint changes only selected head part",
+        "pass": true
+      },
+      {
+        "name": "whole and detail update same material immediately",
+        "pass": true
+      },
+      {
+        "name": "rotation link leaves paint scope independent",
+        "pass": true
+      },
+      {
+        "name": "mode round trip preserves colors and bindings",
+        "pass": true
+      },
+      {
+        "name": "cancel save remains focused",
+        "pass": true
+      },
+      {
+        "name": "failed save stays focused with visible failure",
+        "pass": true
+      },
+      {
+        "name": "successful named save returns to basic",
+        "pass": true
+      },
+      {
+        "name": "saved colors and bindings survive reload",
+        "pass": true
+      },
+      {
+        "name": "swapped dock does not cover part picker",
+        "pass": true
+      },
+      {
+        "name": "mode buttons remain on screen at 1024",
+        "pass": true
+      },
+      {
+        "name": "direct array return clickable at 1024",
+        "pass": true
+      },
+      {
+        "name": "mode buttons remain on screen at 780",
+        "pass": true
+      },
+      {
+        "name": "direct array return clickable at 780",
+        "pass": true
+      },
+      {
+        "name": "mode buttons remain on screen at 390",
+        "pass": true
+      },
+      {
+        "name": "direct array return clickable at 390",
+        "pass": true
+      }
+    ]
+  },
+  "pythonTests": {
+    "passed": 8,
+    "failed": 0
+  },
+  "nodeTests": {
+    "passed": 29,
+    "failed": 0
+  },
+  "syntax": {
+    "app.js": {
+      "exit": 0,
+      "output": ""
+    },
+    "color-workflows.mjs": {
+      "exit": 0,
+      "output": ""
+    },
+    "duck-workbench.mjs": {
+      "exit": 0,
+      "output": ""
+    },
+    "community-store.mjs": {
+      "exit": 0,
+      "output": ""
+    },
+    "community-prototype/app.mjs": {
+      "exit": 0,
+      "output": ""
+    },
+    "community-prototype/model-view.mjs": {
+      "exit": 0,
+      "output": ""
+    },
+    "focus-workspace.mjs": {
+      "exit": 0,
+      "output": ""
+    },
+    "focus-rules.mjs": {
+      "exit": 0,
+      "output": ""
+    },
+    "tests/focus-b-browser.js": {
+      "exit": 0,
+      "output": ""
+    }
+  },
+  "unchangedFiles": {
+    "app.js": true,
+    "focus-rules.mjs": true,
+    "color-workflows.mjs": true,
+    "assets/model.json": true,
+    "assets/geometry.bin": true,
+    "exporter.py": true,
+    "start.py": true
+  },
+  "visualAcceptance": "pending",
+  "approval": "User approved B prototype on 2026-10-22",
+  "review": "One Important palette overlap fixed RED to GREEN; no Critical/Minor or declined-to-judge items.",
+  "runtime": {
+    "version": "2.0.0",
+    "source_sha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+    "productCount": 36
+  },
+  "artifactWarnings": {
+    "checkedAt": "2026-10-22T06:46:21.976Z",
+    "warnings": [],
+    "pending": []
+  },
+  "browserCleanup": {
+    "session": "duck-focus-b",
+    "remainingPids": []
+  },
+  "videoPlayback": {
+    "duration": 38.267,
+    "resolution": [
+      1440,
+      950
+    ],
+    "advancedTo": 0.687762,
+    "playing": true,
+    "error": null
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "current": "verification-materials.json",
+  "version": "2.0.0",
+  "prototypeVerification": {
+    "checked_at": "2026-10-22",
+    "data_checks": {
+      "source_3mf_unchanged": true,
+      "part_ids_and_uuids_unique": true,
+      "all_6_plates": true,
+      "all_original_meshes_and_print_placements_preserved": true,
+      "only_rigid_transforms_in_assembly": true,
+      "baseline_colors_and_materials_match_BOM": true,
+      "original_triangle_count_213704": true,
+      "export_has_all_35_part_ids": true,
+      "export_retains_original_materials": true,
+      "export_marked_prototype_only": true
+    },
+    "max_float32_display_coordinate_error_mm": 1.5250143803768879e-05,
+    "interaction_checks": [
+      {
+        "name": "35 parts loaded",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "right foot selection",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "paired feet recolor",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "baseline is independent",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "unlinked right foot changes alone",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "undo restores previous draft",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "search filters four pads",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "TPU 90A material retained",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "TPU material unchanged after recolor",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "comparison mode",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "plate view shares colors",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "all source triangles retained in plate view",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "JSON download",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "reload retains full draft",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "invalid color rejected",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "clear selection disables editing",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "3D raycast selects head shell",
+        "pass": true,
+        "detail": "P4-01"
+      },
+      {
+        "name": "orbit drag changes viewpoint",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "mobile page has no horizontal overflow",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "name": "no browser errors",
+        "pass": true,
+        "detail": ""
+      }
+    ],
+    "not_verified": [
+      "physical assembly, fit or motion",
+      "real filament appearance / SKU / inventory",
+      "Bambu Studio export or slicing (not implemented in prototype)",
+      "MCP (not connected)",
+      "subjective user acceptance"
+    ],
+    "assembly_limitations": "原始打印零件网格共 35 个。装配位置参考官方 XGO Duck V2 模型进行配准；脚部、部分外壳有版本差异，两个踝轴为示意定位。仅用于配色预览，未验证实物装配公差。",
+    "final_display_checks": {
+      "corrected_coordinate_frame_is_right_handed": true,
+      "3d_picking_after_geometry_fix": true,
+      "plate_contrast_reviewed": true,
+      "desktop_compare_reviewed": true,
+      "native_app_browser_render_verified": true
+    },
+    "resolved_findings": [
+      "Initial display coordinate conversion reflected the model. Corrected to a rotation with positive determinant; original triangle indices, dimensions and print placements now pass the geometry checks."
+    ]
+  }
+}

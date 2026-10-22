@@ -1,0 +1,22 @@
+name: Public source checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check publication boundary
+        run: python3 scripts/publication_audit.py
+      - name: Test local asset importer with synthetic fixtures
+        run: python3 -m unittest discover -s tests -p test_local_assets.py -v
+      - name: Check browser module syntax
+        run: |
+          for file in app.js color-workflows.mjs duck-workbench.mjs community-store.mjs focus-workspace.mjs focus-rules.mjs community-prototype/app.mjs community-prototype/model-view.mjs; do
+            node --check "$file"
+          done
+      - name: State the validation boundary
+        run: echo "Real-model export and browser checks need a separately licensed local asset pack and are not run in public CI."

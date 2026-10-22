@@ -1,0 +1,63 @@
+{
+  "passed": 32,
+  "checks": [
+    "eight actual model color designs",
+    "credible high score outranks a single five-star vote",
+    "eight distinct actual geometry renders",
+    "every community design contains all 35 parts and product bindings",
+    "asymmetric sample really differs left and right",
+    "search has useful empty state",
+    "color filter works",
+    "latest ordering works",
+    "detail mounts interactive actual mesh",
+    "drag changes actual model viewpoint",
+    "first vote adds one person",
+    "editing vote replaces the previous vote",
+    "rating persists across reload",
+    "import creates own copy with source attribution",
+    "import retains the whole design exactly",
+    "single left foot can be recolored independently",
+    "source remains immutable during edits",
+    "dirty draft is protected before switching",
+    "cancel import preserves edited draft",
+    "save and switch keeps private draft and imports new source",
+    "publication retains source and starts with no inherited rating",
+    "own work cannot be rated",
+    "user title rendered as plain text",
+    "published version is not mutated by later draft edits",
+    "my schemes contains two private and one published design",
+    "new publication appears in searchable gallery",
+    "mobile gallery has no horizontal overflow",
+    "mobile detail exposes import action",
+    "mobile detail has no horizontal overflow",
+    "TPU part offers only matching six TPU products",
+    "prototype never writes actual workbench drafts",
+    "no page runtime errors"
+  ],
+  "errors": [],
+  "unitTests": {
+    "python": 8,
+    "node": 14,
+    "passed": true
+  },
+  "syntaxChecked": [
+    "app.js",
+    "color-workflows.mjs",
+    "duck-workbench.mjs",
+    "community-prototype/app.mjs",
+    "community-prototype/model-view.mjs"
+  ],
+  "scope": "Local clickable design prototype; not connected to public accounts or real community backend",
+  "priorTestHarnessFailures": [
+    "Mobile detail assertion ran before hash route mounted; waited for the visible import action",
+    "Repeated run retained detail hash; reset gallery route and reload explicitly",
+    "Detail canvas assertion ran before route mounted; added element wait"
+  ],
+  "visualReview": [
+    "gallery.png",
+    "detail.png",
+    "studio.png",
+    "mobile-gallery.png",
+    "mobile-detail.png"
+  ]
+}

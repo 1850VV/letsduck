@@ -1,0 +1,133 @@
+{
+  "checked_date": "2026-10-22",
+  "repositories": [
+    {
+      "repo": "pollen-robotics/microduck",
+      "branch": "main",
+      "commit": "942e58e3aa6dbb28e7037203fff11866122c7567",
+      "commit_date": "2026-10-19T14:18:36Z",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "path": "README.md",
+          "url": "https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/README.md",
+          "sha256": "28b4c4c092b1a6cf09796290cdd0398210a14e17ea88a23ef262704c4e0d3678"
+        }
+      ],
+      "tree_truncated": false,
+      "license_paths": [
+        "LICENSE",
+        "tof/vendor/LICENSE.txt"
+      ]
+    },
+    {
+      "repo": "pollen-robotics/microduck_rl",
+      "branch": "develop",
+      "commit": "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3",
+      "commit_date": "2026-10-12T11:58:55Z",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/LICENSE",
+          "sha256": "2d3fd9ffffa70a4307498ec630b14a6b4731e010f8ddda92686eaf65733c2dfe"
+        },
+        {
+          "path": "LICENSE-MODELS.md",
+          "url": "https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/LICENSE-MODELS.md",
+          "sha256": "51526767ce31785f88f318ede4870f4b0d466267c79ce6fb9009c682f798da30"
+        },
+        {
+          "path": "README.md",
+          "url": "https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/README.md",
+          "sha256": "baca2fd269fd15a1b3a3e600bcedf5a9083f93a5ba1b6e0d53ad13d2c6a9ec37"
+        }
+      ],
+      "tree_truncated": false,
+      "license_paths": [
+        "LICENSE",
+        "LICENSE-MODELS.md"
+      ]
+    },
+    {
+      "repo": "LuwuDynamics/xgoduck_rl",
+      "branch": "main",
+      "commit": "afd091be041caf5e6d4f44102c959e7571b82a37",
+      "commit_date": "2026-10-21T11:44:18Z",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://github.com/LuwuDynamics/xgoduck_rl/blob/afd091be041caf5e6d4f44102c959e7571b82a37/LICENSE",
+          "sha256": "2d3fd9ffffa70a4307498ec630b14a6b4731e010f8ddda92686eaf65733c2dfe"
+        },
+        {
+          "path": "README.md",
+          "url": "https://github.com/LuwuDynamics/xgoduck_rl/blob/afd091be041caf5e6d4f44102c959e7571b82a37/README.md",
+          "sha256": "b82a89532d5c49d5d5ad723f614f82ceb37f41c3c4f9c297a0dc4cd745656a90"
+        }
+      ],
+      "tree_truncated": false,
+      "license_paths": [
+        "LICENSE",
+        "vendor/bam/LICENSE"
+      ]
+    },
+    {
+      "repo": "LuwuDynamics/xgoduck_hardware",
+      "branch": "master",
+      "commit": "cd3358d96945c6ff2b713c7c2f3084321b9537ca",
+      "commit_date": "2026-10-21T09:50:07Z",
+      "files": [
+        {
+          "path": "LICENSING.md",
+          "url": "https://github.com/LuwuDynamics/xgoduck_hardware/blob/cd3358d96945c6ff2b713c7c2f3084321b9537ca/LICENSING.md",
+          "sha256": "29da66eb9f6927505aff3394686e719dd12a7035b7283b3082d02329ae486ab2"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "url": "https://github.com/LuwuDynamics/xgoduck_hardware/blob/cd3358d96945c6ff2b713c7c2f3084321b9537ca/UPSTREAM.md",
+          "sha256": "4e9b04beeb31365e18dae946d0c659e656420a5f27fbcef7e474deab8cd53a6c"
+        },
+        {
+          "path": "README_CN.md",
+          "url": "https://github.com/LuwuDynamics/xgoduck_hardware/blob/cd3358d96945c6ff2b713c7c2f3084321b9537ca/README_CN.md",
+          "sha256": "d6c6ec780c55d3ba301ff019ebebb41072492f148fcd1e3d10a27379f8f49b72"
+        }
+      ],
+      "tree_truncated": false,
+      "license_paths": [
+        "LICENSING.md"
+      ]
+    },
+    {
+      "repo": "LuwuDynamics/xgoduck_runtime_arduino",
+      "branch": "master",
+      "commit": "9dc36787bc61b102c2da0f97c9c758e639e90ab8",
+      "commit_date": "2026-10-12T06:05:19Z",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://github.com/LuwuDynamics/xgoduck_runtime_arduino/blob/9dc36787bc61b102c2da0f97c9c758e639e90ab8/README.md",
+          "sha256": "cd77ed4058bd8fb1f6f41b8192cab84e18b156bec8229cfd8160fe39dde152a5"
+        }
+      ],
+      "tree_truncated": false,
+      "license_paths": []
+    }
+  ],
+  "uploaded_3mf": {
+    "path": "<local-workbench>/assets/source.3mf",
+    "sha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+    "metadata": {
+      "CreationDate": "2026-10-21",
+      "DesignModelId": "CN1dd29ab947e6e7",
+      "DesignProfileId": "206240006",
+      "Designer": "陆吾智能LuwuDynamics",
+      "License": "MakerWorld Exclusive License",
+      "Title": "XGO-Duck｜打造属于你的双足机器鸭"
+    }
+  }
+}

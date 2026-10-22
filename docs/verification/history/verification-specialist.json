@@ -1,0 +1,430 @@
+{
+  "date": "2026-10-22",
+  "model": "XGO Duck V2",
+  "modelChoice": "User explicitly confirmed continuing the current XGO Duck V2 project, not Pollen Robotics MicroDuck.",
+  "url": "http://127.0.0.1:8876/",
+  "source_sha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+  "scope": "Fixed-model part coloring and model presentation. No general importer, texture painting, source geometry editing, or MCP.",
+  "acceptance": [
+    {
+      "criterion": "Specialized part navigation for the current model",
+      "status": "passed",
+      "evidence": "Eight explicit regions cover all 35 instances exactly once; each has one original material family. Unit test and browser region selection checks."
+    },
+    {
+      "criterion": "Keep all three palette workflows and default project palette",
+      "status": "passed",
+      "evidence": "Default project mode, continuous painting, contextual palette, actual mesh color, and material-compatible choices verified in painting/display browser checks."
+    },
+    {
+      "criterion": "Preview affected parts and protect finished colors",
+      "status": "passed",
+      "evidence": "Hover scope has no design mutation; locks block all three painting workflows and resets; selective and global theme transfer skip locks; one-step undo; reload and failed-persistence checks."
+    },
+    {
+      "criterion": "Make assembly inspection and presentation convenient",
+      "status": "passed",
+      "evidence": "Focus, isolation, whole-model restoration, rear/top views, auto rotation, rotation pause on interaction, non-editing presentation, PNG download, comparison, actual scheme thumbnails."
+    },
+    {
+      "criterion": "Fit the model on narrow screens",
+      "status": "passed",
+      "evidence": "1024/800/390 layout checks plus normalized projection bounds for editing, presentation, comparison, six-plate, rear and top views at 1440/800/390 widths."
+    },
+    {
+      "criterion": "Preserve real material bindings and complete 3MF delivery",
+      "status": "passed",
+      "evidence": {
+        "validation": {
+          "status": "passed",
+          "source_sha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+          "geometryEntriesByteIdentical": 27,
+          "plateCount": 6,
+          "objectCount": 25,
+          "partCount": 35,
+          "nonMaterialObjectMetadataUnchanged": true,
+          "changedConfigurationKeys": [
+            "activate_air_filtration",
+            "additional_cooling_fan_speed",
+            "additional_fan_full_speed_layer",
+            "chamber_temperatures",
+            "circle_compensation_speed",
+            "close_additional_fan_first_x_layers",
+            "close_fan_the_first_x_layers",
+            "complete_print_exhaust_fan_speed",
+            "cool_plate_temp",
+            "cool_plate_temp_initial_layer",
+            "cooling_perimeter_transition_distance",
+            "cooling_slowdown_logic",
+            "counter_coef_1",
+            "counter_coef_2",
+            "counter_coef_3",
+            "counter_limit_max",
+            "counter_limit_min",
+            "default_filament_colour",
+            "diameter_limit",
+            "different_settings_to_system",
+            "during_print_exhaust_fan_speed",
+            "enable_overhang_bridge_fan",
+            "enable_pressure_advance",
+            "eng_plate_temp",
+            "eng_plate_temp_initial_layer",
+            "fan_cooling_layer_time",
+            "fan_max_speed",
+            "fan_min_speed",
+            "filament_adaptive_volumetric_speed",
+            "filament_adhesiveness_category",
+            "filament_bridge_speed",
+            "filament_change_length",
+            "filament_change_length_nc",
+            "filament_colour",
+            "filament_colour_type",
+            "filament_cooling_before_tower",
+            "filament_cost",
+            "filament_density",
+            "filament_deretraction_speed",
+            "filament_dev_ams_drying_ams_limitations",
+            "filament_dev_ams_drying_heat_distortion_temperature",
+            "filament_dev_ams_drying_temperature",
+            "filament_dev_ams_drying_time",
+            "filament_dev_chamber_drying_bed_temperature",
+            "filament_dev_chamber_drying_time",
+            "filament_dev_drying_cooling_temperature",
+            "filament_dev_drying_softening_temperature",
+            "filament_diameter",
+            "filament_enable_overhang_speed",
+            "filament_end_gcode",
+            "filament_extruder_compatibility",
+            "filament_extruder_variant",
+            "filament_flow_ratio",
+            "filament_flush_temp",
+            "filament_flush_temp_fast",
+            "filament_flush_volumetric_speed",
+            "filament_ids",
+            "filament_is_mixed",
+            "filament_is_support",
+            "filament_long_retractions_when_cut",
+            "filament_map",
+            "filament_max_volumetric_speed",
+            "filament_metal_stickiness",
+            "filament_minimal_purge_on_wipe_tower",
+            "filament_mixed_components",
+            "filament_mixed_gradient",
+            "filament_mixed_gradient_curve",
+            "filament_mixed_gradient_per_part",
+            "filament_mixed_gradient_range",
+            "filament_mixed_sublayer_ratios",
+            "filament_multi_colour",
+            "filament_nozzle_map",
+            "filament_overhang_1_4_speed",
+            "filament_overhang_2_4_speed",
+            "filament_overhang_3_4_speed",
+            "filament_overhang_4_4_speed",
+            "filament_overhang_totally_speed",
+            "filament_pre_cooling_temperature",
+            "filament_pre_cooling_temperature_nc",
+            "filament_preheat_temperature_delta",
+            "filament_prime_volume",
+            "filament_prime_volume_nc",
+            "filament_printable",
+            "filament_ramming_travel_time",
+            "filament_ramming_travel_time_nc",
+            "filament_ramming_volumetric_speed",
+            "filament_ramming_volumetric_speed_nc",
+            "filament_retract_before_wipe",
+            "filament_retract_length_nc",
+            "filament_retract_restart_extra",
+            "filament_retract_when_changing_layer",
+            "filament_retraction_distances_when_cut",
+            "filament_retraction_length",
+            "filament_retraction_minimum_travel",
+            "filament_retraction_speed",
+            "filament_scarf_gap",
+            "filament_scarf_height",
+            "filament_scarf_length",
+            "filament_scarf_seam_type",
+            "filament_self_index",
+            "filament_settings_id",
+            "filament_shrink",
+            "filament_soluble",
+            "filament_start_gcode",
+            "filament_tower_interface_pre_extrusion_dist",
+            "filament_tower_interface_pre_extrusion_length",
+            "filament_tower_interface_print_temp",
+            "filament_tower_interface_purge_volume",
+            "filament_tower_ironing_area",
+            "filament_type",
+            "filament_velocity_adaptation_factor",
+            "filament_vendor",
+            "filament_volume_map",
+            "filament_wipe",
+            "filament_wipe_distance",
+            "filament_z_hop",
+            "filament_z_hop_types",
+            "first_x_layer_fan_speed",
+            "first_x_layer_part_fan_speed",
+            "flush_volumes_matrix",
+            "flush_volumes_vector",
+            "full_fan_speed_layer",
+            "hole_coef_1",
+            "hole_coef_2",
+            "hole_coef_3",
+            "hole_limit_max",
+            "hole_limit_min",
+            "hot_plate_temp",
+            "hot_plate_temp_initial_layer",
+            "impact_strength_z",
+            "ironing_fan_speed",
+            "long_retractions_when_ec",
+            "no_slow_down_for_cooling_on_outwalls",
+            "nozzle_temperature",
+            "nozzle_temperature_initial_layer",
+            "nozzle_temperature_range_high",
+            "nozzle_temperature_range_low",
+            "overhang_fan_speed",
+            "overhang_fan_threshold",
+            "overhang_threshold_participating_cooling",
+            "override_process_overhang_speed",
+            "pre_start_fan_time",
+            "pressure_advance",
+            "reduce_fan_stop_start_freq",
+            "required_nozzle_HRC",
+            "retraction_distances_when_ec",
+            "slow_down_for_layer_cooling",
+            "slow_down_layer_time",
+            "slow_down_min_speed",
+            "supertack_plate_temp",
+            "supertack_plate_temp_initial_layer",
+            "temperature_vitrification",
+            "textured_plate_temp",
+            "textured_plate_temp_initial_layer",
+            "volumetric_speed_coefficients"
+          ],
+          "sliced": false,
+          "physicalPrintVerified": false
+        },
+        "browserAssignmentsMatch": true,
+        "BOMRows": 35,
+        "BOMColorsAndMaterialsMatch": true,
+        "sourceUnchanged": true
+      }
+    },
+    {
+      "criterion": "Subjective usability and physical appearance acceptance",
+      "status": "not_verified",
+      "evidence": "User review of this iteration is pending; no physical print, assembly tolerance, motion, or calibrated color validation."
+    }
+  ],
+  "automatedTests": {
+    "pythonExporter": {
+      "passed": 8,
+      "command": "python3 -m unittest discover -s tests -v"
+    },
+    "javascriptRules": {
+      "passed": 11,
+      "command": "node --test tests/test_workflows.mjs tests/test_workbench.mjs"
+    },
+    "syntax": [
+      "app.js",
+      "color-workflows.mjs",
+      "duck-workbench.mjs"
+    ],
+    "whitespaceIssues": 0
+  },
+  "browser": {
+    "managed": "Playwright Chromium / Chrome for Testing",
+    "session": "duck-specialist",
+    "passed": 95,
+    "groups": {
+      "painting": {
+        "passed": 27,
+        "checks": [
+          "default project palette with part-region navigation",
+          "eight model-specific paint regions",
+          "hover previews four body parts",
+          "scope preview does not mutate design",
+          "body selection has four explicit IDs",
+          "body color changes only four body-shell parts",
+          "body renderer matches bound cobalt blue",
+          "lock whole body region",
+          "project color mutation respects locks",
+          "reset respects locks",
+          "theme scope explicitly excludes four locks",
+          "global theme keeps locked body color",
+          "theme modifies unlocked shell and retains body locks",
+          "theme preserves original TPU product bindings",
+          "theme change undo is atomic",
+          "theme applies only selected feet",
+          "soft soles only offer six TPU products",
+          "specific part-region name shown in editor",
+          "continuous painting skips locked paired body parts",
+          "continuous painting still changes unlocked pair",
+          "near-part palette still opens",
+          "near-part painting respects locks",
+          "unlock paired body shells leaves back and battery locked",
+          "unlocked mirrored body shells are editable",
+          "locks and color draft survive reload",
+          "three actual model thumbnails render",
+          "baseline ocean and edited draft thumbnails differ"
+        ]
+      },
+      "display": {
+        "passed": 20,
+        "checks": [
+          "focus moves camera target to selected head region",
+          "isolate shows only three selected head parts",
+          "isolation follows newly selected region",
+          "show whole duck restores every part",
+          "rear view sees back of robot",
+          "top view aims down onto robot",
+          "turntable changes camera position over time",
+          "pointer gesture pauses automatic rotation",
+          "camera rotation isolation and focus preserve paint",
+          "presentation hides editing panels",
+          "presentation has visible return action",
+          "presentation model clicks cannot select or paint",
+          "showcase PNG download succeeds",
+          "Escape exits presentation",
+          "comparison resets isolation for whole-model comparison",
+          "comparison renders selected reference scheme",
+          "plate layout does not auto-rotate",
+          "all 35 print parts visible in six-board view",
+          "real canvas raycast paints visible isolated head",
+          "hidden parts cannot intercept isolated-part painting"
+        ]
+      },
+      "export-layout": {
+        "passed": 24,
+        "checks": [
+          "custom scheme can be saved from specialized workbench",
+          "editing produces draft without changing saved reference",
+          "saved custom scheme is usable as a selective color source",
+          "export fixture isolates two feet",
+          "export review retains all 35 parts despite isolation",
+          "BOM download succeeded",
+          "actual recolored 3MF download succeeded",
+          "unbound target still cannot be exported as physical filament",
+          "no horizontal page overflow at 1024",
+          "region selection works at 1024",
+          "near-part palette fits canvas at 1024",
+          "presentation return available at 1024",
+          "presentation canvas stays in viewport at 1024",
+          "no horizontal page overflow at 800",
+          "region selection works at 800",
+          "near-part palette fits canvas at 800",
+          "presentation return available at 800",
+          "presentation canvas stays in viewport at 800",
+          "no horizontal page overflow at 390",
+          "region selection works at 390",
+          "near-part palette fits canvas at 390",
+          "presentation return available at 390",
+          "presentation canvas stays in viewport at 390",
+          "existing lock state survives all workflow switches"
+        ]
+      },
+      "framing": {
+        "passed": 20,
+        "checks": [
+          "complete duck fits editing view at 1440",
+          "complete duck fits presentation after resize at 1440",
+          "both ducks fit comparison view at 1440",
+          "all six plates parts fit view at 1440",
+          "rear view fits model at 1440",
+          "top view fits model at 1440",
+          "complete duck fits editing view at 800",
+          "complete duck fits presentation after resize at 800",
+          "both ducks fit comparison view at 800",
+          "all six plates parts fit view at 800",
+          "rear view fits model at 800",
+          "top view fits model at 800",
+          "complete duck fits editing view at 390",
+          "complete duck fits presentation after resize at 390",
+          "both ducks fit comparison view at 390",
+          "all six plates parts fit view at 390",
+          "rear view fits model at 390",
+          "top view fits model at 390",
+          "failed lock persistence is explicitly shown",
+          "failed lock write does not pretend to persist on reload"
+        ]
+      },
+      "final-smoke": {
+        "passed": 3,
+        "checks": [
+          "raw part navigation reports 35 real parts",
+          "canvas paint works with automatic framing",
+          "final blue white black model image downloads"
+        ]
+      },
+      "thumbnail-final": {
+        "passed": 1,
+        "checks": [
+          "thumbnail cache updates synchronously without broken image placeholders"
+        ]
+      }
+    },
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "cleanup": {
+      "command": "playwright-cli -s=duck-specialist close",
+      "ownedPids": [
+        64167,
+        64168,
+        64177,
+        64178,
+        64179,
+        64182,
+        64188,
+        64189
+      ],
+      "remainingPids": [],
+      "confirmed": true
+    }
+  },
+  "issuesResolved": [
+    {
+      "finding": "Initial hover test read before a new pointer boundary event after reload.",
+      "resolution": "Moved the test pointer outside the panel before hovering and waited for actual preview state; all 27 painting checks passed."
+    },
+    {
+      "finding": "Mobile presentation initially cropped the model despite a page that did not overflow.",
+      "resolution": "Added camera-space framing based on all visible model bounds and viewport aspect ratio."
+    },
+    {
+      "finding": "390 px six-board projection exceeded normalized horizontal limits (minX=-1.546, maxX=1.546) due to the old 2000 mm camera orbit limit.",
+      "resolution": "Camera orbit range and far plane now accommodate fitted distance; all 18 geometric framing checks passed."
+    },
+    {
+      "finding": "Rebuilding scheme cards could briefly show image placeholders until the thumbnail timer fired.",
+      "resolution": "Cached model thumbnails update synchronously; first-render placeholders are hidden and final image rendering was visually inspected."
+    }
+  ],
+  "notExecuted": [
+    "Native Bambu Studio reload was not repeated for this UI-only revision; exporter backend is unchanged.",
+    "Actual slicing and physical printing.",
+    "Timing or usability benchmark with a human operator."
+  ],
+  "previewAccess": {
+    "userTabAutoRefresh": "blocked by in-app browser security policy; no workaround attempted",
+    "instruction": "Refresh the existing workspace manually."
+  },
+  "serverHealth": {
+    "version": "2.0.0",
+    "source_sha256": "731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c",
+    "productCount": 36
+  },
+  "artifacts": {
+    "qa": "<project>/output/playwright/duck-specialist",
+    "image": "<project>/output/playwright/duck-specialist/blue-white-black.png",
+    "threeMF": "<project>/output/playwright/duck-specialist/specialist.3mf",
+    "bom": "<project>/output/playwright/duck-specialist/specialist-BOM.csv"
+  },
+  "changedFiles": {
+    "app.js": "a31f54af3c01fe67dcec90102617358166e574d70600181e792f6da194dc7499",
+    "color-workflows.mjs": "2f607da6cbca16ae025ec5bb47877c8e5f95d24ffbd9b5af9f298d9eac52bf8e",
+    "duck-workbench.mjs": "90d4723c2b9755e5c07b0d578482623959b2e9dc0e8c0fa13f3099ee901e3686",
+    "duck-workbench.css": "85d7aaa0bd162e79ea5acc52334a389904675f7ce9d6262560610a26bdcd62cc",
+    "index.html": "faf8de60e5a3b6b7dd00977a0ad64ba5bc55b3a41067ec225cab8b011e96e509",
+    "README.txt": "93d96f5efae7cb91d528bd9cf84e26ad93cf33bc700e6aa84afb2faaf0906020",
+    "tests/test_workbench.mjs": "0e73ee08478a42047da197bdd4abc2dc225d8a97a40dc4b986899c90d5cb0dc1"
+  }
+}
