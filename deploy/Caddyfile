@@ -1,0 +1,12 @@
+# HTTPS entry for the server edition (docker-compose.https.yml). Caddy obtains and renews
+# Let's Encrypt certificates for DUCK_DOMAIN and www.DUCK_DOMAIN; both must resolve to this server
+# and ports 80 + 443 must be open. HTTP redirects to HTTPS; www redirects to the bare domain.
+
+{$DUCK_DOMAIN} {
+	reverse_proxy frontend:80
+	header -Server
+}
+
+www.{$DUCK_DOMAIN} {
+	redir https://{$DUCK_DOMAIN}{uri} permanent
+}

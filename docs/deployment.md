@@ -28,6 +28,10 @@ docker compose up -d --build
 
 要求 Docker Compose v2。对外端口 `DUCK_BIND:DUCK_PORT`（默认 `0.0.0.0:8080`）。HTTPS 由站点前的反向代理提供；代理在同一台机器上时可设 `DUCK_BIND=127.0.0.1`。
 
+### HTTPS
+
+`docker-compose.https.yml` 加一个 Caddy 容器（`deploy/Caddyfile`）：为 `DUCK_DOMAIN` 和 `www.DUCK_DOMAIN` 自动申请、续期 Let's Encrypt 证书，HTTP 跳 HTTPS，`www.` 永久跳转到主域名，再转发给 nginx。前提：两个域名的 A 记录指向服务器，80/443（含 443/udp）对外开放。`.env` 里设 `DUCK_DOMAIN`、`DUCK_PUBLIC_URL=https://<域名>`、`DUCK_BIND=127.0.0.1`、`DUCK_PORT=8080`，并用 `COMPOSE_FILE=docker-compose.yml:docker-compose.https.yml` 让普通的 `docker compose` 命令自动带上这个文件。证书保存在 `caddy-data` 卷里，不要删除。查看申请日志：`docker compose logs caddy`。
+
 ### 小服务器（1 核 2 GB 起）
 
 MySQL 以 `--innodb-buffer-pool-size=${DUCK_MYSQL_BUFFER_POOL:-128M} --performance-schema=OFF --max-connections=60` 启动；4 GB 内存可在 `.env` 设 `DUCK_MYSQL_BUFFER_POOL=256M`。测试环境（Ubuntu 24.04，Docker 29）中实测内存：MySQL 约 165 MB（128M 缓冲池，刚启动）到 265 MB（256M，跑过测试流量；缓冲池按使用逐步占满）、后端 63 MB、nginx 5 MB；每个 3MF 导出进程峰值约 60 MB。1 核 2 GB 合计约 800 MB（含系统与 Docker），建议另开 2 GB swap（命令见 README）。3MF 导出在独立进程计算，保持 `DUCK_EXPORT_WORKERS=1`。

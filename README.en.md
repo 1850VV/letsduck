@@ -103,7 +103,17 @@ docker compose up -d --build
 Open `http://<server>:8080/` (change with `DUCK_PORT` / `DUCK_BIND` in `.env`).
 
 - `frontend` (nginx) serves the static pages with gzip and a read-only `/assets/` (the source 3MF is never served), and proxies `/api/` to `backend`; `backend` stays on the internal network and MySQL has no host port.
-- No HTTPS built in: put it behind Caddy or nginx with a certificate. Once HTTPS works, set `DUCK_PUBLIC_URL=https://your-domain` in `.env` and run `docker compose up -d`; only then are copy-link and poster QR codes generated (pointing to `<DUCK_PUBLIC_URL>/gallery/#d/<work id>`). Unset, non-HTTPS, localhost or IP addresses produce no share links. After deploying, scan a poster with another phone to check.
+- **HTTPS (automatic certificates)**: point your domain and its `www.` at the server, open ports 80 and 443, then set in `.env`:
+
+  ```dotenv
+  DUCK_DOMAIN=your-domain
+  DUCK_PUBLIC_URL=https://your-domain
+  DUCK_BIND=127.0.0.1
+  DUCK_PORT=8080
+  COMPOSE_FILE=docker-compose.yml:docker-compose.https.yml
+  ```
+
+  and run `docker compose up -d`. `docker-compose.https.yml` adds a Caddy container that obtains and renews Let's Encrypt certificates, redirects HTTP to HTTPS and `www.` to the bare domain. Copy-link and poster QR codes appear once `DUCK_PUBLIC_URL` is set (pointing to `<DUCK_PUBLIC_URL>/gallery/#d/<work id>`); unset, non-HTTPS, localhost or IP addresses produce no share links. An existing reverse proxy works too.
 - Backup: `docker compose exec -T mysql sh -c 'mysqldump --single-transaction -uduck -p"$MYSQL_PASSWORD" doodleduck' > backup.sql`. Upgrading from an older SQLite deployment, rollback and external MySQL: see [deployment](docs/deployment.md) (Chinese).
 
 ### Small servers (1 core / 2 GB)
