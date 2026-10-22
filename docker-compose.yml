@@ -1,16 +1,18 @@
 # 涂鸭 DoodleDuck server edition (accounts + 配色广场): nginx frontend, FastAPI backend, MySQL 8.4.
 #   cp .env.example .env   # then set the two MySQL passwords
 #   docker compose up -d --build
-# Sized for a 2-core / 4 GB server. ./assets must hold the separately licensed asset pack
-# (docs/local-assets.md); it is mounted read-only and never baked into an image.
+# Fits a 1-core / 2 GB server (add swap, see README); raise DUCK_MYSQL_BUFFER_POOL on bigger hosts.
+# ./assets must hold the separately licensed asset pack (docs/local-assets.md); it is mounted
+# read-only and never baked into an image.
 # The personal edition does not use Docker: double-click 启动涂鸭.command / 启动涂鸭.bat instead.
 services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
-    # Small-server tuning: ~256 MB buffer pool, no performance_schema (saves ~400 MB), few connections.
+    # Small-server tuning: buffer pool from .env (128M default; 256M on 4 GB), no performance_schema
+    # (saves ~400 MB), few connections.
     command: >-
-      --innodb-buffer-pool-size=256M --performance-schema=OFF --max-connections=60
+      --innodb-buffer-pool-size=${DUCK_MYSQL_BUFFER_POOL:-128M} --performance-schema=OFF --max-connections=60
       --skip-name-resolve --character-set-server=utf8mb4 --collation-server=utf8mb4_bin
     environment:
       MYSQL_DATABASE: doodleduck

@@ -28,9 +28,11 @@ docker compose up -d --build
 
 要求 Docker Compose v2。对外端口 `DUCK_BIND:DUCK_PORT`（默认 `0.0.0.0:8080`）。HTTPS 由站点前的反向代理提供；代理在同一台机器上时可设 `DUCK_BIND=127.0.0.1`。
 
-### 2 核 4 GB 服务器
+### 小服务器（1 核 2 GB 起）
 
-MySQL 以 `--innodb-buffer-pool-size=256M --performance-schema=OFF --max-connections=60` 启动。测试环境（Ubuntu 24.04，Docker 29）中三个容器空闲时约为：MySQL 265 MB、后端 63 MB、nginx 5 MB。3MF 导出在独立进程计算，建议保持 `DUCK_EXPORT_WORKERS=1`。
+MySQL 以 `--innodb-buffer-pool-size=${DUCK_MYSQL_BUFFER_POOL:-128M} --performance-schema=OFF --max-connections=60` 启动；4 GB 内存可在 `.env` 设 `DUCK_MYSQL_BUFFER_POOL=256M`。测试环境（Ubuntu 24.04，Docker 29）中实测内存：MySQL 约 165 MB（128M 缓冲池，刚启动）到 265 MB（256M，跑过测试流量；缓冲池按使用逐步占满）、后端 63 MB、nginx 5 MB；每个 3MF 导出进程峰值约 60 MB。1 核 2 GB 合计约 800 MB（含系统与 Docker），建议另开 2 GB swap（命令见 README）。3MF 导出在独立进程计算，保持 `DUCK_EXPORT_WORKERS=1`。
+
+nginx 对 `/assets/`（模型几何、色表）发送 `Cache-Control: public, max-age=604800`，过期后用 ETag / Last-Modified 重新验证。更换资产包后，7 天内访问过的浏览器可能仍用旧文件，需要强制刷新。页面和脚本仍是 `no-cache`，每次都会核对是否有新版本。
 
 ### 外部 MySQL
 

@@ -50,7 +50,7 @@ assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器
 
 ## 服务器版：Docker + MySQL
 
-适合 2 核 4 GB 的云服务器；三个容器空闲时合计约 350 MB 内存，MySQL 已按小内存调优（256 MB 缓冲池、关闭 performance_schema）。
+1 核 2 GB 的云服务器就够用（见下面「小服务器建议」）。三个容器空闲时合计约 250–330 MB 内存；3D 渲染和涂色都在用户浏览器里完成，服务器只存数据和导出 3MF。
 
 ```sh
 git clone git@github.com:1850VV/duck-palette.git
@@ -65,6 +65,20 @@ docker compose up -d --build
 - `frontend`（nginx）提供静态页面、gzip 压缩和只读的 `/assets/`（不对外提供源 3MF），并把 `/api/` 转发给 `backend`；`backend` 只在内部网络，MySQL 不映射宿主机端口。
 - 本身不带 HTTPS：放在 Caddy 或 nginx + 证书的反向代理后面。HTTPS 就绪后在 `.env` 设置 `DUCK_PUBLIC_URL=https://你的域名`，再 `docker compose up -d`，复制链接和海报二维码才会生成（指向 `<DUCK_PUBLIC_URL>/gallery/#d/<作品ID>`）。未配置、非 HTTPS、localhost 或 IP 地址都不会生成分享链接。部署后请用另一台手机扫一下海报核对。
 - 备份：`docker compose exec -T mysql sh -c 'mysqldump --single-transaction -uduck -p"$MYSQL_PASSWORD" doodleduck' > backup.sql`。从旧的 SQLite 部署升级、回退和外部 MySQL 见 [部署与迁移说明](docs/deployment.md)。
+
+### 小服务器建议（1 核 2 GB）
+
+- **先开 2 GB swap**，防止构建镜像或偶发高峰时内存不够、进程被系统杀掉（Ubuntu / Debian，只需做一次）：
+
+  ```sh
+  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+  sudo mkswap /swapfile && sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+  ```
+
+- **MySQL 缓存**：`.env` 里 `DUCK_MYSQL_BUFFER_POOL` 默认 `128M`，几个朋友的数据量足够；4 GB 内存可改成 `256M`。改完 `docker compose up -d` 生效。
+- **导出**保持 `DUCK_EXPORT_WORKERS=1`：单核每次导出约 1–2 秒，同时算 1 个、排队 2 个，再多会提示稍后重试。
+- **带宽比 CPU 和内存更关键**：新用户第一次打开约下载 3.8 MB（gzip 后，其中模型 3 MB），5 Mbps 大约每分钟能承受 10 个新用户首次打开，30 Mbps 约 60 个。模型文件在浏览器缓存 7 天，老用户再来基本不用重新下载；更换资产包后，7 天内已访问过的浏览器可能需要强制刷新。
 
 ## 本地开发
 
