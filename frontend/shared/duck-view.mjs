@@ -6,6 +6,8 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 
+import {demandLoop} from './render-policy.mjs';
+import {adaptiveDraw} from './depth-render.mjs';
 import {loadModel} from './model-loader.mjs';
 export async function loadDuck() {
   const data=await loadModel(),{model,catalog}=data;
@@ -54,7 +56,7 @@ function addLights(scene) {
 }
 
 export function createDuckView({ model, binary, geometry: prepared }) {
-  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: false });
   // Phones: a lighter pixel ratio keeps the frame rate up, and firmer damping/slower rotation keep the duck under the finger on a short stage.
   const coarse = matchMedia('(pointer: coarse)').matches;
   renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.5 : 1.75));renderer.outputColorSpace = THREE.SRGBColorSpace;renderer.toneMapping = THREE.ACESFilmicToneMapping;renderer.toneMappingExposure = 1.05;renderer.setClearColor(0, 0);
@@ -80,7 +82,7 @@ export function createDuckView({ model, binary, geometry: prepared }) {
   let pose = { ...REST_POSE };
   // Applies joint angles in degrees. Ankles keep feet flat and the rig shifts so both soles stay planted.
   function setPose(next) {
-    pose = { ...REST_POSE, ...next };const P = pose;
+    invalidate();pose = { ...REST_POSE, ...next };const P = pose;
     joints.trunk.rotation.set(deg(P.trunk), 0, 0);
     for (const [s, side] of [['L', 'left'], ['R', 'right']]) {
       const hip = P.hip + P['hip' + s],knee = P.knee + P['knee' + s];
@@ -97,6 +99,9 @@ export function createDuckView({ model, binary, geometry: prepared }) {
     rig.position.y += P.lift;root.updateMatrixWorld(true);
   }
 
+  let revision=0;
+  const schedule=demandLoop(animate),invalidate=()=>{revision++;schedule();};
+  const draw=adaptiveDraw(renderer,scene,camera);let finishState='';
   let host = null,observer = null,turntable = false,tween = null,frame,selected = new Set(),hovered = new Set(),layout = 'assembly',beforeArrange = null,moving = false,split = null;
   const tanV = () => Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   // Selection is drawn as an outline (an inverted hull), never by tinting the part, so the colour on
@@ -106,15 +111,15 @@ export function createDuckView({ model, binary, geometry: prepared }) {
   function paintHighlight() {for (const [id, m] of meshes) {m.material.emissiveIntensity = 0;const s = selected.has(id),h = hovered.has(id);let o = m.userData.outline;if ((s || h) && !o) {o = new THREE.Mesh(m.geometry, OUTLINE.sel);o.raycast = () => {};m.add(o);m.userData.outline = o;}if (o) {o.visible = s || h;o.material = s ? OUTLINE.sel : OUTLINE.hover;}}}
   // Colour changes glide over ~150 ms instead of snapping; snapshots and A/B halves set colours instantly.
   const targets = new Map();let tweening = false;
-  function setColors(colors, instant = false) {for (const [id, m] of meshes) if (colors[id]) {let t = targets.get(id);if (!t) targets.set(id, t = new THREE.Color());t.set(colors[id]);if (instant) m.material.color.copy(t);}tweening = true;}
+  function setColors(colors, instant = false) {invalidate();for (const [id, m] of meshes) if (colors[id]) {let t = targets.get(id);if (!t) targets.set(id, t = new THREE.Color());t.set(colors[id]);if (instant) m.material.color.copy(t);}tweening = true;}
   function stepColors() {if (!tweening) return;let busy = false;for (const [id, t] of targets) {const c = meshes.get(id).material.color;if (Math.abs(c.r - t.r) + Math.abs(c.g - t.g) + Math.abs(c.b - t.b) > .003) {c.lerp(t, .3);busy = true;} else c.copy(t);}tweening = busy;}
   const flushColors = () => {for (const [id, t] of targets) meshes.get(id).material.color.copy(t);tweening = false;};
-  function setFinishes(map) {for (const [id, m] of meshes) {const f = FINISHES[map[id]] || FINISHES.basic;for (const k of FINISH_KEYS) m.material[k] = f[k];m.material.userData.layer.value = f.layer;}}
-  function setHighlight(ids = [], hover = []) {selected = new Set(ids);hovered = new Set(hover);paintHighlight();}
+  function setFinishes(map) {invalidate();finishState=JSON.stringify(map);for (const [id, m] of meshes) {const f = FINISHES[map[id]] || FINISHES.basic;for (const k of FINISH_KEYS) m.material[k] = f[k];m.material.userData.layer.value = f.layer;}}
+  function setHighlight(ids = [], hover = []) {invalidate();selected = new Set(ids);hovered = new Set(hover);paintHighlight();}
 
   // ---- camera ----
   const framed = (name) => new THREE.Vector3(...VIEWS[name]).sub(TARGET).multiplyScalar(1.32 * (camera.aspect < .9 ? .9 / camera.aspect : 1)).add(TARGET);
-  function fly(to, target) {tween = { from: camera.position.clone(), to, tFrom: controls.target.clone(), tTo: target.clone(), start: performance.now() };}
+  function fly(to, target) {invalidate();tween = { from: camera.position.clone(), to, tFrom: controls.target.clone(), tTo: target.clone(), start: performance.now() };}
   function arrangedCamera() {const w = GRID.cols * GRID.cell,h = Math.ceil(model.parts.length / GRID.cols) * GRID.cell,d = Math.max(h / 2 / tanV(), w / 2 / (tanV() * camera.aspect)) * 1.12;return GRID.center.clone().add(new THREE.Vector3(0, 0, d * 1.18));}
   function view(name) {if (layout === 'arrange') return fly(arrangedCamera(), GRID.center);fly(framed(name), TARGET);}
   function placeCamera(name) {camera.position.copy(framed(name));controls.target.copy(TARGET);controls.update();}
@@ -144,7 +149,7 @@ export function createDuckView({ model, binary, geometry: prepared }) {
   // It shares the camera, so orbiting turns both together; it always sits to the screen-right of the
   // duck, and a view offset keeps the pair centred. Clicks on the copy select and paint the real part.
   const side = { group: new THREE.Group(), inner: new THREE.Group(), key: '', label: null, scale: 1, radius: 0, on: false };side.group.add(side.inner);scene.add(side.group);side.group.visible = false;
-  function setSideCopy(ids, label) {
+  function setSideCopy(ids, label) {invalidate();
     const key = ids?.length && layout !== 'arrange' ? ids.join(',') : '';side.label = label || side.label;
     if (key === side.key) return side.scale;side.key = key;
     side.inner.children.forEach((m) => m.material.dispose());side.inner.clear();
@@ -181,7 +186,7 @@ export function createDuckView({ model, binary, geometry: prepared }) {
   }
 
   // ---- loop ----
-  function resize() {if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();}
+  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();}
   function mount(el, { view: name = 'hero', preserveView=false } = {}) {host = el;observer?.disconnect();el.prepend(renderer.domElement);observer = new ResizeObserver(resize);observer.observe(el);resize();if(!preserveView)placeCamera(name);}
   const ray = new THREE.Raycaster(),pointer = new THREE.Vector2();
   function pick(clientX, clientY) {
@@ -189,15 +194,18 @@ export function createDuckView({ model, binary, geometry: prepared }) {
     if (split) {if (x < .5) return null;x = (x - .5) * 2;camera.aspect = aspect / 2;camera.updateProjectionMatrix();}
     pointer.set(x * 2 - 1, -(clientY - b.top) / b.height * 2 + 1);ray.setFromCamera(pointer, camera);const hit = ray.intersectObjects([...meshes.values(), ...(side.group.visible ? side.inner.children : [])], false)[0];
     if (split) {camera.aspect = aspect;camera.updateProjectionMatrix();}return hit?.object.userData.id || null;}
-  controls.addEventListener('start', () => {tween = null;});
+  controls.addEventListener('start', () => {tween = null;invalidate();});
+  controls.addEventListener('change', invalidate);
+  renderer.domElement.addEventListener('webglcontextrestored',invalidate);
   function animate() {
-    frame = requestAnimationFrame(animate);
+    if(!renderer.domElement.isConnected)return false;
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
     if (turntable && !tween) root.rotation.y += .006;
-    if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else renderer.render(scene, camera);}
+    if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else draw(layout==='assembly'&&!side.group.visible&&!selected.size&&!hovered.size&&root.children.length===1&&[...meshes.values()].some(m=>m.material.transmission>0),finishState);}
+    return !!(tween||moving||tweening||turntable);
   }
-  animate();
+
 
   // Renders the assembled duck alone at an exact size from the current camera direction, then restores the live view.
   function snapshot(w, h, { colors, angle } = {}) {
@@ -213,7 +221,7 @@ export function createDuckView({ model, binary, geometry: prepared }) {
     renderer.render(scene, camera);const out = document.createElement('canvas');out.width = w;out.height = h;out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
     renderer.setPixelRatio(saved.ratio);renderer.setSize(saved.size.x, saved.size.y, false);camera.aspect = saved.aspect;camera.updateProjectionMatrix();camera.position.copy(saved.pos);controls.target.copy(saved.target);camera.lookAt(saved.target);controls.update();
     saved.objs.forEach(([o, p, s, v]) => {o.position.copy(p);o.scale.setScalar(s);o.visible = v;});shadow.visible = saved.shadow;side.group.visible = saved.side;
-    root.rotation.y = saved.spin;if (saved.colors) setColors(saved.colors, true);selected = saved.hl[0];hovered = saved.hl[1];paintHighlight();return out;
+    root.rotation.y = saved.spin;if (saved.colors) setColors(saved.colors, true);selected = saved.hl[0];hovered = saved.hl[1];paintHighlight();invalidate();return out;
   }
   const thumbnail = (colors, w = 540, h = 390) => snapshot(w, h, { colors, angle: 'hero' }).toDataURL('image/png');
   // A separate assembled scene for the publish ceremony (evolution.mjs renders it with its own renderer).
@@ -223,10 +231,10 @@ export function createDuckView({ model, binary, geometry: prepared }) {
     for (const h of hardware) s.add(new THREE.Mesh(h.geometry, h.material));
     return { scene: s, meshes: list };
   }
-  return { mount, setColors, setFinishes, setHighlight, pick, view, focus, snapshot, thumbnail, createShowcase, canvas: renderer.domElement,
+  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, view, focus, snapshot, thumbnail, createShowcase, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
-    setSideCopy, setSplit: (colors) => {split = colors || null;},
-    setTurntable: (on) => {if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;},
+    setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
+    setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},
     setExplode: (on) => setLayout(on ? 'explode' : 'assembly'), get turntable() {return turntable;} };
 }
 

@@ -2,6 +2,13 @@
   "name": "letsduck-build-tools",
   "private": true,
   "type": "module",
-  "scripts": {"pack:positions": "node scripts/pack_positions.mjs", "test": "node --test tests/*.mjs"},
-  "devDependencies": {"meshoptimizer": "1.0.1"}
+  "scripts": {
+    "pack:positions": "node scripts/pack_positions.mjs",
+    "test": "node --test tests/*.mjs"
+  },
+  "devDependencies": {
+    "meshoptimizer": "1.0.1",
+    "playwright": "1.58.2",
+    "pngjs": "7.0.0"
+  }
 }

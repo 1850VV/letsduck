@@ -15,6 +15,13 @@ Not approved for integration: transmission at 0.5, drag resolution at 0.67, or s
 - Checks: Node 44 passed; Python 67 total, 49 passed / 18 MySQL checks skipped (no dedicated MySQL test database). Baseline had the same skips.
 - Generated assets and browser evidence are local-only under ignored `assets/` and `output/integration/`.
 
+## 2. Rendering
+
+- The viewer sleeps after controls, camera/layout/colour tweens and actions settle. Invalidations cover resize, pose, colours, finishes, highlights, side copies, split comparison, turntable, snapshot restoration, and animated props. Main framebuffer preservation is disabled; snapshots copy immediately after an explicit render.
+- At 2500 × 1750, depth prepass and the original pass produced identical RGBA in five current-geometry states (hero, rear, pose, mixed finishes, close-up). The six idle checks (initial, pose, arrange, side copy, split, snapshot) submitted zero draws during each 300 ms quiet interval; an action rendered and then settled.
+- Depth prepass samples only during existing frames and never changes resolution, sorting or materials. It requires at least 12 samples per mode, >7% median GPU savings and <1 ms added median CPU submission cost. Outlines, split, side-copy and prop states retain the original single pass. Missing/disjoint timers also retain it. These conservative thresholds are implementation choices, not Windows measurements.
+- The browser harness initially failed on its own unqualified `studioProto` wait after reload. Corrected to `window.studioProto`; the full rerun passed without page errors.
+
 ## Remaining acceptance
 
-Rendering, picking, and export stages are still in progress. Final visual/interaction acceptance and Windows hardware measurements are separate from automated checks. The existing running studio is not switched by these source changes.
+Picking and export stages are still in progress. Final visual/interaction acceptance and Windows hardware measurements are separate from automated checks. The existing running studio is not switched by these source changes.
