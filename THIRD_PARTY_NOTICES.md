@@ -31,3 +31,7 @@ The screenshots and animated clips in `docs/media/` (used by the README) show re
 ## Project mark
 
 The 来做鸭 / letsduck mark (`frontend/shared/brand/logo.svg`, drawn inline by `frontend/shared/brand.mjs`) is original project artwork under this repository's MIT licence: a duck head in one stroke whose jaw is a paintbrush. The name is set in the visitor's system font; no font files are shipped. The earlier avatar image (2026-10-23, an AI-generated adaptation of Pollen Robotics' MicroDuck head illustration) and its vector wordmarks were removed from the current tree.
+
+## meshoptimizer 1.0.1
+
+The position decoder in `frontend/vendor/meshopt_decoder.mjs` is from meshoptimizer 1.0.1 (MIT); see `frontend/vendor/MESHOPT-LICENSE.txt`. The encoder is a build-only npm dependency.

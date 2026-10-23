@@ -81,7 +81,7 @@ def valid_id(value):
 
 class PublicAssets(StaticFiles):
     async def get_response(self, path, scope):
-        if path not in {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'export-schema.json'}:
+        if path not in {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'geometry.positions.bin', 'export-schema.json'}:
             raise HTTPException(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
         return await super().get_response(path, scope)
 

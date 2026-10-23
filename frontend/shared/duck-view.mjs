@@ -6,18 +6,11 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 
-import { unpackGeometry } from './geometry-pack.mjs';
-const ASSETS = new URL('../assets/', import.meta.url);
+import {loadModel} from './model-loader.mjs';
 export async function loadDuck() {
-  const get = (name, type) => fetch(new URL(name, ASSETS)).then((r) => {if (!r.ok) throw Error(name);return r[type]();});
-  // geometry.pack.bin is a third of the size on the wire; geometry.bin stays the fallback (e.g. before the pack is generated).
-  const pack = fetch(new URL('geometry.pack.bin', ASSETS)).then((r) => r.ok ? r.arrayBuffer() : null).catch(() => null);
-  const [model, catalog] = await Promise.all([get('model.json', 'json'), get('catalog.json', 'json')]);
-  let binary = null;const packed = await pack;
-  if (packed) try {binary = unpackGeometry(packed, model);} catch {}
-  binary ||= await get('geometry.bin', 'arrayBuffer');
+  const data=await loadModel(),{model,catalog}=data;
   for(const item of [...model.parts,...catalog.products]){const originalName=item.name;Object.defineProperty(item,'name',{get:()=>_label(originalName),enumerable:true,configurable:true});}
-  return { model, binary, catalog, products: new Map(catalog.products.map((p) => [p.id, p])) };
+  return { ...data, products: new Map(catalog.products.map((p) => [p.id, p])) };
 }
 
 const TARGET = new THREE.Vector3(0, 130, 15);
@@ -60,7 +53,7 @@ function addLights(scene) {
   for (const [color, intensity, position] of [[0xfffbf7, 3.2, [-160, 380, 290]], [0xdde9ff, 1.4, [240, 180, -100]]]) {const l = new THREE.DirectionalLight(color, intensity);l.position.set(...position);scene.add(l);}
 }
 
-export function createDuckView({ model, binary }) {
+export function createDuckView({ model, binary, geometry: prepared }) {
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
   // Phones: a lighter pixel ratio keeps the frame rate up, and firmer damping/slower rotation keep the duck under the finger on a short stage.
   const coarse = matchMedia('(pointer: coarse)').matches;
@@ -70,7 +63,7 @@ export function createDuckView({ model, binary }) {
   const pmrem = new THREE.PMREMGenerator(renderer),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04);scene.environment = env.texture;scene.environmentIntensity = .65;room.dispose();pmrem.dispose();
   addLights(scene);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(105, 48), new THREE.MeshBasicMaterial({ color: 0x1b2440, transparent: true, opacity: .05, depthWrite: false }));shadow.rotation.x = -Math.PI / 2;shadow.position.set(0, -2, 15);scene.add(shadow);
-  function geometry(p) {const g = new THREE.BufferGeometry();g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(binary, p.geometry.positionOffset, p.geometry.vertexCount * 3).slice(), 3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary, p.geometry.indexOffset, p.geometry.indexCount).slice(), 1));const s = toCreasedNormals(g, Math.PI / 5);g.dispose();s.computeBoundingBox();return s;}
+  function geometry(p) {const m=prepared?.get((p.id?'part:':'hardware:')+(p.id||p.name));if(m){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(m.positions,3));g.setAttribute('normal',new THREE.BufferAttribute(m.normals,3));g.setIndex(new THREE.BufferAttribute(m.indices,1));g.computeBoundingBox();return g;}const g = new THREE.BufferGeometry();g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(binary, p.geometry.positionOffset, p.geometry.vertexCount * 3).slice(), 3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary, p.geometry.indexOffset, p.geometry.indexCount).slice(), 1));const s = toCreasedNormals(g, Math.PI / 5);g.dispose();s.computeBoundingBox();return s;}
   const center = new THREE.Vector3(0, 120, 15),hardware = [];
   const prep = (m) => {const b = m.geometry.boundingBox;m.userData.c = b.getCenter(new THREE.Vector3());m.userData.size = b.getSize(new THREE.Vector3());m.userData.dir = m.userData.c.clone().sub(center);m.userData.goal = { pos: new THREE.Vector3(), scale: 1 };};
   // Nested joint groups; every mesh keeps world-space geometry and sits at -pivot inside its link.
@@ -239,7 +232,8 @@ export function createDuckView({ model, binary }) {
 
 // 3MF export thumbnails (512×512 PNG data URLs): a cover of the assembled duck plus, for each of the
 // six plates, a ¾ view and a top view of its parts in print position. Rendered in a throwaway context.
-export function renderExportThumbnails({ model, binary }, colors) {
+export async function renderExportThumbnails(data, colors) {
+  const {model}=data,binary=data.binary||await data.loadLegacy();
   const r = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });r.setSize(512, 512);r.outputColorSpace = THREE.SRGBColorSpace;r.toneMapping = THREE.ACESFilmicToneMapping;r.toneMappingExposure = 1.05;r.setClearColor(0xf4f6fa, 1);
   const s = new THREE.Scene(),cam = new THREE.PerspectiveCamera(36, 1, .1, 3000),pmrem = new THREE.PMREMGenerator(r),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04),owned = [];
   s.environment = env.texture;s.environmentIntensity = .65;room.dispose();pmrem.dispose();addLights(s);
