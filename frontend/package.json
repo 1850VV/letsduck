@@ -1,0 +1,12 @@
+{
+  "name": "letsduck-frontend-build",
+  "private": true,
+  "type": "module",
+  "description": "Release build for the server edition's nginx image; the source tree runs without it.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}

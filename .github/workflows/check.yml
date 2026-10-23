@@ -26,9 +26,8 @@ jobs:
       - name: Personal edition with no third-party packages installed
         run: |
           python3 -I -m unittest discover -s tests -p test_personal.py -v
-          python3 -I -m unittest discover -s tests -p test_stamp.py -v
           python3 -I -m unittest discover -s tests -p test_pack_geometry.py -v
-          python3 -I -m compileall -q personal run.py frontend/stamp.py scripts/pack_geometry.py backend/rules.py backend/errors.py backend/exporter.py
+          python3 -I -m compileall -q personal run.py scripts/pack_geometry.py backend/rules.py backend/errors.py backend/exporter.py
       - name: Install pinned backend and test dependencies
         run: python3 -m pip install -r requirements-dev.txt
       - name: Check publication boundary
@@ -48,6 +47,10 @@ jobs:
           node --test tests/test_positions.mjs tests/test_model_loader.mjs tests/test_render_policy.mjs tests/test_hover_queue.mjs
           python3 -I -m unittest discover -s tests -p test_zip_reuse.py -v
           python3 -I -m unittest discover -s tests -p test_export_transport_unit.py -v
+      - name: Release frontend build with pinned esbuild
+        run: |
+          npm ci --prefix frontend --no-audit --no-fund
+          node --test tests/test_frontend_build.mjs
       - name: Verify precompressed asset delivery with native nginx
         run: |
           sudo apt-get update -qq

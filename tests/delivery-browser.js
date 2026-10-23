@@ -1,4 +1,4 @@
-// Build and serve the real stamped frontend under a task-owned native nginx.
+// Build and serve the real release frontend (frontend/build.mjs) under a task-owned native nginx.
 import {chromium} from 'playwright';
 import fs from 'node:fs/promises';
 import {mkdtempSync,readFileSync} from 'node:fs';
@@ -14,8 +14,8 @@ const root=resolve('.'),nginx=process.env.DUCK_NGINX_BIN;
 assert.ok(nginx,'Set DUCK_NGINX_BIN to a native nginx with gzip_static');
 const folder=mkdtempSync(join(tmpdir(),'letsduck-delivery-')),result={errors:[],workers:[],responses:[]};let server,browser;
 try{
- await fs.cp('frontend',join(folder,'site'),{recursive:true});await fs.symlink(join(root,'assets'),join(folder,'assets'));
- execFileSync('python3',['frontend/stamp.py',join(folder,'site')]);
+ await fs.symlink(join(root,'assets'),join(folder,'assets'));
+ execFileSync('node',['frontend/build.mjs',join(folder,'site')]);
  const portServer=net.createServer();portServer.listen(0,'127.0.0.1');await once(portServer,'listening');const port=portServer.address().port;await new Promise(r=>portServer.close(r));
  let config=await fs.readFile('frontend/nginx.conf','utf8');
  config=config.replace('listen 80;',`listen 127.0.0.1:${port};`).replace('root /usr/share/nginx/html;',`root ${folder}/site;`).replace('root /;',`root ${folder};`).replace('alias /assets/;',`alias ${folder}/assets/;`).replace('http://backend:8876','http://127.0.0.1:8897');
@@ -30,7 +30,7 @@ try{
   result[encoding]={bytes:response.body.length,etag:response.headers.etag,vary:response.headers.vary};
  }
  browser=await chromium.launch({headless:false});const context=await browser.newContext(),p=await context.newPage();
- const workerRefs=[];context.on('response',r=>{if(/positions-worker|positions\.mjs|meshopt_decoder/.test(r.url()))workerRefs.push({url:r.url(),cache:r.headers()['cache-control']});});
+ const workerRefs=[];context.on('response',r=>{if(/positions-worker/.test(r.url()))workerRefs.push({url:r.url(),cache:r.headers()['cache-control']});});
  p.on('pageerror',e=>result.errors.push(String(e)));p.on('worker',w=>result.workers.push(w.url()));
  // Slow just the model: a real Worker must exist before its response is released.
  let release;const gate=new Promise(r=>release=r);await p.route('**/assets/geometry.positions.bin',async route=>{await gate;await route.continue();});
@@ -41,8 +41,9 @@ try{
   const images=await studioProto.view.exportThumbnails(studioProto.state.colors);
   return {count:Object.keys(images).length,legacy:performance.getEntriesByType('resource').filter(e=>/\/geometry(?:\.pack)?\.bin(?:\?|$)/.test(e.name)).map(e=>e.name)};
  });assert.equal(result.shared.count,13);assert.deepEqual(result.shared.legacy,[]);
- for(const ref of workerRefs){assert.match(ref.url,/\?v=[a-f0-9]{10}$/);assert.match(ref.cache,/immutable/);}
- assert.ok(workerRefs.some(r=>r.url.includes('positions-worker')));assert.ok(workerRefs.some(r=>r.url.includes('meshopt_decoder')));
+ // One self-contained, content-hashed Worker bundle (decoder included) under build/.
+ for(const ref of workerRefs){assert.match(ref.url,/\/build\/positions-worker-[A-Z0-9]{8}\.js$/);assert.match(ref.cache,/immutable/);}
+ assert.ok(workerRefs.length);assert.equal(new Set(workerRefs.map(r=>r.url)).size,1); // the export's print Worker reuses it
  result.responses=workerRefs;assert.deepEqual(result.errors,[]);console.log(JSON.stringify(result));
 } catch(e){result.failure=String(e.stack||e);throw e;}finally{
  if(browser)await browser.close();if(server&&server.exitCode===null){server.kill('SIGTERM');await once(server,'exit');}

@@ -132,7 +132,7 @@ Open `http://<server>:8080/` (change with `DUCK_PORT` / `DUCK_BIND` in `.env`).
 
 - **MySQL cache**: `DUCK_MYSQL_BUFFER_POOL` in `.env`, default `128M`, plenty for a circle of friends; use `256M` with 4 GB. Apply with `docker compose up -d`.
 - **Export**: keep `DUCK_EXPORT_WORKERS=1`. One export takes about 1–2 s on a single core; one runs, two wait, more are asked to retry shortly.
-- **Bandwidth matters more than CPU or memory**: a first visit downloads about 3.8 MB (gzipped; the model is 3 MB). At 5 Mbps that is roughly 10 first visits per minute, at 30 Mbps about 60. When the frontend image is built, `frontend/stamp.py` adds a content hash to every script and stylesheet, one import map and preload links, so all modules and the model download in parallel from the start; hashed code is cached for a year and the model for 7 days, so returning visitors barely touch the network. After replacing the asset pack, browsers that visited within 7 days may need a hard refresh.
+- **Bandwidth matters more than CPU or memory**: a first visit to the studio downloads about 0.8 MB compressed (model about 583 KB, code about 220 KB). At 5 Mbps that is roughly 45 first visits per minute, at 30 Mbps about 270. When the frontend image is built, `frontend/build.mjs` bundles and minifies the code, splits dictionaries per locale and writes precompressed files (see [docs/frontend-build.md](docs/frontend-build.md)); hashed code is cached for a year and the model for 7 days, so returning visitors barely touch the network. After replacing the asset pack, browsers that visited within 7 days may need a hard refresh.
 
 ## Development
 
