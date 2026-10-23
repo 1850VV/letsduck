@@ -59,6 +59,8 @@ function addLights(scene) {
 export function createDuckView(data) {
   const { model, binary, geometry: prepared }=data;
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: false });
+  // Approved transmission background quality; keep canvas size and material shaders unchanged.
+  renderer.transmissionResolutionScale = .5;
   // Phones: a lighter pixel ratio keeps the frame rate up, and firmer damping/slower rotation keep the duck under the finger on a short stage.
   const coarse = matchMedia('(pointer: coarse)').matches;
   renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.5 : 1.75));renderer.outputColorSpace = THREE.SRGBColorSpace;renderer.toneMapping = THREE.ACESFilmicToneMapping;renderer.toneMappingExposure = 1.05;renderer.setClearColor(0, 0);
