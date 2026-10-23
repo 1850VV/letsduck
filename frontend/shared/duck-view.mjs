@@ -3,7 +3,6 @@ import { t as _t, label as _label, onLocale as _onLocale } from "./i18n.mjs"; //
 // snapshots for posters and 3MF export thumbnails.
 import * as THREE from 'three';
 import { OrbitControls } from '../vendor/OrbitControls.js';
-import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 
 import {demandLoop} from './render-policy.mjs';
@@ -12,9 +11,13 @@ import {adaptiveDraw} from './depth-render.mjs';
 import {loadModel} from './model-loader.mjs';
 export async function loadDuck() {
   const data=await loadModel(),{model,catalog}=data;
+  // Only the compatible-geometry fallback derives normals on the main thread.
+  if(!data.geometry)data.toCreasedNormals=await legacyNormals();
   for(const item of [...model.parts,...catalog.products]){const originalName=item.name;Object.defineProperty(item,'name',{get:()=>_label(originalName),enumerable:true,configurable:true});}
   return { ...data, products: new Map(catalog.products.map((p) => [p.id, p])) };
 }
+
+const legacyNormals=()=>import('../vendor/BufferGeometryUtils.js').then((m)=>m.toCreasedNormals);
 
 const TARGET = new THREE.Vector3(0, 130, 15);
 export const VIEWS = { hero: [360, 225, 480], front: [0, 150, 600], side: [590, 160, 15], back: [0, 160, -600], top: [0, 760, 16] };
@@ -57,7 +60,7 @@ function addLights(scene) {
 }
 
 export function createDuckView(data) {
-  const { model, binary, geometry: prepared }=data;
+  const { model, binary, geometry: prepared, toCreasedNormals }=data;
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: false });
   // Approved transmission background quality; keep canvas size and material shaders unchanged.
   renderer.transmissionResolutionScale = .5;
@@ -287,7 +290,7 @@ export async function renderExportThumbnails(data, colors, {binaryUpload=false,v
       return Object.fromEntries(await Promise.all(Object.entries(images).map(async([name,blob])=>[name,await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);})])));
     } catch(error){console.warn('Shared export unavailable; using compatible renderer.',error);}
   }
-  const {model}=data,binary=data.binary||await data.loadLegacy();
+  const {model}=data,[binary,toCreasedNormals]=await Promise.all([data.binary||data.loadLegacy(),data.toCreasedNormals||legacyNormals()]);
   const r = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });r.setSize(512, 512);r.outputColorSpace = THREE.SRGBColorSpace;r.toneMapping = THREE.ACESFilmicToneMapping;r.toneMappingExposure = 1.05;r.setClearColor(0xf4f6fa, 1);
   const s = new THREE.Scene(),cam = new THREE.PerspectiveCamera(36, 1, .1, 3000),pmrem = new THREE.PMREMGenerator(r),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04),owned = [];
   s.environment = env.texture;s.environmentIntensity = .65;room.dispose();pmrem.dispose();addLights(s);

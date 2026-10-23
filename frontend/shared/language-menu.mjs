@@ -12,7 +12,8 @@ function render() {
 slot.addEventListener('click', (e) => {
   if (e.target.closest('#language-trigger')) {open = !open;render();if (open) slot.querySelector('[data-locale="' + getLanguageChoice() + '"]').focus();return;}
   const option = e.target.closest('[data-locale]');if (!option) return;
-  open = false;setLocale(option.dataset.locale);slot.querySelector('#language-trigger').focus();
+  // The menu re-renders once the language applies (later when its dictionary is still loading).
+  open = false;render();setLocale(option.dataset.locale).then(() => slot.querySelector('#language-trigger').focus());
 });
 slot.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {open = false;render();slot.querySelector('#language-trigger').focus();e.stopPropagation();return;}

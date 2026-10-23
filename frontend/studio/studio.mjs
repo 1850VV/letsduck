@@ -7,7 +7,6 @@ import { createPosterDialog, lookCode, drawPoster } from '../shared/poster.mjs';
 import { ZONES, schemePatch } from '../lib/duck-workbench.mjs';
 import { SLOTS, RECIPES, THEMES, quickDesign, rollSlots, themeSlots, designNotes, decodeLook, slotsFromDesign } from '../lib/quick-style.mjs';
 import { sideParts, paintTargets } from '../lib/color-workflows.mjs';
-import { createEvolution } from '../lib/evolution.mjs';
 import { createActionPlayer, ACTIONS, VOICES, describeVoice, seedFromText } from '../shared/duck-actions.mjs';
 import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
 import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
@@ -87,7 +86,9 @@ const poster = createPosterDialog({ view, parts, products });
 const actions = createActionPlayer(view);
 // The playing action's button fills like a progress bar for exactly the action's length.
 actions.onChange((id) => {if (id) requestAnimationFrame(followAction);else setTimeout(() => {poseUI = poseOf(view.pose);syncPose();}, 0);const dur = ACTIONS.find((a) => a.id === id)?.duration || 0;$$('[data-act]').forEach((b) => {const on = b.dataset.act === id;b.classList.remove('playing');if (on) {b.style.setProperty('--dur', dur + 's');void b.offsetWidth;b.classList.add('playing');}b.classList.toggle('on', on);});const st = $('#act-stop');if (st) st.disabled = !id;});
-const evolution = createEvolution({ createShowcase: view.createShowcase, applyAppearance: (material, id) => {const t = products.get(id)?.alpha < 1;material.transparent = t;material.opacity = t ? .68 : 1;material.depthWrite = !t;material.needsUpdate = true;} });
+// The publish ceremony and its renderer load with the first ceremony.
+let evolution = null;const evolutionApi = { createShowcase: view.createShowcase, applyAppearance: (material, id) => {const t = products.get(id)?.alpha < 1;material.transparent = t;material.opacity = t ? .68 : 1;material.depthWrite = !t;material.needsUpdate = true;} };
+const playEvolution = async (options) => {evolution ||= (await import('../lib/evolution.mjs')).createEvolution(evolutionApi);evolution.play(options);};
 
 // ---------- design changes ----------
 function commit(next, label) {undo.push({ design: clone(design), label });if (undo.length > 60) undo.shift();redo.length = 0;design = next;view.setColors(design.colors);persist();renderAll(true);if (label) toast(label, true);}
@@ -767,12 +768,12 @@ $('#publish-form').onsubmit = async (e) => {
   $('#publish-dialog').close();
   const goGallery = () => {location.href = './gallery/#d/' + work.id;};
   if (!$('#publish-evolve').checked) {toast(_message("text.0347", { v0: title }));setTimeout(goGallery, 700);return;}
-  evolution.play({ name: title, author: account.user.name, before: ORIGINAL, after: design, sound: $('#publish-sound').checked, onDone: goGallery, onPoster: () => poster.open({ workId: work.id, design: { ...work.design, name: work.title, author: work.author.name }, before: ORIGINAL }) });
+  playEvolution({ name: title, author: account.user.name, before: ORIGINAL, after: design, sound: $('#publish-sound').checked, onDone: goGallery, onPoster: () => poster.open({ workId: work.id, design: { ...work.design, name: work.title, author: work.author.name }, before: ORIGINAL }) }).catch(goGallery);
 };
 
 // ---------- keyboard ----------
 addEventListener('keydown', (e) => {
-  if (e.target.matches('input,textarea,select') || document.querySelector('dialog[open]') || !$('#evo').hidden) return;
+  if (e.target.matches('input,textarea,select') || document.querySelector('dialog[open]') || $('#evo')?.hidden === false) return;
   const k = e.key.toLowerCase();
   if ((e.metaKey || e.ctrlKey) && k === 'z') {e.preventDefault();(e.shiftKey ? $('#redo') : $('#undo')).click();return;}
   if ((e.metaKey || e.ctrlKey) && k === 's') {e.preventDefault();saveScheme(false);return;}

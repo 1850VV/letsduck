@@ -1,8 +1,10 @@
 import { escapeAttribute as _attr } from "./i18n.mjs";import { t as _t, label as _label, onLocale as _onLocale } from "./i18n.mjs"; // Share previews use a canonical public work link only for published works.
 import { encodeLook, designNotes } from '../lib/quick-style.mjs';
 import { BRAND, brandName } from './brand.mjs';
-import { drawQR } from './qr.mjs';
 import { workURL, loadPublicSite, copyText, UNCONFIGURED_SHARE } from './work-links.mjs';
+
+// The QR encoder only serves published works' posters, so it loads with the first of them.
+let qrModule = null;const loadQR = () => import('./qr.mjs').then((m) => qrModule = m);
 
 const RATIOS = { '3:4': [1080, 1440, "text.0469"], '1:1': [1080, 1080, "text.0470"], '9:16': [1080, 1920, "text.0471"] };
 const THEMES = { light: { bg: ['#f4f6fb', '#e3e8f5'], ink: '#17243c', muted: '#6b7891', brand: '#4d6bfe', card: '#ffffffcc' }, dark: { bg: ['#1a2140', '#0d1226'], ink: '#f3f5ff', muted: '#9aa6c6', brand: '#8fa2ff', card: '#ffffff14' } };
@@ -38,7 +40,7 @@ export function drawPoster({ view, design, parts, products, before, opts, workUr
   if (workUrl) {
     ctx.font = '19px sans-serif';
     wrap(ctx, new URL(workUrl).host, W - pad * 2 - qr - 40).slice(0, 2).forEach((line, i) => ctx.fillText(line, pad, fy + 135 + i * 25));
-    drawQR(ctx, workUrl, W - pad - qr, fy, qr);
+    qrModule.drawQR(ctx, workUrl, W - pad - qr, fy, qr);
   }
   return cv;
 }
@@ -68,9 +70,10 @@ export function createPosterDialog({ view, parts, products, compact = false }) {
   function render() {
     if (!current) return;
     const version = ++renderVersion,input = current;blob = null;ready(false);$('#poster-busy').hidden = false;sync();
-    requestAnimationFrame(() => {
+    requestAnimationFrame(async () => {
       if (version !== renderVersion || !dlg.open) return;
       try {
+        if (input.workUrl && !qrModule) {await loadQR();if (version !== renderVersion || !dlg.open) return;}
         const cv = drawPoster({ view, parts, products, ...input, opts });
         $('#poster-img').src = cv.toDataURL('image/png');$('#poster-img').style.aspectRatio = cv.width + '/' + cv.height;
         cv.toBlob((b) => {if (version !== renderVersion || !dlg.open) return;blob = b;$('#poster-busy').hidden = true;ready(!!b);if (!b) status(_t("text.0810"));}, 'image/png');

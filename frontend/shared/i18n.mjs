@@ -1,10 +1,9 @@
 // Locale state is independent of designs, model geometry and account data.
-import {catalogs} from '../locales/catalogs.mjs';
+import {loadCatalogs} from '../locales/load.mjs';
 import {sourceKeys} from '../locales/source-keys.mjs';
-import {extra} from '../locales/extra.mjs';
-import {personalMessages} from '../locales/personal.mjs';
-for(const code of Object.keys(catalogs))Object.assign(catalogs[code],extra[code],personalMessages[code]);
-export {catalogs};
+// Loaded dictionaries by locale. The source tree provides all of them at once; the release build
+// fetches English (the fallback) plus the active locale, and others on first selection.
+export const catalogs={};
 export const LOCALES=[{code:'zh-Hans',name:'简体中文'},{code:'zh-Hant',name:'繁體中文'},{code:'en',name:'English'},{code:'ja',name:'日本語'},{code:'ko',name:'한국어'},{code:'fr',name:'Français'},{code:'de',name:'Deutsch'},{code:'es',name:'Español'},{code:'pt-BR',name:'Português (Brasil)'},{code:'ru',name:'Русский'},{code:'ar',name:'العربية'},{code:'hi',name:'हिन्दी'}];
 const supported=new Set(LOCALES.map(x=>x.code)),KEY='dd-locale';
 export function matchLocales(languages=[]){
@@ -25,11 +24,26 @@ export function createLocaleController({storage,languages=()=>[]}={}){
   };
 }
 let storage;try{storage=globalThis.localStorage;}catch{}
-const state=createLocaleController({storage,languages:()=>globalThis.navigator?.languages||[globalThis.navigator?.language||'en']});
+const browserLanguages=()=>globalThis.navigator?.languages||[globalThis.navigator?.language||'en'];
+const state=createLocaleController({storage,languages:browserLanguages});
+async function ensureCatalogs(codes){
+  const missing=codes.filter(code=>supported.has(code)&&!catalogs[code]);
+  if(missing.length)Object.assign(catalogs,await loadCatalogs(missing));
+}
+// English must load; a failed active locale falls back to English per key, as a missing key does.
+await ensureCatalogs(['en']);
+try{await ensureCatalogs([state.locale]);}catch(error){console.warn('Locale unavailable; using English.',error);}
 export const getLocale=()=>state.locale;
 export const getLanguageChoice=()=>state.choice;
 export const onLocale=fn=>state.subscribe(fn);
-export const setLocale=code=>state.select(code);
+// Switches synchronously when the dictionary is already loaded (always, in the source tree);
+// otherwise after it arrives. The latest request wins; a failed load keeps the current language.
+let localeRequest=0;
+export function setLocale(code){
+  const request=++localeRequest,target=code==='auto'?matchLocales(browserLanguages()):code;
+  if(!supported.has(target)||catalogs[target]){state.select(code);return Promise.resolve();}
+  return ensureCatalogs([target]).then(()=>{if(request===localeRequest)state.select(code);},error=>console.warn('Locale unavailable.',error));
+}
 export function translate(locale,key,params={}){
   const message=catalogs[locale]?.[key]??catalogs.en[key]??key;
   return message.replace(/\{(\w+)\}/g,(token,name)=>Object.hasOwn(params,name)?typeof params[name]==='number'?new Intl.NumberFormat(supported.has(locale)?locale:'en').format(params[name]):String(params[name]):token);
