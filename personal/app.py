@@ -29,10 +29,12 @@ from errors import payload  # noqa: E402
 from rules import Invalid  # noqa: E402
 from schemes import PersonalStore  # noqa: E402
 
+from export_transport import parse_multipart, ExportBodyError
+
 VERSION = '3.1.0'
 MAX_BODY = 8_000_000
 ID = re.compile(r'^[\w-]{1,64}$')
-PUBLIC_ASSETS = {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'export-schema.json'}
+PUBLIC_ASSETS = {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'geometry.positions.bin', 'export-schema.json'}
 NOT_FOUND = {'error': '未知接口', 'code': 'request.not_found', 'params': {}}
 log = logging.getLogger('doodleduck')
 
@@ -102,6 +104,21 @@ class Handler(SimpleHTTPRequestHandler):
             raise Reply(400, {'error': '请求格式不对', 'code': 'request.format', 'params': {}})
         return body
 
+    def read_export(self):
+        kind = self.headers.get('Content-Type', '')
+        if kind.split(';')[0].strip().lower() != 'multipart/form-data':
+            return self.read_json()
+        try:
+            length = int(self.headers.get('Content-Length') or 0)
+        except ValueError:
+            raise Reply(400, {'error': '请求格式不对', 'code': 'request.format', 'params': {}})
+        if not 0 <= length <= MAX_BODY:
+            raise Reply(413, {'error': '请求太大', 'code': 'request.too_large', 'params': {}})
+        try:
+            return parse_multipart(self.rfile.read(length), kind)
+        except ExportBodyError as error:
+            raise Reply(error.status, error.body)
+
     # ---- API ----
     def api(self, method, path):
         scheme = re.fullmatch(r'/api/schemes/([^/]+)', path)
@@ -123,7 +140,7 @@ class Handler(SimpleHTTPRequestHandler):
         if method == 'POST' and path == '/api/plan':
             return self.need_exporter().plan(self.read_json())
         if method == 'POST' and path == '/api/export':
-            content, _ = self.need_exporter().export_3mf(self.read_json())
+            content, _ = self.need_exporter().export_3mf(self.read_export())
             return Download(content)
         # Accounts, works and ratings exist only in the server edition.
         raise Reply(404, NOT_FOUND)

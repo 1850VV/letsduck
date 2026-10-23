@@ -1,3 +1,4 @@
+import {hoverQueue} from '../shared/hover-queue.mjs';
 import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 涂装台: one stage, three steps (style → refine → showcase), plus schemes, A/B compare, group replace, close-up, arrange, colour finder, plates check,
 // export review and publish ceremony. Colour rules are imported from the shipping modules.
@@ -582,8 +583,9 @@ $('#rail').addEventListener('pointerover', (e) => {const zb = e.target.closest('
 $('#rail').addEventListener('pointerleave', () => renderStage());
 
 // ---------- events: stage ----------
-const stage = $('#stage');let down = null,hoverFrame = 0;
-stage.addEventListener('pointerdown', (e) => {if (e.target === view.canvas) down = { x: e.clientX, y: e.clientY };});
+const stage = $('#stage');let down = null;
+const hover=hoverQueue(({clientX,clientY})=>view.pickAsync(clientX,clientY),showHover);
+stage.addEventListener('pointerdown', (e) => {hover.cancel();if (e.target === view.canvas) down = { x: e.clientX, y: e.clientY };});
 function stageClick(e) {
   const id = view.pick(e.clientX, e.clientY);if (!id) {if (step === 2 && tool === 'select' && !replaceFrom) {sel.part = null;sel.scope = 'all';renderAll();}return;}
   const z = zoneOf(id),p = partById.get(id);
@@ -607,8 +609,10 @@ stage.addEventListener('pointerup', (e) => {
 // Double-click focuses whatever the two clicks selected; double-clicking again returns to the whole duck.
 stage.addEventListener('dblclick', (e) => {if (e.target === view.canvas && step === 2 && (focused || view.pick(e.clientX, e.clientY))) setFocused(!focused);});
 stage.addEventListener('pointermove', (e) => {
-  if (e.buttons || e.target !== view.canvas) {$('#part-tag').hidden = true;return;}
-  cancelAnimationFrame(hoverFrame);hoverFrame = requestAnimationFrame(() => {const id = view.pick(e.clientX, e.clientY),tag = $('#part-tag');
+  if (e.buttons || e.target !== view.canvas) {hover.cancel();$('#part-tag').hidden = true;return;}
+  hover.submit({clientX:e.clientX,clientY:e.clientY});
+});
+function showHover(id,e) {const tag=$('#part-tag');
     if (!id) {tag.hidden = true;if (step === 2) {clearBrushHover();renderStage();}return;}
     const p = partById.get(id),z = zoneOf(id),b = stage.getBoundingClientRect(),prodName = keyName(keyOf(id));
     tag.hidden = false;tag.style.transform = `translate(${e.clientX - b.left + 14}px,${e.clientY - b.top + 14}px)`;
@@ -620,9 +624,9 @@ stage.addEventListener('pointermove', (e) => {
     }
     if (step === 2 && tool === 'pick') {tag.innerHTML = `<i style="--c:${design.colors[id]}"></i><span><b>${_t("text.0282", { v1: esc(prodName) })}</b><small>${esc(p.name)}</small></span>`;view.setHighlight([], [id]);return;}
     tag.innerHTML = `<i style="--c:${design.colors[id]}"></i><span><b>${esc(step === 2 && sel.zone === z.id || view.layout === 'arrange' ? p.name : z.name)}</b><small>${esc(prodName)} ${locks.has(id) ? '· 🔒' : ''}</small></span>`;
-    if (step === 2 && !replaceFrom) view.setHighlight(targetIds(), tool === 'select' && sel.zone !== z.id && view.layout !== 'arrange' ? z.ids : [id]);});
-});
-stage.addEventListener('pointerleave', () => {$('#part-tag').hidden = true;if (step === 2) {clearBrushHover();renderStage();}});
+    if (step === 2 && !replaceFrom) view.setHighlight(targetIds(), tool === 'select' && sel.zone !== z.id && view.layout !== 'arrange' ? z.ids : [id]);
+}
+stage.addEventListener('pointerleave', () => {hover.cancel();$('#part-tag').hidden = true;if (step === 2) {clearBrushHover();renderStage();}});
 $('#tools').onclick = (e) => {const b = e.target.closest('[data-tool]');if (b) setTool(b.dataset.tool);};
 $('#focus-toggle').onclick = () => setFocused(!focused);
 // ---------- simple pose control ----------
@@ -727,8 +731,10 @@ async function download3MF() {
   const btn = $('#dl-3mf'),status = $('#ex-status');btn.disabled = true;status.textContent = _t("text.0323");
   try {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const thumbnails = renderExportThumbnails(duck, design.colors);
-    const r = await fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source_sha256: model.source_sha256, name, assignments: design.assignments, thumbnails }) });
+    const thumbnails = await renderExportThumbnails(duck, design.colors, {binaryUpload:true,view});
+    const body=new FormData();body.append('plan',JSON.stringify({source_sha256:model.source_sha256,name,assignments:design.assignments}));
+    for(const [key,blob] of Object.entries(thumbnails))body.append(key,blob,key+'.png');
+    const r = await fetch('/api/export', { method: 'POST', body });
     if (!r.ok) throw Error(errorText(await r.json().catch(() => ({}))));
     const a = document.createElement('a');a.href = URL.createObjectURL(await r.blob());a.download = 'XGO-Duck-' + name + '-materials.3mf';a.click();setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     status.textContent = _t("text.0325");

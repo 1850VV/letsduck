@@ -41,3 +41,8 @@ storage-state*.json
 *.db
 *.db-*
 
+
+/assets/*.br
+/assets/*.gz
+/assets/*.tmp
+/.venv

@@ -21,6 +21,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.staticfiles import StaticFiles
 from sqlalchemy import func, select, text
 import uvicorn
+from export_transport import parse_multipart, ExportBodyError
 
 from errors import payload as error_payload
 from export_jobs import ExportBusy, ExportManager
@@ -49,9 +50,7 @@ def require_user(user=Depends(optional_user)):
     return user
 
 
-async def read_json(request: Request):
-    if request.headers.get('content-type', '').split(';')[0] != 'application/json':
-        raise HTTPException(415, {'error': '需要 JSON 请求', 'code': 'request.content_type', 'params': {}})
+async def read_body(request: Request):
     try:
         length = int(request.headers.get('content-length', '0'))
     except ValueError:
@@ -64,13 +63,29 @@ async def read_json(request: Request):
         if size > MAX_BODY:
             raise HTTPException(413, {'error': '请求太大', 'code': 'request.too_large', 'params': {}})
         chunks.append(chunk)
+    return b''.join(chunks)
+
+async def read_json(request: Request):
+    if request.headers.get('content-type', '').split(';')[0] != 'application/json':
+        raise HTTPException(415, {'error': '需要 JSON 请求', 'code': 'request.content_type', 'params': {}})
     try:
-        result = json.loads(b''.join(chunks) or b'{}')
+        result = json.loads(await read_body(request) or b'{}')
     except (ValueError, UnicodeError):
         raise HTTPException(400, {'error': '请求不是有效的 JSON', 'code': 'request.json', 'params': {}})
     if not isinstance(result, dict):
         raise HTTPException(400, {'error': '请求格式不对', 'code': 'request.format', 'params': {}})
     return result
+
+
+async def read_export(request: Request):
+    kind = request.headers.get('content-type', '')
+    if kind.split(';')[0].strip().lower() != 'multipart/form-data':
+        return await read_json(request)
+    data = await read_body(request)
+    try:
+        return parse_multipart(data, kind)
+    except ExportBodyError as error:
+        raise HTTPException(error.status, error.body) from error
 
 
 def valid_id(value):
@@ -81,7 +96,7 @@ def valid_id(value):
 
 class PublicAssets(StaticFiles):
     async def get_response(self, path, scope):
-        if path not in {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'export-schema.json'}:
+        if path not in {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'geometry.positions.bin', 'export-schema.json'}:
             raise HTTPException(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
         return await super().get_response(path, scope)
 
@@ -234,7 +249,7 @@ def create_app(database_url=None, static=None, exports=None):
         return exporter_for(request).plan(body)
 
     @app.post('/api/export')
-    async def export(request: Request, body=Depends(read_json)):
+    async def export(request: Request, body=Depends(read_export)):
         # Keep the existing blocking download contract; no job IDs or UI changes required.
         exporter_for(request).plan(body)
         content, _ = await request.app.state.exports.run(body)

@@ -104,7 +104,7 @@ export function createActionPlayer(view) {
   }
   function sample(tracks, t) {const pose = {};for (const [ch, pts] of Object.entries(tracks)) {let i = pts.findIndex((p) => p[0] > t);if (i === -1) {pose[ch] = pts.at(-1)[1];continue;}if (i === 0) {pose[ch] = pts[0][1];continue;}const [t0, v0] = pts[i - 1],[t1, v1] = pts[i];pose[ch] = v0 + (v1 - v0) * ease((t - t0) / (t1 - t0 || 1));}return pose;}
   function loop(now) {
-    frame = requestAnimationFrame(loop);stepSock(now);
+    frame = requestAnimationFrame(loop);if(sockAnim)view.invalidate();stepSock(now);
     if (!run) {
       // A call outside an action only moves the beak, on top of whatever pose the duck holds.
       // A call can outlast the action that started it (wheee runs past the sway), so adopt the final pose.
