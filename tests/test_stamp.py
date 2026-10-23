@@ -60,6 +60,25 @@ class StampTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             stamp.stamp(self.site)
 
+    def test_worker_graph_has_content_hashes_without_an_import_map(self):
+        loader = (self.site / 'shared/model-loader.mjs').read_text()
+        ref = re.search(r"new URL\('([^']*positions-worker[^']*)'", loader).group(1)
+        self.assertIn('?v=', ref)
+        self.check_url(stamp.absolute(ref, '/shared/model-loader.mjs') + '?v=' + ref.split('?v=')[1])
+        worker = (self.site / 'shared/positions-worker.mjs').read_text()
+        for ref in stamp.IMPORT.findall(worker):
+            self.assertIn('?v=', ref)
+            self.check_url(stamp.absolute(ref, '/shared/positions-worker.mjs') + '?v=' + ref.split('?v=')[1])
+
+    def test_worker_dependency_change_invalidates_its_entry_and_loader(self):
+        second = Path(self.tmp.name) / 'second'
+        shutil.copytree(ROOT / 'frontend', second)
+        dependency = second / 'shared/positions.mjs'
+        dependency.write_text(dependency.read_text() + '\n// changed decoder\n')
+        stamp.stamp(second)
+        for path in ['shared/positions-worker.mjs', 'shared/model-loader.mjs']:
+            self.assertNotEqual((self.site / path).read_bytes(), (second / path).read_bytes(), path)
+
 
 if __name__ == '__main__':
     unittest.main()

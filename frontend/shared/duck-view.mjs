@@ -56,7 +56,8 @@ function addLights(scene) {
   for (const [color, intensity, position] of [[0xfffbf7, 3.2, [-160, 380, 290]], [0xdde9ff, 1.4, [240, 180, -100]]]) {const l = new THREE.DirectionalLight(color, intensity);l.position.set(...position);scene.add(l);}
 }
 
-export function createDuckView({ model, binary, geometry: prepared }) {
+export function createDuckView(data) {
+  const { model, binary, geometry: prepared }=data;
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: false });
   // Phones: a lighter pixel ratio keeps the frame rate up, and firmer damping/slower rotation keep the duck under the finger on a short stage.
   const coarse = matchMedia('(pointer: coarse)').matches;
@@ -246,7 +247,24 @@ export function createDuckView({ model, binary, geometry: prepared }) {
     for (const h of hardware) s.add(new THREE.Mesh(h.geometry, h.material));
     return { scene: s, meshes: list };
   }
-  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, canvas: renderer.domElement,
+  let exportSession,exportQueue=Promise.resolve();
+  function exportThumbnails(colors){
+    const palette={...colors};
+    const run=exportQueue.then(async()=>{
+      try {
+        exportSession ||= (async()=>{
+          const [{createSharedExport},printed]=await Promise.all([import('./export-shared.mjs'),data.loadPrintGeometry()]);
+          return createSharedExport({model,printed},{renderer,scene,objects},addLights);
+        })();
+        return await (await exportSession).render(palette);
+      } catch(error){
+        if(exportSession)try{(await exportSession).dispose();}catch{}
+        exportSession=null;throw error;
+      }
+    });
+    exportQueue=run.catch(()=>{});return run;
+  }
+  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
     setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},
@@ -254,8 +272,16 @@ export function createDuckView({ model, binary, geometry: prepared }) {
 }
 
 // 3MF export thumbnails (512×512 PNG data URLs or asynchronously encoded Blobs): a cover of the assembled duck plus, for each of the
-// six plates, a ¾ view and a top view of its parts in print position. Rendered in a throwaway context.
-export async function renderExportThumbnails(data, colors, {binaryUpload=false}={}) {
+// six plates, a ¾ view and a top view. Prefer the shared session; retain the
+// independent legacy path for unsupported workers, contexts or rendering failures.
+export async function renderExportThumbnails(data, colors, {binaryUpload=false,view=null}={}) {
+  if(data.geometry&&view?.exportThumbnails){
+    try {
+      const images=await view.exportThumbnails(colors);
+      if(binaryUpload)return images;
+      return Object.fromEntries(await Promise.all(Object.entries(images).map(async([name,blob])=>[name,await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);})])));
+    } catch(error){console.warn('Shared export unavailable; using compatible renderer.',error);}
+  }
   const {model}=data,binary=data.binary||await data.loadLegacy();
   const r = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });r.setSize(512, 512);r.outputColorSpace = THREE.SRGBColorSpace;r.toneMapping = THREE.ACESFilmicToneMapping;r.toneMappingExposure = 1.05;r.setClearColor(0xf4f6fa, 1);
   const s = new THREE.Scene(),cam = new THREE.PerspectiveCamera(36, 1, .1, 3000),pmrem = new THREE.PMREMGenerator(r),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04),owned = [];

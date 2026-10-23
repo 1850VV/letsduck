@@ -731,7 +731,7 @@ async function download3MF() {
   const btn = $('#dl-3mf'),status = $('#ex-status');btn.disabled = true;status.textContent = _t("text.0323");
   try {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const thumbnails = await renderExportThumbnails(duck, design.colors, {binaryUpload:true});
+    const thumbnails = await renderExportThumbnails(duck, design.colors, {binaryUpload:true,view});
     const body=new FormData();body.append('plan',JSON.stringify({source_sha256:model.source_sha256,name,assignments:design.assignments}));
     for(const [key,blob] of Object.entries(thumbnails))body.append(key,blob,key+'.png');
     const r = await fetch('/api/export', { method: 'POST', body });
