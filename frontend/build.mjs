@@ -5,9 +5,10 @@
 //   under build/, with chunks shared between the studio and the gallery;
 // - dictionaries become one chunk per locale: a page loads English (the fallback) and the active
 //   locale, preloaded from an inline check of the same saved/browser preference as i18n.mjs;
-// - the model Worker is bundled separately and the loader points at its hashed name;
+// - the model Worker is bundled separately and started from each page's <head>, where it also begins
+//   downloading the position pack (instead of a preload); the loader points at its hashed name;
 // - each page gets one minified stylesheet in the original cascade order, module preloads for its
-//   static chunks and the model files, and every build/ file a .br and .gz sibling for nginx.
+//   static chunks and the model description, and every build/ file a .br and .gz sibling for nginx.
 //
 // Usage: node build.mjs <output dir>   (after npm ci in this directory)
 import * as esbuild from 'esbuild';
@@ -18,7 +19,7 @@ import zlib from 'node:zlib';
 
 const SRC=path.dirname(fileURLToPath(import.meta.url));
 const PAGES=['index.html','gallery/index.html'];
-const MODEL=['/assets/model.json','/assets/geometry.positions.bin','/assets/catalog.json']; // fetched by shared/model-loader.mjs
+const MODEL=['/assets/model.json','/assets/catalog.json'],PACK='/assets/geometry.positions.bin'; // fetched by shared/model-loader.mjs
 const BUILD_ONLY=new Set(['build.mjs','package.json','package-lock.json','node_modules','Dockerfile','.dockerignore','nginx.conf']);
 const CODE=/\.(?:mjs|js|css)$/;
 
@@ -85,9 +86,16 @@ export async function build(out) {
     const locale=`<script>(()=>{const supported=new Set(${JSON.stringify(codes)}),files=${JSON.stringify(localeChunks)},matchLocales=${matchLocales.toString()};`+
       `let code;try{code=localStorage.getItem('dd-locale');}catch{}if(!supported.has(code))code=matchLocales(navigator.languages||[navigator.language||'en']);`+
       `for(const c of new Set(['en',code])){const l=document.createElement('link');l.rel='modulepreload';l.href=${JSON.stringify(rel+'/')}+files[c];document.head.append(l);}})();</script>`;
+    // The model Worker starts with the page and downloads the pack itself, decoding as it arrives, so
+    // neither waits for the main thread; shared/model-loader.mjs adopts it (with any failure).
+    const worker=`<script>try{const w=new Worker(${JSON.stringify(rel+'/'+workerFile)},{type:'module'});w.addEventListener('error',()=>{w.failed=true;});`+
+      `w.postMessage({type:'fetch',url:new URL(${JSON.stringify(PACK)},location.href).href});window.duckModelStart=w;}catch{}</script>`;
     const importmap=html.match(/<script type="importmap">.*?<\/script>/s);
     if(!importmap)throw Error(page.name+': import map not found');
-    html=html.replace(importmap[0],preload+locale);
+    // Ahead of the stylesheet: an inline script after it waits until the CSS has loaded.
+    const stylesheet=html.indexOf('<link rel="stylesheet"');
+    if(stylesheet<0||stylesheet>importmap.index)throw Error(page.name+': stylesheet must precede the import map');
+    html=html.replace(importmap[0],'');html=html.slice(0,stylesheet)+preload+locale+worker+'\n'+html.slice(stylesheet);
     fs.writeFileSync(path.join(out,page.name),html);
   }
 
@@ -100,7 +108,8 @@ export async function build(out) {
   return {sizes,localeChunks,worker:workerFile,metafile:result.metafile};
 }
 
-if(import.meta.url===pathToFileURL(process.argv[1]).href){
+// Compare real paths: on macOS the temporary folder is reached through a symlink (/var -> /private/var).
+if(process.argv[1]&&fs.realpathSync(process.argv[1])===fileURLToPath(import.meta.url)){
   if(!process.argv[2])throw Error('Usage: node build.mjs <output dir>');
   const {sizes}=await build(process.argv[2]),total=Object.values(sizes).reduce((a,s)=>({bytes:a.bytes+s.bytes,br:a.br+s.br}),{bytes:0,br:0});
   console.log(`build/: ${Object.keys(sizes).length} files, ${total.bytes} bytes, ${total.br} bytes Brotli`);

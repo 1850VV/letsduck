@@ -31,8 +31,13 @@ test('pages reference only existing hashed build files, one stylesheet, and no i
       assert.ok(fs.existsSync(path.join(path.dirname(path.join(out,name)),ref)),ref);
     }
     assert.equal((html.match(/rel="stylesheet"/g)||[]).length,1,name);
+    // Inline scripts after a stylesheet would wait for it; the early ones come first.
+    assert.ok(html.indexOf('<script>')<html.indexOf('rel="stylesheet"'),name);
     assert.doesNotMatch(html,/importmap|\.mjs"/,name);
-    for(const asset of ['model.json','geometry.positions.bin','catalog.json'])assert.ok(html.includes(`<link rel="preload" href="/assets/${asset}" as="fetch" crossorigin>`),asset);
+    for(const asset of ['model.json','catalog.json'])assert.ok(html.includes(`<link rel="preload" href="/assets/${asset}" as="fetch" crossorigin>`),asset);
+    // The pack is downloaded once, by the Worker the <head> starts, never also preloaded.
+    assert.equal(html.split('/assets/geometry.positions.bin').length,2,name);
+    assert.ok(html.includes(`postMessage({type:'fetch',url:new URL("/assets/geometry.positions.bin",location.href).href})`),name);
   }
   // Only pages, build/ and licence/brand files are published; no source modules.
   const files=fs.readdirSync(out,{recursive:true}).filter(f=>fs.statSync(path.join(out,f)).isFile()&&!f.startsWith('build'+path.sep));
@@ -77,4 +82,7 @@ test('the model loader points at the hashed Worker bundle',{skip},()=>{
   assert.ok(!code.includes('positions-worker.mjs'));
   // The Worker is self-contained: no imports left to resolve without an import map.
   assert.doesNotMatch(fs.readFileSync(path.join(dir,worker),'utf8'),/\bimport\s*[{*(]|\bfrom\s*["']/);
+  // Each page starts it from <head> for the model loader to adopt.
+  for(const [name,prefix] of [['index.html','build/'],['gallery/index.html','../build/']])
+    assert.ok(page(name).includes(`new Worker(${JSON.stringify(prefix+worker)},{type:'module'})`),name);
 });

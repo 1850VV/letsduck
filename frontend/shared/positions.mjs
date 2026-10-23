@@ -14,32 +14,70 @@ export function restorePosition(bytes,meta) {
   for(let i=0;i<p.length/3;i++)for(let k=0;k<3;k++)p[i*3+k]=meta.min[k]+(q[i*4+k]>>>shift)/max*meta.scale[k];
   return p;
 }
-export function decodePositions(buffer,decoder,model) {
-  if(buffer.byteLength<8||buffer.byteLength>16_000_000)throw Error('Invalid position pack size');
-  const d=new DataView(buffer);if(d.getUint32(0,true)!==0x31534f50)throw Error('Invalid POS1');
-  const length=d.getUint32(4,true);if(length>200_000||length+8>buffer.byteLength)throw Error('Invalid position header');
-  const h=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,8,length))),data=new Uint8Array(buffer,8+length);
-  const items=[...model.parts.map(p=>({...p,kind:'part'})),...model.hardware.map(p=>({...p,id:p.name,kind:'hardware'}))];
-  if(h.version!==1||h.source!==model.source_sha256||h.meshes?.length!==items.length)throw Error('Position pack does not match model');
-  const range=([offset,size]=[])=>{if(!Number.isInteger(offset)||!Number.isInteger(size)||offset<0||size<=0||offset+size>data.length)throw Error('Invalid stream range');return data.subarray(offset,offset+size);};
-  return h.meshes.map((m,j)=>{
-    const item=items[j];
-    if(m.id!==item.id||m.kind!==item.kind||m.vertices<1||m.vertices>item.geometry.vertexCount||m.triangles*3!==item.geometry.indexCount||m.bits!==16)throw Error('Position pack does not match model');
-    if(![m.vertices,m.triangles].every(Number.isInteger)||![m.min,m.scale].every(a=>Array.isArray(a)&&a.length===3&&a.every(Number.isFinite))||m.scale.some(v=>v<=0))throw Error('Invalid position metadata');
-    const bytes=new Uint8Array(m.vertices*8),indices=new Uint32Array(m.triangles*3);
+const MAX_PACK=16_000_000,MAX_VERTICES=1<<20,MAX_INDICES=1<<22; // the model's meshes stay below 65 536 vertices
+// Incremental POS1 reader. The pack stores each mesh's streams contiguously and in model order, so a
+// mesh decodes as soon as its bytes have arrived, overlapping the download. The model description
+// may arrive later: every mesh is checked against it before finish() returns anything, so a pack
+// for another model still fails. decodePositions() is the same reader given one buffer.
+export function positionReader(decoder) {
+  let bytes=new Uint8Array(1<<20),size=0,length=-1,h=null,items=null,checked=0;const out=[];
+  function grow(need){if(need>MAX_PACK)throw Error('Invalid position pack size');if(need<=bytes.length)return;const next=new Uint8Array(Math.min(MAX_PACK,Math.max(need,bytes.length*2)));next.set(bytes.subarray(0,size));bytes=next;}
+  // End of a stream inside the data section; malformed ranges fail at once, missing bytes wait.
+  function end([offset,size]=[]){if(!Number.isInteger(offset)||!Number.isInteger(size)||offset<0||size<=0)throw Error('Invalid stream range');return offset+size;}
+  function decode(m,data){
+    if(m.bits!==16||![m.vertices,m.triangles].every(Number.isInteger)||m.vertices<1||m.vertices>MAX_VERTICES||m.triangles<0||m.triangles*3>MAX_INDICES||
+      ![m.min,m.scale].every(a=>Array.isArray(a)&&a.length===3&&a.every(Number.isFinite))||m.scale.some(v=>v<=0))throw Error('Invalid position metadata');
+    const bytes=new Uint8Array(m.vertices*8),indices=new Uint32Array(m.triangles*3),range=r=>data.subarray(r[0],end(r));
     decoder.decodeVertexBuffer(bytes,m.vertices,8,range(m.v));
     decoder.decodeIndexBuffer(new Uint8Array(indices.buffer),indices.length,4,range(m.i));
     if(indices.some(i=>i>=m.vertices))throw Error('Invalid vertex index');
     let printMatrix=m.printMatrix;
     if(m.printMatrix64){
-      const [offset,size]=m.printMatrix64;
-      if(!Number.isInteger(offset)||offset<0||size!==96||offset+size>data.length)throw Error('Invalid print matrix range');
-      const view=new DataView(data.buffer,data.byteOffset+offset,size);
+      const [offset]=m.printMatrix64;
+      const view=new DataView(data.buffer,data.byteOffset+offset,96);
       printMatrix=Array.from({length:3},(_,r)=>Array.from({length:4},(_,c)=>view.getFloat64((r*4+c)*8,true)));
     }
     if(m.kind==='part'&&(!printMatrix||printMatrix.length!==3||!printMatrix.every(a=>a.length===4&&a.every(Number.isFinite))))throw Error('Invalid print matrix');
     return {...m,...(printMatrix?{printMatrix}:{}),positions:restorePosition(bytes,m),indices};
-  });
+  }
+  function check(m,item){if(m.id!==item.id||m.kind!==item.kind||m.vertices>item.geometry.vertexCount||m.triangles*3!==item.geometry.indexCount)throw Error('Position pack does not match model');}
+  function advance(){
+    if(length<0){
+      if(size<8)return;
+      const d=new DataView(bytes.buffer,0,8);if(d.getUint32(0,true)!==0x31534f50)throw Error('Invalid POS1');
+      length=d.getUint32(4,true);if(length>200_000)throw Error('Invalid position header');
+    }
+    if(!h){if(size<8+length)return;h=JSON.parse(new TextDecoder().decode(bytes.subarray(8,8+length)));if(!Array.isArray(h.meshes))throw Error('Invalid position header');}
+    if(items&&!checked&&(h.version!==1||h.source!==items.source||h.meshes.length!==items.length))throw Error('Position pack does not match model');
+    while(out.length<h.meshes.length){
+      const m=h.meshes[out.length],data=bytes.subarray(8+length,size);
+      if(m.printMatrix64&&(!Array.isArray(m.printMatrix64)||!Number.isInteger(m.printMatrix64[0])||m.printMatrix64[0]<0||m.printMatrix64[1]!==96))throw Error('Invalid print matrix range');
+      if(Math.max(end(m.v),end(m.i),m.printMatrix64?end(m.printMatrix64):0)>data.length)break;
+      if(items)check(m,items[out.length]);
+      out.push(decode(m,data));
+    }
+    if(items)for(;checked<out.length;checked++)check(out[checked],items[checked]);
+  }
+  return {
+    // Feed bytes in arrival order; returns the meshes decoded so far (a growing array).
+    push(chunk){grow(size+chunk.length);bytes.set(chunk,size);size+=chunk.length;advance();return out;},
+    setModel(model){
+      items=Object.assign([...model.parts.map(p=>({...p,kind:'part'})),...model.hardware.map(p=>({...p,id:p.name,kind:'hardware'}))],{source:model.source_sha256});
+      advance();return out;
+    },
+    finish(){
+      advance();
+      if(length<0)throw Error(size<8?'Invalid position pack size':'Invalid POS1');
+      if(!h)throw Error('Invalid position header');
+      if(!items)throw Error('Position pack does not match model');
+      if(out.length<h.meshes.length)throw Error('Invalid stream range');
+      return out;
+    },
+  };
+}
+export function decodePositions(buffer,decoder,model) {
+  if(buffer.byteLength<8||buffer.byteLength>MAX_PACK)throw Error('Invalid position pack size');
+  const reader=positionReader(decoder);reader.setModel(model);reader.push(new Uint8Array(buffer));return reader.finish();
 }
 export function creased(positions, indices) {
   const n = positions.length / 3, T = indices.length / 3, mul = (1 + 1e-10) * 1e2;

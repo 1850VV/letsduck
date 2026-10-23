@@ -33,3 +33,16 @@ test('position pack retains oriented topology and exact assembly/print coordinat
   assert.throws(()=>api.decodePositions(data,MeshoptDecoder,{...model,source_sha256:'wrong'}),/match/);
   assert.throws(()=>api.decodePositions(data.slice(0,100),MeshoptDecoder,model),/Invalid/);
 });
+test('streamed pack decodes before the model arrives and is still checked against it', {skip:!existsSync(new URL('geometry.positions.bin',assets))}, async () => {
+  const {MeshoptDecoder} = await import('../frontend/vendor/meshopt_decoder.mjs');await MeshoptDecoder.ready;
+  const model=JSON.parse(read('model.json')),data=read('geometry.positions.bin'),full=api.decodePositions(ab(data),MeshoptDecoder,model);
+  const feed=(target)=>{const r=api.positionReader(MeshoptDecoder);let half=0;for(let o=0;o<data.length;o+=4096){const n=r.push(data.subarray(o,o+4096)).length;if(o<data.length/2)half=n;}r.setModel(target);return [r,half];};
+  const [reader,half]=feed(model);
+  assert.ok(half>10,'meshes decode during the download, before the model description');
+  const out=reader.finish();
+  assert.equal(out.length,full.length);
+  out.forEach((m,j)=>{assert.deepEqual(m.positions,full[j].positions);assert.deepEqual(m.indices,full[j].indices);assert.deepEqual(m.printMatrix,full[j].printMatrix);});
+  assert.throws(()=>feed({...model,source_sha256:'wrong'})[0].finish(),/match/);
+  assert.throws(()=>feed({...model,parts:model.parts.slice(1)})[0].finish(),/match/);
+  assert.throws(()=>{const r=api.positionReader(MeshoptDecoder);r.push(data);r.finish();},/match/);
+});
