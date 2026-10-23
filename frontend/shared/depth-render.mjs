@@ -15,9 +15,13 @@ export function depthDraw(renderer,scene,camera,material) {
 // samples or keep an idle GPU awake. Unsupported/disjoint timers retain one pass.
 export function adaptiveDraw(renderer,scene,camera) {
   const material=new THREE.MeshBasicMaterial({colorWrite:false});
-  const gl=renderer.getContext(),ext=gl.getExtension('EXT_disjoint_timer_query_webgl2');
+  const gl=renderer.getContext();let ext=gl.getExtension('EXT_disjoint_timer_query_webgl2');
   let pending=null,key='',plain=[],depth=[],round=0,enabled=false,decided=false,waited=0;
   function reset(next){key=next;plain=[];depth=[];round=0;enabled=false;decided=false;}
+  renderer.domElement.addEventListener('webglcontextrestored',()=>{
+    // Queries and extension enablement belong to the lost context.
+    pending=null;ext=gl.getExtension('EXT_disjoint_timer_query_webgl2');reset('');
+  });
   return (eligible=false,state='')=>{
     const next=[renderer.domElement.width,renderer.domElement.height,state].join(':');if(key!==next)reset(next);
     if(pending){

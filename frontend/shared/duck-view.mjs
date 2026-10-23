@@ -9,6 +9,7 @@ import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import {demandLoop} from './render-policy.mjs';
 import {idPicker} from './id-picker.mjs';
 import {adaptiveDraw} from './depth-render.mjs';
+import {createDragDraw} from './drag-render.mjs';
 import {loadModel} from './model-loader.mjs';
 export async function loadDuck() {
   const data=await loadModel(),{model,catalog}=data;
@@ -106,6 +107,18 @@ export function createDuckView(data) {
   let revision=0;
   const schedule=demandLoop(animate),invalidate=()=>{revision++;schedule();};
   const draw=adaptiveDraw(renderer,scene,camera);let finishState='';
+  const dragDraw=createDragDraw(renderer,scene,camera,draw);
+  let dragging=false,preparingDrag=false,queuedDrag=false;
+  const canPrepareDrag=()=>!dragging&&!split&&!tween&&!moving&&!tweening&&!turntable&&renderer.domElement.isConnected&&!document.hidden;
+  function prepareDrag(){
+    if(preparingDrag||queuedDrag||!canPrepareDrag()||!dragDraw.needsPreparation())return;
+    queuedDrag=true;
+    const run=()=>{
+      queuedDrag=false;if(!canPrepareDrag()||!dragDraw.needsPreparation())return;
+      preparingDrag=true;dragDraw.prepare(canPrepareDrag).finally(()=>{preparingDrag=false;if(canPrepareDrag()&&dragDraw.needsPreparation())invalidate();});
+    };
+    if(window.requestIdleCallback)requestIdleCallback(run,{timeout:1000});else setTimeout(run,50);
+  }
   const originalMeshes=new Set(objects);
   function depthAllowed(){
     if(layout!=='assembly'||side.group.visible||selected.size||hovered.size)return false;
@@ -212,15 +225,20 @@ export function createDuckView(data) {
     try{const id=await gpuPick(x,y);return revision===version?id:undefined;}
     catch{gpuPickFailed=true;return revision===version?pick(x,y):undefined;}
   }
-  controls.addEventListener('start', () => {tween = null;invalidate();});
+  controls.addEventListener('start', () => {tween = null;dragging=true;invalidate();});
   controls.addEventListener('change', invalidate);
-  renderer.domElement.addEventListener('webglcontextrestored',invalidate);
+  const endDrag=()=>{if(dragging){dragging=false;invalidate();}};
+  controls.addEventListener('end',endDrag);
+  renderer.domElement.addEventListener('pointercancel',endDrag);
+  window.addEventListener('blur',endDrag);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)endDrag();});
+  renderer.domElement.addEventListener('webglcontextrestored',()=>{dragDraw.reset();endDrag();invalidate();});
   function animate() {
     if(!renderer.domElement.isConnected)return false;
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
     if (turntable && !tween) root.rotation.y += .006;
-    if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else draw(depthAllowed(),finishState);}
+    if (renderer.domElement.isConnected) {const changed=controls.update();placeSide();if (split) renderSplit();else dragDraw.render(dragging,depthAllowed(),finishState);if(!changed)prepareDrag();}
     return !!(tween||moving||tweening||turntable);
   }
 
