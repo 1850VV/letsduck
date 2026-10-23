@@ -215,12 +215,15 @@ export function createDuckView(data) {
   controls.addEventListener('start', () => {tween = null;invalidate();});
   controls.addEventListener('change', invalidate);
   renderer.domElement.addEventListener('webglcontextrestored',invalidate);
+  let firstFrame=false;
   function animate() {
     if(!renderer.domElement.isConnected)return false;
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
     if (turntable && !tween) root.rotation.y += .006;
     if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else draw(depthAllowed(),finishState);}
+    // First submitted frame of the mounted view, for load-time measurements (tests/load-timing-browser.js).
+    if(!firstFrame){firstFrame=true;performance.mark('duck:first-frame');}
     return !!(tween||moving||tweening||turntable);
   }
 
