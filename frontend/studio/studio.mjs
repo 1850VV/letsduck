@@ -598,6 +598,8 @@ function stageClick(e) {
   if (!entering && sel.zone === z.id && sel.scope !== 'one' && !z.internal && view.layout !== 'arrange') select(z.id, { part: id });else select(z.id, { part: id, scope: z.internal || view.layout === 'arrange' ? 'one' : 'all' });
 }
 stage.addEventListener('pointerup', (e) => {
+  // A long press compares with the original (studio/phone.mjs); lifting that finger is not a tap.
+  if (stage.dataset.longpress) {delete stage.dataset.longpress;down = null;return;}
   // A fingertip wobbles more than a mouse, so touch gets a looser tap radius before it counts as an orbit drag.
   if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > (e.pointerType === 'touch' ? 12 : 5)) {down = null;return;}down = null;
   stageClick(e);

@@ -51,6 +51,7 @@ Authors, works and ratings in the screenshots are sample data; their titles are 
 ## More
 
 - **Real filaments**: Bambu Lab PLA Basic / TPU 90A colour table. Other brands are illustrative swatches; you are asked to switch to real filaments before publishing or exporting.
+- **Phones**: the duck fills almost the whole screen; the three steps sit in a bottom tab bar and each step's controls in a draggable bottom sheet (swipe up to expand, down to a sliver); paint and view tools float at the sides. Pinch to zoom, double-tap to focus the selected part, long-press the duck to compare with the original colours, and a light vibration on taps where the phone supports it.
 - **Export**: checks the filament of all 35 parts and writes a recoloured 3MF (six plate thumbnails re-rendered) plus a BOM for your print service.
 - **Accounts (server edition)**: nickname + simple password. Private designs live in your account; before you sign in they stay in the browser and sync when you do.
 - **Sharing**: copy or paste a colour code any time; posters of published works carry a real QR code pointing to the same page as the copied link (needs `DUCK_PUBLIC_URL`).

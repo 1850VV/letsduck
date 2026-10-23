@@ -1,0 +1,134 @@
+/* Phone layout (body.phone is set by studio/phone.mjs below 760px wide; desktop never matches).
+   Top bar, full-bleed stage, floating tool columns, part chips above a draggable bottom sheet,
+   and a bottom tab bar for the three steps. Overrides the tablet rules in studio.css and i18n.css. */
+:root{--ph-top:calc(54px + env(safe-area-inset-top));--ph-tab:calc(60px + env(safe-area-inset-bottom));--ph-sheet:262px;--ph-stage-sheet:262px}
+body.phone{height:100dvh;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body.phone button{touch-action:manipulation}
+
+/* ---------- top bar ---------- */
+body.phone .top{position:fixed;top:0;left:0;right:0;z-index:30;height:var(--ph-top)!important;min-height:0;flex-wrap:nowrap;gap:8px!important;
+  padding:env(safe-area-inset-top) 10px 0!important;background:#ffffffeb;border-bottom:1px solid var(--line);box-shadow:0 1px 10px #1b274a0d}
+body.phone .top .brand{margin:0}body.phone .top .brand .logo{width:34px;height:34px}body.phone .top .brand .wordmark{display:none}
+body.phone .top .scheme{flex:1;min-width:0}body.phone .scheme-btn{max-width:100%;padding:6px 8px}body.phone .scheme-btn small{display:none}
+body.phone .edition-badge{display:none}
+body.phone .top-actions{gap:4px;flex:none}
+body.phone .top-actions .icon{width:38px;height:38px;border-radius:12px;font-size:17px}
+body.phone .ph-more{font-size:20px;letter-spacing:1px;line-height:1}
+body.phone .scheme-menu{top:calc(var(--ph-top) + 6px)}
+.ph-menu{position:fixed;z-index:40;top:calc(var(--ph-top) + 6px);right:10px;display:flex;flex-direction:column;align-items:stretch;gap:8px;
+  min-width:210px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px #1b274a2e}
+.ph-menu[hidden]{display:none}
+.ph-menu>*{display:flex!important;width:100%}.ph-menu .language-trigger,.ph-menu #profile-slot .profile-chip,.ph-menu a.ghost,.ph-menu #import-code{width:100%;justify-content:center;min-height:42px;max-width:none}
+.ph-menu .language-trigger bdi,.ph-menu .language-trigger span:last-child{display:inline!important}
+.ph-menu a.ghost{align-items:center;border:1px solid var(--line);border-radius:12px;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none}
+
+/* ---------- step tabs at the bottom ---------- */
+body.phone .top .steps{position:fixed;left:0;right:0;bottom:0;z-index:31;height:var(--ph-tab);margin:0;padding:6px 8px env(safe-area-inset-bottom);
+  display:flex;gap:6px;justify-content:space-between;background:#fff;border-top:1px solid var(--line);box-shadow:0 -6px 18px #1b274a0f;order:0;flex-basis:auto}
+body.phone .steps .step-line{display:none}
+body.phone .steps button{flex:1;flex-direction:column;gap:3px;justify-content:center;padding:4px 2px!important;border-radius:14px;min-width:0}
+body.phone .steps button em{width:26px;height:26px;font-size:13px}
+body.phone .steps button>span{font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+body.phone .steps button small{display:none!important}
+body.phone .steps button.on{background:var(--blue-soft)}
+
+/* ---------- stage: everything between the top bar and the sheet ---------- */
+body.phone .studio{display:block!important}
+body.phone .stage{position:fixed!important;top:var(--ph-top);left:0;right:0;bottom:calc(var(--ph-tab) + var(--ph-stage-sheet));margin:0!important;border-radius:0!important;flex:none!important;transition:bottom .28s ease}
+body.phone.ph-dragging .stage{transition:none}
+body.phone .stage .hint{display:none}
+body.phone .stage .part-tag{display:none!important}
+
+/* Paint tools: a column of round buttons on the right edge (step 2). */
+body.phone .stage .tools{top:10px!important;right:10px!important;left:auto!important;bottom:auto;width:auto!important;max-width:none!important;flex-direction:column;flex-wrap:nowrap!important;
+  gap:6px;padding:5px!important;border-radius:22px;overflow:visible!important;backdrop-filter:none;background:#ffffffe6}
+body.phone .stage .tools button{width:42px;height:42px;padding:0!important;border-radius:50%;justify-content:center;font-size:0!important;gap:0}
+body.phone .stage .tools button b{font-size:18px}body.phone .stage .tools button span,body.phone .stage .tools kbd{display:none!important}
+body.phone .stage .tools .tools-sep,body.phone .stage .tools .tools-seg,body.phone .stage .tools .brush-chip{display:none!important}
+body.phone .stage .tools button.on,body.phone .stage .tools button.active,body.phone .stage .tools button[aria-pressed="true"]{background:var(--blue);color:#fff}
+
+/* View, turntable, compare and background: a column on the left edge. */
+body.phone .stage .dock{top:10px!important;left:10px!important;right:auto!important;bottom:auto!important;transform:none!important;flex-direction:column;flex-wrap:nowrap!important;
+  gap:6px;padding:5px!important;border-radius:22px;backdrop-filter:none;background:#ffffffe6;justify-content:flex-start}
+body.phone .dock .seg{padding:0!important;background:none;border:0}
+body.phone .dock #views button{display:none;width:42px!important;height:42px!important;border-radius:50%;font-size:15px;font-weight:700}
+body.phone .dock #views button.on{display:block;background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+body.phone .dock .toggle,body.phone .dock .hold{width:42px!important;height:42px!important;min-width:0;padding:0!important;border-radius:50%;font-size:0!important;flex:none}
+body.phone .dock .toggle::before{content:'⟳';font-size:19px}body.phone .dock .hold::before{content:'◐';font-size:18px}
+body.phone .dock .toggle[aria-pressed="true"]{background:var(--blue);color:#fff}
+body.phone .dock .compare{flex:none;display:block}body.phone .dock .cmp-pick,body.phone .dock .cmp-menu{display:none!important}
+body.phone .dock .bgs{display:flex!important;flex-direction:column;gap:0;padding:0;background:none;border:0}
+body.phone .dock .bgs>button:not(.custom){display:none}
+body.phone .dock .bgs>button.custom{width:42px;height:42px;border-radius:50%;background:conic-gradient(#ff8a3d,#ffd23f,#2fb37a,#4d6bfe,#9b6bff,#ff8a3d);box-shadow:inset 0 0 0 3px #fff,0 0 0 1px var(--line)}
+body.phone .bg-pop{position:fixed;left:10px;right:10px;top:auto;bottom:calc(var(--ph-tab) + var(--ph-sheet) + 10px);width:auto;z-index:35}
+body.phone .split-labels{top:10px}
+
+/* Holding the duck compares with the original; say so while it lasts. */
+body.phone.ph-holding .stage::after{content:'◐';position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:6px 14px;border-radius:99px;background:#17243ce0;color:#fff;font-size:15px;pointer-events:none}
+
+/* Part chips float just above the sheet (step 2). */
+body.phone .rail{display:none!important}
+body.phone .studio[data-step="2"] .rail{display:flex!important;position:fixed;left:0;right:0;bottom:calc(var(--ph-tab) + var(--ph-sheet) + 8px);z-index:22;gap:6px;padding:0 10px!important;
+  overflow-x:auto;scrollbar-width:none;background:none!important;border:0!important;opacity:1;pointer-events:auto;transition:bottom .28s ease}
+body.phone.ph-dragging .rail{transition:none}
+body.phone .rail::-webkit-scrollbar{display:none}
+body.phone .rail .rail-head{display:none}
+body.phone .rail .zone{flex:none;margin:0;border-radius:99px;background:#fffffff2;box-shadow:0 4px 14px #1b274a1f}
+body.phone .rail .zone-main{padding:7px 12px 7px 8px!important;gap:7px;border-radius:99px;white-space:nowrap}
+body.phone .rail .zone-main small,body.phone .rail .zone [data-lock]{display:none}
+body.phone .rail .zone.on .zone-main{background:var(--blue);color:#fff;border-color:var(--blue)}
+body.phone .rail .zone.on .zone-name{color:#fff}
+
+/* ---------- the bottom sheet ---------- */
+body.phone .panel{position:fixed;left:0;right:0;bottom:var(--ph-tab);z-index:24;height:var(--ph-sheet);border:0!important;border-radius:22px 22px 0 0;
+  box-shadow:0 -10px 30px #1b274a1f;overflow-y:auto;overscroll-behavior:contain;padding-top:22px;transition:height .28s ease;background:#fff}
+body.phone.ph-dragging .panel{transition:none}
+.ph-grip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--ph-tab) + var(--ph-sheet) - 24px);z-index:26;width:96px;height:26px;border:0;background:none;
+  display:grid;place-items:center;touch-action:none;cursor:grab;transition:bottom .28s ease}
+.ph-grip i{width:40px;height:5px;border-radius:99px;background:#cfd6e6}
+body.phone.ph-dragging .ph-grip{transition:none}
+body:not(.phone) .ph-grip{display:none}
+body.phone .panel-head{padding:4px 16px 8px!important}
+/* The grip and the panel header drag the sheet, so the browser must not treat them as page pans. */
+body.phone .ph-grip,body.phone .ph-grip *,body.phone .panel-head,body.phone .panel-head *{touch-action:none}
+body.phone .panel-head .eyebrow{display:none}
+body.phone .panel-head h2{font-size:17px}
+body.phone .panel .panel-foot:not(.finish){display:none}
+body.phone .panel .panel-foot.finish{position:sticky;bottom:0;padding:10px 14px!important}
+body.phone .panel .one-screen{padding-bottom:16px}
+body.phone .studio[data-step="1"] .panel-head{display:none}
+body.phone .studio[data-step="1"] .panel .panel-body{padding-top:2px}
+body.phone .panel .scope{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+body.phone .panel .scope::-webkit-scrollbar{display:none}
+body.phone .panel .scope button,body.phone .panel .dock-tabs button,body.phone .panel [data-ptab]{min-height:36px}
+body.phone .panel #lib-grid button,body.phone .panel #lib-grid [data-key]{min-width:36px;min-height:36px}
+/* Posing: the pose panel takes the sheet's place at the bottom, and the duck stays in view above it. */
+body.phone .pose-panel{bottom:var(--ph-tab)!important;height:44dvh;max-height:44dvh;border-radius:22px 22px 0 0;box-shadow:0 -10px 30px #1b274a1f}
+body.phone:has(#pose-panel:not([hidden])) .stage{bottom:calc(var(--ph-tab) + 44dvh)}
+body.phone:has(#pose-panel:not([hidden])) :is(.panel,.ph-grip,.rail){display:none!important}
+body.phone .act b{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.phone .toast{top:calc(var(--ph-top) + 8px)}
+/* A sheet pulled down to a sliver shows just its first row; the duck takes the rest. */
+body.phone[data-sheet="mini"] .panel{overflow:hidden}
+
+/* Step 2: the colour grid comes first, so the default sheet height shows swatches, not settings. */
+body.phone .studio[data-step="2"] .panel-head:not(.brush-head) .sel-line{display:none}
+body.phone .studio[data-step="2"] .panel-head{padding-bottom:4px!important}
+body.phone .pane-filament #lib-grid{order:1}
+body.phone .pane-filament .brand-row{order:2}
+body.phone .pane-filament>.strip{order:3}
+body.phone .pane-filament #inuse-row{order:4}
+body.phone .pane-filament .take-pop{order:5}
+body.phone .pane-filament .hover-info{display:none}
+body.phone .studio[data-step="2"] .dock-tabs{margin-top:0}
+/* Step 3: the moves first, then the voice, then the joint sliders. */
+body.phone .pane-move>:nth-child(3){order:1}
+body.phone .pane-move>.move-grid{order:2}
+body.phone .pane-move>.voice-row{order:3}
+body.phone .pane-move>.voice-line{order:4}
+body.phone .pane-move>:nth-child(5){order:5}
+body.phone .pane-move>.joint-grid{order:6}
+body.phone .studio[data-step="3"] .panel-head{display:none}
+/* With the sheet fully open its grip is just under the top bar, where toasts normally appear; move them down. */
+body.phone[data-sheet="full"] .toast{top:auto;bottom:calc(var(--ph-tab) + 12px);transform:translate(-50%,20px)}
+body.phone[data-sheet="full"] .toast.show{transform:translate(-50%,0)}

@@ -5,6 +5,7 @@
 | 入口 | 职责 |
 | --- | --- |
 | `frontend/index.html` · `frontend/studio/` | 涂装台：三步主线、方案、发布、导出 |
+| `frontend/studio/phone.mjs` · `phone.css` | 手机竖屏（≤760px）：全屏舞台、底部标签栏、可拖动底部面板、两侧浮动工具、触屏手势；桌面不运行 |
 | `frontend/gallery/` | 配色广场：作品列表、详情、评分、改编家族、我的方案 |
 | `frontend/shared/duck-view.mjs` | Three.js 模型视图：选择、姿势骨架、材质、布局、截图与导出缩略图 |
 | `frontend/shared/duck-actions.mjs` · `duck-voice.mjs` | MicroDuck 经典动作与叫声合成器（JS 移植） |
