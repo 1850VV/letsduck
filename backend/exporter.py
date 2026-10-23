@@ -8,6 +8,7 @@ import base64, copy, hashlib, io, json, re, struct, zipfile
 import xml.etree.ElementTree as ET
 
 import os
+from zip_reuse import repack_zip
 
 ROOT = Path(__file__).resolve().parent
 # Separately licensed local asset pack; mounted in Docker, ../assets during development.
@@ -123,10 +124,10 @@ def remap_objects(report):
     return text.encode('utf-8')
 
 def thumbnail_bytes(value):
-    if not isinstance(value,str) or not value.startswith('data:image/png;base64,'):
+    if not isinstance(value,bytes) and (not isinstance(value,str) or not value.startswith('data:image/png;base64,')):
         raise InvalidDesign('导出缩略图缺失，请等待模型载入后重试。', code='export.23')
     try:
-        data = base64.b64decode(value.split(',',1)[1], validate=True)
+        data = value if isinstance(value,bytes) else base64.b64decode(value.split(',',1)[1], validate=True)
         if len(data)>600000 or data[:8]!=b'\x89PNG\r\n\x1a\n' or struct.unpack('>II',data[16:24])!=(512,512):
             raise ValueError()
     except (ValueError,struct.error):
@@ -178,11 +179,7 @@ def export_3mf(payload):
     content_types=SOURCE_ZIP.read('[Content_Types].xml').decode().replace('</Types>',' <Override PartName="/Metadata/duck_studio_materials.json" ContentType="application/json"/>\n</Types>')
     replacements['[Content_Types].xml']=content_types.encode()
     def pack():
-        memory=io.BytesIO()
-        with zipfile.ZipFile(memory,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as out:
-            for info in SOURCE_ZIP.infolist():out.writestr(copy.copy(info),replacements.get(info.filename,SOURCE_ZIP.read(info.filename)))
-            out.writestr('Metadata/duck_studio_materials.json',json.dumps(report,ensure_ascii=False,indent=2).encode())
-        return memory.getvalue()
+        return repack_zip(SOURCE, {**replacements, 'Metadata/duck_studio_materials.json':json.dumps(report,ensure_ascii=False,indent=2).encode()})
     result=pack()
     report['validation']=verify_result(result,report,config)
     return pack(),report

@@ -162,6 +162,7 @@ node --test tests/*.mjs
 ## 文档
 
 - [部署模式、数据迁移、备份和回退](docs/deployment.md)
+- [性能集成、实测结果与待验收边界](docs/performance-integration.md)
 - [项目结构与边界](docs/project.md)
 - [本地资产与复现边界](docs/local-assets.md)
 - [第三方来源与许可证](THIRD_PARTY_NOTICES.md)

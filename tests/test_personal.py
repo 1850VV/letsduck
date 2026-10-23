@@ -57,6 +57,21 @@ class PersonalTests(unittest.TestCase):
         parts = sorted(server.store.part_ids) or ['P1-01']
         return {'colors': {p: '#ffffff' for p in parts}, 'assignments': {p: None for p in parts}}
 
+    @unittest.skipUnless(app.exporter, 'requires local assets')
+    def test_binary_export_uses_standard_library_and_preserves_archive(self):
+        import io, zipfile
+        from test_export import payload
+        from export_fixtures import multipart
+        self.start()
+        request = Request(self.base+'/api/export', data=multipart(payload()), headers={'Content-Type':'multipart/form-data; boundary=duck-test'})
+        with urlopen(request) as response:
+            self.assertEqual(response.status,200)
+            with zipfile.ZipFile(io.BytesIO(response.read())) as archive:
+                self.assertIsNone(archive.testzip())
+                for name in app.exporter.SOURCE_ZIP.namelist():
+                    if name.startswith('3D/'):
+                        self.assertEqual(archive.read(name), app.exporter.SOURCE_ZIP.read(name))
+
     def test_schemes_persist_without_login(self):
         server = self.start()
         status, created = self.call('PUT', '/api/schemes/personal-1', {'name': '我的个人方案', 'design': self.design(server), 'voiceSalt': 7})

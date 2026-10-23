@@ -6,18 +6,14 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 
-import { unpackGeometry } from './geometry-pack.mjs';
-const ASSETS = new URL('../assets/', import.meta.url);
+import {demandLoop} from './render-policy.mjs';
+import {idPicker} from './id-picker.mjs';
+import {adaptiveDraw} from './depth-render.mjs';
+import {loadModel} from './model-loader.mjs';
 export async function loadDuck() {
-  const get = (name, type) => fetch(new URL(name, ASSETS)).then((r) => {if (!r.ok) throw Error(name);return r[type]();});
-  // geometry.pack.bin is a third of the size on the wire; geometry.bin stays the fallback (e.g. before the pack is generated).
-  const pack = fetch(new URL('geometry.pack.bin', ASSETS)).then((r) => r.ok ? r.arrayBuffer() : null).catch(() => null);
-  const [model, catalog] = await Promise.all([get('model.json', 'json'), get('catalog.json', 'json')]);
-  let binary = null;const packed = await pack;
-  if (packed) try {binary = unpackGeometry(packed, model);} catch {}
-  binary ||= await get('geometry.bin', 'arrayBuffer');
+  const data=await loadModel(),{model,catalog}=data;
   for(const item of [...model.parts,...catalog.products]){const originalName=item.name;Object.defineProperty(item,'name',{get:()=>_label(originalName),enumerable:true,configurable:true});}
-  return { model, binary, catalog, products: new Map(catalog.products.map((p) => [p.id, p])) };
+  return { ...data, products: new Map(catalog.products.map((p) => [p.id, p])) };
 }
 
 const TARGET = new THREE.Vector3(0, 130, 15);
@@ -60,8 +56,9 @@ function addLights(scene) {
   for (const [color, intensity, position] of [[0xfffbf7, 3.2, [-160, 380, 290]], [0xdde9ff, 1.4, [240, 180, -100]]]) {const l = new THREE.DirectionalLight(color, intensity);l.position.set(...position);scene.add(l);}
 }
 
-export function createDuckView({ model, binary }) {
-  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+export function createDuckView(data) {
+  const { model, binary, geometry: prepared }=data;
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: false });
   // Phones: a lighter pixel ratio keeps the frame rate up, and firmer damping/slower rotation keep the duck under the finger on a short stage.
   const coarse = matchMedia('(pointer: coarse)').matches;
   renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.5 : 1.75));renderer.outputColorSpace = THREE.SRGBColorSpace;renderer.toneMapping = THREE.ACESFilmicToneMapping;renderer.toneMappingExposure = 1.05;renderer.setClearColor(0, 0);
@@ -70,7 +67,7 @@ export function createDuckView({ model, binary }) {
   const pmrem = new THREE.PMREMGenerator(renderer),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04);scene.environment = env.texture;scene.environmentIntensity = .65;room.dispose();pmrem.dispose();
   addLights(scene);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(105, 48), new THREE.MeshBasicMaterial({ color: 0x1b2440, transparent: true, opacity: .05, depthWrite: false }));shadow.rotation.x = -Math.PI / 2;shadow.position.set(0, -2, 15);scene.add(shadow);
-  function geometry(p) {const g = new THREE.BufferGeometry();g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(binary, p.geometry.positionOffset, p.geometry.vertexCount * 3).slice(), 3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary, p.geometry.indexOffset, p.geometry.indexCount).slice(), 1));const s = toCreasedNormals(g, Math.PI / 5);g.dispose();s.computeBoundingBox();return s;}
+  function geometry(p) {const m=prepared?.get((p.id?'part:':'hardware:')+(p.id||p.name));if(m){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(m.positions,3));g.setAttribute('normal',new THREE.BufferAttribute(m.normals,3));g.setIndex(new THREE.BufferAttribute(m.indices,1));g.computeBoundingBox();return g;}const g = new THREE.BufferGeometry();g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(binary, p.geometry.positionOffset, p.geometry.vertexCount * 3).slice(), 3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary, p.geometry.indexOffset, p.geometry.indexCount).slice(), 1));const s = toCreasedNormals(g, Math.PI / 5);g.dispose();s.computeBoundingBox();return s;}
   const center = new THREE.Vector3(0, 120, 15),hardware = [];
   const prep = (m) => {const b = m.geometry.boundingBox;m.userData.c = b.getCenter(new THREE.Vector3());m.userData.size = b.getSize(new THREE.Vector3());m.userData.dir = m.userData.c.clone().sub(center);m.userData.goal = { pos: new THREE.Vector3(), scale: 1 };};
   // Nested joint groups; every mesh keeps world-space geometry and sits at -pivot inside its link.
@@ -87,7 +84,7 @@ export function createDuckView({ model, binary }) {
   let pose = { ...REST_POSE };
   // Applies joint angles in degrees. Ankles keep feet flat and the rig shifts so both soles stay planted.
   function setPose(next) {
-    pose = { ...REST_POSE, ...next };const P = pose;
+    invalidate();pose = { ...REST_POSE, ...next };const P = pose;
     joints.trunk.rotation.set(deg(P.trunk), 0, 0);
     for (const [s, side] of [['L', 'left'], ['R', 'right']]) {
       const hip = P.hip + P['hip' + s],knee = P.knee + P['knee' + s];
@@ -104,6 +101,15 @@ export function createDuckView({ model, binary }) {
     rig.position.y += P.lift;root.updateMatrixWorld(true);
   }
 
+  let revision=0;
+  const schedule=demandLoop(animate),invalidate=()=>{revision++;schedule();};
+  const draw=adaptiveDraw(renderer,scene,camera);let finishState='';
+  const originalMeshes=new Set(objects);
+  function depthAllowed(){
+    if(layout!=='assembly'||side.group.visible||selected.size||hovered.size)return false;
+    let extra=false;root.traverse(o=>{if(o.isMesh&&o.visible&&!originalMeshes.has(o))extra=true;});
+    return !extra&&[...meshes.values()].some(m=>m.material.transmission>0);
+  }
   let host = null,observer = null,turntable = false,tween = null,frame,selected = new Set(),hovered = new Set(),layout = 'assembly',beforeArrange = null,moving = false,split = null;
   const tanV = () => Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   // Selection is drawn as an outline (an inverted hull), never by tinting the part, so the colour on
@@ -113,15 +119,15 @@ export function createDuckView({ model, binary }) {
   function paintHighlight() {for (const [id, m] of meshes) {m.material.emissiveIntensity = 0;const s = selected.has(id),h = hovered.has(id);let o = m.userData.outline;if ((s || h) && !o) {o = new THREE.Mesh(m.geometry, OUTLINE.sel);o.raycast = () => {};m.add(o);m.userData.outline = o;}if (o) {o.visible = s || h;o.material = s ? OUTLINE.sel : OUTLINE.hover;}}}
   // Colour changes glide over ~150 ms instead of snapping; snapshots and A/B halves set colours instantly.
   const targets = new Map();let tweening = false;
-  function setColors(colors, instant = false) {for (const [id, m] of meshes) if (colors[id]) {let t = targets.get(id);if (!t) targets.set(id, t = new THREE.Color());t.set(colors[id]);if (instant) m.material.color.copy(t);}tweening = true;}
+  function setColors(colors, instant = false) {invalidate();for (const [id, m] of meshes) if (colors[id]) {let t = targets.get(id);if (!t) targets.set(id, t = new THREE.Color());t.set(colors[id]);if (instant) m.material.color.copy(t);}tweening = true;}
   function stepColors() {if (!tweening) return;let busy = false;for (const [id, t] of targets) {const c = meshes.get(id).material.color;if (Math.abs(c.r - t.r) + Math.abs(c.g - t.g) + Math.abs(c.b - t.b) > .003) {c.lerp(t, .3);busy = true;} else c.copy(t);}tweening = busy;}
   const flushColors = () => {for (const [id, t] of targets) meshes.get(id).material.color.copy(t);tweening = false;};
-  function setFinishes(map) {for (const [id, m] of meshes) {const f = FINISHES[map[id]] || FINISHES.basic;for (const k of FINISH_KEYS) m.material[k] = f[k];m.material.userData.layer.value = f.layer;}}
-  function setHighlight(ids = [], hover = []) {selected = new Set(ids);hovered = new Set(hover);paintHighlight();}
+  function setFinishes(map) {invalidate();finishState=JSON.stringify(map);for (const [id, m] of meshes) {const f = FINISHES[map[id]] || FINISHES.basic;for (const k of FINISH_KEYS) m.material[k] = f[k];m.material.userData.layer.value = f.layer;}}
+  function setHighlight(ids = [], hover = []) {invalidate();selected = new Set(ids);hovered = new Set(hover);paintHighlight();}
 
   // ---- camera ----
   const framed = (name) => new THREE.Vector3(...VIEWS[name]).sub(TARGET).multiplyScalar(1.32 * (camera.aspect < .9 ? .9 / camera.aspect : 1)).add(TARGET);
-  function fly(to, target) {tween = { from: camera.position.clone(), to, tFrom: controls.target.clone(), tTo: target.clone(), start: performance.now() };}
+  function fly(to, target) {invalidate();tween = { from: camera.position.clone(), to, tFrom: controls.target.clone(), tTo: target.clone(), start: performance.now() };}
   function arrangedCamera() {const w = GRID.cols * GRID.cell,h = Math.ceil(model.parts.length / GRID.cols) * GRID.cell,d = Math.max(h / 2 / tanV(), w / 2 / (tanV() * camera.aspect)) * 1.12;return GRID.center.clone().add(new THREE.Vector3(0, 0, d * 1.18));}
   function view(name) {if (layout === 'arrange') return fly(arrangedCamera(), GRID.center);fly(framed(name), TARGET);}
   function placeCamera(name) {camera.position.copy(framed(name));controls.target.copy(TARGET);controls.update();}
@@ -151,7 +157,7 @@ export function createDuckView({ model, binary }) {
   // It shares the camera, so orbiting turns both together; it always sits to the screen-right of the
   // duck, and a view offset keeps the pair centred. Clicks on the copy select and paint the real part.
   const side = { group: new THREE.Group(), inner: new THREE.Group(), key: '', label: null, scale: 1, radius: 0, on: false };side.group.add(side.inner);scene.add(side.group);side.group.visible = false;
-  function setSideCopy(ids, label) {
+  function setSideCopy(ids, label) {invalidate();
     const key = ids?.length && layout !== 'arrange' ? ids.join(',') : '';side.label = label || side.label;
     if (key === side.key) return side.scale;side.key = key;
     side.inner.children.forEach((m) => m.material.dispose());side.inner.clear();
@@ -188,7 +194,7 @@ export function createDuckView({ model, binary }) {
   }
 
   // ---- loop ----
-  function resize() {if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();}
+  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();}
   function mount(el, { view: name = 'hero', preserveView=false } = {}) {host = el;observer?.disconnect();el.prepend(renderer.domElement);observer = new ResizeObserver(resize);observer.observe(el);resize();if(!preserveView)placeCamera(name);}
   const ray = new THREE.Raycaster(),pointer = new THREE.Vector2();
   function pick(clientX, clientY) {
@@ -196,15 +202,26 @@ export function createDuckView({ model, binary }) {
     if (split) {if (x < .5) return null;x = (x - .5) * 2;camera.aspect = aspect / 2;camera.updateProjectionMatrix();}
     pointer.set(x * 2 - 1, -(clientY - b.top) / b.height * 2 + 1);ray.setFromCamera(pointer, camera);const hit = ray.intersectObjects([...meshes.values(), ...(side.group.visible ? side.inner.children : [])], false)[0];
     if (split) {camera.aspect = aspect;camera.updateProjectionMatrix();}return hit?.object.userData.id || null;}
-  controls.addEventListener('start', () => {tween = null;});
+  const gpuPick=idPicker(renderer,scene,camera,()=>[...meshes.values(),...(side.group.visible?side.inner.children:[])],()=>!!split);
+  let gpuPickFailed=false;
+  async function pickAsync(x,y) {
+    if(gpuPickFailed||renderer.getContext().isContextLost())return pick(x,y);
+    const version=revision;
+    try{const id=await gpuPick(x,y);return revision===version?id:undefined;}
+    catch{gpuPickFailed=true;return revision===version?pick(x,y):undefined;}
+  }
+  controls.addEventListener('start', () => {tween = null;invalidate();});
+  controls.addEventListener('change', invalidate);
+  renderer.domElement.addEventListener('webglcontextrestored',invalidate);
   function animate() {
-    frame = requestAnimationFrame(animate);
+    if(!renderer.domElement.isConnected)return false;
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
     if (turntable && !tween) root.rotation.y += .006;
-    if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else renderer.render(scene, camera);}
+    if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else draw(depthAllowed(),finishState);}
+    return !!(tween||moving||tweening||turntable);
   }
-  animate();
+
 
   // Renders the assembled duck alone at an exact size from the current camera direction, then restores the live view.
   function snapshot(w, h, { colors, angle } = {}) {
@@ -220,7 +237,7 @@ export function createDuckView({ model, binary }) {
     renderer.render(scene, camera);const out = document.createElement('canvas');out.width = w;out.height = h;out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
     renderer.setPixelRatio(saved.ratio);renderer.setSize(saved.size.x, saved.size.y, false);camera.aspect = saved.aspect;camera.updateProjectionMatrix();camera.position.copy(saved.pos);controls.target.copy(saved.target);camera.lookAt(saved.target);controls.update();
     saved.objs.forEach(([o, p, s, v]) => {o.position.copy(p);o.scale.setScalar(s);o.visible = v;});shadow.visible = saved.shadow;side.group.visible = saved.side;
-    root.rotation.y = saved.spin;if (saved.colors) setColors(saved.colors, true);selected = saved.hl[0];hovered = saved.hl[1];paintHighlight();return out;
+    root.rotation.y = saved.spin;if (saved.colors) setColors(saved.colors, true);selected = saved.hl[0];hovered = saved.hl[1];paintHighlight();invalidate();return out;
   }
   const thumbnail = (colors, w = 540, h = 390) => snapshot(w, h, { colors, angle: 'hero' }).toDataURL('image/png');
   // A separate assembled scene for the publish ceremony (evolution.mjs renders it with its own renderer).
@@ -230,34 +247,61 @@ export function createDuckView({ model, binary }) {
     for (const h of hardware) s.add(new THREE.Mesh(h.geometry, h.material));
     return { scene: s, meshes: list };
   }
-  return { mount, setColors, setFinishes, setHighlight, pick, view, focus, snapshot, thumbnail, createShowcase, canvas: renderer.domElement,
+  let exportSession,exportQueue=Promise.resolve();
+  function exportThumbnails(colors){
+    const palette={...colors};
+    const run=exportQueue.then(async()=>{
+      try {
+        exportSession ||= (async()=>{
+          const [{createSharedExport},printed]=await Promise.all([import('./export-shared.mjs'),data.loadPrintGeometry()]);
+          return createSharedExport({model,printed},{renderer,scene,objects},addLights);
+        })();
+        return await (await exportSession).render(palette);
+      } catch(error){
+        if(exportSession)try{(await exportSession).dispose();}catch{}
+        exportSession=null;throw error;
+      }
+    });
+    exportQueue=run.catch(()=>{});return run;
+  }
+  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
-    setSideCopy, setSplit: (colors) => {split = colors || null;},
-    setTurntable: (on) => {if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;},
+    setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
+    setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},
     setExplode: (on) => setLayout(on ? 'explode' : 'assembly'), get turntable() {return turntable;} };
 }
 
-// 3MF export thumbnails (512×512 PNG data URLs): a cover of the assembled duck plus, for each of the
-// six plates, a ¾ view and a top view of its parts in print position. Rendered in a throwaway context.
-export function renderExportThumbnails({ model, binary }, colors) {
+// 3MF export thumbnails (512×512 PNG data URLs or asynchronously encoded Blobs): a cover of the assembled duck plus, for each of the
+// six plates, a ¾ view and a top view. Prefer the shared session; retain the
+// independent legacy path for unsupported workers, contexts or rendering failures.
+export async function renderExportThumbnails(data, colors, {binaryUpload=false,view=null}={}) {
+  if(data.geometry&&view?.exportThumbnails){
+    try {
+      const images=await view.exportThumbnails(colors);
+      if(binaryUpload)return images;
+      return Object.fromEntries(await Promise.all(Object.entries(images).map(async([name,blob])=>[name,await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);})])));
+    } catch(error){console.warn('Shared export unavailable; using compatible renderer.',error);}
+  }
+  const {model}=data,binary=data.binary||await data.loadLegacy();
   const r = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });r.setSize(512, 512);r.outputColorSpace = THREE.SRGBColorSpace;r.toneMapping = THREE.ACESFilmicToneMapping;r.toneMappingExposure = 1.05;r.setClearColor(0xf4f6fa, 1);
   const s = new THREE.Scene(),cam = new THREE.PerspectiveCamera(36, 1, .1, 3000),pmrem = new THREE.PMREMGenerator(r),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04),owned = [];
   s.environment = env.texture;s.environmentIntensity = .65;room.dispose();pmrem.dispose();addLights(s);
   const geo = (p, print) => {const g = new THREE.BufferGeometry();g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(binary, print ? p.printPositionOffset : p.geometry.positionOffset, p.geometry.vertexCount * 3).slice(), 3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary, p.geometry.indexOffset, p.geometry.indexCount).slice(), 1));const c = toCreasedNormals(g, Math.PI / 5);g.dispose();owned.push(c);return c;};
   const output = {};
+  const capture=()=>binaryUpload?new Promise((resolve,reject)=>r.domElement.toBlob(blob=>blob?resolve(blob):reject(Error('PNG encoding failed')),'image/png')):r.domElement.toDataURL('image/png');
   try {
     const items = model.parts.map((p) => {const mat = new THREE.MeshStandardMaterial({ color: colors[p.id] || p.color, roughness: p.material.startsWith('TPU') ? .82 : .47, envMapIntensity: .65 });owned.push(mat);const m = new THREE.Mesh(geo(p, false), mat);s.add(m);return [p, m];});
     const hw = model.hardware.map((h) => {const mat = new THREE.MeshStandardMaterial({ color: h.color, roughness: .5, metalness: .12 });owned.push(mat);const m = new THREE.Mesh(geo(h, false), mat);s.add(m);return m;});
-    cam.position.set(330, 225, 460);cam.lookAt(0, 130, 12);r.render(s, cam);output.cover = r.domElement.toDataURL('image/png');
+    cam.position.set(330, 225, 460);cam.lookAt(0, 130, 12);r.render(s, cam);output.cover = capture();
     hw.forEach((m) => s.remove(m));
     const plateMat = new THREE.MeshStandardMaterial({ color: 0xe0e6f0, roughness: 1 }),plate = new THREE.Mesh(new THREE.BoxGeometry(258, .5, 258), plateMat);owned.push(plateMat, plate.geometry);plate.position.y = -1;s.add(plate);
     for (const [p, m] of items) m.geometry = geo(p, true);
     for (let i = 1; i <= 6; i++) {
       const cx = ((i - 1) % 3 - 1) * 290,cz = (Math.floor((i - 1) / 3) - .5) * 290;
       for (const [p, m] of items) {m.visible = p.plate === i;m.position.set(-cx, 0, -cz);}
-      cam.position.set(240, 440, 300);cam.up.set(0, 1, 0);cam.lookAt(0, 6, 0);r.render(s, cam);output['plate' + i] = r.domElement.toDataURL('image/png');
-      cam.position.set(0, 465, .001);cam.up.set(0, 0, -1);cam.lookAt(0, 0, 0);r.render(s, cam);output['top' + i] = r.domElement.toDataURL('image/png');
+      cam.position.set(240, 440, 300);cam.up.set(0, 1, 0);cam.lookAt(0, 6, 0);r.render(s, cam);output['plate' + i] = capture();
+      cam.position.set(0, 465, .001);cam.up.set(0, 0, -1);cam.lookAt(0, 0, 0);r.render(s, cam);output['top' + i] = capture();
     }
-    return output;
+    return Object.fromEntries(await Promise.all(Object.entries(output).map(async([name,value])=>[name,await value])));
   } finally {owned.forEach((o) => o.dispose());env.dispose();r.dispose();r.forceContextLoss();}
 }

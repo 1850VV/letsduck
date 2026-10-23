@@ -12,7 +12,8 @@ rewrites the two HTML pages so that
   files, so everything downloads in parallel from the start.
 
 The personal edition and development servers serve the unmodified source; nothing else changes.
-Usage: python3 stamp.py <frontend dir>   (rewrites index.html and gallery/index.html in place)
+Worker entry/dependency URLs are rewritten with content hashes too; document import maps do not apply to Workers.
+Usage: python3 stamp.py <frontend dir>   (rewrites a build copy of pages and Worker modules in place)
 """
 import hashlib
 import json
@@ -23,7 +24,7 @@ from urllib.parse import urljoin
 
 PAGES = ('index.html', 'gallery/index.html')
 CODE = ('.mjs', '.js', '.css')
-MODEL = ('/assets/model.json', '/assets/geometry.pack.bin', '/assets/catalog.json')  # fetched by shared/duck-view.mjs
+MODEL = ('/assets/model.json', '/assets/geometry.positions.bin', '/assets/catalog.json')  # fetched by shared/duck-view.mjs
 IMPORT = re.compile(r'''(?:\bimport|\bexport)\s*(?:[\w*{}\s,$]*?\bfrom\s*)?['"]([^'"]+)['"]''')
 ORIGIN = 'https://site'
 
@@ -35,6 +36,41 @@ def absolute(ref, base):
 
 def stamp(root):
     root = Path(root)
+    # Workers do not inherit a document's import map. Stamp their dependency
+    # URLs bottom-up, then stamp the worker entry URL in its caller. Hashing the
+    # rewritten bytes makes a decoder update invalidate the whole chain.
+    for page in PAGES:
+        if 'data-stamped' in (root / page).read_text(encoding='utf-8'):
+            raise SystemExit(page + ' is already stamped')
+    done, visiting = {}, set()
+
+    def worker_module(path):
+        if path in done:
+            return done[path]
+        if path in visiting:
+            raise ValueError('Cyclic worker imports: ' + path)
+        visiting.add(path)
+        file = root / path.lstrip('/')
+        source = file.read_text(encoding='utf-8')
+
+        def dependency(match):
+            ref = match.group(1)
+            if not ref.startswith(('.', '/')):
+                raise ValueError('Worker requires a relative or absolute import: ' + ref)
+            target = absolute(ref, path)
+            return match.group(0).replace(ref, target + '?v=' + worker_module(target))
+
+        source = IMPORT.sub(dependency, source)
+        file.write_text(source, encoding='utf-8')
+        visiting.remove(path)
+        done[path] = hashlib.sha256(file.read_bytes()).hexdigest()[:10]
+        return done[path]
+
+    entry = '/shared/positions-worker.mjs'
+    version = worker_module(entry)
+    caller = root / 'shared/model-loader.mjs'
+    source = caller.read_text(encoding='utf-8')
+    caller.write_text(source.replace("'./positions-worker.mjs'", "'./positions-worker.mjs?v=" + version + "'"), encoding='utf-8')
     versions = {'/' + p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()[:10]
                 for p in sorted(root.rglob('*')) if p.is_file() and p.suffix in CODE and p.name != 'stamp.py'}
     url = lambda path: path + '?v=' + versions[path]
