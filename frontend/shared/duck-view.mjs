@@ -7,6 +7,7 @@ import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 
 import {demandLoop} from './render-policy.mjs';
+import {idPicker} from './id-picker.mjs';
 import {adaptiveDraw} from './depth-render.mjs';
 import {loadModel} from './model-loader.mjs';
 export async function loadDuck() {
@@ -194,6 +195,14 @@ export function createDuckView({ model, binary, geometry: prepared }) {
     if (split) {if (x < .5) return null;x = (x - .5) * 2;camera.aspect = aspect / 2;camera.updateProjectionMatrix();}
     pointer.set(x * 2 - 1, -(clientY - b.top) / b.height * 2 + 1);ray.setFromCamera(pointer, camera);const hit = ray.intersectObjects([...meshes.values(), ...(side.group.visible ? side.inner.children : [])], false)[0];
     if (split) {camera.aspect = aspect;camera.updateProjectionMatrix();}return hit?.object.userData.id || null;}
+  const gpuPick=idPicker(renderer,scene,camera,()=>[...meshes.values(),...(side.group.visible?side.inner.children:[])],()=>!!split);
+  let gpuPickFailed=false;
+  async function pickAsync(x,y) {
+    if(gpuPickFailed||renderer.getContext().isContextLost())return pick(x,y);
+    const version=revision;
+    try{const id=await gpuPick(x,y);return revision===version?id:undefined;}
+    catch{gpuPickFailed=true;return revision===version?pick(x,y):undefined;}
+  }
   controls.addEventListener('start', () => {tween = null;invalidate();});
   controls.addEventListener('change', invalidate);
   renderer.domElement.addEventListener('webglcontextrestored',invalidate);
@@ -231,7 +240,7 @@ export function createDuckView({ model, binary, geometry: prepared }) {
     for (const h of hardware) s.add(new THREE.Mesh(h.geometry, h.material));
     return { scene: s, meshes: list };
   }
-  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, view, focus, snapshot, thumbnail, createShowcase, canvas: renderer.domElement,
+  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
     setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},

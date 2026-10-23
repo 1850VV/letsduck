@@ -22,6 +22,12 @@ Not approved for integration: transmission at 0.5, drag resolution at 0.67, or s
 - Depth prepass samples only during existing frames and never changes resolution, sorting or materials. It requires at least 12 samples per mode, >7% median GPU savings and <1 ms added median CPU submission cost. Outlines, split, side-copy and prop states retain the original single pass. Missing/disjoint timers also retain it. These conservative thresholds are implementation choices, not Windows measurements.
 - The browser harness initially failed on its own unqualified `studioProto` wait after reload. Corrected to `window.studioProto`; the full rerun passed without page errors.
 
+## 3. Picking
+
+- GPU hover uses a 1 × 1 ID target and `readRenderTargetPixelsAsync`. Conservative screen boxes skip blank regions, and a latest-only queue coalesces moves. Camera/view invalidations and pointer cancellation suppress stale results. Click/double-click keep the immediate CPU path; GPU failures fall back to it.
+- Managed Chromium / Apple M4: 3,920 sampled rays across hero, rear, pose, side copy, split, explode and arrange all matched CPU IDs. Blank corner: zero GPU draws. Main-thread submission p95 for hits was 0.3–0.6 ms versus CPU raycast 2.3–5.0 ms. Async completion p95 was 5.5–5.9 ms; this is reduced blocking, not a claim of lower result latency.
+- Full viewer regression rerun: idle checks, five depth images and action settling pass. Windows behavior still requires hardware validation.
+
 ## Remaining acceptance
 
-Picking and export stages are still in progress. Final visual/interaction acceptance and Windows hardware measurements are separate from automated checks. The existing running studio is not switched by these source changes.
+The export stage is still in progress. Final visual/interaction acceptance and Windows hardware measurements are separate from automated checks. The existing running studio is not switched by these source changes.
