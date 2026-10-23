@@ -731,8 +731,10 @@ async function download3MF() {
   const btn = $('#dl-3mf'),status = $('#ex-status');btn.disabled = true;status.textContent = _t("text.0323");
   try {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const thumbnails = await renderExportThumbnails(duck, design.colors);
-    const r = await fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source_sha256: model.source_sha256, name, assignments: design.assignments, thumbnails }) });
+    const thumbnails = await renderExportThumbnails(duck, design.colors, {binaryUpload:true});
+    const body=new FormData();body.append('plan',JSON.stringify({source_sha256:model.source_sha256,name,assignments:design.assignments}));
+    for(const [key,blob] of Object.entries(thumbnails))body.append(key,blob,key+'.png');
+    const r = await fetch('/api/export', { method: 'POST', body });
     if (!r.ok) throw Error(errorText(await r.json().catch(() => ({}))));
     const a = document.createElement('a');a.href = URL.createObjectURL(await r.blob());a.download = 'XGO-Duck-' + name + '-materials.3mf';a.click();setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     status.textContent = _t("text.0325");

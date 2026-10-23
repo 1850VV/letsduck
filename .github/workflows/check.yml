@@ -43,6 +43,11 @@ jobs:
           python3 -m unittest discover -s tests -p test_migration.py -v
           python3 -m unittest discover -s tests -p test_startup.py -v
           python3 -m unittest discover -s tests -p test_mysql.py -v
+      - name: Performance unit contracts without licensed assets
+        run: |
+          node --test tests/test_positions.mjs tests/test_render_policy.mjs tests/test_hover_queue.mjs
+          python3 -I -m unittest discover -s tests -p test_zip_reuse.py -v
+          python3 -I -m unittest discover -s tests -p test_export_transport_unit.py -v
       - name: Check Python and browser module syntax
         run: |
           python3 -m compileall -q backend personal run.py

@@ -1,5 +1,5 @@
 // Real managed Chromium + local licensed assets. Run against the isolated server:
-// DUCK_BROWSER_URL=http://127.0.0.1:8897 node tests/performance-browser.mjs
+// DUCK_BROWSER_URL=http://127.0.0.1:8897 node tests/performance-browser.js
 import {chromium} from 'playwright';
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -12,7 +12,7 @@ try {
  // Test-only instrumentation: the shipped viewer has no test renderer/camera API.
  await page.route('**/shared/duck-view.mjs',async route=>{
   const source=await fs.readFile(new URL('../frontend/shared/duck-view.mjs',import.meta.url),'utf8');
-  await route.fulfill({contentType:'text/javascript',body:source.replace('return { invalidate, mount,','return { __test:{renderer,scene,camera,controls,draw,revision:()=>revision,pickables:()=>[...meshes.values(),...(side.group.visible?side.inner.children:[])]}, invalidate, mount,')});
+  await route.fulfill({contentType:'text/javascript',body:source.replace("const draw=adaptiveDraw(renderer,scene,camera);", "const actualDraw=adaptiveDraw(renderer,scene,camera),draw=(eligible,state)=>{window.lastDepthEligible=eligible;actualDraw(eligible,state);};").replace('return { invalidate, mount,','return { __test:{renderer,scene,camera,controls,draw,revision:()=>revision,pickables:()=>[...meshes.values(),...(side.group.visible?side.inner.children:[])]}, invalidate, mount,')});
  });
  await page.addInitScript(()=>{
   window.drawCount=0;for(const name of ['drawElements','drawArrays']){const old=WebGL2RenderingContext.prototype[name];WebGL2RenderingContext.prototype[name]=function(...args){window.drawCount++;return old.apply(this,args);};}
@@ -30,6 +30,13 @@ try {
   await page.waitForTimeout(1500);const before=await page.evaluate(()=>drawCount);await page.waitForTimeout(300);const after=await page.evaluate(()=>drawCount);
   assert.equal(after,before,'idle '+mode);results.idle.push({mode,frames:after-before});
  }
+ const propDepth=await page.evaluate(async()=>{
+  const v=studioProto.view,T=await import('three'),data=await(await import('/shared/duck-view.mjs')).loadDuck();
+  v.setLayout('assembly');v.setSideCopy(null);v.setSplit(null);v.setHighlight();v.setFinishes(Object.fromEntries(data.model.parts.map(p=>[p.id,'translucent'])));
+  await new Promise(r=>setTimeout(r,1000));const before=window.lastDepthEligible;
+  const prop=new T.Mesh(new T.BoxGeometry(1,1,1),new T.MeshBasicMaterial());v.joints.head_roll.add(prop);v.invalidate();await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);const during=window.lastDepthEligible;
+  prop.removeFromParent();prop.geometry.dispose();prop.material.dispose();v.invalidate();return {before,during};
+ });assert.deepEqual(propDepth,{before:true,during:false},'attached action props bypass depth prepass');results.propDepth=propDepth;
  const images=await page.evaluate(async()=>{
   const v=studioProto.view,{renderer:r,scene,camera,controls}=v.__test,T=await import('three'),{depthDraw}=await import('/shared/depth-render.mjs');
   const data=await(await import('/shared/duck-view.mjs')).loadDuck(),material=new T.MeshBasicMaterial({colorWrite:false}),images=[];
