@@ -17,6 +17,8 @@ applyBrand();
 
 const $ = (s) => document.querySelector(s),$$ = (s) => [...document.querySelectorAll(s)];
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+// The model, renderer and shaders load while the edition is asked for; neither depends on the other.
+const duckLoading = loadDuck();duckLoading.catch(() => {});
 const edition = await loadEdition(), personal = edition === 'personal';
 document.body.dataset.edition = edition;
 function renderEdition() {
@@ -30,7 +32,7 @@ function renderEdition() {
   }
 }
 renderEdition();_onLocale(renderEdition);
-const duck = await loadDuck(),{ model, catalog, products } = duck,parts = model.parts,partById = new Map(parts.map((p) => [p.id, p]));
+const duck = await duckLoading,{ model, catalog, products } = duck,parts = model.parts,partById = new Map(parts.map((p) => [p.id, p]));
 const zoneOf = (id) => ZONES.find((z) => z.ids.includes(id));
 const match = (p, hex) => catalog.products.find((x) => x.series === p.material && x.hex.toUpperCase() === hex.toUpperCase())?.id || null;
 const ORIGINAL = { colors: Object.fromEntries(parts.map((p) => [p.id, p.color.toUpperCase()])), assignments: Object.fromEntries(parts.map((p) => [p.id, match(p, p.color)])) };

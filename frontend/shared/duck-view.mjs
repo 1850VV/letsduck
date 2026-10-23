@@ -10,11 +10,17 @@ import {idPicker} from './id-picker.mjs';
 import {adaptiveDraw} from './depth-render.mjs';
 import {loadModel} from './model-loader.mjs';
 export async function loadDuck() {
-  const data=await loadModel(),{model,catalog}=data;
+  performance.mark('duck:loading');
+  const loading=loadModel();
+  // While the model downloads: the WebGL context, lighting environment and startup shader programs.
+  let stage=null;
+  try{stage=createStage();warmStage(stage).catch(error=>console.warn('Shader warm-up failed; programs compile on first use.',error));}
+  catch(error){console.warn('Renderer preparation failed; the view creates its own.',error);}
+  const data=await loading,{model,catalog}=data;
   // Only the compatible-geometry fallback derives normals on the main thread.
   if(!data.geometry)data.toCreasedNormals=await legacyNormals();
   for(const item of [...model.parts,...catalog.products]){const originalName=item.name;Object.defineProperty(item,'name',{get:()=>_label(originalName),enumerable:true,configurable:true});}
-  return { ...data, products: new Map(catalog.products.map((p) => [p.id, p])) };
+  return { ...data, stage, products: new Map(catalog.products.map((p) => [p.id, p])) };
 }
 
 const legacyNormals=()=>import('../vendor/BufferGeometryUtils.js').then((m)=>m.toCreasedNormals);
@@ -58,20 +64,41 @@ function addLights(scene) {
   scene.add(new THREE.HemisphereLight(0xf1f5ff, 0xb6c2d8, 2.2));
   for (const [color, intensity, position] of [[0xfffbf7, 3.2, [-160, 380, 290]], [0xdde9ff, 1.4, [240, 180, -100]]]) {const l = new THREE.DirectionalLight(color, intensity);l.position.set(...position);scene.add(l);}
 }
+const partMaterial = (color, finish) => {const f = FINISHES[finish];return withLayers(new THREE.MeshPhysicalMaterial({ color, envMapIntensity: .65, ...Object.fromEntries(FINISH_KEYS.map((k) => [k, f[k]])) }), f.layer);};
+const hardwareMaterial = (color) => new THREE.MeshStandardMaterial({ color, roughness: .5, metalness: .12 });
+const shadowMaterial = () => new THREE.MeshBasicMaterial({ color: 0x1b2440, transparent: true, opacity: .05, depthWrite: false });
 
-export function createDuckView(data) {
-  const { model, binary, geometry: prepared, toCreasedNormals }=data;
+// Nothing here depends on the model, so loadDuck() prepares it during the download for the first view.
+function createStage() {
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: false });
   // Approved transmission background quality; keep canvas size and material shaders unchanged.
   renderer.transmissionResolutionScale = .5;
   // Phones: a lighter pixel ratio keeps the frame rate up, and firmer damping/slower rotation keep the duck under the finger on a short stage.
   const coarse = matchMedia('(pointer: coarse)').matches;
   renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.5 : 1.75));renderer.outputColorSpace = THREE.SRGBColorSpace;renderer.toneMapping = THREE.ACESFilmicToneMapping;renderer.toneMappingExposure = 1.05;renderer.setClearColor(0, 0);
+  const pmrem = new THREE.PMREMGenerator(renderer),room = new RoomEnvironment(),environment = pmrem.fromScene(room, .04).texture;room.dispose();pmrem.dispose();
+  performance.mark('duck:renderer-ready');
+  return { renderer, environment, coarse };
+}
+// Compiles the first frame's programs (default finishes, hardware, shadow) with the view's lights and
+// environment, in parallel where KHR_parallel_shader_compile exists. Three shares programs by cache
+// key, so the view's materials reuse them. These materials are never disposed: that would release them.
+function warmStage({ renderer, environment }) {
+  const scene = new THREE.Scene(),geometry = new THREE.BufferGeometry();scene.environment = environment;scene.environmentIntensity = .65;addLights(scene);
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3));geometry.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1], 3));geometry.setIndex([0, 1, 2]);
+  for (const material of [partMaterial('#ffffff', 'basic'), partMaterial('#ffffff', 'tpu'), hardwareMaterial('#ffffff'), shadowMaterial()]) scene.add(new THREE.Mesh(geometry, material));
+  return renderer.compileAsync(scene, new THREE.PerspectiveCamera(31, 1, 1, 5000)).then(() => {geometry.dispose();performance.mark('duck:shaders-ready');});
+}
+
+export function createDuckView(data) {
+  const { model, binary, geometry: prepared, toCreasedNormals }=data;
+  // The first view takes the stage prepared while loading; any later view makes its own.
+  const stage = data.stage && !data.stage.taken ? Object.assign(data.stage, { taken: true }) : createStage(),{ renderer, coarse } = stage;
   const scene = new THREE.Scene(),camera = new THREE.PerspectiveCamera(31, 1, 1, 5000),meshes = new Map(),root = new THREE.Group();scene.add(root);
   const controls = new OrbitControls(camera, renderer.domElement);controls.enableDamping = true;if (coarse) {controls.dampingFactor = .2;controls.rotateSpeed = .6;}controls.enablePan = false;controls.minDistance = 60;controls.maxDistance = 1600;controls.target.copy(TARGET);
-  const pmrem = new THREE.PMREMGenerator(renderer),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04);scene.environment = env.texture;scene.environmentIntensity = .65;room.dispose();pmrem.dispose();
+  scene.environment = stage.environment;scene.environmentIntensity = .65;
   addLights(scene);
-  const shadow = new THREE.Mesh(new THREE.CircleGeometry(105, 48), new THREE.MeshBasicMaterial({ color: 0x1b2440, transparent: true, opacity: .05, depthWrite: false }));shadow.rotation.x = -Math.PI / 2;shadow.position.set(0, -2, 15);scene.add(shadow);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(105, 48), shadowMaterial());shadow.rotation.x = -Math.PI / 2;shadow.position.set(0, -2, 15);scene.add(shadow);
   function geometry(p) {const m=prepared?.get((p.id?'part:':'hardware:')+(p.id||p.name));if(m){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(m.positions,3));g.setAttribute('normal',new THREE.BufferAttribute(m.normals,3));g.setIndex(new THREE.BufferAttribute(m.indices,1));g.computeBoundingBox();return g;}const g = new THREE.BufferGeometry();g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(binary, p.geometry.positionOffset, p.geometry.vertexCount * 3).slice(), 3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary, p.geometry.indexOffset, p.geometry.indexCount).slice(), 1));const s = toCreasedNormals(g, Math.PI / 5);g.dispose();s.computeBoundingBox();return s;}
   const center = new THREE.Vector3(0, 120, 15),hardware = [];
   const prep = (m) => {const b = m.geometry.boundingBox;m.userData.c = b.getCenter(new THREE.Vector3());m.userData.size = b.getSize(new THREE.Vector3());m.userData.dir = m.userData.c.clone().sub(center);m.userData.goal = { pos: new THREE.Vector3(), scale: 1 };};
@@ -79,8 +106,8 @@ export function createDuckView(data) {
   const rig = new THREE.Group(),joints = {},objects = [];root.add(rig);
   const joint = (name) => {if (joints[name]) return joints[name];const g = new THREE.Group(),pv = new THREE.Vector3(...PIVOTS[name]),parent = PARENT[name] ? joint(PARENT[name]) : rig;g.position.copy(pv).sub(PARENT[name] ? new THREE.Vector3(...PIVOTS[PARENT[name]]) : new THREE.Vector3());g.userData.pivot = pv;parent.add(g);return joints[name] = g;};
   const place = (m, link) => {const g = joint(link);m.userData.rest = g.userData.pivot.clone().negate();m.position.copy(m.userData.rest);g.add(m);objects.push(m);};
-  for (const p of model.parts) {const f = FINISHES[p.material.startsWith('TPU') ? 'tpu' : 'basic'],m = new THREE.Mesh(geometry(p), withLayers(new THREE.MeshPhysicalMaterial({ color: p.color, envMapIntensity: .65, ...Object.fromEntries(FINISH_KEYS.map((k) => [k, f[k]])) }), f.layer));m.userData.id = p.id;prep(m);place(m, linkOf(p));meshes.set(p.id, m);}
-  for (const h of model.hardware) {const m = new THREE.Mesh(geometry(h), new THREE.MeshStandardMaterial({ color: h.color, roughness: .5, metalness: .12 }));prep(m);const l = h.name.replace(/_\d+$/, '');place(m, l === 'trunk_base' ? 'trunk' : l);hardware.push(m);}
+  for (const p of model.parts) {const m = new THREE.Mesh(geometry(p), partMaterial(p.color, p.material.startsWith('TPU') ? 'tpu' : 'basic'));m.userData.id = p.id;prep(m);place(m, linkOf(p));meshes.set(p.id, m);}
+  for (const h of model.hardware) {const m = new THREE.Mesh(geometry(h), hardwareMaterial(h.color));prep(m);const l = h.name.replace(/_\d+$/, '');place(m, l === 'trunk_base' ? 'trunk' : l);hardware.push(m);}
   const box = new THREE.Box3().setFromObject(root),bounds = { center: box.getCenter(new THREE.Vector3()), size: box.getSize(new THREE.Vector3()) };
   // Sole markers for foot locking and a beak marker for props.
   const marker = (link, at) => {const o = new THREE.Object3D();o.position.set(...at).sub(joints[link].userData.pivot);joints[link].add(o);return o;};
@@ -272,6 +299,7 @@ export function createDuckView(data) {
     });
     exportQueue=run.catch(()=>{});return run;
   }
+  performance.mark('duck:view-ready');
   return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
