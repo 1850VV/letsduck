@@ -41,3 +41,7 @@ python3 scripts/import_assembly_assets.py /path/to/assembly/assets              
 After importing the local assets, run `npm ci && npm run pack:positions` on a build machine with Node.js. This generates local-only `geometry.positions.bin` and precompressed variants. Package them alongside the existing assets; do not commit them. The installed application still needs only Python. If the pack or Worker is unavailable, the browser uses the original DDG1 path.
 
 The display pack retains DDG1's 16-bit coordinates, all triangles, and 64-bit print matrices. It does not remove the original source's existing quantization error. Normals are generated in a Worker. The accepted shared export uses the same downloaded pack, computes print normals lazily in a Worker, and reuses the view renderer and geometry. The legacy pack remains packaged as a compatibility fallback; a successful shared export does not fetch it. The source 3MF still remains on the server.
+
+个人版可用 `python3 scripts/import_local_assets.py /path/to/assets --positions` 一次准备 DDG1 和 POS1；此选项要求准备机器先执行 `npm ci`。普通启动和默认导入只用 Python 3.9 标准库。已有本地包可依次运行 `python3 scripts/pack_geometry.py assets`、`npm run pack:positions`。重新生成 DDG1 会移除旧 POS1，避免混用不同准备版本。
+
+两种生成器最后写入本地 `geometry.integrity.json`，记录原始网格、模型清单和压缩包的 SHA-256。打包交付个人版时应一起携带该文件。个人版每次提供压缩包前核对内容；缺失、损坏或模型清单变化时返回不可用，浏览器依次回退 DDG1、原始网格。该文件与衍生网格一样不提交 Git。所有个人版静态资源使用内容 ETag 和 `no-cache` 条件验证；更新/切换版本无需清浏览器缓存。API 与个人方案保持 `no-store`。JavaScript、语言包及网格按浏览器能力使用 gzip，同一语言表仍保留全部 12 种语言与英文 fallback。

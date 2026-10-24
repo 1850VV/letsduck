@@ -30,3 +30,9 @@ test('a pack that does not match model.json is refused', {skip: !ready}, () => {
   assert.throws(() => unpackGeometry(buffer(read('geometry.pack.bin')), model), /does not match/);
   assert.throws(() => unpackGeometry(new ArrayBuffer(16), model), /Not a geometry pack/);
 });
+
+
+test('truncated geometry streams are refused instead of silently zero-filled', {skip: !ready}, () => {
+ const model=JSON.parse(read('model.json')), data=read('geometry.pack.bin');
+ assert.throws(()=>unpackGeometry(buffer(data.subarray(0,data.length-8)),model),/Invalid geometry/);
+});

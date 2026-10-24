@@ -127,6 +127,80 @@ class PersonalTests(unittest.TestCase):
                     urlopen(self.base + path)
                 self.assertEqual(caught.exception.code, 404)
 
+    def test_static_revalidation_compression_and_updates(self):
+        import gzip
+        self.start()
+        url = self.base + '/locales/catalogs.mjs'
+        with urlopen(Request(url, headers={'Accept-Encoding': 'gzip'})) as response:
+            data = response.read()
+            self.assertEqual(response.headers['Content-Encoding'], 'gzip')
+            self.assertEqual(gzip.decompress(data), (app.FRONTEND / 'locales/catalogs.mjs').read_bytes())
+            etag = response.headers['ETag']
+            self.assertEqual(response.headers['Cache-Control'], 'no-cache')
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(Request(url, headers={'Accept-Encoding': 'gzip', 'If-None-Match': etag}))
+        self.assertEqual(caught.exception.code, 304)
+        import http.client
+        connection = http.client.HTTPConnection('127.0.0.1', self.servers[-1].server_address[1])
+        try:
+            connection.request('GET', '/shared/i18n.mjs')
+            connection.getresponse().read()
+            connection.request('GET', '/api/site')
+            response = connection.getresponse()
+            self.assertEqual(response.headers['Cache-Control'], 'no-store')
+            response.read()
+        finally:
+            connection.close()
+        assets = Path(self.tmp.name) / 'changed'
+        assets.mkdir()
+        (assets / 'catalog.json').write_bytes(b'old')
+        saved = app.ASSETS
+        app.ASSETS = assets
+        self.addCleanup(setattr, app, 'ASSETS', saved)
+        with urlopen(self.base + '/assets/catalog.json') as response:
+            old = response.headers['ETag']
+        (assets / 'catalog.json').write_bytes(b'new')
+        with urlopen(Request(self.base + '/assets/catalog.json', headers={'If-None-Match': old})) as response:
+            self.assertEqual(response.read(), b'new')
+            self.assertNotEqual(response.headers['ETag'], old)
+
+    def test_assembly_models_use_conditional_compressed_delivery(self):
+        import gzip
+        assets = Path(self.tmp.name) / 'models'
+        (assets / 'assembly').mkdir(parents=True)
+        data = b'synthetic GLB fixture' * 200
+        (assets / 'assembly/fixture.glb').write_bytes(data)
+        saved = app.ASSETS, app.ASSEMBLY
+        app.ASSETS, app.ASSEMBLY = assets, {'fixture.glb': {}}
+        self.addCleanup(setattr, app, 'ASSETS', saved[0])
+        self.addCleanup(setattr, app, 'ASSEMBLY', saved[1])
+        self.start()
+        url = self.base + '/assemble/assets/fixture.glb'
+        with urlopen(Request(url, headers={'Accept-Encoding': 'gzip'})) as response:
+            self.assertEqual(response.headers['Content-Encoding'], 'gzip')
+            self.assertEqual(gzip.decompress(response.read()), data)
+            etag = response.headers['ETag']
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(Request(url, headers={'Accept-Encoding': 'gzip', 'If-None-Match': etag}))
+        self.assertEqual(caught.exception.code, 304)
+
+    def test_prepared_pack_integrity_rejects_corruption_and_stale_model(self):
+        import hashlib
+        assets = Path(self.tmp.name) / 'pack'
+        assets.mkdir()
+        for name, data in [('model.json', b'{}'), ('geometry.bin', b'raw'), ('geometry.pack.bin', b'packed')]:
+            (assets / name).write_bytes(data)
+        digest = lambda name: hashlib.sha256((assets / name).read_bytes()).hexdigest()
+        manifest = {'version': 1, 'model': digest('model.json'), 'geometry': digest('geometry.bin'),
+                    'files': {'geometry.pack.bin': digest('geometry.pack.bin')}}
+        (assets / 'geometry.integrity.json').write_text(json.dumps(manifest))
+        self.assertTrue(app.valid_pack(assets, 'geometry.pack.bin'))
+        (assets / 'geometry.pack.bin').write_bytes(b'broken')
+        self.assertFalse(app.valid_pack(assets, 'geometry.pack.bin'))
+        (assets / 'geometry.pack.bin').write_bytes(b'packed')
+        (assets / 'model.json').write_bytes(b'{"version":2}')
+        self.assertFalse(app.valid_pack(assets, 'geometry.pack.bin'))
+
     def test_home_opens_at_root_and_the_studio_at_paint(self):
         self.start()
         pages = {'/': 'personal.html', '/?from=launcher': 'personal.html', '/paint': 'personal.html', '/index.html': 'index.html', '/home.html': 'home.html'}

@@ -140,7 +140,14 @@ def write_pack(assets):
     assets = Path(assets)
     model = json.loads((assets / 'model.json').read_text(encoding='utf-8'))
     data = pack(model, (assets / 'geometry.bin').read_bytes())
-    (assets / 'geometry.pack.bin').write_bytes(data)
+    temp = assets / 'geometry.pack.bin.tmp'
+    temp.write_bytes(data)
+    temp.replace(assets / 'geometry.pack.bin')
+    # A positions pack from an earlier preparation must never be blessed by this run.
+    for suffix in ('', '.br', '.gz'):
+        (assets / ('geometry.positions.bin' + suffix)).unlink(missing_ok=True)
+    from asset_integrity import write_integrity
+    write_integrity(assets)
     return len(data)
 
 

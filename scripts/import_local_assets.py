@@ -1,5 +1,5 @@
 """Import an existing, lawfully obtained local asset pack. No network access."""
-import argparse, hashlib, json, shutil, tempfile, zipfile
+import argparse, hashlib, json, shutil, tempfile, zipfile, subprocess
 from pathlib import Path
 
 FILES=('source.3mf','geometry.bin','model.json','catalog.json','export-schema.json')
@@ -38,6 +38,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source',type=Path,help='Existing workbench assets directory; a 3MF alone is insufficient')
     parser.add_argument('--target',type=Path,default=ROOT/'assets')
+    parser.add_argument('--positions', action='store_true', help='Preparation only: use Node and npm ci dependencies to build the smallest POS1 pack')
     args=parser.parse_args()
     try:digest=import_assets(args.source,args.target)
     except (ValueError,OSError,zipfile.BadZipFile) as error:parser.exit(1,str(error)+'\n')
@@ -47,5 +48,9 @@ def main():
     from pack_geometry import write_pack
     try:print('Packed the geometry for faster loading: geometry.pack.bin, %d bytes.'%write_pack(args.target))
     except (ValueError,OSError,AssertionError) as error:print('Could not pack the geometry (%s); the site uses geometry.bin.'%error)
+    if args.positions:
+        try:subprocess.run(['node', str(ROOT/'scripts/pack_positions.mjs'), str(args.target.resolve())], check=True)
+        except (OSError, subprocess.CalledProcessError) as error:
+            parser.exit(1, 'POS1 preparation failed; run npm ci with Node, then retry --positions. Python-only startup still works with DDG1/raw fallback. '+str(error)+'\n')
 
 if __name__=='__main__':main()

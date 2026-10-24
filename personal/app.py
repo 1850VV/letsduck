@@ -9,6 +9,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 import argparse
 import errno
+import gzip
+import hashlib
+from functools import lru_cache
 import json
 import logging
 import os
@@ -49,6 +52,23 @@ except (OSError, ValueError, AssertionError):
     exporter = None
 
 
+@lru_cache(maxsize=24)
+def compressed(data):
+    return gzip.compress(data, compresslevel=6, mtime=0)
+
+
+def valid_pack(assets, name):
+    """Only serve prepared packs whose source, model and payload still match."""
+    try:
+        manifest = json.loads((assets / 'geometry.integrity.json').read_text())
+        digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        return (manifest['version'] == 1 and manifest['model'] == digest(assets / 'model.json')
+                and manifest['geometry'] == digest(assets / 'geometry.bin')
+                and manifest['files'][name] == digest(assets / name))
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+
+
 class Reply(Exception):
     def __init__(self, status, body):
         super().__init__(body.get('code'))
@@ -73,7 +93,7 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(FRONTEND), **kwargs)
 
     def end_headers(self):
-        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Cache-Control', getattr(self, '_cache_policy', 'no-store'))
         self.send_header('X-Content-Type-Options', 'nosniff')
         super().end_headers()
 
@@ -86,7 +106,8 @@ class Handler(SimpleHTTPRequestHandler):
             data = json.dumps(data, ensure_ascii=False).encode()
         self.send_response(status)
         self.send_header('Content-Type', content_type)
-        self.send_header('Content-Length', str(len(data)))
+        if status != 304:
+            self.send_header('Content-Length', str(len(data)))
         for key, value in headers:
             self.send_header(key, value)
         self.end_headers()
@@ -158,6 +179,7 @@ class Handler(SimpleHTTPRequestHandler):
         return exporter
 
     def handle_api(self, method):
+        self._cache_policy = 'no-store'
         try:
             result = self.api(method, urlparse(self.path).path.rstrip('/'))
         except Reply as reply:
@@ -173,6 +195,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     # ---- static files ----
     def do_GET(self):
+        self._cache_policy = 'no-store'
         path = urlparse(self.path).path
         if path.startswith('/api/'):
             return self.handle_api('GET')
@@ -185,16 +208,46 @@ class Handler(SimpleHTTPRequestHandler):
             target = ASSETS / name
             if name not in PUBLIC_ASSETS or not target.is_file():
                 return self.send_body(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
-            return self.send_body(200, target.read_bytes(), self.extensions_map.get(target.suffix, 'application/octet-stream'))
+            if name in ('geometry.pack.bin', 'geometry.positions.bin') and not valid_pack(ASSETS, name):
+                return self.send_body(404, {'error': '资产校验失败', 'code': 'request.asset_missing', 'params': {}})
+            return self.send_static(target)
         if path.startswith('/assemble/assets/'):
             name = path[len('/assemble/assets/'):]
             if name not in ASSEMBLY or not (ASSETS / 'assembly' / name).is_file():
                 return self.send_body(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
-            return self.send_range(ASSETS / 'assembly' / name)
-        super().do_GET()
+            target = ASSETS / 'assembly' / name
+            return self.send_range(target) if target.suffix in ('.mp4', '.mp3') else self.send_static(target)
+        target = Path(self.translate_path(self.path))
+        if target.is_dir():
+            if not path.endswith('/'):
+                parsed = urlparse(self.path)
+                return self.redirect(301, parsed._replace(path=parsed.path + '/').geturl())
+            target = target / 'index.html'
+        if not target.is_file():
+            return self.send_error(404, 'File not found')
+        return self.send_static(target)
+
+    def send_static(self, target):
+        # Revalidate every use: an extracted update or branch switch takes effect immediately.
+        # Hash the bytes, not second-resolution mtime (two versions can share that timestamp).
+        data = target.read_bytes()
+        self._cache_policy = 'no-cache'
+        headers = [('Vary', 'Accept-Encoding')]
+        accepts = self.headers.get('Accept-Encoding', '')
+        gzip_ok = any(part.split(';')[0].strip() == 'gzip' and not re.search(r';\s*q=0(?:\.0*)?$', part)
+                      for part in accepts.split(','))
+        if gzip_ok and target.suffix in ('.js', '.mjs', '.css', '.json', '.html', '.svg', '.bin', '.glb') and len(data) > 1024:
+            data = compressed(data)
+            headers.append(('Content-Encoding', 'gzip'))
+        etag = '"' + hashlib.sha256(data).hexdigest() + '"'
+        headers += [('ETag', etag), ('Last-Modified', self.date_time_string(target.stat().st_mtime))]
+        if any(value.strip().removeprefix('W/') in (etag, '*') for value in self.headers.get('If-None-Match', '').split(',')):
+            return self.send_body(304, b'', headers=headers)
+        return self.send_body(200, data, self.extensions_map.get(target.suffix, 'application/octet-stream'), headers)
 
     def send_range(self, target):
         """A local file whole, or one byte range of it so videos can seek (Safari will not play them otherwise)."""
+        self._cache_policy = 'no-cache'
         size, kind = target.stat().st_size, self.extensions_map.get(target.suffix, 'application/octet-stream')
         match = re.fullmatch(r'bytes=(\d*)-(\d*)', self.headers.get('Range', '').strip())
         if not match or not (match[1] or match[2]):
@@ -224,10 +277,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_body(404, {'error': '文件不存在', 'code': 'request.not_found', 'params': {}})
 
     def do_HEAD(self):
-        path = urlparse(self.path).path
-        if path.startswith(('/api/', '/assets/', '/gallery', '/assemble/assets/')) or path == '/paint/':
-            return self.do_GET()
-        super().do_HEAD()
+        return self.do_GET()
 
     def do_POST(self):
         self.handle_api('POST')

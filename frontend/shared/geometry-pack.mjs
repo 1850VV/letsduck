@@ -18,16 +18,21 @@ function positions(bytes, start, n, min, scale, out) {
 }
 
 export function unpackGeometry(buffer, model) {
+  if(buffer.byteLength<8||buffer.byteLength>32_000_000)throw Error('Invalid geometry size');
   const bytes = new Uint8Array(buffer), view = new DataView(buffer);
   if (String.fromCharCode(...bytes.subarray(0, 4)) !== 'DDG1') throw Error('Not a geometry pack');
   const length = view.getUint32(4, true), header = JSON.parse(new TextDecoder().decode(bytes.subarray(8, 8 + length))), data = 8 + length;
   const items = [...model.parts.map((p) => ['part', p.geometry, p.printPositionOffset]), ...model.hardware.map((h) => ['hardware', h.geometry])];
   if (header.format !== 1 || header.meshes.length !== items.length) throw Error('Geometry pack does not match model.json');
+  if(!Number.isInteger(header.byteLength)||header.byteLength<1||header.byteLength>32_000_000||data>bytes.length)throw Error('Invalid geometry size');
+  const span=(value,size)=>{if(!Array.isArray(value)||value.length!==2||!value.every(Number.isInteger)||value[0]<0||value[1]!==size||data+value[0]+size>bytes.length)throw Error('Invalid geometry stream');};
   const out = new ArrayBuffer(header.byteLength);
   header.meshes.forEach((m, i) => {
     const [kind, g, printOffset] = items[i];
     if (m.kind !== kind || m.vertexCount !== g.vertexCount || m.indexCount !== g.indexCount || m.positionOffset !== g.positionOffset ||
       m.indexOffset !== g.indexOffset || (kind === 'part' && m.printPositionOffset !== printOffset)) throw Error('Geometry pack does not match model.json');
+    span(m.positions,m.vertexCount*6);span(m.indices,m.indexCount*2);
+    if(m.print)span(m.print.positions,m.vertexCount*6);
     const n = m.vertexCount, assembled = new Float32Array(out, m.positionOffset, n * 3);
     positions(bytes, data + m.positions[0], n, m.min, m.scale, assembled);
     delta16(bytes, data + m.indices[0], m.indexCount, new Uint32Array(out, m.indexOffset, m.indexCount));

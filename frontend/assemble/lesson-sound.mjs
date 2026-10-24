@@ -10,8 +10,6 @@ const $=id=>document.getElementById(id);
 export function createLessonSound(){
   const music=$('piano-audio'),cue=$('completion-audio'),details=$('sound-controls'),panel=$('sound-panel');
   let enabled=true,effects=true,volume=.24,track='satie',needsGesture=false,error='',request=0,fadeFrame=0,fadeTimer=0,lastCueAt=-Infinity,cueCount=0;
-  music.src=new URL('./assets/'+tracks[track].file,import.meta.url).href;
-  cue.src=new URL('./assets/assembly-complete.mp3',import.meta.url).href;
   music.volume=0;cue.volume=volume*.35;
 
   function status(){
@@ -31,6 +29,10 @@ export function createLessonSound(){
   }
   async function startMusic(){
     if(!pageActive()||!enabled||volume===0)return;
+    // Hidden preparation and blocked autoplay should not download a whole track.
+    if(navigator.userActivation&&!navigator.userActivation.hasBeenActive){needsGesture=true;status();return;}
+    const url=new URL('./assets/'+tracks[track].file,import.meta.url).href;
+    if(music.src!==url)music.src=url;
     const token=++request;error='';cancelFade();
     try{
       music.playbackRate=1;await music.play();
@@ -67,7 +69,6 @@ export function createLessonSound(){
   $('piano-track').addEventListener('ryugi-change',ev=>{
     if(!tracks[ev.detail.value]||track===ev.detail.value)return;
     ++request;cancelFade();music.pause();music.volume=0;track=ev.detail.value;error='';
-    music.src=new URL('./assets/'+tracks[track].file,import.meta.url).href;
     enabled?startMusic():status();
   });
   $('sound-volume').addEventListener('ryugi-change',ev=>{
@@ -85,12 +86,13 @@ export function createLessonSound(){
       enabled=$('music-enabled').checked;effects=$('effects-enabled').checked;
       volume=Math.max(0,Math.min(1,Number($('sound-volume').value)/100));cue.volume=volume*.35;
       const restored=$('piano-track').value;
-      if(tracks[restored]&&restored!==track){++request;music.pause();track=restored;music.src=new URL('./assets/'+tracks[track].file,import.meta.url).href;}
+      if(tracks[restored]&&restored!==track){++request;music.pause();track=restored;}
       enabled?startMusic():stopMusic();status();
     },
     observe(before,after,now){
       if(!shouldPlayCompletion(before,after,now,lastCueAt,effects,volume))return;
       // Reserve the interval even when autoplay is blocked, so cues never queue up.
+      if(!cue.getAttribute('src'))cue.src=new URL('./assets/assembly-complete.mp3',import.meta.url).href;
       lastCueAt=now;cue.currentTime=0;cue.playbackRate=1;cue.volume=volume*.35;
       cue.play().then(()=>{cueCount++;}).catch(()=>{});
     },

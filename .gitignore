@@ -47,3 +47,5 @@ storage-state*.json
 /assets/*.tmp
 /.venv
 /assets/assembly/
+
+/assets/geometry.integrity.json

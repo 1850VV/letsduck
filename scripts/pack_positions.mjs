@@ -3,13 +3,21 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {brotliCompressSync,gzipSync,constants} from 'node:zlib';
 import {MeshoptEncoder as enc,MeshoptDecoder as dec} from 'meshoptimizer';
 import {quantizePosition,restorePosition,decodePositions} from '../frontend/shared/positions.mjs';
 import {unpackGeometry} from '../frontend/shared/geometry-pack.mjs';
 const assets=path.resolve(process.argv[2]||path.join(path.dirname(fileURLToPath(import.meta.url)),'../assets'));
 await Promise.all([enc.ready,dec.ready]);
-const model=JSON.parse(await fs.readFile(path.join(assets,'model.json'),'utf8')), pack=await fs.readFile(path.join(assets,'geometry.pack.bin'));
+const hash=data=>createHash('sha256').update(data).digest('hex');
+const modelBytes=await fs.readFile(path.join(assets,'model.json')),raw=await fs.readFile(path.join(assets,'geometry.bin'));
+const model=JSON.parse(modelBytes), pack=await fs.readFile(path.join(assets,'geometry.pack.bin'));
+const prepared=JSON.parse(await fs.readFile(path.join(assets,'geometry.integrity.json'),'utf8'));
+assert.equal(prepared.version,1,'Run pack_geometry.py first');
+assert.equal(prepared.model,hash(modelBytes),'DDG1 model changed; run pack_geometry.py first');
+assert.equal(prepared.geometry,hash(raw),'DDG1 geometry changed; run pack_geometry.py first');
+assert.equal(prepared.files['geometry.pack.bin'],hash(pack),'DDG1 damaged; run pack_geometry.py first');
 const buffer=pack.buffer.slice(pack.byteOffset,pack.byteOffset+pack.length), binary=unpackGeometry(buffer,model);
 const ddg=JSON.parse(pack.subarray(8,8+pack.readUInt32LE(4))),streams=[],meshes=[];let offset=0;
 const add=data=>{const span=[offset,data.length];streams.push(Buffer.from(data));offset+=data.length;return span;};
@@ -38,3 +46,8 @@ const name=path.join(assets,'geometry.positions.bin'),br=brotliCompressSync(data
 await fs.writeFile(name+'.tmp',data);await fs.rename(name+'.tmp',name);
 await fs.writeFile(name+'.br',br);await fs.writeFile(name+'.gz',gz);
 console.log(JSON.stringify({meshes:meshes.length,triangles:meshes.reduce((n,m)=>n+m.triangles,0),bytes:data.length,br:br.length,gzip:gz.length}));
+
+// Write last: the service rejects incomplete, modified or old preparations.
+const integrity={version:1,model:hash(modelBytes),geometry:hash(raw),files:{'geometry.pack.bin':hash(pack),'geometry.positions.bin':hash(data)}};
+const manifest=path.join(assets,'geometry.integrity.json');
+await fs.writeFile(manifest+'.tmp',JSON.stringify(integrity));await fs.rename(manifest+'.tmp',manifest);
