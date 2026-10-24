@@ -118,3 +118,7 @@ Final raw-log SHA-256:
 - `stdlib-backup-asset-free.log`: `2ae77c6d7206faac7afeeb44c42310f9199dd04dbe36d982bd553afe7749632f`
 
 Final publication boundary: **316 tracked/staged files, zero findings**; `git diff --cached --check` passed. No assets, screenshots, videos, access keys, browser storage or databases are staged.
+
+## Draft PR receipt
+
+Draft PR [#18](https://github.com/1850VV/letsduck/pull/18) was created against `codex/optimization-ab-ui` and attached to this chat. The base was remotely verified as `1e88b87e2c0874889a1d5a142873485681b3b7ad`; the implementation/test head is `d749a9d4a1d7a4e12f3307a263f9466f2aa4508f`. This final documentation receipt follows as a separate commit. The PR is draft/open; it has not been merged or deployed. Human actual-UI acceptance and local native-MySQL execution remain pending.
