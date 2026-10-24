@@ -540,7 +540,7 @@ $('#panel').addEventListener('click', async (e) => {
   if (t.closest('#act-show')) return actions.show();if (t.closest('#act-stop')) return actions.stop();
   if (t.closest('#export2')) return openExport();
   // The guide wears the current draft; an untouched duck counts too once you choose to build it.
-  if (t.closest('#go-assemble')) {draftUpdated ||= Date.now();persist();return;}
+  if (t.closest('#go-assemble')) {draftUpdated ||= Date.now();persist();handOff();return;}
   if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_message(personal ? 'personal.saved' : "text.0268"));await saveScheme(false);return renderPanel();}
   if (t.closest('#publish')) return openPublish();
 });
@@ -805,6 +805,11 @@ function renderToast(){
 }
 function toast(msg,withUndo){lastToast={msg,withUndo};$('#toast').classList.add('show');renderToast();clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3600);}
 const COACH = KEY + '-coach';let seen = !!read(COACH);
+// The assembly guide shows this picture of the duck in the same stage until its own model has loaded.
+function handOff() {
+  try {const r = view.canvas.getBoundingClientRect(),s = Math.min(devicePixelRatio, 1.5);
+    sessionStorage.setItem('dd-handoff', JSON.stringify({ at: Date.now(), image: view.snapshot(Math.round(r.width * s), Math.round(r.height * s)).toDataURL('image/webp', .85) }));} catch {}
+}
 // Unsaved work becomes a scheme before something replaces the draft.
 async function backupDraft() {
   if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };

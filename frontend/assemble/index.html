@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>来做鸭 / letsduck · 3D 组装教程</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css">
+  <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css"><link rel="stylesheet" href="../shared/handoff.css">
   <script type="importmap">{"imports":{"three":"../vendor/three.module.js"}}</script>
 </head>
 <body>
@@ -21,6 +21,7 @@
         <div id="loading" role="status">正在加载现有模型…</div>
         <div class="stage-top"><span class="step-label" id="stage-step">准备零件</span><span class="real-model">真实零件网格</span></div>
         <div id="canvas-host" aria-label="可旋转的整机三维模型"></div>
+        <script>/* Arriving from the studio: its picture of this duck holds the stage until the model loads (page.mjs fades it). */try{const h=JSON.parse(sessionStorage.getItem('dd-handoff'));sessionStorage.removeItem('dd-handoff');if(h&&Date.now()-h.at<15000){document.documentElement.classList.add('arriving');const i=new Image();i.className='handoff';i.alt='';i.decoding='sync';i.src=h.image;document.currentScript.before(i);}}catch{}</script>
         <svg id="focus-zoom-leader" class="focus-zoom-leader" aria-hidden="true" hidden><line id="focus-zoom-line" stroke="#4d6bfe" stroke-width="1"/><circle id="focus-zoom-dot" r="2" fill="#4d6bfe"/></svg>
         <section id="focus-zoom" class="focus-zoom" aria-label="接头局部放大窗" hidden>
           <div id="focus-zoom-handle" class="focus-zoom-handle" title="拖动放大窗"><b id="focus-zoom-title">接头放大</b><span id="focus-zoom-factor"></span><ryugi-action-icon id="focus-zoom-close" icon="x" title="收起局部放大" aria-label="收起局部放大" size="small"></ryugi-action-icon></div>
