@@ -16,3 +16,11 @@ const dots = draft ? [...new Set(['P4-01', 'P2-06', 'P5-06', 'P2-03'].map((id) =
 tag.innerHTML = dots.map((hex) => `<i style="background:${hex}"></i>`).join('') + '<span></span>';
 tag.lastChild.textContent = draft ? '配色 · ' + draft.name : '白胚';
 document.querySelector('.header-name').after(tag);
+
+// Fade the studio's picture (see index.html) once prototype-v3.mjs marks the model ready.
+const picture = document.querySelector('.handoff');
+if (picture) {
+  const fade = () => {picture.classList.add('done');picture.addEventListener('transitionend', () => picture.remove(), { once: true });};
+  if (document.documentElement.dataset.ready) fade();
+  else new MutationObserver((_, watch) => {if (document.documentElement.dataset.ready) {watch.disconnect();requestAnimationFrame(fade);}}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-ready'] });
+}
