@@ -14,8 +14,9 @@ try{
  await context.route('**/assemble/render-quality.mjs',async route=>{const response=await route.fetch();await route.fulfill({response,body:(await response.text()).replace("render(world,camera,id='main'){","render(world,camera,id='main'){globalThis.fSettingsDraws=(globalThis.fSettingsDraws||0)+1;globalThis.fSettingsViews??={};globalThis.fSettingsViews[id]={near:camera.near,far:camera.far,position:camera.position.toArray(),target:camera.userData.target?.toArray()};")});});
  const page=context.pages()[0];page.on('pageerror',e=>result.errors.push(e.message));
  const guideReady=async()=>{await page.waitForFunction(()=>document.documentElement.dataset.page==='assemble',null,{timeout:90000});const f=page.frame({name:'personal-assemble'});await f.waitForFunction(()=>window.anklePrototype?.state.ready,null,{timeout:90000});return f;};
+ await page.goto(base+'/home.html');await page.evaluate(()=>localStorage.removeItem('dd-observation-v1'));
  await page.goto(base+'/assemble/');let guide=await guideReady();
- await guide.evaluate(()=>{localStorage.removeItem('dd-observation-v1');location.reload();});await guide.waitForFunction(()=>window.anklePrototype?.state.ready);
+ assert.equal(await guide.evaluate(async()=>(await import('/shared/personal-page.mjs')).pageActive()),true,'exercise the active retained page');
  assert.equal(await guide.locator('#render-quality').count(),1);assert.equal(await guide.locator('#focus-zoom-toggle').count(),1);assert.equal(await guide.locator('#sequence-open').count(),1);
  await guide.locator('#view-settings > summary').click();assert.equal(await guide.locator('#view-settings').evaluate(e=>e.open),true);
  await guide.locator('#observation-open').click();await page.screenshot({path:path('settings-ab-1440.png')});
