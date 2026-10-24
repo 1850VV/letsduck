@@ -132,3 +132,6 @@ body.phone .studio[data-step="3"] .panel-head{display:none}
 /* With the sheet fully open its grip is just under the top bar, where toasts normally appear; move them down. */
 body.phone[data-sheet="full"] .toast{top:auto;bottom:calc(var(--ph-tab) + 12px);transform:translate(-50%,20px)}
 body.phone[data-sheet="full"] .toast.show{transform:translate(-50%,0)}
+
+/* Touch screens have no keyboard to press: drop shortcut hints from buttons. */
+@media (hover:none) and (pointer:coarse){button kbd{display:none}}
