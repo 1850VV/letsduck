@@ -2,8 +2,13 @@ import {PERSONAL_KEY,personalState,newDraftId} from './personal-state.mjs';
 import {createProgressStore,progressScope} from '../assemble/progress-store.mjs';
 export const TUTORIAL='hardware-v3';
 export const JOURNAL_KEY='dd-backup-pending';
+export function backupDraft(draft){
+ if(!draft)return null;
+ return {name:draft.name,design:draft.design,provenance:draft.provenance??null,voiceSalt:draft.voiceSalt??0,activeId:draft.activeId??null,...(draft.draftId?{draftId:draft.draftId}:{}),updated:draft.updated??0};
+}
+export const draftRevision=storage=>JSON.stringify(backupDraft(personalState(storage).draft));
 export function captureBrowser(storage,schemes,steps){
- const draft=personalState(storage).draft||null,store=createProgressStore(storage,steps,TUTORIAL);
+ const draft=backupDraft(personalState(storage).draft),store=createProgressStore(storage,steps,TUTORIAL);
  const scopes=new Set(['blank',...schemes.map(s=>'scheme:'+s.id),...(draft?[progressScope(draft)]:[])]);
  return {draft,progress:[...scopes].map(scope=>({scope,tutorial:TUTORIAL,stepIds:steps.map(s=>s.id),view:store.read(scope),...store.readChecks(scope)}))};
 }

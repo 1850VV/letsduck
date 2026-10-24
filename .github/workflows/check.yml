@@ -26,6 +26,7 @@ jobs:
       - name: Personal edition with no third-party packages installed
         run: |
           python3 -I -m unittest discover -s tests -p test_personal.py -v
+          python3 -I -m unittest discover -s tests -p test_personal_backup.py -v
           python3 -I -m unittest discover -s tests -p test_stamp.py -v
           python3 -I -m unittest discover -s tests -p test_pack_geometry.py -v
           python3 -I -m compileall -q personal run.py frontend/stamp.py scripts/pack_geometry.py backend/rules.py backend/errors.py backend/exporter.py
@@ -47,6 +48,7 @@ jobs:
         run: |
           node --test tests/test_positions.mjs tests/test_model_loader.mjs tests/test_render_policy.mjs tests/test_hover_queue.mjs
           node --test tests/test_personal_state.mjs tests/assembly-progress.test.mjs
+          node --test tests/backup-*.mjs tests/edit-guard.mjs tests/save-status.mjs
           python3 -I -m unittest discover -s tests -p test_zip_reuse.py -v
           python3 -I -m unittest discover -s tests -p test_export_transport_unit.py -v
       - name: Assembly guide logic without licensed assets

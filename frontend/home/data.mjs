@@ -12,7 +12,7 @@ const dialog=document.createElement('dialog');dialog.className='data-dialog';doc
 const status=document.createElement('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');root.after(status);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const button=(label,id)=>`<button type="button" data-do="${id}">${esc(t('data.'+label))}</button>`;
-const message=error=>t(error?.code==='backup.version'||error?.message==='backup.version'?'data.newer':(error?.code?.startsWith('backup.')||error?.message?.startsWith('backup.'))?'data.invalid':'data.failed');
+const message=error=>(error?.code==='backup.stale'||error?.message==='backup.stale')?t('data.changed'):t(error?.code==='backup.version'||error?.message==='backup.version'?'data.newer':(error?.code?.startsWith('backup.')||error?.message?.startsWith('backup.'))?'data.invalid':'data.failed');
 function modal(html){dialog.innerHTML=html+button('close','close');if(!dialog.open)dialog.showModal();}
 let bundle=null,preview=null;
 function render(){

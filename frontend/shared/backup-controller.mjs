@@ -1,16 +1,16 @@
 import {encodeJournal,decodeJournal} from './backup-journal.mjs';
 import {api} from './api.mjs';
 import {PERSONAL_KEY} from './personal-state.mjs';
-import {captureBrowser,remapBrowser,assertTutorial,browserWrites,restoreWrites,JOURNAL_KEY} from './backup-adapter.mjs';
+import {captureBrowser,draftRevision,remapBrowser,assertTutorial,browserWrites,restoreWrites,JOURNAL_KEY} from './backup-adapter.mjs';
 export function createBackupController(storage,steps,request=api){
  const run=fn=>globalThis.navigator?.locks?navigator.locks.request('letsduck-backup',{mode:'exclusive'},fn):fn();
  const pending=()=>storage.getItem(JOURNAL_KEY);
- const unchanged=raw=>{if(storage.getItem(PERSONAL_KEY)!==raw)throw Error('backup.stale');};
+ const unchanged=raw=>{if(draftRevision(storage)!==raw)throw Error('backup.stale');};
  return {
  pending,
  async export(){
   if(pending())throw Error('backup.recovery');
-  const raw=storage.getItem(PERSONAL_KEY),schemes=await request('GET','/schemes');
+  const raw=draftRevision(storage),schemes=await request('GET','/schemes');
   unchanged(raw);
   return request('POST','/backup/export',captureBrowser(storage,schemes,steps));
  },
@@ -20,7 +20,7 @@ export function createBackupController(storage,steps,request=api){
   assertTutorial(bundle.browser,steps);
   const schemes=await request('GET','/schemes')||[];
   const beforeBrowser=captureBrowser(storage,schemes,steps);
-  return {...preview,browserRevision:storage.getItem(PERSONAL_KEY),existingSchemes:schemes,beforeBrowser};
+  return {...preview,browserRevision:draftRevision(storage),existingSchemes:schemes,beforeBrowser};
  },
  async import(bundle,mode,preview){return run(async()=>{
   if(pending())throw Error('backup.recovery');
@@ -39,7 +39,7 @@ export function createBackupController(storage,steps,request=api){
   storage.setItem(JOURNAL_KEY,encodeJournal(journal));
   try{
    const result=await request('POST','/backup/import',{bundle,mode,revision:preview.revision,operation});
-   unchanged(journal.before);unchangedProgress();
+   unchanged(preview.browserRevision);unchangedProgress();
    const next=remapBrowser(bundle.browser,result.idMap);
    journal.writes=browserWrites(storage,next,steps);
    storage.setItem(JOURNAL_KEY,encodeJournal(journal));

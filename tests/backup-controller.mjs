@@ -68,3 +68,28 @@ test('insufficient browser capacity rejects before SQLite import',async()=>{
  const bundle={browser:{draft:null,progress:[]}},p=await c.preview(bundle);
  await assert.rejects(c.import(bundle,'keep',p),/quota/);assert.equal(imported,false);assert.equal(c.pending(),null);
 });
+test('preview ignores unrelated editor metadata and default-only draft normalization',async()=>{
+ const s=storage(),steps=[{id:'a'}];let imported=false;
+ const draft={name:'Duck',activeId:null,draftId:'d',design:{colors:{p:'#112233'},assignments:{p:null}},voiceSalt:0,updated:1};
+ s.setItem('dd-studio-personal',JSON.stringify({draft}));
+ const c=createBackupController(s,steps,async(method,path)=>{
+  if(path==='/backup/preview')return{revision:'r'};if(path==='/schemes')return[];
+  if(path==='/backup/import'){imported=true;return{idMap:{},recovery:'r'};}
+ });
+ const bundle={browser:{draft:null,progress:[]}},preview=await c.preview(bundle);
+ s.setItem('dd-studio-personal',JSON.stringify({draft:{...draft,provenance:null},recent:[],locks:[]}));
+ await c.import(bundle,'keep',preview);
+ assert.equal(imported,true);assert.deepEqual(JSON.parse(s.getItem('dd-studio-personal')).locks,[]);
+});
+test('preview still rejects an actual draft edit before SQLite import',async()=>{
+ const s=storage();let imported=false;
+ const draft={name:'Before',activeId:null,draftId:'d',design:{colors:{p:'#112233'},assignments:{p:null}}};
+ s.setItem('dd-studio-personal',JSON.stringify({draft}));
+ const c=createBackupController(s,[{id:'a'}],async(method,path)=>{
+  if(path==='/backup/preview')return{revision:'r'};if(path==='/schemes')return[];
+  if(path==='/backup/import')imported=true;
+ });
+ const bundle={browser:{draft:null,progress:[]}},preview=await c.preview(bundle);
+ s.setItem('dd-studio-personal',JSON.stringify({draft:{...draft,name:'After'}}));
+ await assert.rejects(c.import(bundle,'keep',preview),/stale/);assert.equal(imported,false);
+});
