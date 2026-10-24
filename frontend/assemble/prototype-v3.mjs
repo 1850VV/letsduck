@@ -11,6 +11,7 @@ import {createRenderQuality} from './render-quality.mjs';
 import {fitsForParts} from './model-fit.mjs';
 import {buildCableCurve} from './cable-path.mjs';
 import {loadHardwareModels} from './hardware-models.mjs';
+import {LOOK} from '../shared/duck-look.mjs';
 import { STEPS,CHAPTERS,ACTORS,snapshot,chapterFor,OVERVIEW_STEP,PLUG_PAIRS } from './hardware-state.mjs';
 
 import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlugQuaternion,interpolatePose,socketQuaternion} from './render-pose.mjs';
@@ -24,16 +25,17 @@ let currentState=snapshot(0,1),guidanceEndState=snapshot(0,1),backTransition=nul
 const host=$('canvas-host'),stage=$('stage');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
-renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.96;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=LOOK.exposure;
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;host.append(renderer.domElement);
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,.1,1600);
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.13;
 controls.enablePan=true;controls.minDistance=66;controls.maxDistance=1100;controls.maxPolarAngle=Math.PI*.85;
 controls.target.set(0,28,0);camera.position.set(...STEPS[0].camera);controls.update();
-const hemi=new THREE.HemisphereLight(0xf5f7ff,0xb8c2d7,1.3);scene.add(hemi);
-const key=new THREE.DirectionalLight(0xfffbf2,2.5);key.position.set(-150,330,180);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-250;key.shadow.camera.right=250;key.shadow.camera.top=250;key.shadow.camera.bottom=-250;key.shadow.normalBias=.15;key.shadow.bias=-.0002;scene.add(key);
-const fill=new THREE.DirectionalLight(0xe6ecff,1.3);fill.position.set(90,65,-110);scene.add(fill);
-const pmrem=new THREE.PMREMGenerator(renderer),room=new RoomEnvironment(),env=pmrem.fromScene(room,.04);scene.environment=env.texture;scene.environmentIntensity=.7;room.dispose();pmrem.dispose();
+// letsduck: the studio's light (shared/duck-look.mjs), so a part looks the same on both pages; the key still casts shadows.
+const hemi=new THREE.HemisphereLight(0xf1f5ff,0xb6c2d8,2.2);scene.add(hemi);
+const key=new THREE.DirectionalLight(0xfffbf7,3.2);key.position.set(-160,380,290);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-250;key.shadow.camera.right=250;key.shadow.camera.top=250;key.shadow.camera.bottom=-250;key.shadow.normalBias=.15;key.shadow.bias=-.0002;scene.add(key);
+const fill=new THREE.DirectionalLight(0xdde9ff,1.4);fill.position.set(240,180,-100);scene.add(fill);
+const pmrem=new THREE.PMREMGenerator(renderer),room=new RoomEnvironment(),env=pmrem.fromScene(room,.04);scene.environment=env.texture;scene.environmentIntensity=LOOK.environment;room.dispose();pmrem.dispose();
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.ShadowMaterial({color:0x536480,opacity:.13}));ground.rotation.x=-Math.PI/2;ground.position.y=-.2;ground.receiveShadow=true;scene.add(ground);
 const grid=new THREE.GridHelper(210,21,0xd9e1f0,0xe2e8f2);grid.position.y=-.18;grid.material.transparent=true;grid.material.opacity=.23;scene.add(grid);
 const renderQuality=createRenderQuality({renderer,scene,key,fill,hemi,ground});
@@ -303,7 +305,8 @@ async function load(){
     if(/motor/i.test(p.id)){const group=hardwareModels.servo(p.id);addFocusPorts(group,ACTORS[p.id].servoPorts);entity(p.id,group);continue;}
     const raw=new THREE.BufferGeometry();raw.setAttribute('position',new THREE.BufferAttribute(new Float32Array(binary,p.positionOffset,p.vertexCount*3).slice(),3));raw.setIndex(new THREE.BufferAttribute(new Uint32Array(binary,p.indexOffset,p.indexCount).slice(),1));const g=toCreasedNormals(raw,Math.PI/5);raw.dispose();
     if(p.rotationZ)g.rotateZ(p.rotationZ);const bearing=/bearing/i.test(p.id),motor=/motor/i.test(p.id);
-    const material=new THREE.MeshPhysicalMaterial({color:ACTORS[p.id].color||'#f7f8fb',roughness:bearing?.29:.44,metalness:bearing?.68:motor?.08:0,clearcoat:/foot/i.test(p.id)?.16:0,envMapIntensity:.75});
+    // letsduck: printed parts arrive from page.mjs in the studio's material, colour and finish.
+    const material=ACTORS[p.id].material?.clone()||new THREE.MeshPhysicalMaterial({color:ACTORS[p.id].color||'#f7f8fb',roughness:bearing?.29:.44,metalness:bearing?.68:motor?.08:0,clearcoat:/foot/i.test(p.id)?.16:0,envMapIntensity:.75});
     const group=new THREE.Group();group.add(mesh(g,material));
     if(motor){const ports=ACTORS[p.id].servoPorts||[{position:[3,8.5,p.size[2]/2+.8],normal:[0,0,1]}];for(const port of ports){const socket=new THREE.Group(),body=mesh(new THREE.BoxGeometry(7,5,1.3),white);body.position.z=-.65;body.userData.focusPort={label:port.id||'舵机口'};socket.add(body);const inside=mesh(new THREE.BoxGeometry(5.4,3.4,.03),dark);inside.position.z=.01;socket.add(inside);socket.position.fromArray(port.position);socket.quaternion.copy(socketQuaternion(port));socket.userData.servoSocket=true;group.add(socket);}}
     entity(p.id,group);

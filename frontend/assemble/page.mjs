@@ -1,12 +1,19 @@
 // letsduck framing around the assembly prototype. Runs before prototype-v3.mjs builds the model, so the printed parts
-// can wear the studio draft's colours (or plain white, 白胚); servos, boards, cables and screws keep their own.
+// wear the studio draft's colours and finishes in the studio's own material (or plain white, 白胚); servos, boards,
+// cables and screws keep their own.
 import { applyBrand } from '../shared/brand.mjs';
 import { readDraft } from '../shared/draft.mjs';
+import { printedMaterial } from '../shared/duck-look.mjs';
 import { ACTORS } from './hardware-state.mjs';
 
 const WHITE = '#F7F8FB';
 const draft = readDraft();
-for (const actor of Object.values(ACTORS)) if (/^P\d-\d\d$/.test(actor.sourceId || '')) actor.color = draft?.colors[actor.sourceId] || WHITE;
+// The soft pads (P1-xx) are TPU, like in the studio's model.
+const finishOf = (id) => draft?.finishes[id] || (id.startsWith('P1-') ? 'tpu' : 'basic');
+for (const actor of Object.values(ACTORS)) {
+  const id = actor.sourceId || '';if (!/^P\d-\d\d$/.test(id)) continue;
+  actor.color = draft?.colors[id] || WHITE;actor.material = printedMaterial(actor.color, finishOf(id));
+}
 
 applyBrand();
 const tag = document.createElement('span');

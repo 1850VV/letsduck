@@ -104,10 +104,12 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
       scene.traverse(object=>{if(object.material?.toneMapped===false&&object.material.depthTest===false)overlays.push({object,mask:object.layers.mask});});
       for(const[id,root]of entities){const a=actors[id];root.traverse(mesh=>{
         if(!mesh.isMesh)return;const approved=!!mesh.userData.hardwareAsset||!!mesh.material.userData?.approvedHardware;
-        const sourceGeometry=mesh.geometry,edges=!approved&&a.kind!=='cable'&&!!sourceGeometry.attributes.position;
+        // letsduck: printed parts keep the studio's material and the scheme's exact colour in both modes.
+        const printed=[mesh.material].flat().some(m=>m.userData?.printed);
+        const sourceGeometry=mesh.geometry,edges=!approved&&!printed&&a.kind!=='cable'&&!!sourceGeometry.attributes.position;
         if(edges&&!geometryCache.has(sourceGeometry))geometryCache.set(sourceGeometry,prepareEdgeShading(sourceGeometry));
         const enhancedGeometry=edges?geometryCache.get(sourceGeometry):sourceGeometry,original=Array.isArray(mesh.material)?mesh.material:[mesh.material];
-        const enhanced=original.map(m=>{if(!m.isMeshStandardMaterial)return m;if(!cache.has(m)){
+        const enhanced=original.map(m=>{if(!m.isMeshStandardMaterial||m.userData?.printed)return m;if(!cache.has(m)){
           if(approved){cache.set(m,hardwareFinish(m));return cache.get(m);}
           const l=m.color.r*.2126+m.color.g*.7152+m.color.b*.0722;
           const kind=m.metalness>.4||/bearing/i.test(id)?'metal':/h_eyes$/.test(id)?'lens':a.kind==='battery'||/sole|Pad/.test(id)||a.kind==='cable'&&l<.1?'rubber':/motor/i.test(id)&&l<.15?'motor':a.kind==='board'?'board':a.kind==='mesh'?'shell':'connector';cache.set(m,matteFinish(m,kind,edges));
