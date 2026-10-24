@@ -4,6 +4,6 @@ export function readDraft() {
   try {
     const draft = JSON.parse(localStorage.getItem('dd-studio-personal'))?.draft;
     if (!draft?.updated || !draft.design?.colors) return null;
-    return { name: draft.name, saved: !!draft.activeId, updated: draft.updated, colors: draft.design.colors, finishes: draft.design.finishes || {} };
+    return { name: draft.name, saved: !!draft.activeId, activeId: draft.activeId || null, updated: draft.updated, colors: draft.design.colors, finishes: draft.design.finishes || {} };
   } catch {return null;}
 }

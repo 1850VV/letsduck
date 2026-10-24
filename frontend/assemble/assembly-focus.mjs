@@ -74,7 +74,7 @@ export function createAssemblyFocus(scene, entities, cableRecords) {
         draw.forEach((r,i)=>frames[i].show(r.bounds,r.color,r.opacity));
         const labels={fasten:['拧入中','已紧固'],partial:['预拧中','预拧到位'],remove:['正在取下','已取下'],connect:['插接中','已接合'],route:['整理中','余量已留好'],seat:['压入中','已就位']};
         const status=choice.fitPending?'模型配合待核':labels[choice.operation][current.done?1:0],title=choice.type==='screw'?'螺丝放大':choice.type==='part'?(choice.operation==='remove'?'舵盘放大':choice.label+'放大'):choice.operation==='route'?'线端放大':'接头放大';
-        details={fine:true,detailActive:progress>=choice.from,phase:allDone?'completed':'aligning',detailPhase:choice.fitPending?'pending':current.done?'completed':'aligning',detailId:choice.id,detailType:choice.type,detailTitle:title,detailStatus:`${choice.ordinal}/${choice.total} · ${status}`,detailDirection:current.normal.toArray(),message:`${current.done?'绿框':'红框'} · ${status}`,totalTargets:cues.length,completedTargets:resolved.filter(r=>r.done).length,matchedSocket:current.matched,pulsing:draw.some(r=>r.color===GREEN&&r.opacity<.85),boxes:draw.map(r=>({id:r.id,role:r.role,color:r.color,opacity:r.opacity,center:r.bounds.getCenter(new THREE.Vector3()).toArray(),size:r.bounds.getSize(new THREE.Vector3()).toArray()}))};
+        details={fine:true,detailActive:progress>=choice.from,phase:allDone?'completed':'aligning',detailPhase:choice.fitPending?'pending':current.done?'completed':'aligning',detailId:choice.id,detailType:choice.type,detailTitle:title,detailStatus:`${choice.ordinal}/${choice.total} · ${status}`,detailDirection:current.normal.toArray(),message:`${current.done?'绿框':'红框'} · ${status}`,totalTargets:cues.length,completedTargets:resolved.filter(r=>r.done).length,matchedSocket:current.matched,animating:!reducedMotion.matches&&draw.some(r=>r.color===GREEN&&now-clock.get(r.id)<pulseDuration),pulsing:draw.some(r=>r.color===GREEN&&r.opacity<.85),boxes:draw.map(r=>({id:r.id,role:r.role,color:r.color,opacity:r.opacity,center:r.bounds.getCenter(new THREE.Vector3()).toArray(),size:r.bounds.getSize(new THREE.Vector3()).toArray()}))};
         return details;
       }
       let pending=[], completed=[];
@@ -117,7 +117,7 @@ export function createAssemblyFocus(scene, entities, cableRecords) {
         if(factor>1)item.bounds.setFromCenterAndSize(center,size.multiplyScalar(factor));
       }
       draw.forEach((item,i)=>frames[i].show(item.bounds,item.color,item.opacity));
-      details={phase:pending.length?'aligning':'completed',pulsing:draw.some(i=>i.color===GREEN&&i.opacity<.85),boxes:draw.map(i=>({id:i.id,role:i.role,color:i.color,opacity:i.opacity,center:i.bounds.getCenter(new THREE.Vector3()).toArray(),size:i.bounds.getSize(new THREE.Vector3()).toArray()}))};
+      details={phase:pending.length?'aligning':'completed',animating:!reducedMotion.matches&&draw.some(i=>i.color===GREEN&&now-clock.get(i.id)<pulseDuration),pulsing:draw.some(i=>i.color===GREEN&&i.opacity<.85),boxes:draw.map(i=>({id:i.id,role:i.role,color:i.color,opacity:i.opacity,center:i.bounds.getCenter(new THREE.Vector3()).toArray(),size:i.bounds.getSize(new THREE.Vector3()).toArray()}))};
       return details;
     }
   };

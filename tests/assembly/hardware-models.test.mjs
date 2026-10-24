@@ -67,3 +67,20 @@ test('both plug endpoint adapters survive arbitrary actor poses and keep their d
  for(const end of [0,1]){const plug=f.plug(end);plug.quaternion.copy(poseQ);plug.position.copy(poseAt);plug.updateMatrixWorld(true);const raw=plug.getObjectByName('servo-cable'),nativeCentreZ=end===0?-.067:.067,mating=raw.localToWorld(new THREE.Vector3(0,.00225,nativeCentreZ)),want=new THREE.Vector3(0,0,-2.25).applyQuaternion(poseQ).add(poseAt);mating.toArray().forEach((n,i)=>close(n,want.toArray()[i]));assert.deepEqual(plug.userData.canonicalWireExitMm,[0,end===0?2:-2,0]);assert.deepEqual(plug.userData.nativeWireExitMm,[0,0,end===0?2:-2]);}
  const p0=f.plug(0),p1=f.plug(1),p1b=f.plug(1);assert.notEqual(meshes(p0)[0].geometry,meshes(p1)[0].geometry);assert.equal(meshes(p1)[0].geometry,meshes(p1b)[0].geometry);
 });
+
+// Uses the real approved templates: catches reductions that discard the head or mutate shared source buffers.
+test('experimental shaft LOD keeps native head vertices and measures actual template reduction',async()=>{
+ const {simplifyScrewDisplay}=await import('../../frontend/assemble/hardware-lod.mjs');setup();
+ const measurements=[];
+ for(const id of ['screw-m2x6','screw-m3x16','screw-m23x8']){
+  const root=templates[id],rows=[];
+  for(const mesh of meshes(root)){
+   // Factory bakes native node transforms before reduction.
+   root.updateMatrixWorld(true);const g=mesh.geometry.clone().applyMatrix4(mesh.matrixWorld),p=g.attributes.position,before=p.array.slice();g.computeBoundingBox();const head=g.boundingBox.max.y-.002;
+   const counts=[];for(const cell of [.00008,.00016]){const low=simplifyScrewDisplay(g,cell),lp=low.attributes.position,points=new Set();for(let i=0;i<lp.count;i++)points.add(`${lp.getX(i)},${lp.getY(i)},${lp.getZ(i)}`);for(let i=0;i<p.count;i++)if(p.getY(i)>=head)assert.ok(points.has(`${p.getX(i)},${p.getY(i)},${p.getZ(i)}`));assert.deepEqual(p.array,before);counts.push(low.index.count/3);low.dispose();}
+   rows.push({original:g.index.count/3,medium:counts[0],far:counts[1]});g.dispose();
+  }
+  measurements.push({asset:id,...Object.fromEntries(['original','medium','far'].map(k=>[k,rows.reduce((n,r)=>n+r[k],0)]))});
+ }
+ console.log('hardware-lod-measured',JSON.stringify(measurements));for(const row of measurements)assert.ok(row.far<row.original);
+});
