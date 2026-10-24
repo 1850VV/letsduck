@@ -43,3 +43,10 @@ body.phone .cd-refine .hover-info{display:flex}
 body.phone .cd-refine .pane-filament #lib-grid{order:initial}
 body.phone .cd-refine .pane-filament>*{order:initial!important}
 @media(max-width:760px){.sheet .ex-stats{flex-wrap:wrap}.cd-card{padding:14px}.cd-row{flex-wrap:wrap}.cd-checks{font-size:12px}}
+@media(min-width:761px){.studio>.stage{grid-column:2}.studio>.panel{grid-column:3}}
+.cd-locks{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.cd-locks button{border:1px solid var(--line);border-radius:8px;background:#fff;min-height:38px;font-size:12px;padding:6px 10px}
+.cd-scope{position:sticky;top:0;z-index:3}
+body.phone .studio[data-step="2"] .panel-foot.finish{flex-direction:row}
+body.phone .studio[data-step="2"] .panel-foot.finish>button{flex:1;min-width:0;font-size:13px}
+body.phone .cd-parts{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+body.phone .cd-parts>button{flex:none}

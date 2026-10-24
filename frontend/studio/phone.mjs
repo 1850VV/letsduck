@@ -8,7 +8,7 @@ const root = document.documentElement, body = document.body, studio = $('#studio
 const buzz = (ms = 8) => {try {navigator.vibrate?.(ms);} catch {}};
 
 // ---------- bottom sheet: three snap heights, dragged by the grip or the panel header, flicked to snap ----------
-const PEEK = {1: 262, 2: 268, 3: 282};       // tall enough for each step's first useful row
+const PEEK = {1: 262, 2: 360, 3: 282};       // tall enough for each step's first useful row
 const MINI = 112;                            // a sliver: the duck gets almost the whole screen
 let snap = 'peek', dragging = null;
 const px = (name) => parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0;

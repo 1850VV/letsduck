@@ -317,7 +317,7 @@ function setTool(t) {
   if (t === 'pick') toolBefore = tool === 'pick' ? 'select' : tool;else pickToFree = false;
   tool = t;replaceFrom = null;clearBrushHover();renderAll();
 }
-function clearBrushHover() {if (brushHover) {brushHover = null;view.setColors(design.colors);}}
+function clearBrushHover() {if (brushHover) {brushHover = null;view.setColors(design.colors);}if ($('#paint-scope')) $('#paint-scope').innerHTML=scopeText();}
 const brushTargets = (id) => (brushMirror ? paintTargets(parts, [id], true) : [id]).filter((x) => !locks.has(x) && fits(x, brush));
 const cursorFor = (hex) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='9' fill='${hex}' stroke='white' stroke-width='3'/><circle cx='14' cy='14' r='10.5' fill='none' stroke='#141c33' stroke-width='1.2'/></svg>`)}") 14 14, crosshair`;
 const brandList = (id, kind) => (id === 'bambu' ? catalog.products : [...products.values()].filter((p) => p.demo && p.brand === DEMO_BRANDS.find((b) => b.id === id)?.name)).filter((p) => kindOf(p) === kind);
@@ -325,8 +325,8 @@ const brandList = (id, kind) => (id === 'bambu' ? catalog.products : [...product
 // (current colour, in-use chips, selected rings), so hover, focus and scroll never jump.
 // Step 2 fits one screen: a two-line header, the tabs, and a pane with no folds or dropdowns.
 function scopeText() {
-  const actual = paintScope(parts, replaceFrom ? parts.filter(p => keyOf(p.id) === replaceFrom).map(p => p.id) : targetIds(), locks);
-  return esc(_t('cd.scope', {...actual,part:replaceFrom ? keyName(replaceFrom) : selectionLabel(),materials:actual.materials.join(' / ')}));
+  const actual = paintScope(parts, tool === 'brush' ? (brushHover ? brushHover.split(',') : []) : replaceFrom ? parts.filter(p => keyOf(p.id) === replaceFrom).map(p => p.id) : targetIds(), locks);
+  return esc(_t('cd.scope', {...actual,part:tool === 'brush' ? _t('label.brush') + (actual.ids.length ? ' · ' + actual.ids.map(id=>_label(partById.get(id).name)).join(' / ') : '') : replaceFrom ? keyName(replaceFrom) : selectionLabel(),materials:actual.materials.join(' / ')}));
 }
 function quickPaintColors() {
   const compatible = k => isHex(k) || products.has(k) && kindOf(products.get(k)) === gridKind();
@@ -347,9 +347,9 @@ function panelStep2() {
   return `<div class="panel-body cd-refine"><div class="eyebrow">${_t('cd.part')}</div>
     <div class="cd-parts">${ZONES.map(zone => `<button data-paint-zone="${zone.id}" aria-pressed="${sel.zone === zone.id}">${esc(zone.name)}</button>`).join('')}</div>
     <div id="paint-scope" class="cd-scope" role="status">${scopeText()}</div>
-    ${head}<div class="eyebrow">${_t('cd.color')}</div><div id="paint-quick" class="cd-swatches">${quickPaintColors()}</div>
+    <div class="eyebrow">${_t('cd.color')}</div><div id="paint-quick" class="cd-swatches">${quickPaintColors()}</div>
     <div id="paint-current" class="cd-current"></div>
-    <details id="paint-tools" ${paintToolsOpen ? 'open' : ''}><summary>${_t('cd.tools')}</summary><div id="paint-tools-host"></div></details>
+    <details id="paint-tools" ${paintToolsOpen ? 'open' : ''}><summary>${_t('cd.tools')}</summary>${head}<div id="paint-tools-host"></div><div class="cd-locks">${ZONES.map(zone => `<button data-paint-lock="${zone.id}" aria-pressed="${zone.ids.every(id=>locks.has(id))}" aria-label="${_attr(_t('text.0116',{v10:zone.name}))}">${zone.ids.every(id=>locks.has(id)) ? '🔒' : '🔓'} ${esc(zone.name)}</button>`).join('')}</div></details>
     <details id="paint-palette" ${paintPaletteOpen ? 'open' : ''}><summary>${_t('cd.palette')}</summary>${dockHTML(finishes)}</details></div>
     <div class="panel-foot finish"><button class="save-mine" id="finish-save">${_t('text.0220')}</button><button class="primary" data-go="3">${_t("text.0160")}</button></div>`;
 }
@@ -466,7 +466,7 @@ function panelStep3() {
     <section class="cd-card"><h3>${_t('cd.keep')}</h3><span class="cd-save-status" data-save-status>${esc($('#scheme-state').textContent)}</span>
     <div class="cd-row"><button class="primary" id="finish-save">${_t('text.0220')}</button><button id="open-poster">${_t('text.0239')}</button></div></section>
     <section class="cd-card"><h3>${_t('cd.print')}</h3><p>${_t('cd.printHelp')}</p>${deliveryStats(summary)}
-    <button class="primary" id="export2">${_t('text.0247')}</button><p class="muted">${_t('cd.boundary')}</p></section>
+    <button class="primary" id="export2">${_t('cd.review')} →</button><p class="muted">${_t('cd.boundary')}</p></section>
     <details><summary>${_t('cd.advanced')}</summary>${advancedDelivery()}</details></div>
     <div class="panel-foot finish">${personal ? assembly ? `<a class="primary go-assemble" id="go-assemble" href="./assemble/" title="${_attr(_t('personal.assembleTitle'))}">${_t('personal.assemble')} →</a>` : '' : `<button class="primary" id="publish">${_t('text.0250')}</button>`}</div>`;
 }
@@ -486,6 +486,7 @@ function renderPanel() {
   // On phones the panel itself scrolls under the pinned duck: keep the spot within a step, start a new step at the top.
   panel.scrollTop = again ? outer : 0;
   // A new step slides its content in; re-renders within a step stay still.
+  if (again) panel.classList.remove('enter');
   if (!again) {panel.classList.remove('enter');void panel.offsetWidth;panel.classList.add('enter');}
   if (step === 3 && showTab === 'share') fillPosterMini();
   if (step === 3 && $('.joint-grid')) syncPose();
@@ -542,6 +543,7 @@ $('#steps').onclick = (e) => {const b = e.target.closest('[data-step]');if (b) g
 let previewing = false;
 $('#panel').addEventListener('click', async (e) => {
   const t = e.target;
+  const lock = t.closest('[data-paint-lock]');if (lock) return $('#rail [data-lock="'+lock.dataset.paintLock+'"]').click();
   const zone = t.closest('[data-paint-zone]');if (zone) return select(zone.dataset.paintZone);
   const go = t.closest('[data-go]');if (go) return goStep(+go.dataset.go);
   const ptab = t.closest('[data-ptab]');if (ptab) {showTab = ptab.dataset.ptab;$('#pdock').dataset.tab = showTab;if (showTab === 'share') fillPosterMini();return;}
@@ -645,7 +647,7 @@ stage.addEventListener('pointerdown', (e) => {hover.cancel();if (e.target === vi
 function stageClick(e) {
   const id = view.pick(e.clientX, e.clientY);if (!id) {if (step === 2 && tool === 'select' && !replaceFrom) {sel.part = null;sel.scope = 'all';renderAll();}return;}
   const z = zoneOf(id),p = partById.get(id);
-  if (step === 2 && tool === 'brush') {const ids = brushTargets(id);if (!ids.length) return toast(() => locks.has(id) ? _message("text.0272", { v0: p.name }) : _message("text.0273", { v0: p.name, v1: p.material, v2: keyName(brush) }));brushHover = null;return paint(ids, brush, _message("text.0274"));}
+  if (step === 2 && tool === 'brush') {const ids = brushTargets(id);if (!ids.length) return toast(() => locks.has(id) ? _message("text.0272", { v0: p.name }) : _message("text.0273", { v0: p.name, v1: p.material, v2: keyName(brush) }));brushHover = ids.join(',');return paint(ids, brush, _message("text.0274"));}
   if (step === 2 && tool === 'pick') {
     const k = keyOf(id),back = pickToFree ? toolBefore : 'brush';if (isHex(k) && hexFinish(k)) freeFinish = hexFinish(k);setFree(design.colors[id], { preview: false });brush = k;if (!isHex(k)) brushKind = kindOf(products.get(k));
     pickToFree = false;tool = back;renderAll();return toast(_message("text.0275", { v0: keyName(k), v1: back === 'brush' ? _message("text.0276") : _message("text.0277") }));
@@ -675,7 +677,7 @@ function showHover(id,e) {const tag=$('#part-tag');
     if (step === 2 && tool === 'brush') {
       const ids = brushTargets(id),key = ids.join(',');
       tag.innerHTML = ids.length ? `<i style="--c:${keyHex(brush)}"></i><span><b>${_t("text.0279", { v1: esc(keyName(brush)) })}</b><small>${esc(p.name)}${ids.length > 1 ? _t("text.0278") : ''}</small></span>` : `<i style="--c:${design.colors[id]}"></i><span><b>${esc(p.name)}</b><small>${locks.has(id) ? _t("text.0280") : _t("text.0281")}</small></span>`;
-      if (key !== brushHover) {brushHover = key || null;view.setColors({ ...design.colors, ...Object.fromEntries(ids.map((x) => [x, keyHex(brush)])) });view.setHighlight([], ids.length ? ids : [id]);}
+      if (key !== brushHover) {brushHover = key || null;if ($('#paint-scope')) $('#paint-scope').innerHTML=scopeText();view.setColors({ ...design.colors, ...Object.fromEntries(ids.map((x) => [x, keyHex(brush)])) });view.setHighlight([], ids.length ? ids : [id]);}
       return;
     }
     if (step === 2 && tool === 'pick') {tag.innerHTML = `<i style="--c:${design.colors[id]}"></i><span><b>${_t("text.0282", { v1: esc(prodName) })}</b><small>${esc(p.name)}</small></span>`;view.setHighlight([], [id]);return;}
@@ -845,7 +847,7 @@ addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && k === 'z') {e.preventDefault();(e.shiftKey ? $('#redo') : $('#undo')).click();return;}
   if ((e.metaKey || e.ctrlKey) && k === 's') {e.preventDefault();saveScheme(false);return;}
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.code === 'Space' && !e.repeat) {e.preventDefault();holdOn();return;}
+  if (e.code === 'Space' && !e.repeat && !e.target.closest('button,a,summary,[role=button]')) {e.preventDefault();holdOn();return;}
   if (k === 'r' && step === 1) {$('#dice')?.click();return;}
   if (k === '1' || k === '2' || k === '3') {setLayout(['assembly', 'explode', 'arrange'][+k - 1]);return;}
   const shortcut = toolShortcut(e, step);if (!shortcut) return;

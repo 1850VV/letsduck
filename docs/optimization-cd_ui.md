@@ -1,0 +1,46 @@
+# C/D paint and delivery implementation — Mock v1
+
+Scope: approved C/D flow, based on `8a581d216871d699fba93090700d2802142ca096`, on `codex/optimization-cd-ui`. This branch changes the studio only. A/B teaching layout, E save/backup state, F observation settings and G assembly translation remain with their owners.
+
+## Behavior and integration
+
+- C puts real part groups before color choices. Scope comes from actual unique instance IDs, materials and locks. Brush scope follows its real hit targets. Eight groups remain available; the prototype's three example groups and fixed counts are not copied.
+- Quick swatches keep real assignments and material compatibility. Full catalog, free colors, selection scopes, locks, brush, eyedropper, focus and side magnification remain available through progressive disclosure. V/B/I/F/P and native button Space/Enter work; typing does not activate tools. Phone sheet and footer leave swatches visible in the default state.
+- D keeps real nod/quack/sway and the full advanced action/pose controls. Save uses `saveScheme(false)`. Poster uses the existing `poster.open()` and downloads a real PNG. Printing opens review before download.
+- Review counts plates, parts and used materials from the actual plan. Both material-allocation and slicing-review acknowledgements are required for BOM and 3MF. Replacement/reopen/failure invalidates approval. Current design identity is checked again at download; stale asynchronous plan responses are ignored.
+- Both editions keep their existing save/API behavior. New non-assembly copy uses the existing locale catalog and preference system in all 12 locales.
+
+E integration: C/D save buttons use `#finish-save` and call the existing save function. D's `[data-save-status]` currently mirrors the existing header state on render; E owns shared pending/success/failure feedback and naming. No second storage is introduced. F can keep using the existing toolbar hooks; this branch changes neither lighting nor quality nor LOD. C/D does not require A/B source to run, but the requested stacked PR base remains `codex/optimization-ab-ui` when available.
+
+## Acceptance evidence
+
+Local evidence is ignored under `output/cd-ui-1024/`; it contains the isolated test database, browser logs, screenshots, videos and generated files. No assets, database, screenshot or manufacturing archive is committed.
+
+| Criterion | Result and evidence |
+|---|---|
+| Actual selected-part painting, other parts unchanged, undo/redo, retained context | Passed in managed Chromium; renderer material colors compared with saved colors after their existing transition completes |
+| V/B/I/F/P, typing guard, native Space activation, canvas selection, brush and eyedropper | Passed real browser actions plus targeted unit tests |
+| Desktop 1440 and touch 390 layout | Passed model/panel geometry, complete default swatch visibility above footer, touch part/tool/review controls and no horizontal document overflow; screenshots captured |
+| Save and save failure keep edits | Actual isolated SQLite write passed; injected HTTP 503 retained edited colors. E's new shared save-state UI is not integrated here |
+| Actions and sound | Real nod/quack/sway started; real nonzero audio buffers started in a running AudioContext. Subjective speaker output/listening quality not verified |
+| Actual poster | PNG downloaded, signature verified, 1080×1440 |
+| Material replacement and confirmation reset | Passed real illustrative PLA→catalog matching; TPU colors preserved; reopened/failed review exposes no approved stale downloads |
+| Actual 3MF and BOM | Downloaded and inspected: 35 instances, 6 plates, 27 `3D/` ZIP members identical to source, BOM UUID/color mapping matches exported report, four TPU 90A soft parts retained, source machine speed preserved |
+| 12 existing locales | New delivery surfaces switched through all 12; catalog completeness and no unexpected Chinese fallback checks passed. Human language review not performed |
+| Human comparison with approved Mock v1 | Actual screenshots and interaction videos prepared; human implementation visual/interaction verdict pending |
+
+## Checks
+
+- `node --test tests/test_paint_delivery.mjs`: 5/5, after observed RED→GREEN for scope/shortcuts and review identity/reset.
+- `node --test tests/*.mjs`: 66 passed, 3 skipped, 0 failed. Three optional compressed-geometry tests skip because the independent asset copy contains only the compatible original geometry.
+- `node --test tests/assembly/*.test.mjs`: 177/177 passed.
+- `.venv/bin/python -m unittest discover -s tests -v`: 78 run, 60 passed, 18 MySQL checks skipped because `DUCK_TEST_DATABASE_URL` is not configured. Initial borrowed environment failed four imports (missing required test dependencies); an owned environment synced from `requirements-dev.txt` passed.
+- `.venv/bin/python scripts/publication_audit.py`: no findings.
+- `tests/cd-ui-browser.js`: 54 real browser assertions passed. Browser logs additionally show the two expected optional-geometry 404 fallbacks and intentionally injected 503 failure paths.
+- Observed browser RED→GREEN: grid auto-placement squeezed stage to zero width; Space was intercepted by compare shortcut; brush scope incorrectly named the selected group; phone default swatches were covered by footer. All have browser reproductions and verified fixes.
+
+No performance benefit is claimed. The benchmark lock was respected before browser/heavy checks. No source or manufacturing geometry was modified. The production service and real personal database were not used.
+
+## Delivery status
+
+Implementation committed locally; final independent review and publication receipt recorded below before handoff. The remote A/B branch was absent at the initial base check. Do not create or push another owner's base branch, merge, deploy, or switch the live personal service as part of this task.
