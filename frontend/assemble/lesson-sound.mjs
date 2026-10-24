@@ -1,3 +1,4 @@
+import {assemblyText as at,onAssemblyLocale,hasAssemblyCopy} from './assembly-language.mjs';
 import {shouldPlayCompletion} from './sound-policy.mjs';
 import {onPageActivity,pageActive} from '../shared/personal-page.mjs';
 
@@ -9,13 +10,14 @@ const $=id=>document.getElementById(id);
 
 export function createLessonSound(){
   const music=$('piano-audio'),cue=$('completion-audio'),details=$('sound-controls'),panel=$('sound-panel');
+  let languageBlocked=!hasAssemblyCopy();
   let enabled=true,effects=true,volume=.24,track='satie',needsGesture=false,error='',request=0,fadeFrame=0,fadeTimer=0,lastCueAt=-Infinity,cueCount=0;
   music.src=new URL('./assets/'+tracks[track].file,import.meta.url).href;
   cue.src=new URL('./assets/assembly-complete.mp3',import.meta.url).href;
   music.volume=0;cue.volume=volume*.35;
 
   function status(){
-    const audible=volume>0&&(enabled||effects),text=error||(!audible?'已静音':enabled?(needsGesture?'点一下页面开始音乐':music.paused?'正在准备钢琴曲…':'正在播放 · '+tracks[track].label):effects?'仅播放完成提示音':'声音已关闭');
+    const audible=volume>0&&(enabled||effects),text=(error?at(error):'')||(!audible?at('已静音'):enabled?(needsGesture?at('点一下页面开始音乐'):music.paused?at('正在准备钢琴曲…'):at('正在播放 · {track}',{track:at(tracks[track].label)})):effects?at('仅播放完成提示音'):at('声音已关闭'));
     $('sound-status').textContent=text;$('sound-volume-label').textContent=Math.round(volume*100)+'%';
     details.dataset.active=String(audible);details.dataset.pending=String(enabled&&needsGesture);
     details.querySelector('summary').title=text;
@@ -30,7 +32,7 @@ export function createLessonSound(){
     fadeTimer=setTimeout(finish,duration+25);
   }
   async function startMusic(){
-    if(!pageActive()||!enabled||volume===0)return;
+    if(!hasAssemblyCopy()||!pageActive()||!enabled||volume===0)return;
     const token=++request;error='';cancelFade();
     try{
       music.playbackRate=1;await music.play();
@@ -79,7 +81,7 @@ export function createLessonSound(){
   music.addEventListener('error',()=>{error='钢琴曲暂时无法播放，可切换曲目重试';status();});
   window.addEventListener('pagehide',()=>{++request;cancelFade();music.pause();cue.pause();});
   onPageActivity(active=>{if(active){startMusic();}else{++request;cancelFade();music.pause();cue.pause();}});
-  status();startMusic();
+  onAssemblyLocale(()=>{status();if(languageBlocked&&hasAssemblyCopy()){languageBlocked=false;startMusic();}});status();startMusic();
   return{
     syncControls(){
       enabled=$('music-enabled').checked;effects=$('effects-enabled').checked;

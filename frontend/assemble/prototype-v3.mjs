@@ -1,3 +1,4 @@
+import {assemblyText as at,assemblyStep,assemblyActor,assemblyChapter,assemblyFocusText,assemblyLocale,onAssemblyLocale,bindAssembly} from './assembly-language.mjs';
 // Printed materials must be initialized before model construction, including a cold API fallback.
 import './page.mjs';
 import {createProgressStore,progressScope} from './progress-store.mjs';
@@ -205,14 +206,14 @@ let aspectScale=1;
 function cameraTo(position,target,duration=650){const point=new THREE.Vector3(...target),to=new THREE.Vector3(...position).sub(point).multiplyScalar(aspectScale).add(point);cameraTween={from:camera.position.clone(),to,fromTarget:controls.target.clone(),toTarget:point,start:performance.now(),duration};}
 function setAttributes(){
   const end=step===STEPS.length-1,playback=lessonPlayer.state;
-  const replayLabel=$('replay-label');if(replayLabel)replayLabel.textContent=end?'红绿框演示':'重播本步';
+  const replayLabel=$('replay-label');if(replayLabel)replayLabel.textContent=end?at('红绿框演示'):at('重播本步');
   $('back').toggleAttribute('disabled',step===0);$('replay').toggleAttribute('disabled',step===0);
   $('start').hidden=step!==0||playback.autoplay;$('next').hidden=step===0||end;$('restart').hidden=!end;
   $('pause').hidden=!playing&&!(playback.autoplay||step>0&&progress<1);
-  const pauseLabel=$('pause-label');if(pauseLabel)pauseLabel.textContent=playing?'暂停':'继续播放';
-  const autoLabel=$('autoplay-label');if(autoLabel)autoLabel.textContent='自动播放 · '+(playback.autoplay?'开':'关');
-  $('autoplay').toggleAttribute('disabled',!ready);$('autoplay').dataset.active=String(playback.autoplay);const autoButton=$('autoplay').querySelector('button');if(autoButton){autoButton.setAttribute('aria-label','自动播放');autoButton.setAttribute('aria-pressed',String(playback.autoplay));autoButton.title='开启后从第0步开始，连续播放全部14个阶段';}
-  $('play-state').textContent=playback.finished?'全部播放完成':playback.autoplay?(playing?(playback.phase==='settle'?'本步完成，准备下一步':'自动播放中'):'自动播放已暂停'):playing?'正在演示':step===0?'可以开始':'可旋转查看';$('play-dot').classList.toggle('playing',playing);
+  const pauseLabel=$('pause-label');if(pauseLabel)pauseLabel.textContent=playing?at('暂停'):at('继续播放');
+  const autoLabel=$('autoplay-label');if(autoLabel)autoLabel.textContent=at('自动播放 · {state}',{state:at(playback.autoplay?'开':'关')});
+  $('autoplay').toggleAttribute('disabled',!ready);$('autoplay').dataset.active=String(playback.autoplay);const autoButton=$('autoplay').querySelector('button');if(autoButton){autoButton.setAttribute('aria-label',at('自动播放'));autoButton.setAttribute('aria-pressed',String(playback.autoplay));autoButton.title=at('开启后从第0步开始，连续播放全部14个阶段');}
+  $('play-state').textContent=playback.finished?at('全部播放完成'):playback.autoplay?(playing?(playback.phase==='settle'?at('本步完成，准备下一步'):at('自动播放中')):at('自动播放已暂停')):playing?at('正在演示'):step===0?at('可以开始'):at('可旋转查看');$('play-dot').classList.toggle('playing',playing);
 }
 function updateProgress(){
   const v=Math.round(progress*100);$('motion-percent').textContent=`${v}%`;$('full-saved-progress').value=String(progress);
@@ -220,11 +221,11 @@ function updateProgress(){
 }
 let renderedChapter=null,referenceChapter=null;
 function renderSteps(chapter){
-  if(renderedChapter===chapter.id)return;renderedChapter=chapter.id;
+  const key=chapter.id+':'+assemblyLocale();if(renderedChapter===key)return;renderedChapter=key;
   $('step-list').replaceChildren();$('step-list').style.setProperty('--visible-step-count',chapter.end-chapter.start+1);
   for(let i=chapter.start;i<=chapter.end;i++){
     const b=document.createElement('button');b.id=`step-${i}`;b.className='step-option';b.type='button';b.dataset.step=String(i);
-    for(const [cls,text] of [['number',String(i-chapter.start+1)],['title',STEPS[i].short],['time',fmt(STEPS[i].sourceStart)]]){const span=document.createElement('span');span.className=cls;span.textContent=text;b.append(span);}
+    for(const [cls,text] of [['number',String(i-chapter.start+1)],['title',assemblyStep(STEPS[i]).short],['time',fmt(STEPS[i].sourceStart)]]){const span=document.createElement('span');span.className=cls;span.textContent=text;b.append(span);}
     b.addEventListener('click',()=>{goStep(i);$('sequence-dialog').close();});$('step-list').append(b);
   }
 }
@@ -233,35 +234,35 @@ function syncReference(){
   const seek=()=>{if(chapterFor(step).id===c.id)v.currentTime=Math.max(0,STEPS[step].sourceStart-c.videoStart);};
   if(referenceChapter!==c.id){referenceChapter=c.id;v.src=c.video;v.addEventListener('loadedmetadata',seek,{once:true});v.load();}
   else if(v.readyState>=1)seek();
-  $('reference-caption').textContent=`截取自你提供的视频 · ${fmt(c.sourceStart)}—${fmt(c.sourceEnd)}`;
+  $('reference-caption').textContent=at('截取自你提供的视频 · {start}—{end}',{start:fmt(c.sourceStart),end:fmt(c.sourceEnd)});
 }
-function syncInfo(){
-  const s=STEPS[step],c=chapterFor(step),local=step-c.start+1;guidanceEndState=snapshot(step,1);renderSteps(c);$('software-guide').hidden=!s.software;$('servo-id-list').replaceChildren();for(const id of s.servoIds||[]){const tag=document.createElement('span');tag.textContent=`ID ${id}`;$('servo-id-list').append(tag);}
-  $('phase-select').setAttribute('value',String(CHAPTERS.indexOf(c)));
-  $('full-saved-step').value=String(step);$('step-title').textContent=s.title;$('instruction-summary-title').textContent=s.title;$('step-description').textContent=s.text;$('step-check').textContent=s.check+(fitsForParts(s.parts).length||s.id==='robot-complete'||s.overview?' 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。':'');
+function syncInfo({textOnly=false}={}){
+  const s=assemblyStep(STEPS[step]),c=assemblyChapter(chapterFor(step)),local=step-c.start+1;if(!textOnly)guidanceEndState=snapshot(step,1);renderSteps(c);$('software-guide').hidden=!s.software;$('servo-id-list').replaceChildren();for(const id of s.servoIds||[]){const tag=document.createElement('span');tag.textContent=at('ID {id}',{id});$('servo-id-list').append(tag);}
+  $('phase-select').setAttribute('value',String(CHAPTERS.findIndex(chapter=>chapter.id===c.id)));
+  $('full-saved-step').value=String(step);$('step-title').textContent=s.title;$('instruction-summary-title').textContent=s.title;$('step-description').textContent=s.text;$('step-check').textContent=s.check+(fitsForParts(s.parts).length||s.id==='robot-complete'||s.overview?' '+at(' 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。'):'');
   $('step-count').textContent=`${step+1} / ${STEPS.length} · ${c.name} ${local}/${c.end-c.start+1}`;
-  $('stage-step').textContent=s.complete?`${c.name} · 完成`:`${String(local).padStart(2,'0')}  ${s.short}`;
+  $('stage-step').textContent=s.complete?at('{chapter} · 完成',{chapter:c.name}):`${String(local).padStart(2,'0')}  ${s.short}`;
   $('source-time').textContent=`${fmt(s.sourceStart)}—${fmt(s.sourceEnd)}`;
   $('needed-parts').replaceChildren();const groups=new Set();
-  for(const id of s.parts){const a=ACTORS[id];if(a.listGroup&&groups.has(a.listGroup))continue;if(a.listGroup)groups.add(a.listGroup);
+  for(const id of s.parts){const a=assemblyActor(id,ACTORS[id]);if(a.listGroup&&groups.has(a.listGroup))continue;if(a.listGroup)groups.add(a.listGroup);
     const b=document.createElement('button');b.type='button';b.id=`part-chip-${id}`;b.className='part-chip';b.style.setProperty('--c',a.color||'#9ba7b9');
     const dot=document.createElement('i'),label=document.createElement('span');label.textContent=a.chip||a.label.split(' · ')[0];b.append(dot,label);b.addEventListener('click',()=>selectActor(id));$('needed-parts').append(b);}
-  $('progress-status').textContent='';syncChecks();
-  clearPartInfo();syncReference();setAttributes();updateProgress();
+  if(!textOnly)$('progress-status').textContent='';else if($('progress-status').textContent)$('progress-status').textContent=at('进度未保存：浏览器存储不可用，请重试。');syncChecks();
+  if(!textOnly){clearPartInfo();syncReference();updateProgress();}else{if(selected)updateSelectedText();const c=chapterFor(step);$('reference-caption').textContent=at('截取自你提供的视频 · {start}—{end}',{start:fmt(c.sourceStart),end:fmt(c.sourceEnd)});}setAttributes();
 }
 function syncChecks(){
  const checks=viewingStore.readChecks(viewingScope),c=chapterFor(step);
  $('confirm-seen').checked=checks.seen.includes(STEPS[step].id);$('confirm-built').checked=checks.built.includes(STEPS[step].id);
- $('progress-count').textContent=`观看 ${checks.seen.length}/${STEPS.length} · 实物 ${checks.built.length}/${STEPS.length}`;
+ $('progress-count').textContent=at('观看 {seen}/{total} · 实物 {built}/{total}',{seen:checks.seen.length,built:checks.built.length,total:STEPS.length});
  for(const b of $('step-list').children){const n=Number(b.dataset.step),built=checks.built.includes(STEPS[n].id),seen=checks.seen.includes(STEPS[n].id);
   if(n===step)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');
   b.classList.toggle('done',built);b.classList.toggle('seen',seen);b.querySelector('.number').textContent=built?'✓':String(n-c.start+1);
-  b.setAttribute('aria-label',`${STEPS[n].title}${seen?' · 已看过':''}${built?' · 实物已装好':''}`);
+  b.setAttribute('aria-label',`${assemblyStep(STEPS[n]).title}${seen?at(' · 已看过'):''}${built?at(' · 实物已装好'):''}`);
  }
 }
 for(const kind of ['seen','built'])$('confirm-'+kind).addEventListener('change',event=>{
  const saved=viewingStore.setCheck(viewingScope,STEPS[step].id,kind,event.target.checked);
- $('progress-status').textContent=saved?'':'进度未保存：浏览器存储不可用，请重试。';syncChecks();
+ $('progress-status').textContent=saved?'':at('进度未保存：浏览器存储不可用，请重试。');syncChecks();
 });
 function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   if(!ready)return;const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
@@ -273,13 +274,14 @@ function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   syncInfo();$('instruction-content').scrollTop=0;cameraTo(STEPS[step].camera,STEPS[step].target,650/lessonPlayer.state.rate);
   if(!backTransition)applyState(snapshot(step,progress));flushViewing();
 }
+function updateSelectedText(){if(!selected)return;const a=assemblyActor(selected,ACTORS[selected]);$('part-name').textContent=a.label;$('part-source').textContent=a.source||'';}
 function clearPartInfo(){
   $('part-tooltip').hidden=true;$('part-leader').toggleAttribute('hidden',true);stage.classList.remove('has-part-info');selected=null;selectedAnchor=null;selection.visible=false;
 }
 function selectActor(id,point=null){
   const obj=entities.get(id);if(!obj?.visible)return;selected=id;
   obj.updateWorldMatrix(true,true);const at=point?.clone()||new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());selectedAnchor=obj.worldToLocal(at);
-  $('part-name').textContent=ACTORS[id].label;$('part-source').textContent=ACTORS[id].source;
+  updateSelectedText();
   $('part-tooltip').hidden=false;stage.classList.add('has-part-info');
 }
 $('part-close').addEventListener('click',()=>{
@@ -303,7 +305,7 @@ $('sequence-open').addEventListener('click',()=>$('sequence-dialog').showModal()
 $('sequence-close').addEventListener('click',()=>$('sequence-dialog').close());
 $('instruction-toggle').addEventListener('click',()=>{
  const panel=document.querySelector('.instruction-column'),compact=panel.classList.toggle('compact');
- $('instruction-toggle').setAttribute('aria-expanded',String(!compact));$('instruction-toggle-label').textContent=compact?'展开本步说明':'收起说明 · 留出观察空间';
+ $('instruction-toggle').setAttribute('aria-expanded',String(!compact));$('instruction-toggle-label').textContent=compact?at('展开本步说明'):at('收起说明 · 留出观察空间');
 });
 $('reference-toggle').addEventListener('click',()=>{$('reference-panel').hidden?openReference():closeReference();});
 $('reference-close').addEventListener('click',closeReference);$('source-step').addEventListener('click',openReference);
@@ -312,7 +314,7 @@ $('reference-video').addEventListener('timeupdate',()=>{const v=$('reference-vid
 // restore and automatic playback never infer confirmations from position.
 function explicitViewing(index,options){
  const saved=viewingStore.setCheck(viewingScope,STEPS[step].id,'seen',true);
- goStep(index,options);if(!saved)$('progress-status').textContent='进度未保存：浏览器存储不可用，请重试。';
+ goStep(index,options);if(!saved)$('progress-status').textContent=at('进度未保存：浏览器存储不可用，请重试。');
 }
 $('start').addEventListener('click',()=>explicitViewing(1));$('next').addEventListener('click',()=>explicitViewing(step+1));$('back').addEventListener('click',()=>explicitViewing(step-1,{animate:false,back:true}));
 $('replay').addEventListener('click',()=>explicitViewing(step===OVERVIEW_STEP?STEPS.findIndex(s=>s.id==='final-power'):step));$('restart').addEventListener('click',()=>goStep(0));$('overview').addEventListener('click',()=>goStep(OVERVIEW_STEP,{animate:false}));
@@ -332,7 +334,7 @@ document.addEventListener('ryugi-ui:ready',initUI,{once:true});if(customElements
 function fit(){const {width,height}=host.getBoundingClientRect();if(width<1||height<1)return;renderer.setSize(width,height,false);camera.aspect=width/height;const scale=Math.max(1,1.07/camera.aspect);controls.minDistance=66*scale;controls.maxDistance=1100*scale;if(Math.abs(scale-aspectScale)>.001){camera.position.sub(controls.target).multiplyScalar(scale/aspectScale).add(controls.target);aspectScale=scale;cameraTween=null;}camera.updateProjectionMatrix();invalidate();}
 new ResizeObserver(fit).observe(host);
 function updateActionLabel(){
-  const caption=STEPS[step].caption,active=ready&&!!caption,label=$('action-indicator');label.hidden=!active;$('motion-label').hidden=active;
+  const caption=assemblyStep(STEPS[step]).caption,active=ready&&!!caption,label=$('action-indicator');label.hidden=!active;$('motion-label').hidden=active;
   if(active&&$('action-caption').textContent!==caption)$('action-caption').textContent=caption;
 }
 const leaderPoint=new THREE.Vector3();
@@ -370,7 +372,7 @@ function render(now){
   const cameraMoving=controls.update();updateActionLabel();
   const focus=ready?assemblyFocus.update(STEPS[step].id,progress,currentState,guidanceEndState,now,!!backTransition,camera,host.clientHeight):{phase:'none'};
   if(focus.phase!=='none')guideArrow.visible=false;
-  const hint=document.querySelector('.real-model'),message=focus.message||(focus.phase==='aligning'?'红框 · 对准这两处':focus.phase==='completed'?'绿框 · 本次已装好':'真实零件网格');
+  const hint=document.querySelector('.real-model'),message=assemblyFocusText(focus).message||(focus.phase==='aligning'?at('红框 · 对准这两处'):focus.phase==='completed'?at('绿框 · 本次已装好'):at('真实零件网格'));
   if(hint.textContent!==message)hint.textContent=message;
   hint.dataset.focus=focus.phase;
   renderQuality.render(scene,camera);assemblyMagnifier.render(focus,now,ready?STEPS[step].id:null);updatePartLeader();
@@ -403,6 +405,20 @@ async function load(){
   }
   renderQuality.attach(entities,ACTORS);ready=true;fit();viewingScope=progressScope(personalState(localStorage).draft);restoreViewing();$('loading').hidden=true;document.documentElement.dataset.ready='true';markPageReady();
 }
-load().catch(e=>{$('loading').textContent=`模型没有加载成功：${e.message}`;console.error(e);});
+let modelLoadFailure=null;
+function renderLoadFailure(){const detail=modelLoadFailure==='模型清单加载失败'?at('模型清单加载失败'):/[\u3400-\u9fff]/u.test(modelLoadFailure)?at('模型几何加载失败'):modelLoadFailure;$('loading').textContent=at('模型没有加载成功：{error}',{error:detail});}
+load().catch(e=>{modelLoadFailure=e.message;renderLoadFailure();console.error(e);});
 // A read-only diagnostic surface for the prototype's browser acceptance checks.
 window.anklePrototype={get hardware(){return hardwareModels?.state||{ready:false};},get quality(){return renderQuality.state;},get sound(){return lessonSound.state;},get magnifier(){return assemblyMagnifier.state;},get focus(){return assemblyFocus.state;},get playback(){return lessonPlayer.state;},get renderStats(){return renderQuality.renderStats;},getActorTransform(id){const obj=entities.get(id);if(!obj)return null;const axis=new THREE.Vector3(0,-1,0);if(obj.children[0]&&ACTORS[id].kind==='screw')axis.applyQuaternion(obj.children[0].quaternion);axis.applyQuaternion(obj.quaternion);return{visible:obj.visible,position:obj.position.toArray(),quaternion:obj.quaternion.toArray(),shaftAxis:axis.toArray(),normal:new THREE.Vector3(0,1,0).applyQuaternion(obj.quaternion).toArray()};},get state(){return{version:3,totalSteps:STEPS.length,totalChapters:CHAPTERS.length,step,stepId:STEPS[step].id,chapter:chapterFor(step).id,progress,playing,ready,uiReady,backTransition:!!backTransition,cameraTransition:!!cameraTween,camera:camera.position.toArray(),target:controls.target.toArray(),actors:structuredClone(currentState),referenceVisible:!$('reference-panel').hidden};}};
+
+// Refresh display copy without seeking, saving progress, changing confirmations,
+// closing source video, rebuilding the scene, or losing keyboard/part focus.
+onAssemblyLocale(()=>{
+ const active=document.activeElement,activeId=active?.id,scroll=$('instruction-content')?.scrollTop;
+ bindAssembly();syncInfo({textOnly:true});if(modelLoadFailure)renderLoadFailure();
+ const compact=document.querySelector('.instruction-column').classList.contains('compact');
+ $('instruction-toggle-label').textContent=at(compact?'展开本步说明':'收起说明 · 留出观察空间');
+ if(activeId)document.getElementById(activeId)?.focus({preventScroll:true});
+ if(scroll!==undefined)$('instruction-content').scrollTop=scroll;
+ scheduler.invalidate();
+});

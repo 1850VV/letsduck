@@ -31,9 +31,9 @@ export default {
       "caption": "Único servo · Conecte no lugar"
     },
     "prepare-usb": {
-      "short": "Ligue o computador e conecte-o",
-      "title": "Ligue e conecte ao Type-C",
-      "text": "Pressione vídeo para ligar a energia e conecte o computador com o cabo Type-C.",
+      "short": "Ligue o robô e conecte-o ao computador",
+      "title": "Ligue a energia do robô e conecte a linha Type-C",
+      "text": "Siga as instruções do vídeo, ligue o robô e conecte-o ao computador usando o cabo Type-C.",
       "check": "Esta página apenas demonstra a sequência de conexão e não inicia ou conecta dispositivos reais.",
       "caption": "Ligar · Conectar ao Type-C"
     },
@@ -90,7 +90,7 @@ export default {
       "short": "Panturrilha fixa",
       "title": "Conector fixo da perna",
       "text": "Encaixe o conector branco da perna inferior em servo, alinhe os orifícios de montagem e, em seguida, aparafuse dois parafusos autoatarraxantes de cabeça escareada M2×6.",
-      "check": "A extremidade longa do conector aponta para cima. Alinhe os furos primeiro e depois conserte-os. Não são necessários parafusos para colocar as peças distorcidas no lugar.",
+      "check": "A extremidade longa do conector deve estar voltada para cima. Alinhe os furos primeiro e depois prenda as peças. Não use parafusos para forçar peças desalinhadas na posição de instalação.",
       "caption": "Furo correto · M2×6 ×2"
     },
     "r-foot": {
@@ -153,7 +153,7 @@ export default {
       "short": "Panturrilha fixa",
       "title": "Conector fixo da perna",
       "text": "Encaixe o conector branco da perna inferior em servo, alinhe os orifícios de montagem e, em seguida, aparafuse dois parafusos autoatarraxantes de cabeça escareada M2×6.",
-      "check": "A extremidade longa do conector aponta para cima. Alinhe os furos primeiro e depois conserte-os. Não são necessários parafusos para colocar as peças distorcidas no lugar.",
+      "check": "A extremidade longa do conector deve estar voltada para cima. Alinhe os furos primeiro e depois prenda as peças. Não use parafusos para forçar peças desalinhadas na posição de instalação.",
       "caption": "Furo correto · M2×6 ×2"
     },
     "l-foot": {
@@ -369,7 +369,7 @@ export default {
     "t-wire": {
       "short": "Conexão e fiação",
       "title": "chicote de cabos é visível no quadril inserido e sai",
-      "text": "Pressione a peça original para apertar os plugues visíveis nos dois corpos servo, deixando de lado os subsequentes fios de conexão do motor quadril e os fios reservados para a placa-mãe. O fio reservado é conduzido para fora da abertura.",
+      "text": "Referindo-se à demonstração no filme original, pressione os dois plugues visíveis servo no corpo do robô. Separe os fios de conexão do motor de quadril subsequentes e os fios reservados para a placa-mãe, respectivamente, e conduza os fios reservados da abertura.",
       "check": "O soquete duplo é posicionado como um modelo de ensino simples de acordo com as características da superfície da grade da fonte. O caminho chicote de cabos, a identidade do soquete e os pinos não foram verificados, e os dois corpos servo não são desenhados como interconectados sem autorização.",
       "caption": "Conecte-o primeiro axialmente e depois passe os fios, diagrama de fiação"
     },
@@ -432,7 +432,7 @@ export default {
     "t-bearing-r": {
       "short": "Pressione o grande rolamento direito",
       "title": "Antes de conectar a perna, pressione o rolamento grande na conexão direita",
-      "text": "Pressione a tela após 11: 18, pressione o novo 16×22×4 mm grande rolamento axialmente no conector superior da perna direita independente e, em seguida, prepare-se para conectar ao corpo.",
+      "text": "Consulte a cena após 11:18 no vídeo: Pressione o novo 16×22×4 mm e o rolamento maior axialmente no conector superior da perna direita independente e, em seguida, prepare-se para conectar esta perna ao corpo do robô.",
       "check": "Este não é o rolamento superior já instalado no módulo da perna. Esta etapa apenas pressiona o novo rolamento, e a perna direita ainda está na posição de prontidão; a cooperação coaxial é um sinal.",
       "caption": "Primeiro pressione rolamento · A perna intacta não se moverá por enquanto."
     },
@@ -460,7 +460,7 @@ export default {
     "t-bearing-l": {
       "short": "Pressione grande para a esquerda rolamento",
       "title": "Antes de inserir a segunda perna, pressione rolamento",
-      "text": "Pressione 12:28 na tela, pressione o outro novo rolamento grande no conector superior da perna esquerda independente e, em seguida, conecte a segunda perna completa.",
+      "text": "Consulte a cena após 12:28 no vídeo: Pressione o outro novo rolamento grande no conector superior da perna esquerda independente e, em seguida, conecte o segundo conjunto completo da perna.",
       "check": "A perna direita foi instalada; a perna esquerda ainda não se moveu. A postura e a superfície de contato do rolamento são ilustradas usando o modelo existente.",
       "caption": "Pressione rolamento primeiro · A perna esquerda ainda está na posição de prontidão"
     },
@@ -509,7 +509,7 @@ export default {
     "head-core-join": {
       "short": "Módulo de rotação combinado",
       "title": "Conecte os subcomponentes das duas cabeças servo",
-      "text": "Mantenha o subconjunto ID32 no lugar, conecte o subconjunto do suporte ID33 que instalou o rolamento como um todo e pressione a segunda marca na tela para fixá-lo com quatro M2×6.",
+      "text": "Mantenha o subconjunto ID32 no lugar e conecte o subconjunto do suporte ID33 que instalou o rolamento como um todo. Em seguida, use quatro parafusos M2×6 para fixá-lo de acordo com as instruções marcadas no segundo lugar da tela.",
       "check": "P6-08 e seus dois rolamento se movem com a submontagem ID33; P6-01 e o primeiro rolamento permanecem no lado ID32. O eixo do furo vem da grade de origem e o ajuste físico precisa ser verificado.",
       "caption": "Encaixe geral e refixação de subconjuntos M2×6 ×4"
     },
@@ -539,19 +539,19 @@ export default {
       "title": "Remova o bocal braço do servo e conecte chicote de cabos",
       "text": "Primeiro retire o parafuso de fixação central, depois retire a boca braço do servo e guarde-a. Insira a linha servo conforme o vídeo e pressione-a no lugar.",
       "check": "A ambiguidade de numeração permanece. A codificação do conector, os soquetes reais e a pinagem não são confirmados por esta animação.",
-      "caption": "Remova o disco primeiro e depois conecte chicote de cabos"
+      "caption": "Primeiro remova braço do servo e depois conecte chicote de cabos"
     },
     "head-mouth-jaw": {
-      "short": "Instale servo com queixo",
-      "title": "Coloque servo na boca e coloque no queixo",
-      "text": "Primeiro coloque a peça bucal servo na plataforma e, em seguida, alinhe os dois lados do queixo P2-01 com o eixo de transmissão e a posição de suporte. Deixe chicote de cabos ficar fora da abertura.",
+      "short": "Instale o servo da boca e a mandíbula",
+      "title": "Instale o servo da boca e depois encaixe a mandíbula do robô",
+      "text": "Primeiro coloque a boca do robô servo na plataforma. Alinhe ambos os lados da mandíbula do robô P2-01 com o eixo de transmissão e a posição de suporte e, em seguida, insira-a. chicote de cabos deve passar pela abertura e sobressair.",
       "check": "Esta animação expressa a relação da sequência; os furos do eixo em ambos os lados, as folgas reais e a precisão correspondente precisam ser verificadas.",
-      "caption": "Coloque servo primeiro · Depois insira-o no queixo"
+      "caption": "Posicione o servo e depois encaixe a mandíbula do robô"
     },
     "head-servo-support": {
       "short": "Cubra a fixação",
       "title": "Instale a peça de fixação do cabeçote servo",
-      "text": "Mecanismo que fixa a peça de fixação da cabeça P4-02 servo à plataforma. Pressione a primeira legenda para corrigir quatro M2×6.",
+      "text": "Encaixe a peça de fixação do cabeçote P4-02 servo no mecanismo da plataforma. De acordo com as instruções da primeira legenda, utilize quatro parafusos M2×6 para fixá-lo.",
       "check": "Mantenha sua mandíbula móvel e evite chicote de cabos. As posições específicas dos quatro furos ainda são indicativas.",
       "caption": "O primeiro grupo de buracos · M2×6 ×4"
     },
@@ -565,7 +565,7 @@ export default {
     "head-mouth-check": {
       "short": "Verifique abertura e fechamento da boca",
       "title": "Verifique a abertura e fechamento do queixo e o status do chicote de cabos",
-      "text": "Mova levemente o queixo para verificar se ele pode ser aberto e fechado, se está obviamente preso e se o fio está preso na lateral. A animação mostra abertura e fechamento ao mesmo tempo.",
+      "text": "Mova suavemente a parte da mandíbula inferior do robô para verificar se ele pode abrir e fechar, se não está obviamente preso e se não há cabos presos em nenhum dos lados. A animação demonstra a abertura e o fechamento apenas uma vez.",
       "check": "Este é apenas um sinal de abertura e fechamento, e no final retornará à posição fechada; se o produto real é liso, a lacuna e o ângulo servo precisam ser verificados.",
       "caption": "Simular abertura → fechamento · Objeto real a ser verificado"
     },
@@ -635,7 +635,7 @@ export default {
     "head-lower-pad": {
       "short": "Almofada de queixo",
       "title": "Primeiro coloque a almofada no queixo",
-      "text": "De acordo com a peça original, primeiro coloque toda a almofada de queixo colada no queixo aberto e pressione-a para encaixar. A grade de origem usa P1-01.",
+      "text": "Consulte a demonstração no filme original: Fixe a almofada colada da mandíbula do robô como um todo à parte aberta da mandíbula do robô, alise-a e encaixe-a. A grade de origem usa P1-01.",
       "check": "O filme e a almofada se movem juntos e as identidades superior e inferior dos arquivos de origem são mantidas como candidatas; o material físico e a solidez da ligação precisam ser verificados.",
       "caption": "Aplique a almofada de queixo primeiro"
     },
@@ -649,7 +649,7 @@ export default {
     "head-upper-pad-check": {
       "short": "Aplique a almofada para fechar",
       "title": "Coloque a almofada bucal e verifique o ajuste da boca superior e inferior",
-      "text": "Pressione a peça original e prenda a almofada macia da boca superior junto com o filme na boca superior; use P1-02 para a grade de origem. Em seguida, verifique se as bocas superior e inferior se ajustam bem e se há alguma lacuna óbvia.",
+      "text": "Consulte a demonstração do filme original: prenda a almofada macia da boca superior do robô junto com o filme na parte superior da boca do robô; use P1-02 para a grade de origem. Em seguida, verifique se as partes superiores e inferiores da boca do robô se encaixam bem e se há alguma lacuna óbvia.",
       "check": "Esta etapa simula apenas uma vez a abertura e o fechamento e retorna à postura de fechamento do diretório; ajuste perfeito, movimento suave e margem chicote de cabos devem ser verificados pelo objeto real.",
       "caption": "Simular fechamento após montagem · O produto real deve ser verificado"
     },
@@ -663,21 +663,21 @@ export default {
     "final-tray": {
       "short": "Instale o compartimento da bateria",
       "title": "Prenda o compartimento da bateria que contém a bateria ao corpo",
-      "text": "Alinhe a bateria e o compartimento da bateria como um conjunto com a parte traseira do corpo e fixe-o com parafusos auto-roscantes de cabeça escareada 4 M2×6 e cauda plana, conforme mostrado no vídeo.",
+      "text": "Alinhe a bateria e o compartimento da bateria como um conjunto com a parte traseira do corpo do robô. De acordo com as instruções do vídeo, use parafusos auto-roscantes de cabeça plana escareada 4 M2×6 para fixá-lo.",
       "check": "Alinhe primeiro e depois fixe, mantendo o cabo de alimentação afastado; a posição e a coordenação do parafuso são instruções de ensino e você deve verificar o objeto real furo por furo.",
       "caption": "Os componentes estão instalados como um todo · M2×6 ×4"
     },
     "final-body-shells": {
       "short": "Instale a carroceria",
       "title": "Instale a carroceria em ambos os lados e guarde a fiação superior",
-      "text": "Alinhe e instale as duas carrocerias, deixando a saída superior do chicote de cabos. 19:05 As legendas esquerda e direita marcam 5 e M2×6; esta etapa indica apenas o número total deste grupo.",
+      "text": "Alinhe e instale as duas carrocerias do robô, mantendo a saída superior chicote de cabos. Aproximadamente 19:05, as legendas do vídeo mostram um total de parafusos 5 M2×6. Esta etapa apenas demonstra esse total e não especifica a quantidade por lado.",
       "check": "A distribuição lado a lado e furo a furo dos chips 5 ainda não foi verificada. Na figura, os furos redondos existentes na grade de origem são usados ​​como candidatos de ensino, e a verdadeira atribuição do passo dos furos superiores e inferiores e dos furos de costura ainda não foi verificada; a conclusão de 5 por lado não se baseia nisso.",
       "caption": "M2×6 ×5 · Candidato a furo de origem, atribuído para ser verificado"
     },
     "final-head-join": {
       "short": "Conecte toda a cabeça e pescoço",
       "title": "Anexe todo o conjunto instalado de cabeça e pescoço ao corpo",
-      "text": "Mova a cabeça, pescoço, parafusos e chicote de cabos completos como um todo, primeiro deixe a parte inferior da conexão servo no lugar e, em seguida, pressione as marcas 4 e M2×6 marcadas em ambos os lados do vídeo para fixá-lo.",
+      "text": "Mova a cabeça, o pescoço, os parafusos e o chicote de cabos do robô completo como um todo. Primeiro coloque a parte inferior da conexão servo na posição de instalação e, em seguida, consulte as marcações de vídeo para fixá-la com os parafusos 4 M2×6 em cada lado.",
       "check": "A cabeça e o pescoço devem mover-se como um todo, não apenas o crânio. O número total de peças 4 em cada lado deste protótipo é de peças 8; a posição real do furo, o eixo de instalação e a versão ainda precisam ser verificados.",
       "caption": "A cabeça e o pescoço estão no lugar como um todo · M2×6 ×4 em ambos os lados"
     },
@@ -691,7 +691,7 @@ export default {
     "final-board-mount": {
       "short": "controlador fixo",
       "title": "Fixe o conjunto de duas placas inserido ao corpo",
-      "text": "Mantendo as duas placas encaixadas, mova o conjunto do controlador para a parte de trás do seu corpo. O filme original está marcado como 4 e M3×16; este modelo demonstra apenas a inserção em dois furos quase coaxiais, sendo os outros dois reservados para verificação.",
+      "text": "Mantendo as duas placas conectadas uma à outra, mova o conjunto de controle principal para a parte traseira do corpo do robô. As peças originais estão marcadas como 4 e M3×16; este modelo demonstra apenas a inserção de dois furos quase coaxiais, sendo os dois restantes reservados para verificação.",
       "check": "A peça original possui peças 4; os furos 2 deste modelo são quase coaxiais e os furos 2 estão aproximadamente 1.27mm desalinhados. O estado completo da passagem pelas duas placas ainda não é mostrado. O formato da placa de origem, a posição do furo, a espessura do PCB e o passo da fileira de pinos não foram esticados ou corrigidos; o suporte corporal e a coordenação física precisam ser verificados.",
       "caption": "Filme original M3×16 ×4 · Demonstra furos 2, e os outros furos 2 devem ser verificados"
     },
@@ -733,7 +733,7 @@ export default {
     "calibration-power": {
       "short": "Inicialização após a montagem",
       "title": "Ligue a máquina após a conclusão da montagem",
-      "text": "Este parágrafo mostra apenas a sequência de ensino. Verifique a conexão mecânica e chicote de cabos e pressione o vídeo para entrar na página de configuração do seu próprio dispositivo.",
+      "text": "Este parágrafo mostra apenas a sequência de ensino. Verifique as conexões mecânicas do robô e do chicote de cabos e siga as instruções do vídeo para abrir a página de configuração do dispositivo em seu próprio dispositivo real.",
       "check": "Este protótipo não se conecta ao hardware; o seguinte mostra apenas a sequência de ensino.",
       "caption": "Demonstração de ensino · Sem controle de equipamento real"
     },
@@ -2015,7 +2015,7 @@ export default {
     "固定小腿连接件": "Conector fixo da perna",
     "固定小腿": "Panturrilha fixa",
     "将白色小腿连接件贴合舵机，对齐安装孔，再拧入两颗 M2×6 沉头自攻螺丝。": "Encaixe o conector branco da perna inferior em servo, alinhe os orifícios de montagem e, em seguida, aparafuse dois parafusos autoatarraxantes de cabeça escareada M2×6.",
-    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "A extremidade longa do conector aponta para cima. Alinhe os furos primeiro e depois conserte-os. Não são necessários parafusos para colocar as peças distorcidas no lugar.",
+    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "A extremidade longa do conector deve estar voltada para cima. Alinhe os furos primeiro e depois prenda as peças. Não use parafusos para forçar peças desalinhadas na posição de instalação.",
     "把舵机装入脚掌": "Instale servo na sola do pé",
     "装入脚掌": "Encaixe na sola do pé",
     "把舵机和小腿连接件组成的模块放入脚掌，按视频固定四颗 M2×6 沉头自攻螺丝。": "Coloque o módulo composto por servo e conector de panturrilha na sola do pé e fixe os quatro parafusos auto-roscantes de cabeça escareada M2×6 conforme mostrado no vídeo.",
@@ -2262,7 +2262,7 @@ export default {
     "已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核": "Aparência braço do servo independente confirmada de v2 · Desmontagem de acordo com etapas; coordenação física ainda precisa ser verificada",
     "已确认 v2 三芯插头外观与三根黑线；线长、走线和针脚仍为未核验教学示意": "A aparência do plugue de três núcleos v2 e três fios pretos foi confirmada; o comprimento do fio, fiação e pinos ainda são instruções de ensino não verificadas",
     "已确认 v2 指定规格螺丝外观 · 孔位用途、扭矩与实体配合未实物验证": "A aparência dos parafusos com especificações especificadas de v2 foi confirmada. A posição do furo, o torque e o ajuste físico não foram verificados fisicamente.",
-    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Mantendo as duas placas encaixadas, mova o conjunto do controlador para a parte de trás do seu corpo. O filme original está marcado como 4 e M3×16; este modelo demonstra apenas a inserção em dois furos quase coaxiais, sendo os outros dois reservados para verificação.",
+    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Mantendo as duas placas conectadas uma à outra, mova o conjunto de controle principal para a parte traseira do corpo do robô. As peças originais estão marcadas como 4 e M3×16; este modelo demonstra apenas a inserção de dois furos quase coaxiais, sendo os dois restantes reservados para verificação.",
     "原片4颗；本模型2孔近共轴，另2孔约1.27mm错位，暂不显示穿过两板的完成态。源板形、孔位、PCB厚度和排针节距均未拉伸或补孔；身体支撑与实体配合待核。": "A peça original possui peças 4; os furos 2 deste modelo são quase coaxiais e os furos 2 estão aproximadamente 1.27mm desalinhados. O estado completo da passagem pelas duas placas ainda não é mostrado. O formato da placa de origem, a posição do furo, a espessura do PCB e o passo da fileira de pinos não foram esticados ou corrigidos; o suporte corporal e a coordenação física precisam ser verificados.",
     "原片 M3×16 ×4 · 演示2孔，另2孔待核": "Filme original M3×16 ×4 · Demonstra furos 2, e os outros furos 2 devem ser verificados",
     "采用已确认板卡模型；32针对齐与12.3mm建模间距已核对，孔位部分为照片估算。两处安装孔约1.27mm错位，实物插合、公差与电气针脚未验证。": "O modelo de placa confirmado é usado; O alinhamento dos pinos 32 e o espaçamento de modelagem 12.3mm foram verificados e as localizações dos furos são estimadas a partir de fotos. Os dois furos de montagem estão desalinhados em cerca de 1.27mm e a inserção física, tolerâncias e pinos elétricos não foram verificados.",
@@ -2279,7 +2279,7 @@ export default {
     "打印件用涂装台当前的配色，舵机、板子和螺丝保持原样": "A impressão utiliza o esquema de cores atual da mesa de pintura, servo, a placa e os parafusos permanecem os mesmos",
     "还没有涂色，打印件先用白色演示": "Ainda não foi colorido, então a impressão será demonstrada primeiro em branco.",
     "配色 · ": "Combinação de cores ·",
-    "白胚": "embrião branco",
+    "白胚": "Sem pintura",
     ").textContent=s.complete?`{value} · 完成`:`${String(local).padStart(2,": ").textContent=s.complete?`{value} · Completo`:`${String(local).padStart(2,",
     "红框 · 对准这两处": "Caixa vermelha · Mire nesses dois lugares",
     "绿框 · 本次已装好": "Moldura verde · Já instalada desta vez",
@@ -2389,6 +2389,22 @@ export default {
     "{chapter} · 完成": "{chapter} · Completo",
     "{local}  {short}": "{local} {short}",
     "红框": "Quadro vermelho",
-    "绿框": "Quadro verde"
+    "绿框": "Quadro verde",
+    "重播本步": "Repetir esta etapa",
+    "继续播放": "continuar jogando",
+    "自动播放": "Reprodução automática",
+    "开启后从第0步开始，连续播放全部14个阶段": "Após ligá-lo, a partir da etapa 0, todos os estágios 14 serão reproduzidos continuamente.",
+    "全部播放完成": "Toda a reprodução foi concluída",
+    "本步完成，准备下一步": "Esta etapa está concluída, pronta para a próxima etapa",
+    "自动播放中": "Jogando automaticamente",
+    "自动播放已暂停": "Reprodução automática pausada",
+    "正在演示": "Demonstrando",
+    "可旋转查看": "Gire para visualizar",
+    " 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。": "O ajuste do novo modelo precisa ser verificado: o plugue relevante tem sobreposição geométrica com o suporte ou invólucro 3MF original; o tamanho original é mantido e a caixa vermelha não indica que foi unida.",
+    "进度未保存：浏览器存储不可用，请重试。": "Progresso não salvo: o armazenamento do navegador não está disponível. Tente novamente.",
+    " · 已看过": "· Visto",
+    " · 实物已装好": "· O objeto real foi instalado",
+    "展开本步说明": "Expanda as instruções para esta etapa",
+    "舵机口": "Porta servo"
   }
 };

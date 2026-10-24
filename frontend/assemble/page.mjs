@@ -1,3 +1,5 @@
+import {assemblyText as at,mountAssemblyLanguage,bindAssembly,onAssemblyLocale} from './assembly-language.mjs';
+import {BRAND,brandName} from '../shared/brand.mjs';
 // letsduck framing around the assembly prototype. Runs before prototype-v3.mjs builds the model, so the printed parts
 // wear the studio draft's colours and finishes in the studio's own material (or plain white, 白胚); servos, boards,
 // cables and screws keep their own.
@@ -10,7 +12,8 @@ import { ACTORS } from './hardware-state.mjs';
 import {onPageActivity} from '../shared/personal-page.mjs';
 
 const WHITE = '#F7F8FB';
-applyBrand();
+applyBrand();mountAssemblyLanguage(document.querySelector('.top'));bindAssembly();
+const updateTitle=()=>{document.title=brandName()+' / '+BRAND.en+' · '+at('3D 组装教程');document.querySelector('[data-brand-slot]').title=brandName()+' / '+BRAND.en;};updateTitle();
 await ensurePersonalDraft(localStorage,()=>api('GET','/schemes')).catch(()=>{});
 const tag = document.createElement('span');
 tag.className = 'scheme-tag';
@@ -24,12 +27,16 @@ function refreshDraft(){
   actor.material?.dispose();actor.color=draft?.colors[id]||WHITE;
   actor.material=printedMaterial(actor.color,draft?.finishes[id]||(id.startsWith('P1-')?'tpu':'basic'));
  }
- tag.title=draft?'打印件用涂装台当前的配色，舵机、板子和螺丝保持原样':'还没有涂色，打印件先用白色演示';
- const dots=draft?[...new Set(['P4-01','P2-06','P5-06','P2-03'].map(id=>draft.colors[id]))]:[WHITE];
- tag.replaceChildren(...dots.map(hex=>{const dot=document.createElement('i');dot.style.background=hex;return dot;}),document.createElement('span'));
- tag.lastChild.textContent=draft?'配色 · '+draft.name:'白胚';
+ renderDraftTag(draft);
  dispatchEvent(new Event('personal:appearance'));
 }
+function renderDraftTag(draft){
+ tag.title=at(draft?'打印件用涂装台当前的配色，舵机、板子和螺丝保持原样':'还没有涂色，打印件先用白色演示');
+ const dots=draft?[...new Set(['P4-01','P2-06','P5-06','P2-03'].map(id=>draft.colors[id]))]:[WHITE];
+ tag.replaceChildren(...dots.map(hex=>{const dot=document.createElement('i');dot.style.background=hex;return dot;}),document.createElement('span'));
+ tag.lastChild.textContent=draft?at('配色 · {name}',{name:draft.name}):at('白胚');
+}
+onAssemblyLocale(()=>{updateTitle();renderDraftTag(readDraft());});
 addEventListener('storage',event=>{if(event.key===PERSONAL_KEY||event.key===null)refreshDraft();});
 refreshDraft();onPageActivity(active=>{if(active)refreshDraft();});
 

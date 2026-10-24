@@ -31,9 +31,9 @@ export default {
       "caption": "Simple servomoteur · Brancher en place"
     },
     "prepare-usb": {
-      "short": "Allumez l'ordinateur et connectez-le",
-      "title": "Allumez et connectez-vous au Type-C",
-      "text": "Appuyez sur vidéo pour allumer l'alimentation, puis connectez l'ordinateur avec le câble Type-C.",
+      "short": "Allumez le robot et connectez-le à l'ordinateur",
+      "title": "Allumez le robot et connectez la ligne Type-C",
+      "text": "Suivez les instructions de la vidéo, allumez le robot, puis connectez-le à l'ordinateur à l'aide du câble Type-C.",
       "check": "Cette page montre uniquement la séquence de connexion et ne démarre ni ne connecte de vrais appareils.",
       "caption": "Allumer · Connectez-vous à Type-C"
     },
@@ -90,7 +90,7 @@ export default {
       "short": "Veau fixe",
       "title": "Connecteur de jambe fixe",
       "text": "Installez le connecteur blanc du pied inférieur sur le servomoteur, alignez les trous de montage, puis vissez deux vis autotaraudeuses à tête fraisée M2×6.",
-      "check": "L'extrémité longue du connecteur pointe vers le haut. Alignez d'abord les trous, puis fixez-les. Aucune vis n'est nécessaire pour mettre les pièces inclinées en place.",
+      "check": "L'extrémité longue du connecteur doit être tournée vers le haut. Alignez d'abord les trous, puis fixez les pièces. N'utilisez pas de vis pour forcer des pièces mal alignées dans la position d'installation.",
       "caption": "Trou correct · M2×6 ×2"
     },
     "r-foot": {
@@ -153,7 +153,7 @@ export default {
       "short": "Veau fixe",
       "title": "Connecteur de jambe fixe",
       "text": "Installez le connecteur blanc du pied inférieur sur le servomoteur, alignez les trous de montage, puis vissez deux vis autotaraudeuses à tête fraisée M2×6.",
-      "check": "L'extrémité longue du connecteur pointe vers le haut. Alignez d'abord les trous, puis fixez-les. Aucune vis n'est nécessaire pour mettre les pièces inclinées en place.",
+      "check": "L'extrémité longue du connecteur doit être tournée vers le haut. Alignez d'abord les trous, puis fixez les pièces. N'utilisez pas de vis pour forcer des pièces mal alignées dans la position d'installation.",
       "caption": "Trou correct · M2×6 ×2"
     },
     "l-foot": {
@@ -369,7 +369,7 @@ export default {
     "t-wire": {
       "short": "Branchement et câblage",
       "title": "faisceau de câbles est visible au niveau de la hanche insérée et ressort",
-      "text": "Appuyez sur la pièce d'origine pour serrer les bouchons visibles sur les deux corps servomoteur, en laissant de côté les fils de connexion ultérieurs du moteur de hanche et les fils réservés à la carte mère. Le fil réservé sort de l’ouverture.",
+      "text": "En vous référant à la démonstration du film original, appuyez sur les deux bouchons servomoteur visibles sur le corps du robot. Mettez de côté les fils de connexion du moteur de hanche suivants et les fils réservés à la carte mère, respectivement, et faites passer les fils réservés depuis l'ouverture.",
       "check": "La double prise se positionne comme un modèle pédagogique simple en fonction des caractéristiques de la surface de la grille source. Le chemin faisceau de câbles, l'identité du socket et les broches n'ont pas été vérifiés, et les deux corps servomoteur ne sont pas dessinés comme interconnectés sans autorisation.",
       "caption": "Branchez-le axialement d'abord, puis enfilez les fils, schéma de câblage"
     },
@@ -432,7 +432,7 @@ export default {
     "t-bearing-r": {
       "short": "Appuyez sur le grand roulement droit",
       "title": "Avant de fixer les pieds, appuyez sur la bonne taille d'interface roulement",
-      "text": "Appuyez sur l'écran après 11:18, appuyez axialement sur le nouveau grand 16×22×4 mm roulement dans le connecteur supérieur de la jambe droite indépendante, puis préparez-vous à vous connecter au corps.",
+      "text": "Reportez-vous à la scène après 11:18 dans la vidéo : appuyez axialement sur le nouveau 16×22×4 mm et le plus grand roulement dans le connecteur supérieur de la jambe droite indépendante, puis préparez-vous à connecter cette jambe au corps du robot.",
       "check": "Il ne s'agit pas de l'extrémité supérieure roulement déjà installée dans le module de jambe. Cette étape appuie uniquement sur le nouveau roulement, et la jambe droite est toujours en position prête ; la coopération coaxiale est un signal.",
       "caption": "Appuyez d'abord sur roulement · La jambe intacte ne bougera pas pour le moment."
     },
@@ -460,7 +460,7 @@ export default {
     "t-bearing-l": {
       "short": "Appuyez en grand à gauche roulement",
       "title": "Avant d'insérer la deuxième jambe, appuyez sur roulement",
-      "text": "Appuyez sur 12:28 sur l'écran, appuyez sur l'autre nouveau grand roulement dans le connecteur supérieur de la jambe gauche indépendante, puis connectez la deuxième jambe complète.",
+      "text": "Reportez-vous à la scène après 12:28 dans la vidéo : appuyez sur l'autre nouveau grand roulement dans le connecteur supérieur du pied gauche indépendant, puis connectez le deuxième ensemble de pied complet.",
       "check": "La jambe droite a été installée ; la jambe gauche n'a pas encore bougé. La posture roulement et la surface de contact sont illustrées à l’aide du modèle existant.",
       "caption": "Appuyez d'abord sur roulement · La jambe gauche est toujours en position prête"
     },
@@ -509,7 +509,7 @@ export default {
     "head-core-join": {
       "short": "Module de rotation combiné",
       "title": "Connectez les sous-composants des deux têtes servomoteur",
-      "text": "Maintenez le sous-ensemble ID32 en place, connectez le sous-ensemble de support ID33 qui a installé roulement dans son ensemble, puis appuyez sur la deuxième marque sur l'écran pour le fixer avec quatre M2×6.",
+      "text": "Maintenez le sous-ensemble ID32 en place et connectez le sous-ensemble de support ID33 qui a installé le roulement dans son ensemble. Utilisez ensuite quatre vis M2×6 pour le fixer selon les instructions marquées en deuxième endroit sur l'écran.",
       "check": "P6-08 et ses deux roulement se déplacent avec le sous-ensemble ID33 ; P6-01 et le premier roulement restent du côté des ID32. L'axe du trou provient de la grille source et l'ajustement physique doit être vérifié.",
       "caption": "Accostage global et refixation des sous-ensembles M2×6 ×4"
     },
@@ -539,19 +539,19 @@ export default {
       "title": "Retirez l'embout buccal palonnier de servomoteur et branchez le faisceau de câbles.",
       "text": "Retirez d'abord la vis de fixation centrale, puis retirez la bouche palonnier de servomoteur et conservez-la. Insérez la ligne servomoteur selon la vidéo et appuyez dessus.",
       "check": "L’ambiguïté de la numérotation demeure. Le codage des connecteurs, les prises réelles et le brochage ne sont pas confirmés par cette animation.",
-      "caption": "Retirez d'abord le disque, puis branchez faisceau de câbles"
+      "caption": "Retirez d'abord palonnier de servomoteur, puis branchez faisceau de câbles."
     },
     "head-mouth-jaw": {
-      "short": "Installez servomoteur avec le menton",
-      "title": "Mettez le servomoteur dans votre bouche et mettez-le sur votre menton",
-      "text": "Placez d'abord la partie buccale servomoteur dans la plate-forme, puis alignez les deux côtés du menton P2-01 avec l'arbre d'entraînement et la position de support. Laissez faisceau de câbles rester en dehors de l'ouverture.",
+      "short": "Installer le servomoteur de bouche et la mâchoire",
+      "title": "Installer le servomoteur de bouche, puis emboîter la mâchoire du robot",
+      "text": "Mettez d'abord la bouche du robot servomoteur dans la plate-forme. Alignez les deux côtés de la pièce de mâchoire du robot P2-01 avec l'arbre d'entraînement et la position de support, puis insérez-la. faisceau de câbles doit passer par l’ouverture et ressortir.",
       "check": "Cette animation exprime la relation de séquence ; les trous d'arbre des deux côtés, les écarts réels et la précision de correspondance doivent être vérifiés.",
-      "caption": "Mettez servomoteur en premier · Puis insérez-le dans le menton"
+      "caption": "Placer le servomoteur, puis emboîter la mâchoire du robot"
     },
     "head-servo-support": {
       "short": "Couvrir la fixation",
       "title": "Installer la pièce de fixation de la tête servomoteur",
-      "text": "Mécanisme qui fixe la pièce de fixation de la tête P4-02 servomoteur à la plateforme. Appuyez sur le premier sous-titre pour corriger quatre M2×6.",
+      "text": "Montez la pièce de fixation de la tête P4-02 servomoteur sur le mécanisme de la plateforme. Selon les instructions du premier sous-titre, utilisez quatre vis M2×6 pour le fixer.",
       "check": "Gardez votre mâchoire mobile et évitez les faisceau de câbles. Les positions spécifiques des quatre trous sont encore indicatives.",
       "caption": "Le premier groupe de trous · M2×6 ×4"
     },
@@ -565,7 +565,7 @@ export default {
     "head-mouth-check": {
       "short": "Vérifier l'ouverture et la fermeture de la bouche",
       "title": "Vérifiez l'ouverture et la fermeture du menton et l'état faisceau de câbles.",
-      "text": "Bougez légèrement votre menton pour vérifier s'il peut être ouvert et fermé, s'il est visiblement coincé et si le fil est pincé sur le côté. L'animation montre l'ouverture et la fermeture en même temps.",
+      "text": "Déplacez doucement la partie inférieure de la mâchoire du robot pour vérifier qu'elle peut s'ouvrir et se fermer, qu'elle n'est pas visiblement coincée et qu'aucun câble n'est coincé d'un côté ou de l'autre. L'animation ne montre l'ouverture et la fermeture qu'une seule fois.",
       "check": "Ce n'est qu'un signe d'ouverture et de fermeture, et il reviendra en position fermée à la fin ; Si le produit réel est lisse, l'écart et l'angle servomoteur doivent être vérifiés.",
       "caption": "Simuler l'ouverture → la fermeture · Objet réel à vérifier"
     },
@@ -614,7 +614,7 @@ export default {
     "head-shell-fix": {
       "short": "Couvre-tête fixe interne",
       "title": "Fixez le couvre-culasse de l'intérieur",
-      "text": "Selon le sous-titre sur 17 : 31, réparez deux M2×6 de l'intérieur.",
+      "text": "Selon le sous-titre sur 17:31, réparez deux M2×6 de l'intérieur.",
       "check": "Les positions des vis sont à des fins pédagogiques. Assurez-vous que le faisceau de câbles n'est pas coincé entre le couvre-chef et la plate-forme.",
       "caption": "Fixation interne · M2×6 ×2"
     },
@@ -635,7 +635,7 @@ export default {
     "head-lower-pad": {
       "short": "Mentonnière",
       "title": "Mettez d'abord le coussin dans le menton",
-      "text": "Selon la pièce originale, placez d'abord l'ensemble du coussin de menton collé dans le menton ouvert et appuyez dessus à plat pour l'ajuster. La grille source utilise P1-01.",
+      "text": "Reportez-vous à la démonstration dans le film original : fixez le coussinet de mâchoire de robot collé dans son ensemble sur la partie de mâchoire de robot ouverte, aplatissez-le et installez-le. La grille source utilise P1-01.",
       "check": "Le film et le coussin se déplacent ensemble, et les identités supérieure et inférieure des fichiers source sont conservées comme candidates ; le matériau physique et la solidité de la liaison doivent être vérifiés.",
       "caption": "Appliquez d'abord le coussin de menton"
     },
@@ -649,7 +649,7 @@ export default {
     "head-upper-pad-check": {
       "short": "Appliquer le tampon pour fermer",
       "title": "Fixez le coussinet buccal et vérifiez l'ajustement de la bouche supérieure et inférieure.",
-      "text": "Appuyez sur la pièce originale et fixez le coussinet souple du haut de la bouche avec le film sur le haut de la bouche ; utilisez P1-02 pour la grille source. Vérifiez ensuite si les bouches supérieure et inférieure s'ajustent bien et s'il y a des espaces évidents.",
+      "text": "Reportez-vous à la démonstration du film original : fixez le coussinet souple de la bouche supérieure du robot avec le film sur la partie supérieure de la bouche du robot ; utilisez P1-02 pour la grille source. Vérifiez ensuite si les parties buccales supérieure et inférieure du robot s'ajustent bien et s'il y a des espaces évidents.",
       "check": "Cette étape ne simule l'ouverture et la fermeture qu'une seule fois et revient à la posture de fermeture du répertoire ; l'ajustement parfait, le mouvement fluide et la marge faisceau de câbles doivent être vérifiés par l'objet réel.",
       "caption": "Simuler la fermeture après le montage · Le produit réel doit être vérifié"
     },
@@ -663,21 +663,21 @@ export default {
     "final-tray": {
       "short": "Installer le compartiment à piles",
       "title": "Fixez le compartiment à piles contenant la batterie au corps",
-      "text": "Alignez la batterie et le compartiment de la batterie en tant qu'ensemble à l'arrière du corps et fixez-les avec des vis autotaraudeuses à tête fraisée 4 M2×6 et à queue plate, comme indiqué dans la vidéo.",
+      "text": "Alignez la batterie et le compartiment de la batterie comme un seul assemblage avec l'arrière du corps du robot. Selon les instructions vidéo, utilisez des vis autotaraudeuses à tête fraisée à queue plate 4 M2×6 pour le fixer.",
       "check": "Alignez d'abord, puis réparez, en gardant le cordon d'alimentation hors tension ; la position et la coordination de la vis sont des instructions pédagogiques, et vous devez vérifier l'objet réel trou par trou.",
       "caption": "Les composants sont en place dans leur ensemble · M2×6 ×4"
     },
     "final-body-shells": {
       "short": "Installer la carrosserie",
       "title": "Installer la carrosserie des deux côtés et conserver le câblage supérieur",
-      "text": "Alignez et installez les deux carrosseries en laissant la sortie supérieure faisceau de câbles. 19 : 05 Les sous-titres gauche et droit marquent 5 et M2×6 ; cette étape indique uniquement le nombre total de ce groupe.",
+      "text": "Alignez et installez les deux coques du robot, en conservant la sortie supérieure faisceau de câbles. À environ 19:05, les sous-titres vidéo notent un total de vis 5 M2×6. Cette étape démontre uniquement ce total et ne précise pas la quantité par côté.",
       "check": "La distribution côte à côte et trou par trou des puces 5 n'a pas encore été vérifiée. Dans la figure, les trous ronds existants dans la grille source sont utilisés comme candidats à l'enseignement, et la véritable attribution des échelons des trous supérieurs et inférieurs et des trous de couture n'a pas encore été vérifiée ; la conclusion de 5 par côté n'est pas basée sur cela.",
       "caption": "M2×6 ×5 · Candidat au trou source, assigné à vérifier"
     },
     "final-head-join": {
       "short": "Connectez toute la tête et le cou",
       "title": "Fixez l’ensemble de la tête et du cou installés au corps",
-      "text": "Déplacez la tête, le col, les vis et le faisceau de câbles terminés dans leur ensemble, laissez d'abord la partie de connexion inférieure du servomoteur être en place, puis appuyez sur les marques 4 et M2×6 marquées des deux côtés de la vidéo pour la fixer.",
+      "text": "Déplacez la tête du robot, le col, les vis et le faisceau de câbles terminés dans leur ensemble. Placez d'abord la pièce de connexion inférieure servomoteur dans la position d'installation, puis reportez-vous aux marquages ​​vidéo pour la fixer avec les vis 4 M2×6 de chaque côté.",
       "check": "La tête et le cou doivent bouger dans leur ensemble, pas seulement le crâne. Le nombre total de pièces 4 de chaque côté de ce prototype est de pièces 8 ; la position réelle du trou, l'axe d'installation et la version doivent encore être vérifiés.",
       "caption": "La tête et le cou sont en place dans leur ensemble · M2×6 ×4 des deux côtés"
     },
@@ -691,7 +691,7 @@ export default {
     "final-board-mount": {
       "short": "contrôleur fixe",
       "title": "Fixer l'ensemble à deux plaques inséré au corps",
-      "text": "En gardant les deux cartes accouplées, déplacez l’ensemble contrôleur vers l’arrière de votre corps. Le film original est marqué 4 et M3×16 ; ce modèle ne démontre l'insertion que dans deux trous quasi coaxiaux, et les deux autres sont réservés à la vérification.",
+      "text": "En gardant les deux cartes branchées l'une sur l'autre, déplacez l'ensemble de commande principal vers l'arrière du corps du robot. Les pièces originales sont marquées 4 et M3×16 ; ce modèle ne démontre que l'insertion de deux trous quasi coaxiaux, et les deux autres sont réservés à la vérification.",
       "check": "La pièce originale contient des pièces 4 ; les trous 2 de ce modèle sont presque coaxiaux et les trous 2 sont approximativement mal alignés 1.27mm. L’état final du passage à travers les deux plaques n’est pas encore représenté. La forme de la plaque source, la position du trou, l'épaisseur du PCB et le pas de la rangée de broches n'ont pas été étirés ou corrigés ; le maintien du corps et la coordination physique doivent être vérifiés.",
       "caption": "Film original M3×16 ×4 · Démontre les trous 2, et les autres trous 2 doivent être vérifiés"
     },
@@ -733,7 +733,7 @@ export default {
     "calibration-power": {
       "short": "Démarrage après assemblage",
       "title": "Allumez la machine une fois l’assemblage terminé",
-      "text": "Ce paragraphe montre uniquement la séquence d'enseignement. Vérifiez la connexion mécanique et faisceau de câbles, puis appuyez sur la vidéo pour accéder à la page de configuration de votre propre appareil.",
+      "text": "Ce paragraphe montre uniquement la séquence d'enseignement. Vérifiez les connexions mécaniques du robot et du faisceau de câbles, puis suivez les instructions de la vidéo pour ouvrir la page de configuration de l'appareil sur votre propre appareil réel.",
       "check": "Ce prototype ne se connecte pas au matériel ; ce qui suit montre uniquement la séquence d’enseignement.",
       "caption": "Démonstration pédagogique · Pas de contrôle du matériel réel"
     },
@@ -2015,7 +2015,7 @@ export default {
     "固定小腿连接件": "Connecteur de jambe fixe",
     "固定小腿": "Veau fixe",
     "将白色小腿连接件贴合舵机，对齐安装孔，再拧入两颗 M2×6 沉头自攻螺丝。": "Installez le connecteur blanc du pied inférieur sur le servomoteur, alignez les trous de montage, puis vissez deux vis autotaraudeuses à tête fraisée M2×6.",
-    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "L'extrémité longue du connecteur pointe vers le haut. Alignez d'abord les trous, puis fixez-les. Aucune vis n'est nécessaire pour mettre les pièces inclinées en place.",
+    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "L'extrémité longue du connecteur doit être tournée vers le haut. Alignez d'abord les trous, puis fixez les pièces. N'utilisez pas de vis pour forcer des pièces mal alignées dans la position d'installation.",
     "把舵机装入脚掌": "Installez servomoteur dans la plante du pied",
     "装入脚掌": "S'insère dans la plante du pied",
     "把舵机和小腿连接件组成的模块放入脚掌，按视频固定四颗 M2×6 沉头自攻螺丝。": "Placez le module composé du servomoteur et du connecteur de mollet dans la plante du pied, et fixez les quatre vis autotaraudeuses à tête fraisée M2×6 comme indiqué dans la vidéo.",
@@ -2262,7 +2262,7 @@ export default {
     "已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核": "Aspect indépendant confirmé du v2 palonnier de servomoteur · Démontage selon les étapes ; la coordination physique reste à vérifier",
     "已确认 v2 三芯插头外观与三根黑线；线长、走线和针脚仍为未核验教学示意": "L'apparition de la fiche à trois conducteurs v2 et des trois fils noirs a été confirmée ; la longueur du fil, le câblage et les broches sont encore des instructions pédagogiques non vérifiées",
     "已确认 v2 指定规格螺丝外观 · 孔位用途、扭矩与实体配合未实物验证": "L'apparence des vis avec les spécifications spécifiées de v2 a été confirmée. La position du trou, le couple et l'ajustement physique n'ont pas été physiquement vérifiés.",
-    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "En gardant les deux cartes accouplées, déplacez l’ensemble contrôleur vers l’arrière de votre corps. Le film original est marqué 4 et M3×16 ; ce modèle ne démontre l'insertion que dans deux trous quasi coaxiaux, et les deux autres sont réservés à la vérification.",
+    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "En gardant les deux cartes branchées l'une sur l'autre, déplacez l'ensemble de commande principal vers l'arrière du corps du robot. Les pièces originales sont marquées 4 et M3×16 ; ce modèle ne démontre que l'insertion de deux trous quasi coaxiaux, et les deux autres sont réservés à la vérification.",
     "原片4颗；本模型2孔近共轴，另2孔约1.27mm错位，暂不显示穿过两板的完成态。源板形、孔位、PCB厚度和排针节距均未拉伸或补孔；身体支撑与实体配合待核。": "La pièce originale contient des pièces 4 ; les trous 2 de ce modèle sont presque coaxiaux et les trous 2 sont approximativement mal alignés 1.27mm. L’état final du passage à travers les deux plaques n’est pas encore représenté. La forme de la plaque source, la position du trou, l'épaisseur du PCB et le pas de la rangée de broches n'ont pas été étirés ou corrigés ; le maintien du corps et la coordination physique doivent être vérifiés.",
     "原片 M3×16 ×4 · 演示2孔，另2孔待核": "Film original M3×16 ×4 · Démontre les trous 2, et les autres trous 2 doivent être vérifiés",
     "采用已确认板卡模型；32针对齐与12.3mm建模间距已核对，孔位部分为照片估算。两处安装孔约1.27mm错位，实物插合、公差与电气针脚未验证。": "Le modèle de tableau confirmé est utilisé ; L'alignement des broches 32 et l'espacement de modélisation 12.3mm ont été vérifiés et les emplacements des trous sont estimés à partir de photos. Les deux trous de montage sont mal alignés d'environ 1.27mm, et l'insertion physique, les tolérances et les broches électriques n'ont pas été vérifiées.",
@@ -2279,7 +2279,7 @@ export default {
     "打印件用涂装台当前的配色，舵机、板子和螺丝保持原样": "L'impression utilise la palette de couleurs actuelle de la table de peinture, servomoteur, la planche et les vis restent les mêmes.",
     "还没有涂色，打印件先用白色演示": "Il n'a pas encore été colorié, l'impression sera donc d'abord présentée en blanc.",
     "配色 · ": "Correspondance des couleurs ·",
-    "白胚": "embryon blanc",
+    "白胚": "Sans peinture",
     ").textContent=s.complete?`{value} · 完成`:`${String(local).padStart(2,": ").textContent=s.complete?`{value} · Terminé`:`${String(local).padStart(2,",
     "红框 · 对准这两处": "Encadré rouge · Visez ces deux endroits",
     "绿框 · 本次已装好": "Cadre vert · Déjà installé cette fois",
@@ -2389,6 +2389,22 @@ export default {
     "{chapter} · 完成": "{chapter} · Complet",
     "{local}  {short}": "{local} {short}",
     "红框": "Cadre rouge",
-    "绿框": "Cadre vert"
+    "绿框": "Cadre vert",
+    "重播本步": "Rejouez cette étape",
+    "继续播放": "continuer à jouer",
+    "自动播放": "Lecture automatique",
+    "开启后从第0步开始，连续播放全部14个阶段": "Après l'avoir allumé, à partir de l'étape 0, toutes les étapes 14 seront jouées en continu.",
+    "全部播放完成": "Toute la lecture est terminée",
+    "本步完成，准备下一步": "Cette étape est terminée, prête pour la prochaine étape",
+    "自动播放中": "Jouer automatiquement",
+    "自动播放已暂停": "Lecture automatique interrompue",
+    "正在演示": "Démonstration",
+    "可旋转查看": "Faire pivoter pour voir",
+    " 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。": "L'ajustement du nouveau modèle doit être vérifié : la fiche correspondante présente un chevauchement géométrique avec le support ou la coque 3MF d'origine ; la taille d'origine est conservée et la case rouge n'indique pas qu'elle a été jointe.",
+    "进度未保存：浏览器存储不可用，请重试。": "Progression non enregistrée : le stockage du navigateur n'est pas disponible, veuillez réessayer.",
+    " · 已看过": "· Vu",
+    " · 实物已装好": "· L'objet réel a été installé",
+    "展开本步说明": "Développez les instructions pour cette étape",
+    "舵机口": "Port servomoteur"
   }
 };

@@ -31,9 +31,9 @@ export default {
       "caption": "Single servo · Plug in place"
     },
     "prepare-usb": {
-      "short": "Turn on the computer and connect it",
-      "title": "Power on and connect to Type-C",
-      "text": "Press video to turn on the power, and then connect the computer with the Type-C cable.",
+      "short": "Switch on the robot and connect the computer",
+      "title": "Switch on the robot and connect Type-C",
+      "text": "Following the video, switch on the robot, then connect it to the computer with a Type-C cable.",
       "check": "This page only demonstrates the connection sequence and does not start or connect real devices.",
       "caption": "Power on · Connect to Type-C"
     },
@@ -90,7 +90,7 @@ export default {
       "short": "Fixed calf",
       "title": "Fixed lower leg connector",
       "text": "Fit the white lower leg connector to servo, align the mounting holes, and then screw in two M2×6 countersunk head self-tapping screws.",
-      "check": "The long end of the connector points upward. Align the holes first and then fix them. No screws are needed to pull the skewed parts into place.",
+      "check": "The long end of the link faces upward. Align the holes before fastening. Do not use screws to force misaligned parts into place.",
       "caption": "Correct hole · M2×6 ×2"
     },
     "r-foot": {
@@ -153,7 +153,7 @@ export default {
       "short": "Fixed calf",
       "title": "Fixed lower leg connector",
       "text": "Fit the white lower leg connector to servo, align the mounting holes, and then screw in two M2×6 countersunk head self-tapping screws.",
-      "check": "The long end of the connector points upward. Align the holes first and then fix them. No screws are needed to pull the skewed parts into place.",
+      "check": "The long end of the link faces upward. Align the holes before fastening. Do not use screws to force misaligned parts into place.",
       "caption": "Correct hole · M2×6 ×2"
     },
     "l-foot": {
@@ -369,7 +369,7 @@ export default {
     "t-wire": {
       "short": "Plugging and wiring",
       "title": "cable harness is visible at the inserted hip and comes out",
-      "text": "Press the original piece to tighten the visible plugs on the two bodies servo, leaving aside the subsequent hip motor connection wires and the reserved wires for the motherboard. The reserved wire is led out from the opening.",
+      "text": "Following the source video, press the visible plugs on the robot's two body servos firmly into place. Leave the subsequent hip-motor connection wires and the reserved motherboard wire available. Route the reserved wire out through the opening.",
       "check": "The double socket is positioned as a simple teaching model according to the characteristics of the source mesh surface. The cable harness path, socket identity and pins have not been verified, and the two bodies servo are not drawn as interconnected without authorization.",
       "caption": "Plug it in axially first, then thread the wires, wiring diagram"
     },
@@ -391,7 +391,7 @@ export default {
       "short": "Install the right connector",
       "title": "Press bearing first, then install the right Yaw–Roll connector",
       "text": "First press the large bearing into the independent P6-06 connector, and then align the entire connector with bearing to the right side of the body. Finally, the fixing hole group is demonstrated.",
-      "check": "Original film 09:41 You can see bearing in the connector. 10: 05 subtitles are four M2×6, but the number and hole group assignments on each side have yet to be verified; the animated screws are only indicated.",
+      "check": "Original film 09:41 You can see bearing in the connector. 10:05 subtitles are four M2×6, but the number and hole group assignments on each side have yet to be verified; the animated screws are only indicated.",
       "caption": "First press bearing → Overall alignment · Hole group diagram"
     },
     "t-yaw-l": {
@@ -432,7 +432,7 @@ export default {
     "t-bearing-r": {
       "short": "Press the right large bearing",
       "title": "Before attaching the legs, press into the right interface size bearing",
-      "text": "Press the screen after 11:18, press the new 16×22×4 mm large bearing axially into the upper connector of the independent right leg, and then prepare to connect to the body.",
+      "text": "Following the footage after 11:18, press the new 16×22×4 mm large bearing axially into the upper connector of the separate right leg, then prepare to connect that leg to the robot body.",
       "check": "This is not the upper end bearing already installed in the leg module. This step only presses the new bearing, and the right leg is still in the ready position; coaxial fit is a signal.",
       "caption": "First press bearing · The intact leg will not move for the time being."
     },
@@ -460,7 +460,7 @@ export default {
     "t-bearing-l": {
       "short": "Press left large bearing",
       "title": "Before inserting the second leg, press bearing",
-      "text": "Press 12:28 on the screen, press the other new large bearing into the upper connector of the independent left leg, and then connect the second complete leg.",
+      "text": "As shown in the footage after 12:28, press another new large bearing into the upper link of the separate left leg, then connect the second complete leg assembly.",
       "check": "The right leg has been installed; the left leg has not moved yet. The bearing posture and contact surface are illustrated using the existing model.",
       "caption": "Press bearing first · The left leg is still in the ready position"
     },
@@ -509,7 +509,7 @@ export default {
     "head-core-join": {
       "short": "Combined rotation module",
       "title": "Connect the subcomponents of the two heads servo",
-      "text": "Keep the ID32 sub-assembly in place, connect the ID33 bracket sub-assembly that has installed bearing as a whole, and then press the second mark on the screen to fix it with four M2×6.",
+      "text": "Keep the ID32 subassembly in place and mate the complete ID33 bracket subassembly with its bearings already fitted. Then follow the second marked instruction in the footage and secure it with four M2×6 screws.",
       "check": "P6-08 and its two bearing move with the ID33 subassembly; P6-01 and the first bearing remain on the ID32 side. The hole axis comes from the source mesh, and the physical fit needs to be verified.",
       "caption": "Overall docking and re-fixing of sub-assemblies M2×6 ×4"
     },
@@ -539,19 +539,19 @@ export default {
       "title": "Remove the mouthpiece servo horn and plug in cable harness",
       "text": "First remove the central fixing screw, then remove the mouth servo horn and keep it. Insert the servo line according to the video and press it in place.",
       "check": "Numbering ambiguity remains. Connector keying, actual sockets, and pinouts are not confirmed by this animation.",
-      "caption": "Remove the disk first and then plug in cable harness"
+      "caption": "Remove the servo horn, then connect the cable harness"
     },
     "head-mouth-jaw": {
-      "short": "Install servo with chin",
-      "title": "Put servo in your mouth and put it on your chin",
-      "text": "First put the mouth part servo into the platform, and then align the two sides of the P2-01 chin with the drive shaft and support position. Let cable harness stay out of the opening.",
+      "short": "Fit mouth servo and jaw",
+      "title": "Seat the robot mouth servo, then fit the jaw",
+      "text": "First place the robot mouth servo in the platform. Fit both sides of jaw part P2-01 onto the drive shaft and support point. Leave the cable harness extending through the opening.",
       "check": "This animation expresses the sequence relationship; the shaft holes on both sides, actual gaps and matching accuracy need to be verified.",
-      "caption": "Put servo first · Then insert it into the chin"
+      "caption": "Seat the servo, then fit the robot jaw"
     },
     "head-servo-support": {
       "short": "Cover the fixing",
       "title": "Install the head servo fixing piece",
-      "text": "Mechanism that attaches the P4-02 head servo fixing piece to the platform. Press the first subtitle to fix four M2×6.",
+      "text": "Fit head-servo mounting part P4-02 against the mechanism on the platform. Following the first subtitle, secure it with four M2×6 screws.",
       "check": "Keep your jaw mobile and avoid cable harness. The specific positions of the four holes are still indicative.",
       "caption": "The first hole group · M2×6 ×4"
     },
@@ -565,7 +565,7 @@ export default {
     "head-mouth-check": {
       "short": "Check mouth opening and closing",
       "title": "Check chin opening and closing and cable harness status",
-      "text": "Move your chin slightly to check whether it can be opened and closed, whether it is obviously stuck, and whether the thread is pinched on the side. Animation shows opening and closing at once.",
+      "text": "Gently move the robot jaw part. Check that it can open and close, that it does not visibly jam, and that neither side pinches a wire. The animation demonstrates one opening and closing cycle.",
       "check": "This is just a sign of opening and closing, and it will return to the closed position at the end; whether the actual product is smooth, the gap and the servo angle need to be verified.",
       "caption": "Simulate opening → closing · Actual object to be verified"
     },
@@ -635,7 +635,7 @@ export default {
     "head-lower-pad": {
       "short": "Chin pad",
       "title": "First put the cushion into the chin",
-      "text": "According to the original piece, first place the entire glued chin cushion into the open chin, and press it flat to fit. The source mesh uses P1-01.",
+      "text": "Following the source video, attach the pad with glue already applied inside the robot's open lower jaw, then press it flat so it adheres. The source mesh uses P1-01.",
       "check": "The film and cushion move together, and the upper and lower identities of the source files are retained as candidates; the physical material and bonding fastness need to be verified.",
       "caption": "Apply the chin cushion first"
     },
@@ -649,7 +649,7 @@ export default {
     "head-upper-pad-check": {
       "short": "Apply pad to close",
       "title": "Attach the mouth cushion and check the fit of the upper and lower mouth",
-      "text": "Press the original piece and attach the upper mouth soft pad together with the film to the upper mouth; use P1-02 for the source mesh. Then check whether the upper and lower mouths fit well and whether there are any obvious gaps.",
+      "text": "Following the source video, attach the upper-mouth pad together with its adhesive sheet to the robot's upper mouth. The source mesh uses P1-02. Then check whether the robot's upper and lower mouth parts meet cleanly and whether any obvious gaps remain.",
       "check": "This step only simulates opening and closing once and returns to the directory closing posture; seamless fit, smooth movement and cable harness margin must be checked by the actual object.",
       "caption": "Simulate closing after fitting · The actual product is to be verified"
     },
@@ -663,21 +663,21 @@ export default {
     "final-tray": {
       "short": "Install battery compartment",
       "title": "Secure the battery compartment containing the battery to the body",
-      "text": "Align the battery and battery compartment as an assembly to the back of the body, and fix it with 4 M2×6 countersunk head and flat tail self-tapping screws as shown in the video.",
+      "text": "Align the battery and battery tray together with the back of the robot body. Following the video, secure them with 4 M2×6 countersunk blunt-end self-tapping screws.",
       "check": "Align first and then fix, keeping the power cord out; the screw position and fit are teaching instructions, and you must check the actual object hole by hole.",
       "caption": "The components are in place as a whole · M2×6 ×4"
     },
     "final-body-shells": {
       "short": "Install body shell",
       "title": "Install the body shell on both sides and retain the upper wiring",
-      "text": "Align and install the two body shells, leaving the upper cable harness outlet. 19:05 The left and right subtitles mark 5 and M2×6; this step only indicates the total number of this group.",
+      "text": "Align and install both robot body shells, leaving the upper cable-harness outlet clear. Around 19:05, the subtitle specifies a total of 5 M2×6 screws. This step illustrates that total only; the allocation to each side remains unverified.",
       "check": "The side-by-side and hole-by-hole distribution of 5 chips has not yet been verified. In the figure, the existing round holes in the source mesh are used as teaching candidates, and the true step attribution of the upper and lower holes and seam holes has yet to be verified; the conclusion of 5 per side is not based on this.",
       "caption": "M2×6 ×5 · Source hole candidate, assigned to be verified"
     },
     "final-head-join": {
       "short": "Connect the entire head and neck",
       "title": "Attach the entire installed head and neck assembly to the body",
-      "text": "Move the completed head, neck, screws and cable harness as a whole, first let the lower servo connection part be in place, and then press the 4 and M2×6 marks marked on both sides of the video to fix it.",
+      "text": "Move the completed robot head, neck, screws and cable harness together as one assembly. Seat the lower servo connection first. Then follow the video labels and secure each side with 4 M2×6 screws.",
       "check": "The head and neck must move as a whole, not just the skull. The total number of 4 pieces on each side of this prototype is 8 pieces; the actual hole position, installation axis and version are still to be verified.",
       "caption": "The head and neck are in place as a whole · M2×6 ×4 on both sides"
     },
@@ -691,7 +691,7 @@ export default {
     "final-board-mount": {
       "short": "fixed controller",
       "title": "Fix the inserted two-plate assembly to the body",
-      "text": "Keeping the two boards mated, move the controller assembly to the back of your body. The source video is marked 4 and M3×16; this model only demonstrates insertion in two near-coaxial holes, and the other two are reserved for verification.",
+      "text": "Keep the two boards mated and move the controller assembly to the back of the robot's body. The source video is marked 4 and M3×16; this model only demonstrates insertion into two nearly coaxial holes, while the other two remain pending verification.",
       "check": "The original piece has 4 pieces; the 2 holes of this model are nearly coaxial, and the 2 holes are approximately 1.27mm misaligned. The completed state of passing through the two plates is not shown yet. The source plate shape, hole position, PCB thickness and pin row pitch have not been stretched or patched; the body support and physical fit need to be verified.",
       "caption": "Original film M3×16 ×4 · Demonstrates 2 holes, and the other 2 holes are to be verified"
     },
@@ -733,7 +733,7 @@ export default {
     "calibration-power": {
       "short": "Start up after assembly",
       "title": "Turn on the machine after assembly is complete",
-      "text": "This paragraph only shows the teaching sequence. Check the mechanical connection and cable harness, and then press the video to enter your own device configuration page.",
+      "text": "This section only illustrates the teaching sequence. Check the robot mechanical connections and cable harness. Then follow the video instructions to open the configuration page for your own device.",
       "check": "This prototype does not connect to the hardware; the following only shows the teaching sequence.",
       "caption": "Teaching demonstration · No control of real equipment"
     },
@@ -2015,7 +2015,7 @@ export default {
     "固定小腿连接件": "Fixed lower leg connector",
     "固定小腿": "Fixed calf",
     "将白色小腿连接件贴合舵机，对齐安装孔，再拧入两颗 M2×6 沉头自攻螺丝。": "Fit the white lower leg connector to servo, align the mounting holes, and then screw in two M2×6 countersunk head self-tapping screws.",
-    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "The long end of the connector points upward. Align the holes first and then fix them. No screws are needed to pull the skewed parts into place.",
+    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "The long end of the link faces upward. Align the holes before fastening. Do not use screws to force misaligned parts into place.",
     "把舵机装入脚掌": "Install servo into the sole of the foot",
     "装入脚掌": "Fit into the sole of the foot",
     "把舵机和小腿连接件组成的模块放入脚掌，按视频固定四颗 M2×6 沉头自攻螺丝。": "Put the module composed of servo and calf connector into the sole of the foot, and fix the four M2×6 countersunk head self-tapping screws as shown in the video.",
@@ -2262,7 +2262,7 @@ export default {
     "已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified",
     "已确认 v2 三芯插头外观与三根黑线；线长、走线和针脚仍为未核验教学示意": "The appearance of the v2 three-core plug and three black wires have been confirmed; the wire length, wiring and pins are still unverified teaching instructions",
     "已确认 v2 指定规格螺丝外观 · 孔位用途、扭矩与实体配合未实物验证": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified.",
-    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Keeping the two boards mated, move the controller assembly to the back of your body. The source video is marked 4 and M3×16; this model only demonstrates insertion in two near-coaxial holes, and the other two are reserved for verification.",
+    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Keep the two boards mated and move the controller assembly to the back of the robot's body. The source video is marked 4 and M3×16; this model only demonstrates insertion into two nearly coaxial holes, while the other two remain pending verification.",
     "原片4颗；本模型2孔近共轴，另2孔约1.27mm错位，暂不显示穿过两板的完成态。源板形、孔位、PCB厚度和排针节距均未拉伸或补孔；身体支撑与实体配合待核。": "The original piece has 4 pieces; the 2 holes of this model are nearly coaxial, and the 2 holes are approximately 1.27mm misaligned. The completed state of passing through the two plates is not shown yet. The source plate shape, hole position, PCB thickness and pin row pitch have not been stretched or patched; the body support and physical fit need to be verified.",
     "原片 M3×16 ×4 · 演示2孔，另2孔待核": "Original film M3×16 ×4 · Demonstrates 2 holes, and the other 2 holes are to be verified",
     "采用已确认板卡模型；32针对齐与12.3mm建模间距已核对，孔位部分为照片估算。两处安装孔约1.27mm错位，实物插合、公差与电气针脚未验证。": "The confirmed board model is used; 32 pin alignment and 12.3mm modeling spacing have been checked, and the hole locations are estimated from photos. The two mounting holes are misaligned by about 1.27mm, and the physical insertion, tolerances and electrical pins have not been verified.",
@@ -2279,7 +2279,7 @@ export default {
     "打印件用涂装台当前的配色，舵机、板子和螺丝保持原样": "The print uses the current color scheme of the paint table, servo, the board and screws remain the same",
     "还没有涂色，打印件先用白色演示": "It has not been colored yet, so the printout will be demonstrated in white first.",
     "配色 · ": "Color matching ·",
-    "白胚": "white embryo",
+    "白胚": "Unpainted",
     ").textContent=s.complete?`{value} · 完成`:`${String(local).padStart(2,": ").textContent=s.complete?`{value} · Complete`:`${String(local).padStart(2,",
     "红框 · 对准这两处": "Red box · Aim at these two places",
     "绿框 · 本次已装好": "Green frame · Already installed this time",
@@ -2389,6 +2389,22 @@ export default {
     "{chapter} · 完成": "{chapter} · Complete",
     "{local}  {short}": "{local} {short}",
     "红框": "Red frame",
-    "绿框": "Green frame"
+    "绿框": "Green frame",
+    "重播本步": "Replay this step",
+    "继续播放": "continue playing",
+    "自动播放": "Autoplay",
+    "开启后从第0步开始，连续播放全部14个阶段": "After turning it on, starting from step 0, all 14 stages will be played continuously.",
+    "全部播放完成": "All playback completed",
+    "本步完成，准备下一步": "This step is completed, ready for the next step",
+    "自动播放中": "Playing automatically",
+    "自动播放已暂停": "Autoplay paused",
+    "正在演示": "Demonstrating",
+    "可旋转查看": "Rotate to view",
+    " 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。": "The new model's fit needs to be verified: the relevant plug has geometric overlap with the original 3MF bracket or shell; the original size is maintained, and the red box does not indicate that it has been joined.",
+    "进度未保存：浏览器存储不可用，请重试。": "Progress not saved: Browser storage is not available, please try again.",
+    " · 已看过": "· Viewed",
+    " · 实物已装好": "· The actual object has been installed",
+    "展开本步说明": "Expand the instructions for this step",
+    "舵机口": "servo port"
   }
 };

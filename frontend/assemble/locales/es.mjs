@@ -31,9 +31,9 @@ export default {
       "caption": "Sencillo servo · Enchufe en su lugar"
     },
     "prepare-usb": {
-      "short": "Enciende el ordenador y conéctalo.",
-      "title": "Encienda y conéctese a Type-C",
-      "text": "Presione video para encender la alimentación y luego conecte la computadora con el cable Type-C.",
+      "short": "Encienda el robot y conéctelo a la computadora.",
+      "title": "Encienda el robot y conecte la línea Type-C",
+      "text": "Siga las instrucciones del vídeo, encienda el robot y luego conéctelo a la computadora usando el cable Type-C.",
       "check": "Esta página solo demuestra la secuencia de conexión y no inicia ni conecta dispositivos reales.",
       "caption": "Encendido · Conectar a Type-C"
     },
@@ -90,7 +90,7 @@ export default {
       "short": "Pantorrilla fija",
       "title": "Conector fijo en la parte inferior de la pierna.",
       "text": "Coloque el conector blanco de la pata inferior en servo, alinee los orificios de montaje y luego atornille dos tornillos autorroscantes de cabeza avellanada M2×6.",
-      "check": "El extremo largo del conector apunta hacia arriba. Primero alinee los agujeros y luego fíjelos. No se necesitan tornillos para colocar las piezas torcidas en su lugar.",
+      "check": "El extremo largo del conector debe mirar hacia arriba. Primero alinee los orificios y luego asegure las piezas. No utilice tornillos para forzar piezas desalineadas a la posición de instalación.",
       "caption": "Agujero correcto · M2×6 ×2"
     },
     "r-foot": {
@@ -153,7 +153,7 @@ export default {
       "short": "Pantorrilla fija",
       "title": "Conector fijo en la parte inferior de la pierna.",
       "text": "Coloque el conector blanco de la pata inferior en servo, alinee los orificios de montaje y luego atornille dos tornillos autorroscantes de cabeza avellanada M2×6.",
-      "check": "El extremo largo del conector apunta hacia arriba. Primero alinee los agujeros y luego fíjelos. No se necesitan tornillos para colocar las piezas torcidas en su lugar.",
+      "check": "El extremo largo del conector debe mirar hacia arriba. Primero alinee los orificios y luego asegure las piezas. No utilice tornillos para forzar piezas desalineadas a la posición de instalación.",
       "caption": "Agujero correcto · M2×6 ×2"
     },
     "l-foot": {
@@ -369,7 +369,7 @@ export default {
     "t-wire": {
       "short": "Conexión y cableado",
       "title": "mazo de cables es visible en la cadera insertada y sale",
-      "text": "Presionamos la pieza original para apretar los enchufes visibles en los dos cuerpos servo, dejando a un lado los siguientes cables de conexión del motor de cadera y los cables reservados para la placa base. El cable reservado sale por la abertura.",
+      "text": "Haciendo referencia a la demostración en la película original, presione los dos tapones visibles servo en el cuerpo del robot. Deje a un lado los cables de conexión del motor de cadera posteriores y los cables reservados para la placa base, respectivamente, y lleve los cables reservados desde la abertura.",
       "check": "El enchufe doble se posiciona como un modelo didáctico sencillo según las características de la superficie de la rejilla fuente. La ruta mazo de cables, la identidad del zócalo y los pines no se han verificado, y los dos cuerpos servo no están interconectados sin autorización.",
       "caption": "Conéctelo axialmente primero, luego pase los cables, diagrama de cableado"
     },
@@ -432,7 +432,7 @@ export default {
     "t-bearing-r": {
       "short": "Presione el rodamiento grande derecho",
       "title": "Antes de acoplar la pata, inserte a presión el rodamiento grande en la unión derecha",
-      "text": "Presione la pantalla después de 11:18, presione el nuevo 16×22×4 mm grande rodamiento axialmente en el conector superior de la pierna derecha independiente y luego prepárese para conectarse al cuerpo.",
+      "text": "Consulte la escena después de 11:18 en el video: presione el nuevo 16×22×4 mm y el rodamiento más grande axialmente en el conector superior de la pata derecha independiente y luego prepárese para conectar esta pata al cuerpo del robot.",
       "check": "Este no es el extremo superior rodamiento que ya está instalado en el módulo de patas. Este paso solo presiona el nuevo rodamiento, y la pierna derecha todavía está en la posición lista; La cooperación coaxial es una señal.",
       "caption": "Primero presione rodamiento · La pierna intacta no se moverá por el momento."
     },
@@ -460,7 +460,7 @@ export default {
     "t-bearing-l": {
       "short": "Presione izquierda grande rodamiento",
       "title": "Antes de insertar la segunda pierna, presione rodamiento",
-      "text": "Presione 12:28 en la pantalla, presione el otro nuevo rodamiento grande en el conector superior de la pata izquierda independiente y luego conecte la segunda pata completa.",
+      "text": "Consulte la escena después de 12:28 en el video: Presione el otro nuevo rodamiento grande en el conector superior de la pata izquierda independiente y luego conecte el segundo conjunto de pata completo.",
       "check": "Se ha instalado la pierna derecha; la pierna izquierda aún no se ha movido. La postura rodamiento y la superficie de contacto se ilustran utilizando el modelo existente.",
       "caption": "Presione primero rodamiento · La pierna izquierda todavía está en la posición lista"
     },
@@ -509,7 +509,7 @@ export default {
     "head-core-join": {
       "short": "Módulo de rotación combinado",
       "title": "Conecte los subcomponentes de los dos cabezales servo",
-      "text": "Mantenga el subconjunto ID32 en su lugar, conecte el subconjunto del soporte ID33 que ha instalado rodamiento como un todo y luego presione la segunda marca en la pantalla para fijarlo con cuatro M2×6.",
+      "text": "Mantenga el subconjunto ID32 en su lugar y conecte el subconjunto del soporte ID33 que instaló el rodamiento en su totalidad. Luego utiliza cuatro tornillos M2×6 para fijarlo según las instrucciones marcadas en el segundo lugar de la pantalla.",
       "check": "P6-08 y sus dos rodamiento se mueven con el subconjunto ID33; P6-01 y el primer rodamiento quedan del lado de ID32. El eje del orificio proviene de la rejilla de origen y es necesario verificar el ajuste físico.",
       "caption": "Acoplamiento general y refijación de subconjuntos M2×6 ×4"
     },
@@ -539,19 +539,19 @@ export default {
       "title": "Retire la boquilla brazo del servo y conecte mazo de cables.",
       "text": "Primero retiramos el tornillo de fijación central, luego retiramos la boca brazo del servo y la guardamos. Inserte la línea servo según el video y presiónela en su lugar.",
       "check": "La ambigüedad en la numeración persiste. Esta animación no confirma la codificación de conectores, los zócalos reales ni la distribución de pines.",
-      "caption": "Retire el disco primero y luego conecte mazo de cables"
+      "caption": "Primero retire brazo del servo, luego conecte mazo de cables"
     },
     "head-mouth-jaw": {
-      "short": "Instalar servo con barbilla",
-      "title": "Pon servo en tu boca y ponlo en tu barbilla.",
-      "text": "Primero coloque la pieza bucal servo en la plataforma y luego alinee los dos lados del mentón P2-01 con el eje impulsor y la posición de soporte. Dejemos que mazo de cables se quede fuera de la apertura.",
+      "short": "Monte el servo de la boca y la mandíbula",
+      "title": "Coloque el servo de la boca y después encaje la mandíbula del robot",
+      "text": "Primero coloque la boca del robot servo en la plataforma. Alinee ambos lados de la pieza de la mandíbula del robot P2-01 con el eje impulsor y la posición de soporte, y luego insértelo. mazo de cables debe pasar por la abertura y sobresalir.",
       "check": "Esta animación expresa la relación de secuencia; Es necesario verificar los orificios del eje en ambos lados, los espacios reales y la precisión de coincidencia.",
-      "caption": "Ponga primero servo · Luego insértelo en la barbilla."
+      "caption": "Coloque el servo y después encaje la mandíbula del robot"
     },
     "head-servo-support": {
       "short": "Cubrir la fijación",
       "title": "Instale la pieza de fijación del cabezal servo.",
-      "text": "Mecanismo que fija la pieza de fijación del cabezal P4-02 servo a la plataforma. Presione el primer subtítulo para arreglar cuatro M2×6.",
+      "text": "Montar la pieza de fijación del cabezal P4-02 servo al mecanismo de la plataforma. Según las instrucciones del primer subtítulo, utilice cuatro tornillos M2×6 para fijarlo.",
       "check": "Mantenga su mandíbula móvil y evite mazo de cables. Las posiciones específicas de los cuatro agujeros siguen siendo indicativas.",
       "caption": "El primer grupo de agujeros · M2×6 ×4"
     },
@@ -565,7 +565,7 @@ export default {
     "head-mouth-check": {
       "short": "Comprobar apertura y cierre de la boca.",
       "title": "Verifique la apertura y cierre del mentón y el estado de mazo de cables",
-      "text": "Mueva ligeramente la barbilla para comprobar si se puede abrir y cerrar, si está obviamente atascado y si el hilo está pellizcado en el costado. La animación muestra apertura y cierre a la vez.",
+      "text": "Mueva suavemente la parte de la mandíbula inferior del robot para comprobar que se puede abrir y cerrar, que no está claramente atascado y que no hay cables atrapados en ninguno de los lados. La animación sólo muestra la apertura y el cierre una vez.",
       "check": "Esto es solo una señal de apertura y cierre, y al final volverá a la posición cerrada; Si el producto real es liso, es necesario verificar el espacio y el ángulo servo.",
       "caption": "Simular apertura → cierre · Objeto real a verificar"
     },
@@ -635,7 +635,7 @@ export default {
     "head-lower-pad": {
       "short": "Almohadilla para la barbilla",
       "title": "Primero pon el cojín en la barbilla.",
-      "text": "De acuerdo con la pieza original, primero coloque todo el cojín de barbilla pegado en la barbilla abierta y presiónelo para que encaje. La cuadrícula de origen utiliza P1-01.",
+      "text": "Consulte la demostración en la película original: fije la almohadilla pegada de la mandíbula del robot en su conjunto a la parte abierta de la mandíbula del robot, aplánela y colóquela. La cuadrícula de origen utiliza P1-01.",
       "check": "La película y el cojín se mueven juntos y las identidades superior e inferior de los archivos de origen se conservan como candidatos; Es necesario verificar el material físico y la solidez de la unión.",
       "caption": "Aplique primero la almohadilla para la barbilla."
     },
@@ -649,7 +649,7 @@ export default {
     "head-upper-pad-check": {
       "short": "Aplique la almohadilla para cerrar",
       "title": "Coloque el cojín bucal y compruebe el ajuste de la boca superior e inferior.",
-      "text": "Presione la pieza original y coloque la almohadilla suave de la parte superior de la boca junto con la película en la parte superior de la boca; utilice P1-02 para la cuadrícula de origen. Luego verifique si las bocas superior e inferior encajan bien y si hay espacios obvios.",
+      "text": "Consulte la demostración de la película original: coloque la almohadilla suave de la boca superior del robot junto con la película en la parte superior de la boca del robot; utilice P1-02 para la cuadrícula de origen. Luego verifique si las partes superior e inferior de la boca del robot encajan bien y si hay espacios obvios.",
       "check": "Este paso solo simula la apertura y el cierre una vez y vuelve a la postura de cierre del directorio; El objeto real debe verificar el ajuste perfecto, el movimiento suave y el margen mazo de cables.",
       "caption": "Simular el cierre después del montaje · El producto real debe ser verificado"
     },
@@ -663,21 +663,21 @@ export default {
     "final-tray": {
       "short": "Instalar el compartimiento de la batería",
       "title": "Asegure el compartimiento de la batería que contiene la batería al cuerpo.",
-      "text": "Alinee la batería y el compartimiento de la batería como un conjunto con la parte posterior del cuerpo y fíjelo con tornillos autorroscantes de cabeza avellanada y cola plana 4 M2×6 como se muestra en el video.",
+      "text": "Alinee la batería y el compartimiento de la batería como un solo conjunto con la parte posterior del cuerpo del robot. De acuerdo con las instrucciones en video, use tornillos autorroscantes de cola plana y cabeza avellanada 4 M2×6 para fijarlo.",
       "check": "Alinee primero y luego fíjelo, manteniendo el cable de alimentación afuera; La posición del tornillo y la coordinación son instrucciones de enseñanza, y debes comprobar el objeto real agujero por agujero.",
       "caption": "Los componentes están en su lugar en su conjunto · M2×6 ×4"
     },
     "final-body-shells": {
       "short": "Instalar la carrocería",
       "title": "Instale la carrocería en ambos lados y conserve el cableado superior.",
-      "text": "Alinee e instale las dos carrocerías, dejando la salida superior mazo de cables. 19:05 Los subtítulos izquierdo y derecho marcan 5 y M2×6; este paso sólo indica el número total de este grupo.",
+      "text": "Alinee e instale las dos carcasas del cuerpo del robot, conservando la salida superior mazo de cables. Aproximadamente en 19:05, los subtítulos del video indican un total de tornillos 5 M2×6. Este paso solo demuestra este total y no especifica la cantidad por lado.",
       "check": "La distribución lado a lado y agujero por agujero de los chips 5 aún no se ha verificado. En la figura, los orificios redondos existentes en la cuadrícula de origen se utilizan como candidatos de enseñanza, y la verdadera atribución de paso de los orificios superior e inferior y los orificios de costura aún no se ha verificado; la conclusión de 5 por lado no se basa en esto.",
       "caption": "M2×6 ×5 · Candidato a agujero fuente, asignado para ser verificado"
     },
     "final-head-join": {
       "short": "Conecta toda la cabeza y el cuello.",
       "title": "Conecte todo el conjunto de cabeza y cuello instalado al cuerpo.",
-      "text": "Mueva la cabeza, el cuello, los tornillos y el mazo de cables completos en su conjunto, primero deje que la parte de conexión inferior servo esté en su lugar y luego presione las marcas 4 y M2×6 marcadas en ambos lados del video para fijarlo.",
+      "text": "Mueva la cabeza, el cuello, los tornillos y el mazo de cables del robot completos en su conjunto. Primero coloque la parte de conexión inferior servo en la posición de instalación y luego consulte las marcas del video para fijarla con tornillos 4 M2×6 en cada lado.",
       "check": "La cabeza y el cuello deben moverse como un todo, no sólo el cráneo. El número total de piezas 4 en cada lado de este prototipo es de piezas 8; aún deben verificarse la posición real del orificio, el eje de instalación y la versión.",
       "caption": "La cabeza y el cuello están en su lugar como un todo · M2×6 ×4 en ambos lados"
     },
@@ -691,7 +691,7 @@ export default {
     "final-board-mount": {
       "short": "controlador fijo",
       "title": "Fije el conjunto de dos placas insertado al cuerpo.",
-      "text": "Manteniendo las dos placas acopladas, mueva el conjunto del controlador hacia la parte posterior de su cuerpo. La película original está marcada como 4 y M3×16; este modelo solo demuestra la inserción en dos orificios casi coaxiales y los otros dos están reservados para verificación.",
+      "text": "Manteniendo las dos placas conectadas entre sí, mueva el conjunto de control principal hacia la parte posterior del cuerpo del robot. Las piezas originales están marcadas como 4 y M3×16; este modelo solo demuestra la inserción de dos orificios casi coaxiales y los dos restantes están reservados para verificación.",
       "check": "La pieza original tiene piezas 4; los orificios 2 de este modelo son casi coaxiales y los orificios 2 están aproximadamente desalineados 1.27mm. Aún no se muestra el estado completo del paso a través de las dos placas. La forma de la placa fuente, la posición de los orificios, el grosor de PCB y el paso de la fila de pines no se han estirado ni parcheado; Es necesario verificar el soporte del cuerpo y la coordinación física.",
       "caption": "Película original M3×16 ×4 · Muestra los orificios 2 y los otros orificios 2 deben verificarse"
     },
@@ -733,7 +733,7 @@ export default {
     "calibration-power": {
       "short": "Puesta en marcha después del montaje.",
       "title": "Encienda la máquina después de completar el montaje.",
-      "text": "Este párrafo sólo muestra la secuencia de enseñanza. Verifique la conexión mecánica y mazo de cables, y luego presione el video para ingresar a la página de configuración de su propio dispositivo.",
+      "text": "Este párrafo sólo muestra la secuencia de enseñanza. Verifique las conexiones mecánicas del robot y mazo de cables, luego siga las instrucciones del video para abrir la página de configuración del dispositivo en su propio dispositivo real.",
       "check": "Este prototipo no se conecta al hardware; a continuación sólo se muestra la secuencia de enseñanza.",
       "caption": "Demostración didáctica · Sin control de equipos reales."
     },
@@ -2015,7 +2015,7 @@ export default {
     "固定小腿连接件": "Conector fijo en la parte inferior de la pierna.",
     "固定小腿": "Pantorrilla fija",
     "将白色小腿连接件贴合舵机，对齐安装孔，再拧入两颗 M2×6 沉头自攻螺丝。": "Coloque el conector blanco de la pata inferior en servo, alinee los orificios de montaje y luego atornille dos tornillos autorroscantes de cabeza avellanada M2×6.",
-    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "El extremo largo del conector apunta hacia arriba. Primero alinee los agujeros y luego fíjelos. No se necesitan tornillos para colocar las piezas torcidas en su lugar.",
+    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "El extremo largo del conector debe mirar hacia arriba. Primero alinee los orificios y luego asegure las piezas. No utilice tornillos para forzar piezas desalineadas a la posición de instalación.",
     "把舵机装入脚掌": "Instale servo en la planta del pie.",
     "装入脚掌": "Se adapta a la planta del pie",
     "把舵机和小腿连接件组成的模块放入脚掌，按视频固定四颗 M2×6 沉头自攻螺丝。": "Coloque el módulo compuesto por servo y conector de pantorrilla en la planta del pie y fije los cuatro tornillos autorroscantes de cabeza avellanada M2×6 como se muestra en el vídeo.",
@@ -2262,7 +2262,7 @@ export default {
     "已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核": "Apariencia confirmada de v2 independiente brazo del servo · Desmontaje según pasos; La coordinación física aún está por verificar.",
     "已确认 v2 三芯插头外观与三根黑线；线长、走线和针脚仍为未核验教学示意": "Se ha confirmado la aparición del enchufe de tres núcleos v2 y tres cables negros; La longitud del cable, el cableado y los pines aún son instrucciones de enseñanza sin verificar.",
     "已确认 v2 指定规格螺丝外观 · 孔位用途、扭矩与实体配合未实物验证": "Se ha confirmado la apariencia de los tornillos con especificaciones especificadas de v2. La posición del orificio, el torque y el ajuste físico no se han verificado físicamente.",
-    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Manteniendo las dos placas acopladas, mueva el conjunto del controlador hacia la parte posterior de su cuerpo. La película original está marcada como 4 y M3×16; este modelo solo demuestra la inserción en dos orificios casi coaxiales y los otros dos están reservados para verificación.",
+    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Manteniendo las dos placas conectadas entre sí, mueva el conjunto de control principal hacia la parte posterior del cuerpo del robot. Las piezas originales están marcadas como 4 y M3×16; este modelo solo demuestra la inserción de dos orificios casi coaxiales y los dos restantes están reservados para verificación.",
     "原片4颗；本模型2孔近共轴，另2孔约1.27mm错位，暂不显示穿过两板的完成态。源板形、孔位、PCB厚度和排针节距均未拉伸或补孔；身体支撑与实体配合待核。": "La pieza original tiene piezas 4; los orificios 2 de este modelo son casi coaxiales y los orificios 2 están aproximadamente desalineados 1.27mm. Aún no se muestra el estado completo del paso a través de las dos placas. La forma de la placa fuente, la posición de los orificios, el grosor de PCB y el paso de la fila de pines no se han estirado ni parcheado; Es necesario verificar el soporte del cuerpo y la coordinación física.",
     "原片 M3×16 ×4 · 演示2孔，另2孔待核": "Película original M3×16 ×4 · Muestra los orificios 2 y los otros orificios 2 deben verificarse",
     "采用已确认板卡模型；32针对齐与12.3mm建模间距已核对，孔位部分为照片估算。两处安装孔约1.27mm错位，实物插合、公差与电气针脚未验证。": "Se utiliza el modelo de tablero confirmado; Se ha verificado la alineación de los pasadores 32 y el espaciado del modelado 12.3mm, y las ubicaciones de los orificios se estiman a partir de fotografías. Los dos orificios de montaje están desalineados aproximadamente 1.27mm y no se han verificado la inserción física, las tolerancias y los pines eléctricos.",
@@ -2279,7 +2279,7 @@ export default {
     "打印件用涂装台当前的配色，舵机、板子和螺丝保持原样": "La impresión utiliza el esquema de color actual de la mesa de pintura, servo, el tablero y los tornillos siguen siendo los mismos.",
     "还没有涂色，打印件先用白色演示": "Aún no se ha coloreado, por lo que la impresión se mostrará primero en blanco.",
     "配色 · ": "Combinación de colores ·",
-    "白胚": "embrión blanco",
+    "白胚": "Sin pintar",
     ").textContent=s.complete?`{value} · 完成`:`${String(local).padStart(2,": ").textContent=s.complete?`{value} · Completo`:`${String(local).padStart(2,",
     "红框 · 对准这两处": "Cuadro rojo · Apunta a estos dos lugares.",
     "绿框 · 本次已装好": "Marco verde · Ya instalado esta vez",
@@ -2389,6 +2389,22 @@ export default {
     "{chapter} · 完成": "{chapter} · Completo",
     "{local}  {short}": "{local} {short}",
     "红框": "Marco rojo",
-    "绿框": "Marco verde"
+    "绿框": "Marco verde",
+    "重播本步": "Repita este paso",
+    "继续播放": "seguir jugando",
+    "自动播放": "Reproducción automática",
+    "开启后从第0步开始，连续播放全部14个阶段": "Después de encenderlo, a partir del paso 0, todas las etapas 14 se reproducirán continuamente.",
+    "全部播放完成": "Toda la reproducción completada",
+    "本步完成，准备下一步": "Este paso está completado, listo para el siguiente paso.",
+    "自动播放中": "Reproduciendo automáticamente",
+    "自动播放已暂停": "Reproducción automática pausada",
+    "正在演示": "demostrando",
+    "可旋转查看": "Girar para ver",
+    " 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。": "Es necesario verificar el ajuste del nuevo modelo: el conector correspondiente tiene una superposición geométrica con el soporte o carcasa original 3MF; Se mantiene el tamaño original y el cuadro rojo no indica que se haya unido.",
+    "进度未保存：浏览器存储不可用，请重试。": "Progreso no guardado: el almacenamiento del navegador no está disponible, inténtelo de nuevo.",
+    " · 已看过": "· Visto",
+    " · 实物已装好": "· El objeto real ha sido instalado.",
+    "展开本步说明": "Ampliar las instrucciones para este paso.",
+    "舵机口": "Puerto servo"
   }
 };

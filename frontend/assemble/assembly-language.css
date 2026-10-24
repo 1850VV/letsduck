@@ -1,0 +1,24 @@
+/* Approved G long-copy and RTL behavior. No transform is applied to WebGL. */
+.top{min-width:0}.header-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.assembly-language{margin-inline-start:auto;flex:0 1 155px;min-width:92px;max-width:155px;min-height:36px;border:1px solid #dce2f4;border-radius:8px;background:#fff;color:#344666;padding:5px 8px;font:inherit;font-size:12px}
+.panel-scroll,.part-tooltip,.step-option .title{overflow-wrap:anywhere}.step-option{text-align:start}
+.stage-top .step-label{max-width:90%;white-space:normal}.real-model{max-width:45%;text-align:end}
+.player-buttons{align-items:stretch}.player-buttons>ryugi-button{height:auto!important;min-height:44px;white-space:normal}
+.player-buttons>ryugi-button>button{min-height:44px;height:auto;line-height:1.25;text-align:center;overflow-wrap:anywhere}
+#source-time,.step-option .time,#motion-percent,#sound-volume-label,#focus-zoom-factor,.orientation{direction:ltr;unicode-bidi:isolate}
+#reference-video{direction:ltr}.checks label{align-items:flex-start}.checks input{margin-block-start:2px}
+html[dir=rtl] #sequence-close{margin-left:0;margin-inline-start:auto}
+html[dir=rtl] .sound-row>span{text-align:start}
+#assembly-language-status{margin:0;padding:8px 16px;background:#fff5e6;color:#856445;font-size:12px}
+@media(max-width:760px){.assembly-language{flex-basis:100px;max-width:100px;font-size:11px;padding:5px}.top .header-name{flex:1;max-width:150px}.top .brand{flex:none}.panel-scroll h2{line-height:1.5}.player-buttons>ryugi-button>button{font-size:11px!important}}
+@media(max-width:760px){
+ .top{gap:6px}.top .header-name{display:none}.assembly-language{min-width:80px;max-width:90px;flex:0 1 90px}
+ .top>ryugi-button{flex:1 1 0;min-width:0;max-width:90px;white-space:normal;height:auto!important;min-height:36px;margin:0!important;font-size:10px}
+ .top>ryugi-button>button{line-height:1.15;text-align:center;overflow-wrap:anywhere}.top>ryugi-button svg{display:none}
+}
+html[data-assembly-language-unavailable] .workspace,html[data-assembly-language-unavailable] .top>ryugi-button{visibility:hidden}
+
+/* Keep the existing player inside the viewport when an asset error notice is present. */
+body:has(>#assembly-language-status){height:100dvh;display:flex;flex-direction:column}
+body:has(>#assembly-language-status)>.top,body:has(>#assembly-language-status)>#assembly-language-status{flex:none}
+body:has(>#assembly-language-status)>.workspace{height:auto;flex:1;min-height:0}

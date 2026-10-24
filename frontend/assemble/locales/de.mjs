@@ -31,9 +31,9 @@ export default {
       "caption": "Einzeln Servo · Eingesteckt"
     },
     "prepare-usb": {
-      "short": "Schalten Sie den Computer ein und schließen Sie ihn an",
-      "title": "Einschalten und mit Type-C verbinden",
-      "text": "Drücken Sie auf „Video“, um das Gerät einzuschalten, und schließen Sie dann den Computer mit dem Type-C-Kabel an.",
+      "short": "Schalten Sie den Roboter ein und verbinden Sie ihn mit dem Computer",
+      "title": "Schalten Sie den Roboter ein und schließen Sie die Type-C-Leitung an",
+      "text": "Befolgen Sie die Anweisungen im Video, schalten Sie den Roboter ein und verbinden Sie ihn dann mit dem Type-C-Kabel mit dem Computer.",
       "check": "Auf dieser Seite wird nur die Verbindungssequenz veranschaulicht und es werden keine echten Geräte gestartet oder verbunden.",
       "caption": "Einschalten · Mit Type-C verbinden"
     },
@@ -90,7 +90,7 @@ export default {
       "short": "Festes Kalb",
       "title": "Fester Unterschenkelanschluss",
       "text": "Bringen Sie den weißen unteren Beinverbinder an Servo an, richten Sie die Montagelöcher aus und schrauben Sie dann zwei selbstschneidende Senkkopfschrauben M2×6 ein.",
-      "check": "Das lange Ende des Steckers zeigt nach oben. Richten Sie zuerst die Löcher aus und befestigen Sie sie dann. Es sind keine Schrauben erforderlich, um die schrägen Teile an ihren Platz zu ziehen.",
+      "check": "Das lange Ende des Steckers muss nach oben zeigen. Richten Sie zuerst die Löcher aus und befestigen Sie dann die Teile. Verwenden Sie keine Schrauben, um falsch ausgerichtete Teile in die Einbauposition zu zwingen.",
       "caption": "Richtiges Loch · M2×6 ×2"
     },
     "r-foot": {
@@ -153,7 +153,7 @@ export default {
       "short": "Festes Kalb",
       "title": "Fester Unterschenkelanschluss",
       "text": "Bringen Sie den weißen unteren Beinverbinder an Servo an, richten Sie die Montagelöcher aus und schrauben Sie dann zwei selbstschneidende Senkkopfschrauben M2×6 ein.",
-      "check": "Das lange Ende des Steckers zeigt nach oben. Richten Sie zuerst die Löcher aus und befestigen Sie sie dann. Es sind keine Schrauben erforderlich, um die schrägen Teile an ihren Platz zu ziehen.",
+      "check": "Das lange Ende des Steckers muss nach oben zeigen. Richten Sie zuerst die Löcher aus und befestigen Sie dann die Teile. Verwenden Sie keine Schrauben, um falsch ausgerichtete Teile in die Einbauposition zu zwingen.",
       "caption": "Richtiges Loch · M2×6 ×2"
     },
     "l-foot": {
@@ -369,7 +369,7 @@ export default {
     "t-wire": {
       "short": "Anschließen und Verkabeln",
       "title": "Kabelbaum ist an der eingesetzten Hüfte sichtbar und kommt heraus",
-      "text": "Drücken Sie auf das Originalteil, um die sichtbaren Stecker an den beiden Körpern Servo festzuziehen, und lassen Sie dabei die Anschlussdrähte für den Hüftmotor und die reservierten Drähte für die Hauptplatine beiseite. Der reservierte Draht wird aus der Öffnung herausgeführt.",
+      "text": "Drücken Sie unter Bezugnahme auf die Demonstration im Originalfilm die beiden sichtbaren Stecker Servo auf den Roboterkörper. Legen Sie die Anschlusskabel für den Hüftmotor bzw. die reservierten Kabel für die Hauptplatine beiseite und führen Sie die reservierten Kabel aus der Öffnung heraus.",
       "check": "Die Doppelsteckdose wird als einfaches Lehrmodell entsprechend den Eigenschaften der Quellgitteroberfläche positioniert. Der Kabelbaum-Pfad, die Socket-Identität und die Pins wurden nicht überprüft, und die beiden Körper Servo werden nicht ohne Genehmigung als miteinander verbunden dargestellt.",
       "caption": "Zuerst axial einstecken, dann die Drähte einfädeln, Schaltplan"
     },
@@ -391,7 +391,7 @@ export default {
       "short": "Rechtes Verbindungsteil montieren",
       "title": "Drücken Sie zuerst Lager und installieren Sie dann den rechten Yaw–Roll-Stecker",
       "text": "Drücken Sie zuerst den großen Lager in den unabhängigen P6-06-Stecker und richten Sie dann den gesamten Stecker mit Lager an der rechten Seite des Gehäuses aus. Abschließend wird die Befestigungslochgruppe demonstriert.",
-      "check": "Originalfilm 09:41 Im Anschluss ist Lager zu sehen. 10: 05 Untertitel sind vier M2×6, aber die Anzahl und Lochgruppenzuordnungen auf jeder Seite müssen noch überprüft werden; die animierten Schrauben sind nur angedeutet.",
+      "check": "Originalfilm 09:41 Im Anschluss ist Lager zu sehen. 10:05 Untertitel sind vier M2×6, aber die Anzahl und Lochgruppenzuordnungen auf jeder Seite müssen noch überprüft werden; die animierten Schrauben sind nur angedeutet.",
       "caption": "Drücken Sie zunächst Lager → Gesamtausrichtung · Lochgruppendiagramm"
     },
     "t-yaw-l": {
@@ -432,7 +432,7 @@ export default {
     "t-bearing-r": {
       "short": "Drücken Sie die rechte große Taste Lager",
       "title": "Vor dem Anbringen des Beins das große Lager in die rechte Anschlussstelle einpressen",
-      "text": "Drücken Sie nach 11:18 auf den Bildschirm, drücken Sie den neuen großen 16×22×4 mm Lager axial in den oberen Anschluss des unabhängigen rechten Beins und bereiten Sie dann die Verbindung mit dem Körper vor.",
+      "text": "Sehen Sie sich die Szene nach 11:18 im Video an: Drücken Sie den neuen 16×22×4 mm und den größeren Lager axial in den oberen Anschluss des unabhängigen rechten Beins und bereiten Sie dann die Verbindung dieses Beins mit dem Körper des Roboters vor.",
       "check": "Dabei handelt es sich nicht um das obere Ende Lager, das bereits im Beinmodul installiert ist. Dieser Schritt drückt nur auf den neuen Lager und das rechte Bein befindet sich noch in der Bereitschaftsposition; Koaxiale Zusammenarbeit ist ein Signal.",
       "caption": "Zuerst Lager drücken · Das intakte Bein bewegt sich vorerst nicht."
     },
@@ -460,7 +460,7 @@ export default {
     "t-bearing-l": {
       "short": "Drücken Sie links groß Lager",
       "title": "Drücken Sie vor dem Einsetzen des zweiten Beins Lager",
-      "text": "Drücken Sie auf dem Bildschirm 12:28, drücken Sie das andere neue große Lager in den oberen Anschluss des unabhängigen linken Beins und schließen Sie dann das zweite komplette Bein an.",
+      "text": "Sehen Sie sich die Szene nach 12:28 im Video an: Drücken Sie den anderen neuen großen Lager in den oberen Anschluss des unabhängigen linken Beins und schließen Sie dann die zweite vollständige Beinbaugruppe an.",
       "check": "Das rechte Bein wurde eingebaut; das linke Bein hat sich noch nicht bewegt. Die Lager-Haltung und Kontaktfläche werden anhand des vorhandenen Modells veranschaulicht.",
       "caption": "Zuerst Lager drücken · Das linke Bein befindet sich noch in der Bereitschaftsposition"
     },
@@ -509,7 +509,7 @@ export default {
     "head-core-join": {
       "short": "Kombiniertes Rotationsmodul",
       "title": "Verbinden Sie die Unterkomponenten der beiden Köpfe Servo",
-      "text": "Halten Sie die ID32-Unterbaugruppe an Ort und Stelle, verbinden Sie die ID33-Halterungsunterbaugruppe, mit der Lager als Ganzes installiert wurde, und drücken Sie dann auf die zweite Markierung auf dem Bildschirm, um sie mit vier M2×6 zu befestigen.",
+      "text": "Lassen Sie die ID32-Unterbaugruppe an Ort und Stelle und verbinden Sie die ID33-Halterungsunterbaugruppe, mit der Lager als Ganzes installiert wurde. Befestigen Sie es dann mit vier M2×6-Schrauben gemäß den Anweisungen, die an zweiter Stelle auf dem Bildschirm markiert sind.",
       "check": "P6-08 und seine beiden Lager bewegen sich mit der Unterbaugruppe ID33; P6-01 und der erste Lager bleiben auf der ID32-Seite. Die Lochachse stammt aus dem Quellgitter und die physische Passung muss überprüft werden.",
       "caption": "Gesamtes Andocken und Neufixieren von Unterbaugruppen M2×6 ×4"
     },
@@ -539,19 +539,19 @@ export default {
       "title": "Entfernen Sie das Mundstück Servohorn und schließen Sie Kabelbaum an",
       "text": "Entfernen Sie zuerst die zentrale Befestigungsschraube, entfernen Sie dann den Mund Servohorn und bewahren Sie ihn auf. Fügen Sie die Servo-Leitung entsprechend dem Video ein und drücken Sie sie fest.",
       "check": "Es besteht weiterhin Unklarheit bei der Nummerierung. Steckerkodierung, tatsächliche Buchsen und Pinbelegung werden durch diese Animation nicht bestätigt.",
-      "caption": "Entfernen Sie zuerst die Festplatte und schließen Sie dann Kabelbaum an"
+      "caption": "Zuerst Servohorn entfernen, dann Kabelbaum einstecken"
     },
     "head-mouth-jaw": {
-      "short": "Installieren Sie Servo mit Kinn",
-      "title": "Nehmen Sie Servo in den Mund und legen Sie es auf Ihr Kinn",
-      "text": "Setzen Sie zuerst das Mundteil Servo in die Plattform ein und richten Sie dann die beiden Seiten des Kinns P2-01 auf die Antriebswelle und die Stützposition aus. Lassen Sie Kabelbaum von der Öffnung fernbleiben.",
+      "short": "Mundservo und Kieferteil einsetzen",
+      "title": "Mundservo einsetzen, dann das Kieferteil aufsetzen",
+      "text": "Setzen Sie zuerst den Mund des Roboters Servo in die Plattform ein. Richten Sie beide Seiten des Roboterbackenteils P2-01 an der Antriebswelle und der Stützposition aus und setzen Sie es dann ein. Kabelbaum sollte durch die Öffnung gehen und herausragen.",
       "check": "Diese Animation drückt die Sequenzbeziehung aus; Die Wellenlöcher auf beiden Seiten, die tatsächlichen Abstände und die Passgenauigkeit müssen überprüft werden.",
-      "caption": "Setzen Sie zuerst Servo ein. Führen Sie es dann in das Kinn ein"
+      "caption": "Servo einsetzen, dann Roboterkiefer aufsetzen"
     },
     "head-servo-support": {
       "short": "Decken Sie die Befestigung ab",
       "title": "Montieren Sie das Kopfbefestigungsstück Servo",
-      "text": "Mechanismus, der das P4-02-Kopf-Servo-Befestigungsstück an der Plattform befestigt. Drücken Sie den ersten Untertitel, um vier M2×6 zu fixieren.",
+      "text": "Befestigen Sie das P4-02-Kopfbefestigungsstück Servo am Mechanismus auf der Plattform. Verwenden Sie zur Befestigung gemäß den Anweisungen im ersten Untertitel vier M2×6-Schrauben.",
       "check": "Halten Sie Ihren Kiefer beweglich und vermeiden Sie Kabelbaum. Die genauen Positionen der vier Löcher sind noch Richtwerte.",
       "caption": "Die erste Lochgruppe · M2×6 ×4"
     },
@@ -565,7 +565,7 @@ export default {
     "head-mouth-check": {
       "short": "Überprüfen Sie das Öffnen und Schließen des Mundes",
       "title": "Überprüfen Sie das Öffnen und Schließen des Kinns sowie den Kabelbaum-Status",
-      "text": "Bewegen Sie Ihr Kinn leicht, um zu prüfen, ob es sich öffnen und schließen lässt, ob es offensichtlich festsitzt und ob der Faden seitlich eingeklemmt ist. Die Animation zeigt das gleichzeitige Öffnen und Schließen.",
+      "text": "Bewegen Sie den unteren Backenteil des Roboters vorsichtig, um zu prüfen, ob er sich öffnen und schließen lässt, ob er nicht offensichtlich festsitzt und ob auf beiden Seiten keine Kabel eingeklemmt sind. Die Animation zeigt nur einmal das Öffnen und Schließen.",
       "check": "Dies ist nur ein Zeichen für das Öffnen und Schließen und kehrt am Ende in die geschlossene Position zurück. Ob das tatsächliche Produkt glatt ist, müssen der Spalt und der Servo-Winkel überprüft werden.",
       "caption": "Öffnen → Schließen simulieren · Tatsächliches zu überprüfendes Objekt"
     },
@@ -635,7 +635,7 @@ export default {
     "head-lower-pad": {
       "short": "Kinnpolster",
       "title": "Legen Sie zunächst das Kissen in das Kinn",
-      "text": "Legen Sie gemäß dem Originalstück zunächst das gesamte geklebte Kinnpolster in das offene Kinn und drücken Sie es flach, damit es passt. Das Quellraster verwendet P1-01.",
+      "text": "Sehen Sie sich die Demonstration im Originalfilm an: Befestigen Sie das geklebte Roboterbackenkissen als Ganzes am geöffneten Roboterbackenteil, drücken Sie es flach und passen Sie es an. Das Quellraster verwendet P1-01.",
       "check": "Der Film und das Kissen werden zusammen bewegt und die obere und untere Identität der Quelldateien werden als Kandidaten beibehalten; Das physikalische Material und die Klebeechtheit müssen überprüft werden.",
       "caption": "Bringen Sie zuerst das Kinnkissen an"
     },
@@ -649,7 +649,7 @@ export default {
     "head-upper-pad-check": {
       "short": "Zum Verschließen das Pad anbringen",
       "title": "Bringen Sie das Mundkissen an und prüfen Sie den Sitz von Ober- und Untermund",
-      "text": "Drücken Sie auf das Originalstück und befestigen Sie das Obermund-Weichpolster zusammen mit der Folie am Obermund. Verwenden Sie P1-02 für das Quellraster. Überprüfen Sie anschließend, ob Ober- und Untermund gut passen und ob sichtbare Lücken vorhanden sind.",
+      "text": "Sehen Sie sich die Demonstration des Originalfilms an: Befestigen Sie das weiche Polster des oberen Mundes des Roboters zusammen mit der Folie am oberen Mundteil des Roboters. Verwenden Sie P1-02 für das Quellraster. Überprüfen Sie anschließend, ob die oberen und unteren Mundteile des Roboters gut passen und ob offensichtliche Lücken vorhanden sind.",
       "check": "Dieser Schritt simuliert nur einmal das Öffnen und Schließen und kehrt zur Verzeichnisschließhaltung zurück. Nahtlose Passform, reibungslose Bewegung und Kabelbaum-Spielraum müssen am tatsächlichen Objekt überprüft werden.",
       "caption": "Simulieren Sie das Schließen nach der Montage. · Das tatsächliche Produkt ist zu überprüfen"
     },
@@ -663,21 +663,21 @@ export default {
     "final-tray": {
       "short": "Batteriefach einbauen",
       "title": "Befestigen Sie das Batteriefach mit der Batterie am Gehäuse",
-      "text": "Richten Sie die Batterie und das Batteriefach als Baugruppe an der Rückseite des Gehäuses aus und befestigen Sie sie mit Senkkopf- und Flachkopfschrauben 4 M2×6, wie im Video gezeigt.",
+      "text": "Richten Sie die Batterie und das Batteriefach als eine Einheit an der Rückseite des Roboterkörpers aus. Verwenden Sie gemäß der Videoanleitung zur Befestigung selbstschneidende Senkkopfschrauben 4 M2×6.",
       "check": "Richten Sie es zuerst aus und befestigen Sie es dann. Halten Sie dabei das Netzkabel heraus. Die Schraubenposition und -koordination sind Lehranweisungen, und Sie müssen das tatsächliche Objekt Loch für Loch überprüfen.",
       "caption": "Die Komponenten sind als Ganzes vorhanden · M2×6 ×4"
     },
     "final-body-shells": {
       "short": "Karosserie einbauen",
       "title": "Montieren Sie die Karosserie auf beiden Seiten und bewahren Sie die obere Verkabelung auf",
-      "text": "Richten Sie die beiden Karosserieteile aus und installieren Sie sie. Lassen Sie dabei den oberen Kabelbaum-Auslass übrig. 19:05 Die linken und rechten Untertitel markieren 5 und M2×6; Dieser Schritt gibt nur die Gesamtzahl dieser Gruppe an.",
+      "text": "Richten Sie die beiden Körperschalen des Roboters aus und installieren Sie sie. Behalten Sie dabei den oberen Kabelbaum-Auslass bei. Bei ungefähr 19:05 vermerken die Untertitel des Videos insgesamt 5 M2×6 Schrauben. Dieser Schritt zeigt nur diese Gesamtsumme und gibt nicht die Menge pro Seite an.",
       "check": "Die Nebeneinander- und Loch-für-Loch-Verteilung der 5-Chips wurde noch nicht überprüft. In der Abbildung werden die vorhandenen runden Löcher im Quellgitter als Lehrkandidaten verwendet, und die tatsächliche Stufenzuordnung der oberen und unteren Löcher sowie der Nahtlöcher muss noch überprüft werden. Die Schlussfolgerung von 5 pro Seite basiert nicht darauf.",
       "caption": "M2×6 ×5 · Quelllochkandidat, zur Überprüfung zugewiesen"
     },
     "final-head-join": {
       "short": "Verbinden Sie den gesamten Kopf und Hals",
       "title": "Befestigen Sie die gesamte installierte Kopf- und Halsbaugruppe am Körper",
-      "text": "Bewegen Sie den fertigen Kopf, den Hals, die Schrauben und Kabelbaum als Ganzes, lassen Sie zuerst das untere Servo-Verbindungsteil an Ort und Stelle und drücken Sie dann die auf beiden Seiten des Videos markierten Markierungen 4 und M2×6, um es zu befestigen.",
+      "text": "Bewegen Sie den fertigen Roboterkopf, Hals, Schrauben und Kabelbaum als Ganzes. Bringen Sie zuerst das untere Servo-Verbindungsteil in die Installationsposition und befestigen Sie es dann anhand der Videomarkierungen mit 4 M2×6-Schrauben auf jeder Seite.",
       "check": "Kopf und Hals müssen sich als Ganzes bewegen, nicht nur der Schädel. Die Gesamtzahl der 4-Teile auf jeder Seite dieses Prototyps beträgt 8-Teile; die tatsächliche Lochposition, Einbauachse und Ausführung müssen noch überprüft werden.",
       "caption": "Kopf und Hals sind als Ganzes vorhanden · M2×6 ×4 auf beiden Seiten"
     },
@@ -691,7 +691,7 @@ export default {
     "final-board-mount": {
       "short": "fester Controller",
       "title": "Befestigen Sie die eingelegte Zweiplattenbaugruppe an der Karosserie",
-      "text": "Halten Sie die beiden Platinen verbunden und bewegen Sie die Controller-Baugruppe auf die Rückseite Ihres Körpers. Der Originalfilm ist mit 4 und M3×16 gekennzeichnet; Dieses Modell demonstriert nur das Einführen in zwei nahezu koaxiale Löcher, die anderen beiden sind zur Überprüfung reserviert.",
+      "text": "Lassen Sie die beiden Platinen miteinander verbunden und bewegen Sie die Hauptsteuerbaugruppe auf die Rückseite des Roboterkörpers. Die Originalstücke sind mit 4 und M3×16 gekennzeichnet; Dieses Modell zeigt nur das Einfügen von zwei nahezu koaxialen Löchern, die restlichen beiden sind zur Überprüfung reserviert.",
       "check": "Das Originalstück hat 4-Teile; Die 2-Löcher dieses Modells sind nahezu koaxial und die 2-Löcher sind ungefähr 1.27mm falsch ausgerichtet. Der abgeschlossene Zustand der Durchquerung der beiden Platten ist noch nicht dargestellt. Die Form der Quellplatte, die Lochposition, die PCB-Dicke und der Pin-Reihenabstand wurden nicht gestreckt oder gepatcht; Die Körperunterstützung und die körperliche Koordination müssen überprüft werden.",
       "caption": "Originalfilm M3×16 ×4 · Zeigt 2-Löcher, und die anderen 2-Löcher müssen überprüft werden"
     },
@@ -713,7 +713,7 @@ export default {
       "short": "Oberschenkelschale auf der ersten Seite",
       "title": "Installieren Sie das Oberschenkelgehäuse der ersten Seite",
       "text": "Installieren Sie die erste seitliche Oberschenkelschale und befestigen Sie die Untertitelmarkierung mit 2 selbstschneidenden Flachkopfschrauben M2.3×4. Der Prototyp demonstriert zunächst die rechte Seite des Roboters und die linke und rechte Zuordnung des Videos muss überprüft werden.",
-      "check": "20: 37-Untertitel M2.3×4 unterscheiden sich von den offiziellen BOM-Untertiteln M2.3×8; Die Originalfilmspezifikationen bleiben erhalten und werden nicht direkt ersetzt oder zum Kauf verwendet. Die Bohrlochstandorte unterliegen der Überprüfung.",
+      "check": "20:37-Untertitel M2.3×4 unterscheiden sich von den offiziellen BOM-Untertiteln M2.3×8; Die Originalfilmspezifikationen bleiben erhalten und werden nicht direkt ersetzt oder zum Kauf verwendet. Die Bohrlochstandorte unterliegen der Überprüfung.",
       "caption": "Video M2.3×4 ×2 · Unterschiede zu BOM"
     },
     "final-route": {
@@ -726,14 +726,14 @@ export default {
     "final-thigh-second": {
       "short": "Oberschenkelschale auf der anderen Seite",
       "title": "Installieren Sie die Oberschenkelschale auf der anderen Seite, um die Endmontage dieses Abschnitts abzuschließen.",
-      "text": "Montieren Sie die andere Oberschenkelschale spiegelbildlich. 20: 57-Untertitel sind auch als 2 und M2.3×4 gekennzeichnet, wobei die Spezifikationsunterschiede zwischen dem Originalfilm und BOM erhalten bleiben.",
+      "text": "Montieren Sie die andere Oberschenkelschale spiegelbildlich. 20:57-Untertitel sind auch als 2 und M2.3×4 gekennzeichnet, wobei die Spezifikationsunterschiede zwischen dem Originalfilm und BOM erhalten bleiben.",
       "check": "Dieser Abschnitt endet mit der Endmontage von 20:58. Steuerung, Nummerierung und Kalibrierung werden in den folgenden Kapiteln beschrieben. Dieses Modul überprüft weder das Einschalten noch die mechanische Genauigkeit.",
       "caption": "Die andere Seite M2.3×4 ×2 · Endmontage"
     },
     "calibration-power": {
       "short": "Inbetriebnahme nach der Montage",
       "title": "Schalten Sie die Maschine ein, nachdem die Montage abgeschlossen ist",
-      "text": "Dieser Absatz zeigt nur den Unterrichtsablauf. Überprüfen Sie die mechanische Verbindung und Kabelbaum und drücken Sie dann das Video, um Ihre eigene Gerätekonfigurationsseite aufzurufen.",
+      "text": "Dieser Absatz zeigt nur den Unterrichtsablauf. Überprüfen Sie die mechanischen Verbindungen und Kabelbaum des Roboters und befolgen Sie dann die Anweisungen im Video, um die Gerätekonfigurationsseite auf Ihrem eigenen realen Gerät zu öffnen.",
       "check": "Dieser Prototyp stellt keine Verbindung zur Hardware her; Im Folgenden wird nur die Lernsequenz gezeigt.",
       "caption": "Lehrdemonstration · Keine Kontrolle realer Geräte"
     },
@@ -2015,7 +2015,7 @@ export default {
     "固定小腿连接件": "Fester Unterschenkelanschluss",
     "固定小腿": "Festes Kalb",
     "将白色小腿连接件贴合舵机，对齐安装孔，再拧入两颗 M2×6 沉头自攻螺丝。": "Bringen Sie den weißen unteren Beinverbinder an Servo an, richten Sie die Montagelöcher aus und schrauben Sie dann zwei selbstschneidende Senkkopfschrauben M2×6 ein.",
-    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "Das lange Ende des Steckers zeigt nach oben. Richten Sie zuerst die Löcher aus und befestigen Sie sie dann. Es sind keine Schrauben erforderlich, um die schrägen Teile an ihren Platz zu ziehen.",
+    "连接件的长端朝上。先对孔，再固定，不用螺丝把歪斜的零件硬拉到位。": "Das lange Ende des Steckers muss nach oben zeigen. Richten Sie zuerst die Löcher aus und befestigen Sie dann die Teile. Verwenden Sie keine Schrauben, um falsch ausgerichtete Teile in die Einbauposition zu zwingen.",
     "把舵机装入脚掌": "Installieren Sie Servo in der Fußsohle",
     "装入脚掌": "Passt in die Fußsohle",
     "把舵机和小腿连接件组成的模块放入脚掌，按视频固定四颗 M2×6 沉头自攻螺丝。": "Setzen Sie das Modul bestehend aus Servo und Wadenverbinder in die Fußsohle ein und befestigen Sie die vier selbstschneidenden Senkkopfschrauben M2×6, wie im Video gezeigt.",
@@ -2262,7 +2262,7 @@ export default {
     "已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核": "Bestätigtes v2 unabhängiges Servohorn-Erscheinungsbild · Demontage gemäß Schritten; Die körperliche Koordination muss noch überprüft werden",
     "已确认 v2 三芯插头外观与三根黑线；线长、走线和针脚仍为未核验教学示意": "Das Erscheinen des dreiadrigen Steckers v2 und der drei schwarzen Drähte wurde bestätigt; Die Kabellänge, Verkabelung und Pins sind noch ungeprüfte Lehranweisungen",
     "已确认 v2 指定规格螺丝外观 · 孔位用途、扭矩与实体配合未实物验证": "Das Aussehen der Schrauben mit den angegebenen Spezifikationen v2 wurde bestätigt. Die Lochposition, das Drehmoment und die physische Passform wurden nicht physisch überprüft.",
-    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Halten Sie die beiden Platinen verbunden und bewegen Sie die Controller-Baugruppe auf die Rückseite Ihres Körpers. Der Originalfilm ist mit 4 und M3×16 gekennzeichnet; Dieses Modell demonstriert nur das Einführen in zwei nahezu koaxiale Löcher, die anderen beiden sind zur Überprüfung reserviert.",
+    "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Lassen Sie die beiden Platinen miteinander verbunden und bewegen Sie die Hauptsteuerbaugruppe auf die Rückseite des Roboterkörpers. Die Originalstücke sind mit 4 und M3×16 gekennzeichnet; Dieses Modell zeigt nur das Einfügen von zwei nahezu koaxialen Löchern, die restlichen beiden sind zur Überprüfung reserviert.",
     "原片4颗；本模型2孔近共轴，另2孔约1.27mm错位，暂不显示穿过两板的完成态。源板形、孔位、PCB厚度和排针节距均未拉伸或补孔；身体支撑与实体配合待核。": "Das Originalstück hat 4-Teile; Die 2-Löcher dieses Modells sind nahezu koaxial und die 2-Löcher sind ungefähr 1.27mm falsch ausgerichtet. Der abgeschlossene Zustand der Durchquerung der beiden Platten ist noch nicht dargestellt. Die Form der Quellplatte, die Lochposition, die PCB-Dicke und der Pin-Reihenabstand wurden nicht gestreckt oder gepatcht; Die Körperunterstützung und die körperliche Koordination müssen überprüft werden.",
     "原片 M3×16 ×4 · 演示2孔，另2孔待核": "Originalfilm M3×16 ×4 · Zeigt 2-Löcher, und die anderen 2-Löcher müssen überprüft werden",
     "采用已确认板卡模型；32针对齐与12.3mm建模间距已核对，孔位部分为照片估算。两处安装孔约1.27mm错位，实物插合、公差与电气针脚未验证。": "Es wird das bestätigte Board-Modell verwendet; Die Ausrichtung der 32-Stifte und der 12.3mm-Modellierungsabstand wurden überprüft und die Lochpositionen wurden anhand von Fotos geschätzt. Die beiden Befestigungslöcher sind etwa 1.27mm falsch ausgerichtet und die physische Einfügung, die Toleranzen und die elektrischen Pins wurden nicht überprüft.",
@@ -2279,7 +2279,7 @@ export default {
     "打印件用涂装台当前的配色，舵机、板子和螺丝保持原样": "Der Druck verwendet das aktuelle Farbschema der Farbtabelle, Servo, die Platine und die Schrauben bleiben gleich",
     "还没有涂色，打印件先用白色演示": "Es wurde noch nicht eingefärbt, daher wird der Ausdruck zunächst in Weiß gezeigt.",
     "配色 · ": "Farbabstimmung ·",
-    "白胚": "weißer Embryo",
+    "白胚": "Unbemalt",
     ").textContent=s.complete?`{value} · 完成`:`${String(local).padStart(2,": ").textContent=s.complete?`{value} · Vollständig`:`${String(local).padStart(2,",
     "红框 · 对准这两处": "Rotes Kästchen · Zielen Sie auf diese beiden Orte",
     "绿框 · 本次已装好": "Grüner Rahmen · Dieses Mal bereits installiert",
@@ -2389,6 +2389,22 @@ export default {
     "{chapter} · 完成": "{chapter} · Vollständig",
     "{local}  {short}": "{local} {short}",
     "红框": "Roter Rahmen",
-    "绿框": "Grüner Rahmen"
+    "绿框": "Grüner Rahmen",
+    "重播本步": "Wiederholen Sie diesen Schritt",
+    "继续播放": "weiterspielen",
+    "自动播放": "Autoplay",
+    "开启后从第0步开始，连续播放全部14个阶段": "Nach dem Einschalten werden ab Schritt 0 alle 14-Stufen kontinuierlich abgespielt.",
+    "全部播放完成": "Die gesamte Wiedergabe ist abgeschlossen",
+    "本步完成，准备下一步": "Dieser Schritt ist abgeschlossen und bereit für den nächsten Schritt",
+    "自动播放中": "Automatisch abspielen",
+    "自动播放已暂停": "Autoplay angehalten",
+    "正在演示": "Demonstrieren",
+    "可旋转查看": "Zur Ansicht drehen",
+    " 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。": "Die Passform des neuen Modells muss überprüft werden: Der entsprechende Stecker weist eine geometrische Überlappung mit der ursprünglichen 3MF-Halterung oder -Schale auf; Die ursprüngliche Größe bleibt erhalten und das rote Kästchen zeigt nicht an, dass es verbunden wurde.",
+    "进度未保存：浏览器存储不可用，请重试。": "Fortschritt nicht gespeichert: Browserspeicher ist nicht verfügbar, bitte versuchen Sie es erneut.",
+    " · 已看过": "· Angesehen",
+    " · 实物已装好": "· Das eigentliche Objekt wurde installiert",
+    "展开本步说明": "Erweitern Sie die Anweisungen für diesen Schritt",
+    "舵机口": "Servo-Port"
   }
 };

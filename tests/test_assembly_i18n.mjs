@@ -53,3 +53,43 @@ test('real locale data covers every focus action and retains technical warnings'
   }
  }
 });
+test('RTL technical ranges, times and fastener counts retain left-to-right order',async()=>{
+ const {isolateTechnical}=await import('../frontend/assemble/assembly-i18n.mjs');
+ assert.equal(isolateTechnical('10–14 20:37 M2×6 ×4 KP=5 1.27mm','ar'),'\u206810–14\u2069 \u206820:37\u2069 \u2068M2×6 ×4\u2069 \u2068KP=5\u2069 \u20681.27mm\u2069');
+});
+test('mouth instructions refer to robot components and preserve the through-opening cable route',async()=>{
+ const {loadAssemblyLocale}=await import('../frontend/assemble/assembly-i18n.mjs'),copy=await loadAssemblyLocale('en');
+ assert.match(copy.steps['head-mouth-jaw'].title,/mouth servo/i);assert.doesNotMatch(copy.steps['head-mouth-jaw'].title,/your mouth|your chin/i);
+ assert.match(copy.steps['head-mouth-jaw'].text,/through the opening/i);
+});
+test('force-fitting with screws remains an explicit prohibition',async()=>{
+ const {loadAssemblyLocale}=await import('../frontend/assemble/assembly-i18n.mjs'),copy=await loadAssemblyLocale('en');
+ for(const id of ['r-shank','l-shank']){assert.match(copy.steps[id].check,/do not use screws/i);assert.match(copy.steps[id].check,/misaligned|skewed/i);}
+});
+test('video evidence is not translated into nonexistent press actions',async()=>{
+ const {loadAssemblyLocale}=await import('../frontend/assemble/assembly-i18n.mjs'),copy=await loadAssemblyLocale('en');
+ for(const id of ['prepare-usb','t-bearing-r','t-bearing-l','t-wire','head-servo-support','head-core-join','head-upper-pad-check','final-head-join','calibration-power'])assert.doesNotMatch(copy.steps[id].text,/press (?:the )?(?:video|subtitle|screen|original piece|12:28|4)/i,id);
+});
+test('approximate timestamp does not invent per-side fastener evidence',async()=>{
+ const {loadAssemblyLocale}=await import('../frontend/assemble/assembly-i18n.mjs'),copy=await loadAssemblyLocale('en');
+ assert.match(copy.steps['final-body-shells'].text,/around 19:05/i);assert.doesNotMatch(copy.steps['final-body-shells'].text,/left and right subtitles/i);
+});
+test('first locale failure leaves an initialized recoverable language controller',async()=>{
+ const {createAssemblyLanguageController,loadAssemblyLocale}=await import('../frontend/assemble/assembly-i18n.mjs');
+ let attempts=0;const controller=createAssemblyLanguageController(async locale=>{if(!attempts++)throw new Error('temporary asset failure');return loadAssemblyLocale(locale);});
+ assert.equal(await controller.select('en'),'failed');assert.equal(controller.state.copy,null);assert.equal(controller.state.locale,null);assert.equal(controller.state.requested,'en');assert.ok(controller.state.error);
+ assert.equal(await controller.select('ja'),'loaded');assert.equal(controller.state.locale,'ja');assert.ok(controller.state.copy.steps['prepare-intro'].title);assert.equal(controller.state.error,null);
+});
+test('failed switch retains effective language and ignores stale imports',async()=>{
+ const {createAssemblyLanguageController,loadAssemblyLocale}=await import('../frontend/assemble/assembly-i18n.mjs');
+ let finish;
+ const controller=createAssemblyLanguageController(async locale=>{if(locale==='ar')throw new Error('missing locale');if(locale==='de')await new Promise(resolve=>{finish=resolve;});return loadAssemblyLocale(locale);});
+ await controller.select('en');const copy=controller.state.copy;
+ assert.equal(await controller.select('ar'),'failed');assert.equal(controller.state.copy,copy);assert.equal(controller.state.locale,'en');assert.equal(controller.state.requested,'ar');
+ const slow=controller.select('de');await controller.select('ja');finish();assert.equal(await slow,'stale');assert.equal(controller.state.locale,'ja');assert.equal(controller.state.requested,'ja');assert.equal(controller.state.error,null);
+});
+
+test('controller placement describes the robot body',async()=>{
+ const {loadAssemblyLocale}=await import('../frontend/assemble/assembly-i18n.mjs'),copy=await loadAssemblyLocale('en');
+ assert.doesNotMatch(copy.steps['final-board-mount'].text,/your body/i);assert.match(copy.steps['final-board-mount'].text,/robot.*body|body.*robot/i);
+});

@@ -27,7 +27,7 @@ export function localizeActor(id,actor,copy){
 // Isolate technical runs in RTL text; the model uses unchanged coordinates.
 export function isolateTechnical(text,locale){
  if(locale!=='ar')return text;
- const technical=/\b(?:ID\s?\d+|P\d-\d\d|M\d+(?:\.\d+)?[×x]\d+|HD-?[A-Z0-9-]+|UNO Q|USB-C|Type-C|(?:\d+(?:\.\d+)?×){1,2}\d+(?:\.\d+)?(?:\s?mm)?)\b/g;
+ const technical=/\b(?:ID\s?\d+|P\d-\d\d|M\d+(?:\.\d+)?[×x]\d+(?:\s*×\s*\d+)?|\d+(?:\.\d+)?[–—-]\d+(?:\.\d+)?|\d{1,2}:\d{2}(?:[—–-]\d{1,2}:\d{2})?|[A-Z]{2,}=\d+|\d+(?:\.\d+)?\s?mm|HD-?[A-Z0-9-]+|UNO Q|USB-C|Type-C|(?:\d+(?:\.\d+)?×){1,2}\d+(?:\.\d+)?(?:\s?mm)?)\b/g;
  return String(text).replace(technical,value=>'\u2068'+value+'\u2069');
 }
 export function localizeFocus(focus,copy){
@@ -42,4 +42,17 @@ export function localizeFocus(focus,copy){
   result.message=parts.length===2?text('{frame} · {status}',{frame:text(parts[0]),status:text(parts[1])}):text(focus.message);
  }
  return result;
+}
+
+// Effective display state is distinct from the requested saved preference.
+export function createAssemblyLanguageController(load=loadAssemblyLocale){
+ let sequence=0,locale=null,copy=null,requested=null,error=null;
+ return{
+  get state(){return{locale,copy,requested,error};},
+  async select(next){
+   const token=++sequence;requested=next;error=null;
+   try{const loaded=await load(next);if(token!==sequence)return 'stale';copy=loaded;locale=next;return 'loaded';}
+   catch(failure){if(token!==sequence)return 'stale';error=failure;return 'failed';}
+  }
+ };
 }

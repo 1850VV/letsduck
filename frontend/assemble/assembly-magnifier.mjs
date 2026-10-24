@@ -1,3 +1,4 @@
+import {assemblyText as at,assemblyFocusText} from './assembly-language.mjs';
 import * as THREE from 'three';
 import {withDetailSection} from './detail-section.mjs';
 
@@ -25,14 +26,15 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
   restore();
   return {
     get state(){return structuredClone(details);},
-    render(focus,now,stepId) {
+    render(rawFocus,now,stepId) {
+      const focus=assemblyFocusText(rawFocus);
       if(stepId&&stepId!==currentStep){currentStep=stepId;if(savedStep.value!==stepId){saved.value='1';savedStep.value=stepId;}}
       const available=!!stepId&&focus.phase!=='none'&&!!focus.boxes?.length;
       const automatic=!!focus.fine&&focus.detailActive!==false;
       const enabled=available&&(saved.value==='2'||saved.value!=='0'&&automatic);
       toggle.toggleAttribute('disabled',!available);if(toggle.dataset.active!==String(enabled))toggle.dataset.active=String(enabled);
-      const button=toggle.querySelector('button');if(button){if(button.getAttribute('aria-pressed')!==String(enabled))button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label','局部放大');button.title=available?'本步可手动开关；换步后，小部位自动开启，大部位默认关闭':'本步暂无需要放大的装配细节';}
-      const label=$('focus-zoom-toggle-label'),text='局部放大 · '+(enabled?'开':'关');if(label&&label.textContent!==text)label.textContent=text;
+      const button=toggle.querySelector('button');if(button){if(button.getAttribute('aria-pressed')!==String(enabled))button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',at('局部放大'));button.title=available?at('本步可手动开关；换步后，小部位自动开启，大部位默认关闭'):at('本步暂无需要放大的装配细节');}
+      const label=$('focus-zoom-toggle-label'),text=at('局部放大 · {state}',{state:at(enabled?'开':'关')});if(label&&label.textContent!==text)label.textContent=text;
       if(!available||!enabled){panel.hidden=true;leader.toggleAttribute('hidden',true);context='';initialized=false;details={visible:false,available,automatic,choice:saved.value};return;}
       const current=focus.boxes.find(b=>b.id===focus.detailId&&b.role!=='moving')||focus.boxes.find(b=>b.role==='target')||focus.boxes.at(-1),id=current.id;
       panel.hidden=false;leader.toggleAttribute('hidden',false);
@@ -72,8 +74,8 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
       const offset=lens.position.clone().sub(lens.userData.target);if(offset.length()>maxDistance)lens.position.copy(lens.userData.target).add(offset.setLength(maxDistance));
       lens.lookAt(lens.userData.target);lens.updateProjectionMatrix();lens.updateMatrixWorld();
       const lensScale=h/(2*lens.position.distanceTo(lens.userData.target)*Math.tan(THREE.MathUtils.degToRad(16))),zoom=lensScale/mainScale;
-      $('focus-zoom-factor').textContent=zoom.toFixed(1)+'×';$('focus-zoom-title').textContent=(focus.detailTitle||'接头放大')+(stepId==='head-shell-fix'?' · 剖视':'');$('focus-zoom-status').textContent=focus.detailStatus||(focus.phase==='completed'?'已接合':'对准接口');panel.dataset.phase=focus.detailPhase||focus.phase;
-      panel.setAttribute('aria-label',(focus.detailTitle||'接头放大')+'窗口');view.setAttribute('aria-label','当前装配部位的实时三维放大画面');
+      $('focus-zoom-factor').textContent=zoom.toFixed(1)+'×';$('focus-zoom-title').textContent=(focus.detailTitle||at('接头放大'))+(stepId==='head-shell-fix'?at(' · 剖视'):'');$('focus-zoom-status').textContent=focus.detailStatus||(focus.phase==='completed'?at('已接合'):at('对准接口'));panel.dataset.phase=focus.detailPhase||focus.phase;
+      panel.setAttribute('aria-label',at('{title}窗口',{title:focus.detailTitle||at('接头放大')}));view.setAttribute('aria-label',at('当前装配部位的实时三维放大画面'));
       const shadowAutoUpdate=renderer.shadowMap.autoUpdate;
       renderer.shadowMap.autoUpdate=false;renderer.autoClear=false;renderer.setScissor(x,y,w,h);renderer.setViewport(x,y,w,h);renderer.setScissorTest(true);renderer.setClearColor(0xf1f5fc,1);renderer.clear(true,true,false);if(stepId==='head-shell-fix')withDetailSection(renderer,center,approach,6,()=>renderView(scene,lens));else renderView(scene,lens);
       renderer.shadowMap.autoUpdate=shadowAutoUpdate;
