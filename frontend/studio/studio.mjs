@@ -73,7 +73,12 @@ const dirty = () => {
   return !same(design, baseline()) || !!(stored && (name !== stored.name || voiceSalt !== stored.voiceSalt
     || JSON.stringify(provenance) !== JSON.stringify(stored.provenance)));
 };
-function persist() {try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, voiceSalt }, ...(!personal ? {schemes, owner} : {}), recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}}
+// `updated` changes only when the draft itself does, so the personal home page can say when it was last edited.
+let draftUpdated = saved.draft?.updated || 0,draftShape = JSON.stringify([design, name, activeId]);
+function persist() {
+  const shape = JSON.stringify([design, name, activeId]);if (shape !== draftShape) {draftShape = shape;draftUpdated = Date.now();}
+  try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, voiceSalt, updated: draftUpdated }, ...(!personal ? {schemes, owner} : {}), recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}
+}
 
 let step = 1,stepsDone = new Set(),slots = slotsFromDesign(products, design.assignments, themeSlots(products, THEMES[0])),recipe = '经典',slotLocks = {},openSlot = null,activeTheme = null,styleTab = 'themes',showTab = 'move';
 let sel = { zone: 'head-shell', scope: 'all', part: null, mirror: true },tool = 'select',brush = null,search = '',replaceFrom = null,finder = '#FF8A3D',takeFrom = 'original',source = 'bambu',dockTab = 'filament',freeFinish = 'basic',freeAuto = true,pickToFree = false,brushMirror = true,brushKind = 'PLA',brushHover = null,toolBefore = 'select';
@@ -796,14 +801,18 @@ function renderToast(){
 }
 function toast(msg,withUndo){lastToast={msg,withUndo};$('#toast').classList.add('show');renderToast();clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3600);}
 const COACH = KEY + '-coach';let seen = !!read(COACH);
+// Unsaved work becomes a scheme before something replaces the draft.
+async function backupDraft() {
+  if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };
+    if (personal) {const result = await personalWrite('PUT', s.id, schemeBody(s));if (!result) throw Error(_t('personal.loadFailed'));Object.assign(s,result);}
+    schemes.unshift(s);if (!personal) pushScheme(s);setTimeout(() => toast(_message("text.0350")), 2200);}
+}
 // "做同款" from the gallery arrives as #look=<配色码>&src=<title>|<author>|<workId>.
 // Accepts a bare 配色码, a '#look=' fragment or a whole share link. Unsaved work is backed up first.
 async function importLook(text, src = '') {
   const raw = String(text).trim(),code = (raw.match(/#look=([^&\s]+)/) || [, raw])[1];
   const d = decodeLook(parts, products, code),[title, author, workId] = decodeURIComponent(src || '').split('|');
-  if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };
-    if (personal) {const result = await personalWrite('PUT', s.id, schemeBody(s));if (!result) throw Error(_t('personal.loadFailed'));Object.assign(s,result);}
-    schemes.unshift(s);if (!personal) pushScheme(s);setTimeout(() => toast(_message("text.0350")), 2200);}
+  await backupDraft();
   design = { colors: d.colors, assignments: d.assignments };voiceSalt = 0;slots = slotsFromDesign(products, d.assignments, slots);name = _t("text.0351", { v0: d.name || title || _t("text.0352") });provenance = title ? { title, author: author || _t("text.0353"), ...(workId ? { workId } : {}) } : null;activeId = null;
   view.setColors(design.colors);stepsDone.add(1);persist();return d.name || title || _t("text.0354");
 }
@@ -827,6 +836,17 @@ const look = location.hash.match(/^#look=([^&]+)(?:&src=(.*))?$/),openId = locat
 if (look) {try {const n = await importLook(look[1], look[2]);step = 2;seen = true;setTimeout(() => toast(_message("text.0355", { v0: n })), 300);} catch (error) {toast(error.message);}history.replaceState(null, '', location.pathname);}
 // 我的方案 in the gallery opens a saved scheme here with #scheme=<id>.
 if (openId) {const s = schemes.find((x) => x.id === decodeURIComponent(openId[1]));if (s) {design = clone(s.design);name = s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = s.id;slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);stepsDone.add(1);step = 2;seen = true;persist();setTimeout(() => toast(_message("text.0071", { v0: s.name })), 300);}history.replaceState(null, '', location.pathname);}
+// 或者新开一只 on the personal home page arrives as #new: start again from the original colours.
+// With no room left to back up unsaved work, the draft stays open instead of being lost.
+if (location.hash === '#new') {
+  if (dirty() && schemes.length >= 30) setTimeout(() => toast(_message("text.0066")), 300);
+  else try {
+    await backupDraft();
+    design = clone(ORIGINAL);name = _t("text.0047");provenance = null;voiceSalt = 0;activeId = null;
+    slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);stepsDone.clear();step = 1;persist();
+  } catch (error) {toast(error.message);}
+  history.replaceState(null, '', location.pathname);
+}
 if (!personal && (!seen || location.hash === '#coach')) $('#coach').hidden = false;
 const coachDone = () => {$('#coach').hidden = true;try {localStorage.setItem(COACH, '1');} catch {}};
 $('#coach-go').onclick = coachDone;
