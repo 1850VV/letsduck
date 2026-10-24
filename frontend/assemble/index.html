@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>来做鸭 / letsduck · 3D 组装教程</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css"><link rel="stylesheet" href="../shared/handoff.css">
+  <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css"><link rel="stylesheet" href="teaching.css"><link rel="stylesheet" href="../shared/handoff.css">
   <script type="importmap">{"imports":{"three":"../vendor/three.module.js"}}</script>
 </head>
 <body>
@@ -15,7 +15,7 @@
     <ryugi-button id="reference-toggle" variant="outlined" size="small" icon="play">对照原片</ryugi-button>
   </header>
   <main class="workspace">
-      <div class="section-heading"><div><p class="eyebrow">跟着视频，一步一步装</p><h1>整机组装</h1></div><span class="source-range">原片 00:00—23:10</span><div class="view-tools"><div class="quality-control"><span>画质</span><ryugi-select id="render-quality" value="current" size="small" aria-label="渲染画质" style="width:66px"><ryugi-option value="current">当前</ryugi-option><ryugi-option value="ultra">极致</ryugi-option></ryugi-select></div><ryugi-button id="focus-zoom-toggle" variant="outlined" size="small" aria-label="局部放大" aria-pressed="false" disabled style="font-size:var(--view-font);padding:0 var(--view-pad)"><span id="focus-zoom-toggle-label">局部放大 · 关</span></ryugi-button><div class="view-dock"><ryugi-button id="reset-view" variant="borderless" size="small" icon="refresh" style="font-size:var(--view-font);padding:0 var(--view-pad)">最佳视角</ryugi-button><span></span><ryugi-button id="front-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)">正面</ryugi-button><ryugi-button id="back-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)">背面</ryugi-button></div></div></div>
+      <div class="section-heading"><div><p class="eyebrow">跟着视频，一步一步装</p><h1>整机组装</h1></div><span class="source-range">原片 00:00—23:10</span><button id="sequence-open" type="button" aria-haspopup="dialog" aria-controls="sequence-dialog">组装顺序</button></div>
     <section class="model-column" aria-label="三维组装区域">
       <div id="stage" class="stage">
         <div id="loading" role="status">正在加载现有模型…</div>
@@ -35,9 +35,21 @@
         <div class="animation-state"><i id="play-dot"></i><span id="play-state">可以开始</span></div>
       </div>
     </section>
-      <div class="player-bar">
-        <div class="scrub-row"><span id="motion-label">本步动作</span><div id="action-indicator" class="action-indicator" hidden><span></span><b id="action-caption"></b></div><ryugi-slider id="motion-progress" value="100" min="0" max="100" step="1" aria-label="本步动作进度"></ryugi-slider><span id="motion-percent">100%</span></div>
-        <div class="player-buttons"><ryugi-button id="back" variant="outlined" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)">← 上一步</ryugi-button><ryugi-button id="replay" variant="borderless" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="replay-label">红绿框演示</span></ryugi-button><ryugi-button id="pause" variant="borderless" icon="pause" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="pause-label">暂停</span></ryugi-button><div class="playback-controls"><ryugi-button id="autoplay" variant="outlined" size="small" disabled style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="autoplay-label">自动播放 · 关</span></ryugi-button><ryugi-select id="playback-rate" value="1" size="small" aria-label="播放倍率" style="width:70px"><ryugi-option value="0.5">0.5×</ryugi-option><ryugi-option value="1">1×</ryugi-option><ryugi-option value="1.5">1.5×</ryugi-option><ryugi-option value="2">2×</ryugi-option><ryugi-option value="3">3×</ryugi-option><ryugi-option value="4">4×</ryugi-option></ryugi-select><details id="sound-controls" class="sound-controls">
+    <aside class="instruction-column" aria-label="组装步骤">
+      <button id="instruction-toggle" class="instruction-toggle" type="button" aria-expanded="true" aria-controls="instruction-content"><span id="instruction-summary-title">本步说明</span><b id="instruction-toggle-label">收起说明 · 留出观察空间</b></button>
+      <div id="instruction-content" class="panel-scroll">
+        <div class="instruction-top"><span id="step-count"></span><span id="progress-count" aria-live="polite"></span></div>
+        <h2 id="step-title"></h2>
+        <section class="teaching-block parts-needed"><h3>本步用到</h3><div id="needed-parts"></div></section>
+        <section class="teaching-block"><h3>方向与动作</h3><p id="step-description"></p><div id="software-guide" class="software-guide" hidden><p>教学说明 · 不连接或控制真实设备</p><div id="servo-id-list"></div></div></section>
+        <section class="teaching-block"><h3>完成检查</h3><p id="step-check"></p>
+          <div class="checks"><label><input id="confirm-seen" type="checkbox">已看过此步</label><label><input id="confirm-built" type="checkbox">我已检查实物并装好</label></div>
+          <p id="progress-status" role="status" aria-live="polite"></p>
+        </section>
+        <p class="detail-note">教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。接头键位、实际插座、针脚和极性未核验。</p>
+        <div class="source-row"><ryugi-button id="source-step" variant="borderless" size="small" icon="play">看这一步的原片</ryugi-button><span id="source-time"></span></div>
+        <details id="view-settings"><summary>观察设置 · 视角 / 聚焦 / 画质</summary><div class="view-tools"><div class="quality-control"><span>画质</span><ryugi-select id="render-quality" value="current" size="small" aria-label="渲染画质" style="width:66px"><ryugi-option value="current">当前</ryugi-option><ryugi-option value="ultra">极致</ryugi-option></ryugi-select></div><ryugi-button id="focus-zoom-toggle" variant="outlined" size="small" aria-label="局部放大" aria-pressed="false" disabled style="font-size:var(--view-font);padding:0 var(--view-pad)"><span id="focus-zoom-toggle-label">局部放大 · 关</span></ryugi-button><div class="view-dock"><ryugi-button id="reset-view" variant="borderless" size="small" icon="refresh" style="font-size:var(--view-font);padding:0 var(--view-pad)">最佳视角</ryugi-button><span></span><ryugi-button id="front-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)">正面</ryugi-button><ryugi-button id="back-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)">背面</ryugi-button></div></div></details>
+        <details id="playback-settings"><summary>播放设置 · 进度 / 倍率 / 声音</summary><div class="scrub-row"><span id="motion-label">本步动作</span><div id="action-indicator" class="action-indicator" hidden><span></span><b id="action-caption"></b></div><ryugi-slider id="motion-progress" value="100" min="0" max="100" step="1" aria-label="本步动作进度"></ryugi-slider><span id="motion-percent">100%</span></div><div class="playback-controls"><ryugi-button id="autoplay" variant="outlined" size="small" disabled style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="autoplay-label">自动播放 · 关</span></ryugi-button><ryugi-select id="playback-rate" value="1" size="small" aria-label="播放倍率" style="width:70px"><ryugi-option value="0.5">0.5×</ryugi-option><ryugi-option value="1">1×</ryugi-option><ryugi-option value="1.5">1.5×</ryugi-option><ryugi-option value="2">2×</ryugi-option><ryugi-option value="3">3×</ryugi-option><ryugi-option value="4">4×</ryugi-option></ryugi-select><details id="sound-controls" class="sound-controls">
           <summary aria-label="声音设置"><i aria-hidden="true"></i>声音</summary>
           <section id="sound-panel" class="sound-panel" aria-label="声音设置">
             <div class="sound-heading"><b>声音</b><ryugi-action-icon id="sound-close" icon="x" size="small" aria-label="收起声音设置"></ryugi-action-icon></div>
@@ -48,30 +60,21 @@
             <p id="sound-status" class="sound-status" role="status" aria-live="polite">正在准备钢琴曲…</p>
             <a class="sound-credits" href="audio-credits.html" target="_blank" rel="noopener">曲目与模型来源 ↗</a>
           </section>
-        </details></div><span></span><ryugi-button id="start" variant="filled" icon="play" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">开始组装</ryugi-button><ryugi-button id="next" variant="filled" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">下一步 →</ryugi-button><ryugi-button id="restart" variant="filled" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650" hidden>从头再看</ryugi-button></div>
+        </details></div></details>
       </div>
-      <p class="prototype-note"><span class="note-dot"></span>v4.1 走线复核版 · 新插头与部分3MF支架/外壳有几何干涉，红框部位配合待核。</p>
-    <aside class="instruction-column" aria-label="组装步骤">
-      <div class="lesson-list"><div class="lesson-list-heading"><b>组装顺序</b><div class="chapter-picker"><ryugi-select id="phase-select" value="13" size="small" aria-label="选择组装阶段" style="width:100%;font-size:11px"><ryugi-option value="0">1 · 准备与编号</ryugi-option><ryugi-option value="1">2 · 右脚踝</ryugi-option><ryugi-option value="2">3 · 左脚踝</ryugi-option><ryugi-option value="3">4 · 右腿连接</ryugi-option><ryugi-option value="4">5 · 左腿连接</ryugi-option><ryugi-option value="5">6 · 双腿收尾</ryugi-option><ryugi-option value="6">7 · 身体与髋支撑</ryugi-option><ryugi-option value="7">8 · 髋电机与接腿</ryugi-option><ryugi-option value="8">9 · 头部旋转与接线</ryugi-option><ryugi-option value="9">10 · 嘴部与双舵机脖子</ryugi-option><ryugi-option value="10">11 · 头盖与嘴部软垫</ryugi-option><ryugi-option value="11">12 · 身体与头颈总装</ryugi-option><ryugi-option value="12">13 · 电控与外壳收尾</ryugi-option><ryugi-option value="13">14 · 校准与完成</ryugi-option></ryugi-select></div></div><nav id="step-list" aria-label="选择组装步骤"></nav></div>
-      <button id="instruction-toggle" class="instruction-toggle" type="button" aria-haspopup="dialog"><span id="instruction-summary-title">先认清这几件</span><b>本步说明 ↗</b></button>
-      <dialog id="instruction-dialog" aria-labelledby="step-title">
-      <div class="instruction-card">
-        <button id="instruction-close" class="instruction-close" type="button" aria-label="收起本步说明">×</button>
-        <div class="instruction-top"><span id="step-count">准备</span><span id="source-time">02:06</span></div>
-        <h2 id="step-title">先认清这几件</h2><p id="step-description"></p><div id="software-guide" class="software-guide" hidden><p>教学说明 · 不连接或控制真实设备</p><div id="servo-id-list"></div></div>
-        <div class="parts-needed"><span>本步用到</span><div id="needed-parts"></div></div>
-        <div class="checkpoint"><span class="check-icon">✓</span><p id="step-check"></p></div>
-        <ryugi-button id="source-step" variant="borderless" size="small" icon="play">看这一步的原片</ryugi-button>
-        <p class="detail-note">教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。</p>
+      <div class="player-bar">
+
+        <div class="player-buttons"><ryugi-button id="back" variant="outlined" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)">← 上一步</ryugi-button><ryugi-button id="replay" variant="borderless" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="replay-label">红绿框演示</span></ryugi-button><ryugi-button id="pause" variant="borderless" icon="pause" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="pause-label">暂停</span></ryugi-button><span></span><ryugi-button id="start" variant="filled" icon="play" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">开始组装</ryugi-button><ryugi-button id="next" variant="filled" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">下一步 →</ryugi-button><ryugi-button id="restart" variant="filled" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650" hidden>从头再看</ryugi-button></div>
       </div>
-      </dialog>
-      <div id="reference-panel" class="reference-panel" role="dialog" aria-label="原片对照" hidden>
+      <dialog id="reference-panel" class="reference-panel" aria-label="原片对照" hidden>
         <div class="reference-heading"><b>原片对照</b><ryugi-action-icon id="reference-close" icon="x" title="收起原片" aria-label="收起原片"></ryugi-action-icon></div>
         <video id="reference-video" controls playsinline muted preload="metadata" src="assets/full-calibration.mp4"></video>
         <p id="reference-caption">截取自你提供的视频 · 20:58—23:10</p>
-      </div>
+      </dialog>
     </aside>
   </main>
+<dialog id="sequence-dialog" aria-labelledby="sequence-title">      <div class="lesson-list"><div class="lesson-list-heading"><b id="sequence-title">组装顺序</b><button id="sequence-close" type="button" aria-label="收起组装顺序">×</button><div class="chapter-picker"><ryugi-select id="phase-select" value="13" size="small" aria-label="选择组装阶段" style="width:100%;font-size:11px"><ryugi-option value="0">1 · 准备与编号</ryugi-option><ryugi-option value="1">2 · 右脚踝</ryugi-option><ryugi-option value="2">3 · 左脚踝</ryugi-option><ryugi-option value="3">4 · 右腿连接</ryugi-option><ryugi-option value="4">5 · 左腿连接</ryugi-option><ryugi-option value="5">6 · 双腿收尾</ryugi-option><ryugi-option value="6">7 · 身体与髋支撑</ryugi-option><ryugi-option value="7">8 · 髋电机与接腿</ryugi-option><ryugi-option value="8">9 · 头部旋转与接线</ryugi-option><ryugi-option value="9">10 · 嘴部与双舵机脖子</ryugi-option><ryugi-option value="10">11 · 头盖与嘴部软垫</ryugi-option><ryugi-option value="11">12 · 身体与头颈总装</ryugi-option><ryugi-option value="12">13 · 电控与外壳收尾</ryugi-option><ryugi-option value="13">14 · 校准与完成</ryugi-option></ryugi-select></div></div><nav id="step-list" aria-label="选择组装步骤"></nav></div>
+</dialog>
   <input type="hidden" id="full-saved-step" value="0"><input type="hidden" id="full-saved-progress" value="1">
   <input type="hidden" id="focus-zoom-saved" value="1"><input type="hidden" id="focus-zoom-step" value=""><input type="hidden" id="focus-zoom-position" value="">
   <audio id="piano-audio" loop preload="auto" playsinline crossorigin="anonymous"></audio>
