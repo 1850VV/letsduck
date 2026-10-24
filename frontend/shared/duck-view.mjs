@@ -201,21 +201,25 @@ export function createDuckView(data) {
 
 
   // Renders the assembled duck alone at an exact size from the current camera direction, then restores the live view.
-  function snapshot(w, h, { colors, angle } = {}) {
+  // stage: the stage exactly as a fresh visit first draws it (hero view, at rest), for the next visit to show at once.
+  function snapshot(w, h, { colors, angle, stage = false } = {}) {
     const saved = { size: renderer.getSize(new THREE.Vector2()), ratio: renderer.getPixelRatio(), aspect: camera.aspect, pos: camera.position.clone(), target: controls.target.clone(), colors: colors && Object.fromEntries([...meshes].map(([id, m]) => [id, '#' + (targets.get(id) || m.material.color).getHexString(THREE.SRGBColorSpace)])), hl: [selected, hovered], spin: root.rotation.y,
-      objs: objects.map((o) => [o, o.position.clone(), o.scale.x, o.visible]), shadow: shadow.visible, side: side.group.visible };
+      objs: objects.map((o) => [o, o.position.clone(), o.scale.x, o.visible]), shadow: shadow.visible, side: side.group.visible, pose: { ...pose } };
     side.group.visible = false;camera.clearViewOffset();
     // A spinning turntable or a non-assembled layout would not read as the finished duck.
     root.rotation.y = 0;objects.forEach((o) => {o.position.copy(o.userData.rest);o.scale.setScalar(1);o.visible = true;});shadow.visible = true;setHighlight([], []);flushColors();if (colors) setColors(colors, true);
     renderer.setPixelRatio(1);renderer.setSize(w, h, false);camera.aspect = w / h;camera.updateProjectionMatrix();
+    if (stage) {setPose(REST_POSE);camera.position.copy(framed('hero'));camera.lookAt(TARGET);draw(depthAllowed(), finishState);} else {
     const look = layout === 'arrange' ? new THREE.Vector3(...VIEWS.hero) : angle ? new THREE.Vector3(...VIEWS[angle]) : camera.position.clone().sub(controls.target).add(TARGET);
     const dir = look.sub(TARGET).normalize(),dist = Math.max(bounds.size.y / 2 / tanV(), Math.max(bounds.size.x, bounds.size.z) / 2 / (tanV() * w / h)) * 1.22;
     camera.position.copy(bounds.center).addScaledVector(dir, dist);camera.lookAt(bounds.center);
-    renderer.render(scene, camera);const out = document.createElement('canvas');out.width = w;out.height = h;out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
+    renderer.render(scene, camera);}
+    const out = document.createElement('canvas');out.width = w;out.height = h;out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
     renderer.setPixelRatio(saved.ratio);renderer.setSize(saved.size.x, saved.size.y, false);camera.aspect = saved.aspect;camera.updateProjectionMatrix();camera.position.copy(saved.pos);controls.target.copy(saved.target);camera.lookAt(saved.target);controls.update();
     saved.objs.forEach(([o, p, s, v]) => {o.position.copy(p);o.scale.setScalar(s);o.visible = v;});shadow.visible = saved.shadow;side.group.visible = saved.side;
-    root.rotation.y = saved.spin;if (saved.colors) setColors(saved.colors, true);selected = saved.hl[0];hovered = saved.hl[1];paintHighlight();invalidate();return out;
+    root.rotation.y = saved.spin;if (stage) setPose(saved.pose);if (saved.colors) setColors(saved.colors, true);selected = saved.hl[0];hovered = saved.hl[1];paintHighlight();invalidate();return out;
   }
+  const still = (w, h) => snapshot(w, h, { stage: true });
   const thumbnail = (colors, w = 540, h = 390) => snapshot(w, h, { colors, angle: 'hero' }).toDataURL('image/png');
   // A separate assembled scene for the publish ceremony (evolution.mjs renders it with its own renderer).
   function createShowcase() {
@@ -241,7 +245,7 @@ export function createDuckView(data) {
     });
     exportQueue=run.catch(()=>{});return run;
   }
-  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
+  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, still, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
     setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},
