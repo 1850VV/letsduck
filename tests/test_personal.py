@@ -104,7 +104,7 @@ class PersonalTests(unittest.TestCase):
 
     def test_accounts_and_gallery_do_not_exist(self):
         self.start()
-        self.assertEqual(self.call('GET', '/api/site'), (200, {'publicUrl': '', 'edition': 'personal', 'assembly': (app.FRONTEND / 'assemble' / 'index.html').is_file()}))
+        self.assertEqual(self.call('GET', '/api/site'), (200, {'publicUrl': '', 'edition': 'personal', 'assembly': app.assembly_ready()}))
         for method, path in [('POST', '/api/auth/register'), ('POST', '/api/auth/login'), ('GET', '/api/me'), ('PATCH', '/api/me'),
                              ('GET', '/api/works'), ('POST', '/api/works'), ('GET', '/api/works/w-1'), ('PUT', '/api/works/w-1/rating')]:
             with self.subTest(path=path, method=method):
@@ -141,6 +141,37 @@ class PersonalTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as caught:
             urlopen(self.base + '/paint/index.html')
         self.assertEqual(caught.exception.code, 404)
+
+    def test_assembly_guide_serves_listed_local_assets_with_byte_ranges(self):
+        assets = Path(self.tmp.name) / 'assets'
+        (assets / 'assembly').mkdir(parents=True)
+        (assets / 'assembly' / 'clip.mp4').write_bytes(b'0123456789')
+        (assets / 'secret.mp4').write_bytes(b'not listed')
+        saved = app.ASSETS, app.ASSEMBLY, app.CHUNK
+        app.ASSETS, app.ASSEMBLY, app.CHUNK = assets, {'clip.mp4': {}}, 4
+        self.addCleanup(lambda: setattr(app, 'ASSETS', saved[0]) or setattr(app, 'ASSEMBLY', saved[1]) or setattr(app, 'CHUNK', saved[2]))
+        self.start()
+        with urlopen(self.base + '/assemble/') as response:
+            self.assertEqual(response.read(), (app.FRONTEND / 'assemble' / 'index.html').read_bytes())
+        self.assertTrue(app.assembly_ready())
+        url = self.base + '/assemble/assets/clip.mp4'
+        with urlopen(url) as response:
+            self.assertEqual((response.status, response.headers['Content-Type'], response.headers['Accept-Ranges'], response.read()), (200, 'video/mp4', 'bytes', b'0123456789'))
+        for header, body, content_range in [('bytes=2-5', b'2345', 'bytes 2-5/10'), ('bytes=-3', b'789', 'bytes 7-9/10'),
+                                            ('bytes=0-', b'0123', 'bytes 0-3/10'), ('bytes=8-20', b'89', 'bytes 8-9/10')]:
+            with self.subTest(range=header), urlopen(Request(url, headers={'Range': header})) as response:
+                self.assertEqual((response.status, response.headers['Content-Range'], response.read()), (206, content_range, body))
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(Request(url, headers={'Range': 'bytes=10-'}))
+        self.assertEqual((caught.exception.code, caught.exception.headers['Content-Range']), (416, 'bytes */10'))
+        with urlopen(Request(url, method='HEAD')) as response:
+            self.assertEqual((response.status, response.headers['Content-Length'], response.read()), (200, '10', b''))
+        for path in ['/assemble/assets/secret.mp4', '/assemble/assets/../secret.mp4', '/assemble/assets/%2e%2e/secret.mp4', '/assemble/assets/']:
+            with self.subTest(path=path), self.assertRaises(HTTPError) as caught:
+                urlopen(self.base + path)
+            self.assertEqual(caught.exception.code, 404)
+        (assets / 'assembly' / 'clip.mp4').unlink()
+        self.assertEqual(self.call('GET', '/api/site')[1]['assembly'], False)
 
     def test_a_burst_of_module_requests_is_not_reset(self):
         # Opening the studio loads ~40 modules in parallel; none may be dropped.

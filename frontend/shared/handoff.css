@@ -1,0 +1,21 @@
+/* Studio → assembly guide without leaving the stage. The guide's index.html puts the studio's picture of the duck
+   in #stage before its first paint and marks <html class="arriving">; the panels around the stage then slide in while
+   the picture holds still, and page.mjs crossfades it into the live model. Works in every browser.
+   Where the browser also runs a cross-document view transition, it only moves the stage into place (the panels already
+   animate), so nothing animates twice. */
+@media (prefers-reduced-motion:no-preference){
+  @view-transition{navigation:auto}
+  #stage{view-transition-name:duck-stage}
+  ::view-transition-group(duck-stage){animation-duration:.5s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+  ::view-transition-old(root),::view-transition-new(root){animation:none}
+  .arriving :is(.top,.section-heading,.instruction-column,.player-bar,.prototype-note){animation:handoff-in .5s cubic-bezier(.2,.8,.2,1) both}
+  .arriving .section-heading{animation-delay:.05s}
+  .arriving .instruction-column{animation-delay:.1s;animation-name:handoff-side}
+  .arriving .player-bar{animation-delay:.16s}
+  .arriving .prototype-note{animation-delay:.22s}
+  @keyframes handoff-in{from{opacity:0;transform:translateY(12px)}}
+  @keyframes handoff-side{from{opacity:0;transform:translateX(24px)}}
+}
+.handoff{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:2;transition:opacity .5s ease}
+.handoff.done{opacity:0}
+.stage:has(.handoff:not(.done)) #loading{opacity:0}

@@ -26,7 +26,7 @@ def audit():
         media=name.startswith(MEDIA) and p.suffix.lower() in {'.jpg','.gif'}
         if media and p.stat().st_size>MEDIA_MAX:
             findings.append({'file':name,'rule':'readme-media-too-large'})
-        if p.name in LOCAL_ONLY or (not media and p.suffix.lower() in {'.3mf','.stl','.zip','.bin','.png','.jpg','.gif','.webm','.mp4','.pdf'}):
+        if p.name in LOCAL_ONLY or (not media and p.suffix.lower() in {'.3mf','.stl','.zip','.bin','.glb','.png','.jpg','.gif','.webm','.mp4','.mp3','.pdf'}):
             findings.append({'file':name,'rule':'local-only-or-unreviewed-binary'})
         if any(s in {'.env','.codex','.agents','.playwright-cli','.ryugi','node_modules','__pycache__'}for s in p.relative_to(ROOT).parts):
             findings.append({'file':name,'rule':'private-or-generated-path'})

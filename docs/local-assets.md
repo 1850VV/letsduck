@@ -21,6 +21,17 @@ python3 run.py --no-open
 
 模型持有者应自行确认所需用途的权利。软件 MIT 授权不覆盖上述资产。不要使用 `git add -f` 上传它们，也不要把完整本地运行目录打成公开 Release 附件。
 
+## 组装教程资产
+
+「想做鸭」的 3D 组装教程另需 26 个本地文件（约 126 MB）：整机组装模型、10 个硬件模型、10 段教程视频和 3 段音频。它们同样不进 Git，放在 `assets/assembly/`。`scripts/assembly-assets.json` 记录每个文件的大小和 SHA-256，导入器逐个核对，不覆盖不同的文件：
+
+```sh
+python3 scripts/import_assembly_assets.py --git origin/codex/assembly-tutorial   # 从本机已拉取的私有分支读取
+python3 scripts/import_assembly_assets.py /path/to/assembly/assets               # 或者从一个文件夹读取
+```
+
+没有导入时，首页的「想做鸭」显示「即将开放」，其余功能不受影响。来源与许可见 [第三方说明](../THIRD_PARTY_NOTICES.md)。
+
 ## 验证含义
 
 公开 CI 验证源码、导入工具和发布检查；完整测试使用本地资产执行。缺少资产时，启动器明确提示缺失文件，不生成替代模型，也不会将空白预览称为运行成功。
