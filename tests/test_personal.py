@@ -57,6 +57,27 @@ class PersonalTests(unittest.TestCase):
         parts = sorted(server.store.part_ids) or ['P1-01']
         return {'colors': {p: '#ffffff' for p in parts}, 'assignments': {p: None for p in parts}}
 
+    def test_files_are_revalidated_and_answers_never_stored(self):
+        self.start()
+        with urlopen(self.base + '/paint') as page:
+            self.assertEqual(page.headers['Cache-Control'], 'no-cache')
+            stamp = page.headers['Last-Modified']
+        try:
+            urlopen(Request(self.base + '/paint', headers={'If-Modified-Since': stamp}))
+            self.fail('expected 304')
+        except HTTPError as unchanged:
+            self.assertEqual(unchanged.code, 304)
+        with urlopen(self.base + '/api/site') as answer:
+            self.assertEqual(answer.headers['Cache-Control'], 'no-store')
+        if (app.ASSETS / 'model.json').is_file():
+            with urlopen(self.base + '/assets/model.json') as model:
+                stamp = model.headers['Last-Modified']
+            try:
+                urlopen(Request(self.base + '/assets/model.json', headers={'If-Modified-Since': stamp}))
+                self.fail('expected 304')
+            except HTTPError as unchanged:
+                self.assertEqual(unchanged.code, 304)
+
     @unittest.skipUnless(app.exporter, 'requires local assets')
     def test_binary_export_uses_standard_library_and_preserves_archive(self):
         import io, zipfile
