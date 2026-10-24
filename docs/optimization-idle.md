@@ -79,4 +79,16 @@ Remaining changes are sparse edge pixels from the deliberate camera motion; pixe
 
 Regression tests first failed with the original depth policy because label/casing depth collapsed at 500 mm. The new tests verify 24-bit depth separation at 66/500/1100 mm and unchanged framing, close foreground visibility and inverse-projection round-trip at 18 mm. Final suites: Node 229 passed / 3 existing skips; full Python 60 passed / 18 MySQL skips; personal Python 11 passed. Publication audit and diff checks are required before the follow-up commit.
 
-The local verify artboard `verify-hardware-surface` contains real before/after screenshots and two-second H.264 replays of the captured micro-motion frames (4 fps, no synthesized imagery). Its structural warnings and pending files are empty. Human visual acceptance is pending; the running 8902 preview stays available for this purpose. The 8876 service is not changed.
+The local verify artboard `verify-hardware-surface` contains real before/after screenshots and two-second H.264 replays of the captured micro-motion frames (4 fps, no synthesized imagery). Its structural warnings and pending files are empty. Human visual acceptance was completed on 2026-10-24: the owner stated “现在看起来不闪了”. The artboard API independently records both `board` and `servo` as `pass`, with `evidenceUpdated=false` and no reject threads (23:07 Asia/Shanghai). The running 8902 preview remains available. The 8876 service is not changed.
+
+
+## Controller handoff after owner acceptance — 2026-10-24
+
+- User instruction: organize these optimization/fix results for the controller; do not switch 8876.
+- Idle-render implementation: `9103d2432a244c6a8b3c001c532bce8f1dab93ec`. Initial delivery/documentation head: `2acf7e85f5ec607df2240f85c5a2caa8b5366d9a`.
+- Surface-flicker fix and tests: `9b24e8bcb4aeee583555dfdf85c761c106a35d72`. This is the distinct follow-up for a controller baseline that already contains idle scheduling. Check ancestry and the current owning source before integration; do not replay an already-integrated optimization blindly.
+- PR #12 remains an OPEN DRAFT targeting `codex/personal-navigation`. This handoff does not merge it, change the base branch, or authorize a production-service switch.
+- Summary: stable two-second WebGL submissions dropped to zero in both quality modes; the isolated hardware surface regression dropped large pixel jumps to sparse motion-edge differences; both hardware verify groups and the owner's live preview acceptance passed.
+- Full evidence and limitations are above. Updated tests: 229 Node passes / 3 skips, 60 full-Python passes / 18 MySQL skips, 11 personal-Python passes; publication audit 291 files / no findings. No source code changed after these tests; this handoff adds documentation only.
+- Current preview: 8902 is running from this assigned worktree with the dedicated temporary test database (PID 84606 at handoff verification). The original 8876 listener remains PID 52333; no restart, checkout, merge, or service switch was performed there. Earlier cleanup statements in this document describe the first automated test run, before the owner requested reopening 8902.
+- Task-owned Playwright sessions and browsers are closed. The local verify-artboard server is retained for review. Model assets, screenshots, databases and browser state remain local and ignored.
