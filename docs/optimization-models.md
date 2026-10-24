@@ -2,7 +2,7 @@
 
 状态：内部候选已实现；默认关闭；用户视觉验收未完成。不要据此开启正式服务或默认画质。
 
-基线：`0699ccf96b7b101a57ab4cfb2754983f0d512a9a`，分支 `codex/optimization-models`。交付的实现 SHA 见下方交付记录。
+基线：`0699ccf96b7b101a57ab4cfb2754983f0d512a9a`，分支 `codex/optimization-models`。实现提交：`fb9c2adf5f8078b03f5ef9c5b0b89fd6f2006021`。后续提交仅补充交付记录。
 
 ## 改动与边界
 
@@ -46,3 +46,7 @@
 - 原制造文件：`assets/source.3mf` 前后 SHA256 相同：`731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c`。没有提交或生成制造文件。
 - 测试：Node 230项，227通过、3项压缩资产相关跳过；个人版Python11通过；publication audit findings=[]。全部Python初次因共享环境缺少httpx2有4个模块导入错误；本树独立`.venv`安装锁定requirements-dev后重跑78项，60通过、18跳过（MySQL未配置及显式跳过项，详见日志）。
 - 进程：所有任务自有CLI会话及直接Playwright浏览器已关闭；测试服务交付前停止。正式8876服务未操作。不得把浏览器技术检查视为用户视觉确认。
+
+## 交付记录
+
+本地 Ryugi 画板：`.ryugi/artifacts/artboard/verify-hardware-lod/canvas.json`，五组基线/候选真实截图，warnings=[]、pending=[]（文件完整状态，不代表视觉通过）。项目 auto-publish=false，未云端发布。测试服务8903及自有自动化浏览器/daemon已退出；仅本地画板预览服务保留供审核，端口50191，关闭方式：用 Ryugi launcher 对本工作树执行 `stop --json --project-dir <本工作树>`。它不是正式应用服务。
