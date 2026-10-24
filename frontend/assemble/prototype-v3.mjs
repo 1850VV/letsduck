@@ -11,6 +11,7 @@ import { createAssemblyMagnifier } from './assembly-magnifier.mjs';
 import { buildFineCues } from './fine-cues.mjs';
 import {createLessonPlayer} from './lesson-player.mjs';
 import {createLessonSound} from './lesson-sound.mjs';
+import {updateAssemblyCameraDepth} from './camera-depth.mjs';
 import {createRenderScheduler} from './render-scheduler.mjs';
 import {createRenderQuality} from './render-quality.mjs';
 import {fitsForParts} from './model-fit.mjs';
@@ -338,7 +339,7 @@ function render(now){
     for(const [id,b] of Object.entries(target)){const a=backTransition.from[id]||b;state[id]=interpolatePose(ACTORS[id],a,b,ease);}
     applyState(state);if(t>=1){backTransition=null;applyState(target);}}
   if(cameraTween){const t=Math.min(1,(now-cameraTween.start)/cameraTween.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(cameraTween.from,cameraTween.to,ease);controls.target.lerpVectors(cameraTween.fromTarget,cameraTween.toTarget,ease);if(t>=1)cameraTween=null;}
-  const cameraMoving=controls.update();updateActionLabel();
+  const cameraMoving=controls.update();updateAssemblyCameraDepth(camera,controls.target);updateActionLabel();
   const focus=ready?assemblyFocus.update(STEPS[step].id,progress,currentState,guidanceEndState,now,!!backTransition,camera,host.clientHeight):{phase:'none'};
   if(focus.phase!=='none')guideArrow.visible=false;
   const hint=document.querySelector('.real-model'),message=focus.message||(focus.phase==='aligning'?'红框 · 对准这两处':focus.phase==='completed'?'绿框 · 本次已装好':'真实零件网格');

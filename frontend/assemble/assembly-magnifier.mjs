@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {updateAssemblyCameraDepth} from './camera-depth.mjs';
 import {withDetailSection} from './detail-section.mjs';
 
 // A second camera in the same scene and WebGL context. No model/camera transforms
@@ -66,7 +67,7 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
       const animating=lens.position.distanceToSquared(destination)>1e-8||lens.userData.target.distanceToSquared(center)>1e-8;
       if(!animating){lens.position.copy(destination);lens.userData.target.copy(center);}
       const offset=lens.position.clone().sub(lens.userData.target);if(offset.length()>maxDistance)lens.position.copy(lens.userData.target).add(offset.setLength(maxDistance));
-      lens.lookAt(lens.userData.target);lens.updateProjectionMatrix();lens.updateMatrixWorld();
+      lens.lookAt(lens.userData.target);updateAssemblyCameraDepth(lens,lens.userData.target);lens.updateProjectionMatrix();lens.updateMatrixWorld();
       const lensScale=h/(2*lens.position.distanceTo(lens.userData.target)*Math.tan(THREE.MathUtils.degToRad(16))),zoom=lensScale/mainScale;
       $('focus-zoom-factor').textContent=zoom.toFixed(1)+'×';$('focus-zoom-title').textContent=(focus.detailTitle||'接头放大')+(stepId==='head-shell-fix'?' · 剖视':'');$('focus-zoom-status').textContent=focus.detailStatus||(focus.phase==='completed'?'已接合':'对准接口');panel.dataset.phase=focus.detailPhase||focus.phase;
       panel.setAttribute('aria-label',(focus.detailTitle||'接头放大')+'窗口');view.setAttribute('aria-label','当前装配部位的实时三维放大画面');
