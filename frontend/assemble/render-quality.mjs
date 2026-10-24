@@ -68,7 +68,7 @@ function studioEnvironment(renderer){
 }
 
 export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
-  const hardwareLod=createHardwareLod({enabled:new URLSearchParams(location.search).get('hardwareLod')==='1'}),viewSize=new THREE.Vector2();
+  const hardwareLod=createHardwareLod({enabled:new URLSearchParams(location.search).get('hardwareLod')!=='0'}),viewSize=new THREE.Vector2();
   const input=document.getElementById('render-quality'),bindings=[],overlays=[],cache=new Map(),geometryCache=new Map(),baseline={environment:scene.environment,environmentIntensity:scene.environmentIntensity,exposure:renderer.toneMappingExposure,toneMapping:renderer.toneMapping,pixelRatio:renderer.getPixelRatio(),shadowType:renderer.shadowMap.type,shadowSize:key.shadow.mapSize.clone(),shadowFar:key.shadow.camera.far,shadowNormalBias:key.shadow.normalBias,keyPosition:key.position.clone(),keyIntensity:key.intensity,keyColor:key.color.clone(),fillPosition:fill.position.clone(),fillIntensity:fill.intensity,fillColor:fill.color.clone(),hemiIntensity:hemi.intensity,groundOpacity:ground.material.opacity,groundMaterial:ground.material};
   const softGround=ground.material.clone();softGround.onBeforeCompile=softenShadows;softGround.customProgramCacheKey=()=>`duck-soft-ground-1`;
   let mode='current',studio=null,contact=null,dirty=true,attached=false,lastStats={calls:0,triangles:0};
