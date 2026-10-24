@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 import {STEPS,snapshot} from './hardware-state.mjs';
-import {buildFineCues,selectFineCue,FINE_STEPS} from './fine-cues.mjs';
+import {buildFineCues,selectFineCue} from './fine-cues.mjs';
 import {createFineGeometry} from './fine-geometry.mjs';
 
 // Visual trial only: four explicit assembly actions, with no inferred contacts.
-export const FOCUS_STEPS = new Set(['final-head-join', 'final-board-mate', ...FINE_STEPS]);
+const explicitFocusSteps = new Set(['final-head-join', 'final-board-mate']);
+const stepIndices = new Map(STEPS.map((step,index)=>[step.id,index]));
+// Discover fine cues for the requested step only; scanning the whole lesson blocks first paint.
+export function isFocusStep(step) {
+  const index=stepIndices.get(step);
+  return explicitFocusSteps.has(step)||(index!==undefined&&buildFineCues(index).length>0);
+}
 const RED = 0xef4949, GREEN = 0x13b879;
 const pulseDuration = 1500;
 const box = (center, size) => new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(...center), new THREE.Vector3(...size));
@@ -51,7 +57,7 @@ export function createAssemblyFocus(scene, entities, cableRecords) {
     get state() { return structuredClone(details); },
     update(step,progress,poses,end,now,back,camera,viewportHeight) {
       frames.forEach(f=>f.hide());details={phase:'none',boxes:[]};
-      if (!FOCUS_STEPS.has(step)||back) return details;
+      if (back||!isFocusStep(step)) return details;
       if(activeStep!==step){activeStep=step;clock.clear();}
       const index=indices.get(step),cues=buildFineCues(index);
       if(cues.length&&!(step==='final-head-join'&&progress<cues[0].from)){
