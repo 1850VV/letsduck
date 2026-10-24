@@ -1,4 +1,4 @@
-import {paintScope, deliverySummary, toolShortcut} from '../lib/paint-delivery.mjs';
+import {paintScope, deliverySummary, toolShortcut, createMaterialReview} from '../lib/paint-delivery.mjs';
 import {hoverQueue} from '../shared/hover-queue.mjs';
 import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 涂装台: one stage, three steps (style → refine → showcase), plus schemes, A/B compare, group replace, close-up, arrange, colour finder, plates check,
@@ -420,15 +420,15 @@ function setFree(hex, { hsv, preview = true } = {}) {finder = hex.toUpperCase();
 function previewFree() {const ids = targetIds().filter((id) => !locks.has(id));previewing = true;view.setColors({ ...design.colors, ...Object.fromEntries(ids.map((id) => [id, finder])) });}
 function commitFree() {previewing = false;if (tool === 'brush') return setInk(freeKey());paint(targetIds(), freeKey(), _message("text.0052"));}
 function plateCheck() {
-  return [1, 2, 3, 4, 5, 6].map((n) => {const ps = parts.filter((p) => p.plate === n),ids = [...new Set(ps.map((p) => keyOf(p.id)))],tpu = ps[0].material === 'TPU 90A';
+  return [...new Set(parts.map(p => p.plate))].sort((a,b)=>a-b).map((n) => {const ps = parts.filter((p) => p.plate === n),ids = [...new Set(ps.map((p) => keyOf(p.id)))],tpu = ps[0].material === 'TPU 90A';
     const warn = tpu && ids.length > 1 ? _t("text.0200") : !tpu && ids.length > 4 ? _t("text.0201") : '';
     return `<li class="${warn ? 'warn-row' : ''}"><b>${_t("text.0203", { v1: n })}</b><span class="pc-chips">${ids.map((k) => `<i style="--c:${keyHex(k)}" title="${_attr(esc(keyName(k)))}"></i>`).join('')}</span><small>${_t("text.0204", { v3: ps.length, v4: ids.length, v5: tpu ? _t("text.0202") : '' })}</small>${warn ? `<em>⚠ ${warn}</em>` : ''}</li>`;}).join('');
 }
 // Step 3: four short tabs (姿势 · 动作 · 分享 · 打印), each fits one screen; save / publish stay at the bottom.
-function panelStep3() {
+function advancedDelivery() {
   const notes = designNotes(design.colors, design.assignments),list = used(),slotsNeeded = new Set([...Object.values(ORIGINAL.assignments), ...parts.map((p) => keyOf(p.id))]).size,code = lookCode({ ...design, name }, parts, products),okCode = code.startsWith('v1.');
   const pending = parts.filter((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo).length;
-  const plates = [1, 2, 3, 4, 5, 6].map((n) => {const ps = parts.filter((p) => p.plate === n),ks = [...new Set(ps.map((p) => keyOf(p.id)))],tpu = ps[0].material === 'TPU 90A',warn = tpu && ks.length > 1 ? _t("text.0205") : !tpu && ks.length > 4 ? _t("text.0206") : '';return `<div class="plate ${warn ? 'warn' : ''}" title="${_attr(warn || _t("text.0207", { v0: ps.length, v1: ks.length }))}"><b>${_t("text.0208", { v2: n })}</b><span>${ks.map((k) => `<i style="--c:${keyHex(k)}"></i>`).join('')}</span><small>${_t("text.0209", { v4: ks.length, v5: tpu ? ' · TPU' : '' })}</small></div>`;}).join('');
+  const plates = [...new Set(parts.map(p => p.plate))].sort((a,b)=>a-b).map((n) => {const ps = parts.filter((p) => p.plate === n),ks = [...new Set(ps.map((p) => keyOf(p.id)))],tpu = ps[0].material === 'TPU 90A',warn = tpu && ks.length > 1 ? _t("text.0205") : !tpu && ks.length > 4 ? _t("text.0206") : '';return `<div class="plate ${warn ? 'warn' : ''}" title="${_attr(warn || _t("text.0207", { v0: ps.length, v1: ks.length }))}"><b>${_t("text.0208", { v2: n })}</b><span>${ks.map((k) => `<i style="--c:${keyHex(k)}"></i>`).join('')}</span><small>${_t("text.0209", { v4: ks.length, v5: tpu ? ' · TPU' : '' })}</small></div>`;}).join('');
   return `<div class="panel-head compact tight"><div class="sel-line"><h2>${_t(personal ? 'personal.show' : "text.0221")}</h2><span class="kind-tag">${_t("text.0222", { v0: notes.count, v1: notes.warnings.length ? ' · ⚠' : '' })}</span></div>${notes.warnings.length ? `<p class="lead warn-lead">⚠ ${esc(notes.warnings[0])}</p>` : ''}</div>
   <div class="cdock" id="pdock" data-tab="${showTab}">
     <div class="dock-tabs three" role="tablist"><button data-ptab="move" role="tab">${_t("text.0223")}</button><button data-ptab="share" role="tab">${_t(personal ? 'personal.share' : "text.0224")}</button><button data-ptab="print" role="tab">${_t("text.0225", { v4: pending ? '<sup>!</sup>' : '' })}</button><i class="ink"></i></div>
@@ -442,7 +442,7 @@ function panelStep3() {
         <div class="joint-grid">${POSE_SLIDERS.map(([g, id, label, min, max]) => `<label class="pose-row joint" title="${_attr(_t("text.0213"))}"><span>${label}</span><input type="range" data-pose="${id}" min="${min}" max="${max}" step="1"><em></em></label>`).join('')}</div>
       </section>
       <section class="pane pane-share">
-        <button class="poster-card" id="open-poster"><span class="poster-mini"><img id="poster-mini" alt="${_attr(_t("text.0238"))}"><i class="spin"></i></span><span><b>${_t("text.0239")}</b><small>${_t("text.0240")}</small></span></button>
+        <button class="poster-card" id="open-poster-detail"><span class="poster-mini"><img id="poster-mini" alt="${_attr(_t("text.0238"))}"><i class="spin"></i></span><span><b>${_t("text.0239")}</b><small>${_t("text.0240")}</small></span></button>
         <div class="code-box ${okCode ? '' : 'off'}"><span>${_t("text.0241")} <small>${_t("text.0242")}</small></span><code>${esc(okCode ? code : _t("text.0214"))}</code>${okCode ? `<button id="copy-code">${_t("text.0215")}</button>` : ''}</div>
       </section>
       <section class="pane pane-print">
@@ -451,11 +451,24 @@ function panelStep3() {
         <div class="bom-grid">${list.map((k) => `<div title="${_attr(esc(keySub(k)))}"><i style="--c:${keyHex(k)}"></i><span>${esc(keyName(k))}</span><b>${countOf(k)}</b></div>`).join('')}</div>
         <div class="strip"><span>${_t("text.0245")} <small>${_t("text.0246", { v19: slotsNeeded, v20: slotsNeeded > 16 ? _t("text.0218") : '' })}</small></span></div>
         <div class="plates-grid">${plates}</div>
-        <button class="primary" id="export2">${_t("text.0247")}</button>
+        <button class="primary" id="export-detail">${_t("text.0247")}</button>
       </section>
     </div>
-  </div>
-  <div class="panel-foot finish"><button class="save-mine ${activeId && !dirty() ? 'done' : ''}" id="finish-save" title="${_attr(_t(personal ? 'personal.saveTitle' : "text.0248"))}">${activeId && !dirty() ? _t("text.0219") : _t("text.0220")}</button>${personal ? assembly ? `<a class="primary go-assemble" id="go-assemble" href="./assemble/" title="${_attr(_t('personal.assembleTitle'))}">${_t('personal.assemble')} →</a>` : '' : `<button class="primary" id="publish" title="${_attr(_t("text.0249"))}">${_t("text.0250")}</button>`}</div>`;
+  </div>`;
+}
+function deliveryStats(summary) {
+  return `<div class="ex-stats"><span><b>${summary.plates}</b>${_t('text.0245')}</span><span><b>${summary.parts}</b>${_t('text.0315')}</span><span><b>${summary.materials}</b>${_t('text.0316')}</span></div>`;
+}
+function panelStep3() {
+  const summary = deliverySummary(parts,Object.fromEntries(parts.map(p => [p.id,keyOf(p.id)])));
+  return `<div class="panel-body cd-delivery"><h2>${_t(personal ? 'personal.show' : 'label.showshare')}</h2>
+    <div class="cd-row">${['nod','quack','sway'].map(id => {const a=ACTIONS.find(a=>a.id===id);return `<button data-act="${a.id}" title="${_attr(a.desc)}">${a.name}</button>`;}).join('')}</div>
+    <section class="cd-card"><h3>${_t('cd.keep')}</h3><span class="cd-save-status" data-save-status>${esc($('#scheme-state').textContent)}</span>
+    <div class="cd-row"><button class="primary" id="finish-save">${_t('text.0220')}</button><button id="open-poster">${_t('text.0239')}</button></div></section>
+    <section class="cd-card"><h3>${_t('cd.print')}</h3><p>${_t('cd.printHelp')}</p>${deliveryStats(summary)}
+    <button class="primary" id="export2">${_t('text.0247')}</button><p class="muted">${_t('cd.boundary')}</p></section>
+    <details><summary>${_t('cd.advanced')}</summary>${advancedDelivery()}</details></div>
+    <div class="panel-foot finish">${personal ? assembly ? `<a class="primary go-assemble" id="go-assemble" href="./assemble/" title="${_attr(_t('personal.assembleTitle'))}">${_t('personal.assemble')} →</a>` : '' : `<button class="primary" id="publish">${_t('text.0250')}</button>`}</div>`;
 }
 // The share tab shows the real poster, rendered once per design when the tab opens.
 let miniKey = '';
@@ -564,14 +577,14 @@ $('#panel').addEventListener('click', async (e) => {
     Object.assign(next.colors, patch.colors);Object.assign(next.assignments, patch.assignments);
     return commit(next, _message("text.0264", { v0: takeFrom === 'original' ? _message("text.0069") : schemes.find((s) => s.id === takeFrom).name, v1: Object.keys(patch.colors).length }));
   }
-  if (t.closest('#open-poster')) return poster.open({ design: { ...design, name, author: account.user?.name || '' }, before: ORIGINAL });
+  if (t.closest('#open-poster,#open-poster-detail')) return poster.open({ design: { ...design, name, author: account.user?.name || '' }, before: ORIGINAL });
   if (t.closest('#copy-code')) {navigator.clipboard?.writeText(lookCode({ ...design, name }, parts, products)).then(() => toast(_message("text.0265")), () => toast(_message("text.0266")));return;}
   const act = t.closest('[data-act]');if (act) return actions.play(act.dataset.act);
   const vc = t.closest('[data-voice]');if (vc) {vc.classList.remove('pop');void vc.offsetWidth;vc.classList.add('pop');return actions.say(vc.dataset.voice);}
   if (t.closest('#voice-dice')) {voiceSalt = 1 + Math.floor(Math.random() * 99999);persist();renderPanel();updateVoice();return toast(_message("text.0267"));}
   if (t.closest('#voice-reset')) {voiceSalt = 0;persist();renderPanel();updateVoice();return toast(_message("text.0211"));}
   if (t.closest('#act-show')) return actions.show();if (t.closest('#act-stop')) return actions.stop();
-  if (t.closest('#export2')) return openExport();
+  if (t.closest('#export2,#export-detail')) return openExport();
   // The guide wears the current draft; an untouched duck counts too once you choose to build it.
   if (t.closest('#go-assemble')) {draftUpdated ||= Date.now();persist();handOff();return;}
   if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_message(personal ? 'personal.saved' : "text.0268"));await saveScheme(false);return renderPanel();}
@@ -746,8 +759,11 @@ $('#bgs').addEventListener('input', (e) => {
 document.addEventListener('click', (e) => {if (!e.target.closest('#bgs')) $('#bg-pop').hidden = true;});
 
 // ---------- export review: /api/plan checks every part, /api/export writes the recoloured 3MF ----------
-let plan = null;
+let plan = null,planRequest = 0;
+const materialReview = createMaterialReview();
+const exportIdentity = () => JSON.stringify([model.source_sha256,name,design.assignments,design.colors]);
 async function openExport() {
+  const request = ++planRequest,identity = exportIdentity();plan = null;materialReview.invalidate();
   const dlg = $('#export-dialog'),body = $('#export-body');body.innerHTML = `<p class="muted">${_t("text.0306")}</p>`;if (!dlg.open) dlg.showModal();
   // 3MF export only knows the Bambu catalogue: free colours and illustrative brands are matched first.
   const pending = parts.filter((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo);
@@ -761,33 +777,42 @@ async function openExport() {
     return;
   }
   try {
-    plan = await api('POST', '/plan', { source_sha256: model.source_sha256, name, assignments: design.assignments });const usedSlots = plan.slots.filter((s) => s.used);
-    body.innerHTML = `<div class="ex-stats"><span><b>6</b>${_t("text.0245")}</span><span><b>35</b>${_t("text.0315")}</span><span><b>${usedSlots.length}</b>${_t("text.0316")}</span><span><b>${plan.slots.length}</b>${_t("text.0317")}</span></div>
+    const result = await api('POST', '/plan', { source_sha256: model.source_sha256, name, assignments: design.assignments });
+    if (request !== planRequest || identity !== exportIdentity()) return;
+    plan = result;materialReview.setPlan(plan,identity);const usedSlots = plan.slots.filter((s) => s.used);
+    body.innerHTML = `${deliveryStats(materialReview.summary)}
     <div class="ex-products">${usedSlots.map((s) => {const p = s.product,n = plan.parts.filter((x) => x.slot === s.slot).length;return `<div class="ex-p"><i style="--c:${p.hex}"></i><span><b>${p.series} · ${esc(_label(p.name))}</b><small>${_t("text.0313", { v3: p.colorCode, v4: n, v5: s.slot })}</small></span><a href="${p.productUrl}" target="_blank" rel="noreferrer">${_t("text.0314")}</a></div>`;}).join('')}</div>
     <details class="ex-parts"><summary>${_t("text.0318")}</summary><table><thead><tr><th>${_t("text.0319")}</th><th>${_t("text.0315")}</th><th>${_t("text.0243")}</th><th>${_t("text.0320")}</th></tr></thead><tbody>${plan.parts.map((p) => `<tr><td>${p.plate}</td><td>${p.id} ${esc(_label(p.name))}</td><td>${esc(_label(p.product.name))} ${p.product.colorCode}</td><td>${p.slot}</td></tr>`).join('')}</tbody></table></details>
     <ul class="ex-notes">${plan.warnings.map((w) => `<li>${esc(_label(w))}</li>`).join('')}</ul>
-    <div class="sheet-foot"><button class="ghost-btn" id="dl-bom">${_t("text.0321")}</button><button class="primary" id="dl-3mf">${_t("text.0322")}</button></div><p class="ex-status" id="ex-status"></p>`;
+    <div class="cd-checks"><label><input type="checkbox" id="review-materials">${_t('cd.confirmMaterials',{count:plan.parts.length})}</label><label><input type="checkbox" id="review-slice">${_t('cd.confirmSlice')}</label></div>
+    <div class="sheet-foot"><button class="ghost-btn" id="dl-bom" disabled>${_t("text.0321")}</button><button class="primary" id="dl-3mf" disabled>${_t("text.0322")}</button></div><p class="ex-status" id="ex-status"></p>`;
     $('#dl-bom').onclick = downloadBOM;$('#dl-3mf').onclick = download3MF;
-  } catch (error) {body.innerHTML = `<p class="warn">${esc(error.message)}</p>`;}
+    const confirm = () => {materialReview.confirm('materials',$('#review-materials').checked);materialReview.confirm('slice',$('#review-slice').checked);const allowed=materialReview.canExport(exportIdentity());$('#dl-bom').disabled=!allowed;$('#dl-3mf').disabled=!allowed;};
+    $('#review-materials').onchange=confirm;$('#review-slice').onchange=confirm;
+  } catch (error) {if (request !== planRequest) return;materialReview.invalidate();body.innerHTML = `<p class="warn">${esc(error.message)}</p>`;}
 }
 async function download3MF() {
+  if (!materialReview.canExport(exportIdentity())) return;
+  const identity = exportIdentity(),snapshot = clone(design),exportName = name;
   const btn = $('#dl-3mf'),status = $('#ex-status');btn.disabled = true;status.textContent = _t("text.0323");
   try {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const thumbnails = await renderExportThumbnails(duck, design.colors, {binaryUpload:true,view});
-    const body=new FormData();body.append('plan',JSON.stringify({source_sha256:model.source_sha256,name,assignments:design.assignments}));
+    const thumbnails = await renderExportThumbnails(duck, snapshot.colors, {binaryUpload:true,view});
+    if (!materialReview.canExport(exportIdentity()) || identity !== exportIdentity()) return;
+    const body=new FormData();body.append('plan',JSON.stringify({source_sha256:model.source_sha256,name:exportName,assignments:snapshot.assignments}));
     for(const [key,blob] of Object.entries(thumbnails))body.append(key,blob,key+'.png');
     const r = await fetch('/api/export', { method: 'POST', body });
     if (!r.ok) throw Error(errorText(await r.json().catch(() => ({}))));
     const a = document.createElement('a');a.href = URL.createObjectURL(await r.blob());a.download = 'XGO-Duck-' + name + '-materials.3mf';a.click();setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     status.textContent = _t("text.0325");
   } catch (error) {status.textContent = error.message;} finally
-  {btn.disabled = false;}
+  {btn.disabled = !materialReview.canExport(exportIdentity());}
 }
 function nearestBambu(hex, kind) {return catalog.products.filter((p) => kindOf(p) === kind).map((p) => [p, deltaE(hex, p.hex)]).sort((x, y) => x[1] - y[1])[0][0];}
 function downloadBOM() {
+  if (!materialReview.canExport(exportIdentity())) return;
   const rows = [[_t("text.0326"), _t("text.0319"), _t("text.0327"), _t("text.0328"), _t("text.0329"), _t("text.0330"), _t("text.0331"), _t("text.0332"), _t("text.0333"), _t("text.0334"), _t("text.0335"), _t("text.0336"), _t("text.0337"), _t("text.0338")], ...plan.parts.map((p) => [p.id, p.plate, _label(p.name), p.originalName, p.product.series, p.product.brand, _label(p.product.name), p.product.colorCode, p.product.diameter, p.product.hex, p.slot, p.product.preset, p.product.productUrl, p.uuid])];
-  const csv = '﻿' + rows.map((r) => r.map((v) => '"' + String(v).replaceAll('"', '""') + '"').join(',')).join('\r\n'),a = document.createElement('a');a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));a.download = 'XGO-Duck-' + name + '-BOM.csv';a.click();$('#ex-status').textContent = _t("text.0339");
+  const csv = '﻿' + rows.map((r) => r.map((v) => '"' + String(v).replaceAll('"', '""') + '"').join(',')).join('\r\n'),a = document.createElement('a');a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));a.download = 'XGO-Duck-' + name + '-BOM.csv';a.click();setTimeout(() => URL.revokeObjectURL(a.href),4000);$('#ex-status').textContent = _t("text.0339");
 }
 $$('dialog [data-close]').forEach((b) => b.onclick = () => b.closest('dialog').close());
 

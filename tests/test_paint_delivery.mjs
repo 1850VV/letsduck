@@ -18,3 +18,23 @@ test('tool keys leave text editing and modified keys alone',()=>{
  assert.equal(workflow.toolShortcut({key:'f'},3),null);
  assert.equal(workflow.toolShortcut({key:'P'},2),'side');
 });
+test('material downloads require both confirmations bound to the current plan identity',()=>{
+ assert.equal(typeof workflow.createMaterialReview,'function');
+ const review=workflow.createMaterialReview();
+ assert.equal(review.canExport('draft1'),false);
+ review.setPlan({parts:[{id:'a',plate:9,slot:1}],slots:[{used:true}]},'draft1');
+ review.confirm('materials',true);assert.equal(review.canExport('draft1'),false);
+ review.confirm('slice',true);assert.equal(review.canExport('draft1'),true);
+ assert.equal(review.canExport('draft2'),false);
+ review.confirm('materials',false);assert.equal(review.canExport('draft1'),false);
+});
+test('replacement, reopened review and failed plan invalidate all previous approval',()=>{
+ assert.equal(typeof workflow.createMaterialReview,'function');
+ const review=workflow.createMaterialReview(),plan={parts:[{id:'x',plate:3,slot:1},{id:'y',plate:8,slot:2}],slots:[{used:true},{used:true},{used:false}]};
+ review.setPlan(plan,'before');review.confirm('materials',true);review.confirm('slice',true);
+ assert.deepEqual(review.summary,{plates:2,parts:2,materials:2});
+ review.setPlan(plan,'after');assert.equal(review.canExport('after'),false);
+ review.confirm('materials',true);review.confirm('slice',true);review.invalidate();
+ assert.equal(review.canExport('after'),false);
+ review.confirm('materials',true);review.confirm('slice',true);assert.equal(review.canExport('after'),false);
+});

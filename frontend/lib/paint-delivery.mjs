@@ -14,3 +14,14 @@ export function toolShortcut(event, step) {
  if(step!==2 || event.metaKey || event.ctrlKey || event.altKey || event.target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName))return null;
  return {v:'select',b:'brush',i:'pick',f:'focus',p:'side',escape:'select'}[String(event.key).toLowerCase()] || null;
 }
+// Confirmation belongs to one successful plan. Reopening/replacing never carries it forward.
+export function createMaterialReview() {
+ let plan=null,identity=null,materials=false,slice=false;
+ return {
+  invalidate(){plan=null;identity=null;materials=false;slice=false;},
+  setPlan(next,key){plan=next;identity=key;materials=false;slice=false;},
+  confirm(field,value){if(field==='materials')materials=!!value;if(field==='slice')slice=!!value;},
+  canExport(key){return !!plan && key===identity && materials && slice;},
+  get summary(){return plan ? {plates:new Set(plan.parts.map(p=>p.plate)).size,parts:plan.parts.length,materials:plan.slots.filter(s=>s.used).length} : null;}
+ };
+}
