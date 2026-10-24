@@ -72,7 +72,7 @@ Screen colours are not a guarantee of printed colour; some assembly positions (e
 Both editions share the frontend in `frontend/`; it reads `/api/site` to learn the edition, and the personal edition hides sign-in, the gallery and publishing. Design validation (`backend/rules.py`) and 3MF export (`backend/exporter.py`) use only the standard library and are shared, so both editions give identical results.
 
 ```
-frontend/   static frontend: index.html (studio), home.html + home/ (personal edition home), gallery/ (server edition only), shared/, lib/, locales/, vendor/
+frontend/   static frontend: index.html (studio), home.html + home/ (personal edition home), assemble/ (assembly guide), gallery/ (server edition only), shared/, lib/, locales/, vendor/
 personal/   personal edition: app.py (static files + design/export API), schemes.py (local SQLite)
 backend/    server edition API: server.py (FastAPI), store.py / database.py (MySQL), rules.py, exporter.py
 assets/     local asset pack (git-ignored; read directly by the personal edition, mounted read-only on servers)
@@ -84,7 +84,7 @@ assets/     local asset pack (git-ignored; read directly by the personal edition
 2. Double-click:
    - **macOS**: `启动来做鸭.command`. The system Python 3 is enough; if there is none, macOS offers to install the Command Line Developer Tools. If macOS says the developer cannot be verified, right-click the file in Finder → Open.
    - **Windows**: `启动来做鸭.bat`. Without Python it offers to install Python 3.12 with winget, or opens python.org (tick "Add python.exe to PATH" when installing).
-3. Your browser opens `http://127.0.0.1:8876/` (the next free port if that one is taken) on a home page with two cards: “Paint a duck” opens the studio (`/paint`), “Build a duck” the assembly guide (shown as coming soon until it is added). Close the launcher window to quit.
+3. Your browser opens `http://127.0.0.1:8876/` (the next free port if that one is taken) on a home page with two cards: “Paint a duck” opens the studio (`/paint`), “Build a duck” the assembly guide (`/assemble/`, printed parts in the studio's current colors; shown as coming soon until its assets are imported with `scripts/import_assembly_assets.py`, see [local assets](docs/local-assets.md)). Close the launcher window to quit.
 
 Or run `python3 run.py` in a terminal (`--port` to change the port, `--no-open` to skip opening the browser).
 

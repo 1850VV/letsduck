@@ -13,12 +13,14 @@ import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
 import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
-import { loadEdition } from '../shared/edition.mjs';
+import { loadSite } from '../shared/edition.mjs';
 applyBrand();
 
 const $ = (s) => document.querySelector(s),$$ = (s) => [...document.querySelectorAll(s)];
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const edition = await loadEdition(), personal = edition === 'personal';
+const site = await loadSite(),edition = site.edition,personal = edition === 'personal';
+// Personal edition with the assembly guide installed: step 3 can open it with this duck's colours.
+const assembly = personal && !!site.assembly;
 document.body.dataset.edition = edition;
 function renderEdition() {
   $('#edition-badge').hidden = !personal;
@@ -424,7 +426,7 @@ function panelStep3() {
       </section>
     </div>
   </div>
-  <div class="panel-foot finish"><button class="save-mine ${activeId && !dirty() ? 'done' : ''}" id="finish-save" title="${_attr(_t(personal ? 'personal.saveTitle' : "text.0248"))}">${activeId && !dirty() ? _t("text.0219") : _t("text.0220")}</button>${personal ? '' : `<button class="primary" id="publish" title="${_attr(_t("text.0249"))}">${_t("text.0250")}</button>`}</div>`;
+  <div class="panel-foot finish"><button class="save-mine ${activeId && !dirty() ? 'done' : ''}" id="finish-save" title="${_attr(_t(personal ? 'personal.saveTitle' : "text.0248"))}">${activeId && !dirty() ? _t("text.0219") : _t("text.0220")}</button>${personal ? assembly ? `<a class="primary go-assemble" id="go-assemble" href="./assemble/" title="${_attr(_t('personal.assembleTitle'))}">${_t('personal.assemble')} →</a>` : '' : `<button class="primary" id="publish" title="${_attr(_t("text.0249"))}">${_t("text.0250")}</button>`}</div>`;
 }
 // The share tab shows the real poster, rendered once per design when the tab opens.
 let miniKey = '';
@@ -537,6 +539,8 @@ $('#panel').addEventListener('click', async (e) => {
   if (t.closest('#voice-reset')) {voiceSalt = 0;persist();renderPanel();updateVoice();return toast(_message("text.0211"));}
   if (t.closest('#act-show')) return actions.show();if (t.closest('#act-stop')) return actions.stop();
   if (t.closest('#export2')) return openExport();
+  // The guide wears the current draft; an untouched duck counts too once you choose to build it.
+  if (t.closest('#go-assemble')) {draftUpdated ||= Date.now();persist();handOff();return;}
   if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_message(personal ? 'personal.saved' : "text.0268"));await saveScheme(false);return renderPanel();}
   if (t.closest('#publish')) return openPublish();
 });
@@ -801,6 +805,11 @@ function renderToast(){
 }
 function toast(msg,withUndo){lastToast={msg,withUndo};$('#toast').classList.add('show');renderToast();clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3600);}
 const COACH = KEY + '-coach';let seen = !!read(COACH);
+// The assembly guide shows this picture of the duck in the same stage until its own model has loaded.
+function handOff() {
+  try {const r = view.canvas.getBoundingClientRect(),s = Math.min(devicePixelRatio, 1.5);
+    sessionStorage.setItem('dd-handoff', JSON.stringify({ at: Date.now(), image: view.snapshot(Math.round(r.width * s), Math.round(r.height * s)).toDataURL('image/webp', .85) }));} catch {}
+}
 // Unsaved work becomes a scheme before something replaces the draft.
 async function backupDraft() {
   if (dirty() && schemes.length < 30) {const s = { id: newId(), name: _t("text.0349", { v0: name }), design: clone(design), provenance, voiceSalt, created: Date.now(), updated: Date.now() };

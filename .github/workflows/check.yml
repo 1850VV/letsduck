@@ -48,6 +48,9 @@ jobs:
           node --test tests/test_positions.mjs tests/test_model_loader.mjs tests/test_render_policy.mjs tests/test_hover_queue.mjs
           python3 -I -m unittest discover -s tests -p test_zip_reuse.py -v
           python3 -I -m unittest discover -s tests -p test_export_transport_unit.py -v
+      - name: Assembly guide logic without licensed assets
+        # cable-clearance and hardware-models read the local assembly models (scripts/import_assembly_assets.py).
+        run: node --test $(ls tests/assembly/*.test.mjs | grep -v -e cable-clearance -e hardware-models)
       - name: Verify precompressed asset delivery with native nginx
         run: |
           sudo apt-get update -qq
@@ -56,7 +59,7 @@ jobs:
       - name: Check Python and browser module syntax
         run: |
           python3 -m compileall -q backend personal run.py
-          for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs; do
+          for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs frontend/home/*.mjs frontend/locales/*.mjs frontend/assemble/*.mjs frontend/assemble/full/*.mjs; do
             node --check "$file"
           done
       - name: State the validation boundary
