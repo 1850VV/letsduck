@@ -56,7 +56,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #a9b8
 .stage[data-bg="night"]{background:radial-gradient(ellipse at 50% 35%,#2a3360,#10152b 80%)}
 .stage[data-bg="night"] .hint{color:#aab4d6}
 .stage[data-tool="brush"] canvas{cursor:var(--brush-cursor,crosshair)}.stage[data-tool="pick"] canvas{cursor:copy}
-.loading{position:absolute;inset:0;display:grid;place-content:center;gap:12px;justify-items:center;color:var(--muted);font-size:13px}.loading span{width:26px;height:26px;border:3px solid #d5dcf0;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(1turn)}}
+.loading{position:absolute;inset:0;display:grid;place-content:center;gap:12px;justify-items:center;color:var(--muted);font-size:13px}.loading span:empty{width:26px;height:26px;border:3px solid #d5dcf0;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(1turn)}}
 .tools{position:absolute;top:14px;left:14px;right:14px;width:max-content;max-width:calc(100% - 28px);flex-wrap:wrap;display:none;gap:4px;padding:4px;background:#ffffffe6;backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 18px #1d29500d;align-items:center}
 .studio[data-step="2"] .tools{display:flex}
 .tools button{border:0;background:transparent;border-radius:9px;padding:7px 10px;font-size:12px;display:flex;gap:6px;align-items:center;color:#56637e;white-space:nowrap}
