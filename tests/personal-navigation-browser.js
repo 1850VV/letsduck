@@ -41,7 +41,14 @@ try{
   }
   await click('home','#paint-go','paint');
   const initial=await frame('paint').evaluate(()=>structuredClone(studioProto.state.colors));
-  await frame('paint').locator('[data-start="theme-1"]').click();
+  const original=await frame('paint').evaluate(async()=>Object.fromEntries((await(await import('/shared/model-loader.mjs')).loadModel()).model.parts.map(p=>[p.id,p.color.toUpperCase()])));
+  result.initialColors=initial;result.originalColors=original;
+  async function chooseEditedStart(){
+   await frame('paint').locator('[data-start="theme-1"]').click();
+   // A restored scheme may already use theme-1; choose a real edit so undo/backup are exercised.
+   if(await frame('paint').evaluate(initial=>Object.entries(initial).every(([id,color])=>studioProto.state.colors[id]===color),initial))await frame('paint').locator('[data-start="original"]').click();
+  }
+  await chooseEditedStart();
   await frame('paint').locator('#steps [data-step="3"]').click();
   await frame('paint').evaluate(()=>Promise.all(document.querySelector('.studio').getAnimations().map(animation=>animation.finished)));
   const painted=await frame('paint').evaluate(()=>({colors:studioProto.state.colors,step:studioProto.state.step,undo:studioProto.state.undo,camera:studioProto.view.debug()}));
@@ -82,11 +89,12 @@ try{
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.page),'assemble');
   assert.equal(await page.locator('iframe[data-active="true"]').count(),1);
   await click('assemble','[data-brand-slot]','home');
-  await click('home','#paint-go','paint');await frame('paint').locator('#steps [data-step="1"]').click();await frame('paint').locator('[data-start="theme-1"]').click();
+  await click('home','#paint-go','paint');await frame('paint').locator('#steps [data-step="1"]').click();await chooseEditedStart();
+  assert.equal(await frame('paint').evaluate(()=>studioProto.state.dirty),true,'backup scenario requires an actual unsaved edit');
   await click('paint','[data-brand-slot]','home');
   const beforeSchemes=(await(await page.request.get(base+'/api/schemes')).json()).length;
   await click('home','#paint-alt a','paint');
-  assert.deepEqual(await frame('paint').evaluate(()=>studioProto.state.colors),initial);assert.equal(await frame('paint').evaluate(()=>studioProto.state.undo),0);
+  assert.deepEqual(await frame('paint').evaluate(()=>studioProto.state.colors),original,'new draft uses model original colors, even when startup restored a saved scheme');assert.equal(await frame('paint').evaluate(()=>studioProto.state.undo),0);
   assert.equal((await(await page.request.get(base+'/api/schemes')).json()).length,beforeSchemes+1,'new draft backs up unsaved work');
   await page.screenshot({path:new URL('paint.png',out).pathname});
   result.switches=await page.evaluate(()=>navMeasures);result.retainedPages=3;result.hiddenDraws=0;
