@@ -481,6 +481,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #a9b8
 .edition-badge{font-size:10px;color:var(--muted);background:var(--blue-soft);padding:4px 7px;border-radius:6px;white-space:nowrap}
 body:not([data-edition="server"]) [data-community]{display:none!important}
 body[data-edition="personal"] .panel-foot.finish .save-mine{flex:1}
+.panel-foot.finish .go-assemble{display:flex;align-items:center;justify-content:center;margin-top:0;padding:12px 10px;font-size:14px;text-align:center;text-decoration:none}
 @media(max-width:760px){.edition-badge{font-size:9px;padding:3px 5px}body[data-edition="personal"] .top-actions #import-code{display:block;padding:6px;font-size:11px}}
 .pose-row.joint{grid-template-columns:52px minmax(0,1fr) 30px;gap:5px;font-size:11px}.pose-row.joint span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pose-row.joint em{font-size:10px}
 @media (max-height:680px){.voice-row.slim small{display:none}.dock-body.fit .pane{gap:6px}.act.move{min-height:38px;padding:4px 2px}.joint-grid{gap:2px 12px}}
