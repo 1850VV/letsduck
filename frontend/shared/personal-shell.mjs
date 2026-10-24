@@ -4,7 +4,7 @@ const routes={home:['/home.html','首页'],paint:['/index.html','涂装台'],ass
 let visible=null;
 const frames=new Map();
 function createPage(key){
- const frame=document.createElement('iframe');frame.dataset.personalPage=key;frame.dataset.active='false';
+ const frame=document.createElement('iframe');frame.dataset.personalPage=key;frame.dataset.active='false';frame.dataset.paintWarm='true';
  frame.name='personal-'+key;frame.title='来做鸭 · '+routes[key][1];frame.inert=true;frame.setAttribute('aria-hidden','true');
  const entry={key,frame};frames.set(key,entry);
  return new Promise((resolve,reject)=>{
@@ -34,7 +34,7 @@ const navigator=createPageNavigator(createPage,async(entry,{route,historyMode='p
  if(previous&&previous!==entry){
   previous.frame.dataset.active='false';previous.frame.inert=true;previous.frame.setAttribute('aria-hidden','true');
  }
- entry.frame.dataset.active='true';entry.frame.inert=false;entry.frame.removeAttribute('aria-hidden');syncTitle(entry);
+ entry.frame.dataset.active='true';delete entry.frame.dataset.paintWarm;entry.frame.inert=false;entry.frame.removeAttribute('aria-hidden');syncTitle(entry);
  if(historyMode==='push'&&location.pathname+location.search+location.hash!==route.href)history.pushState(null,'',route.href);
  if(entry.key==='paint'&&/^#(?:new$|look=|scheme=)/.test(new URL(route.href,location.origin).hash))history.replaceState(null,'',location.pathname+location.search);
  document.documentElement.dataset.page=entry.key;document.documentElement.dataset.ready='true';
@@ -55,6 +55,8 @@ addEventListener('popstate',()=>navigate(location.href,{historyMode:'none'}));
 const initial=personalRoute(location.href,location.origin)||personalRoute('/',location.origin);
 await navigate(initial.href,{historyMode:'none',focus:false});
 // Warm one page at a time only after the current page is usable. Hidden scenes then sleep.
+// Unvisited documents may paint behind the opaque active frame, while remaining inert and aria-hidden.
+// visibility:hidden would defer their DOM raster/pipeline preparation until the first user navigation.
 const idle=()=>new Promise(resolve=>{if('requestIdleCallback'in window)requestIdleCallback(resolve,{timeout:2000});else setTimeout(resolve,100);});
 const site=await fetch('/api/site').then(response=>response.json()).catch(()=>({}));
 for(const key of ['home','paint',...(site.assembly?['assemble']:[])]){
