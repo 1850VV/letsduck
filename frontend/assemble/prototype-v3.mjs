@@ -9,6 +9,7 @@ import {createLessonPlayer} from './lesson-player.mjs';
 import {createLessonSound} from './lesson-sound.mjs';
 import {updateAssemblyCameraDepth} from './camera-depth.mjs';
 import {createRenderScheduler} from './render-scheduler.mjs';
+import {stillURL} from '../shared/still.mjs';
 import {createRenderQuality} from './render-quality.mjs';
 import {fitsForParts} from './model-fit.mjs';
 import {buildCableCurve} from './cable-path.mjs';
@@ -262,7 +263,16 @@ $('back-view').addEventListener('click',()=>sideView(-1));
 $('phase-select').addEventListener('ryugi-change',ev=>{const c=CHAPTERS[Number(ev.detail.value)];if(c&&c.id!==chapterFor(step).id)goStep(c.start);});
 // The guide reopens at the step you left; the home page reads the same key for its button.
 const SAVED_STEP='letsduck-assembly';
-function resumeSaved(){if($('full-saved-step').value!=='0')return;try{const {step:saved}=JSON.parse(localStorage.getItem(SAVED_STEP));if(saved>0&&saved<STEPS.length)$('full-saved-step').value=String(saved);}catch{}}
+let resumeView=null;
+function resumeSaved(){if($('full-saved-step').value!=='0')return;try{const saved=JSON.parse(localStorage.getItem(SAVED_STEP));if(saved.step>0&&saved.step<STEPS.length){$('full-saved-step').value=String(saved.step);resumeView=saved;}}catch{}}
+// Reopen at the camera the last visit left, so its still (index.html) and the first live frame match.
+function resumeCamera(){if(resumeView?.camera&&resumeView.step===step){cameraTween=null;camera.position.fromArray(resumeView.camera);controls.target.fromArray(resumeView.target);controls.update();}resumeView=null;}
+const STILL='letsduck-still-assemble';
+addEventListener('pagehide',()=>{if(!ready)return;try{
+  localStorage.setItem(SAVED_STEP,JSON.stringify({step,total:STEPS.length,camera:camera.position.toArray(),target:controls.target.toArray()}));
+  // The main view only: the magnifier's picture belongs inside its frame, which appears with the live page.
+  renderQuality.render(scene,camera);localStorage.setItem(STILL,JSON.stringify({vw:innerWidth,vh:innerHeight,image:stillURL(renderer.domElement,host.clientWidth)}));
+}catch{}});
 function restore(){if(!ready)return;const n=Number($('full-saved-step').value),p=Number($('full-saved-progress').value);goStep(n,{animate:false});progress=Math.max(0,Math.min(1,p));lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();}
 $('full-saved-step').addEventListener('change',restore);$('full-saved-step').addEventListener('input',restore);$('full-saved-progress').addEventListener('change',restore);
 function initUI(){if(uiReady)return;uiReady=true;document.documentElement.setAttribute('data-theme','light');lessonSound.syncControls();renderQuality.sync();lessonPlayer.setRate(Number($('playback-rate').value));const control=$('motion-progress');control.addEventListener('ryugi-change',ev=>{if(!ready)return;playing=false;backTransition=null;progress=Number(ev.detail.value)/100;lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();});setAttributes();}
@@ -328,7 +338,7 @@ async function load(){
     if(motor){const ports=ACTORS[p.id].servoPorts||[{position:[3,8.5,p.size[2]/2+.8],normal:[0,0,1]}];for(const port of ports){const socket=new THREE.Group(),body=mesh(new THREE.BoxGeometry(7,5,1.3),white);body.position.z=-.65;body.userData.focusPort={label:port.id||'舵机口'};socket.add(body);const inside=mesh(new THREE.BoxGeometry(5.4,3.4,.03),dark);inside.position.z=.01;socket.add(inside);socket.position.fromArray(port.position);socket.quaternion.copy(socketQuaternion(port));socket.userData.servoSocket=true;group.add(socket);}}
     entity(p.id,group);
   }
-  renderQuality.attach(entities,ACTORS);ready=true;fit();resumeSaved();restore();$('loading').hidden=true;document.documentElement.dataset.ready='true';
+  renderQuality.attach(entities,ACTORS);ready=true;fit();resumeSaved();restore();resumeCamera();$('loading').hidden=true;document.documentElement.dataset.ready='true';performance.mark('duck-ready');
 }
 load().catch(e=>{$('loading').textContent=`模型没有加载成功：${e.message}`;console.error(e);});
 // A read-only diagnostic surface for the prototype's browser acceptance checks.
