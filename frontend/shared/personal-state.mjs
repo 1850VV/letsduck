@@ -11,7 +11,14 @@ export function personalState(storage){
  try{const value=JSON.parse(storage.getItem(PERSONAL_KEY));return record(value)?value:{};}catch{return {};}
 }
 export async function ensurePersonalDraft(storage,loadSchemes){
- if(validDraft(personalState(storage).draft))return;
+ const existing=personalState(storage);
+ if(validDraft(existing.draft)){
+  // Give legacy unsaved drafts an identity before either the guide or studio opens.
+  if(!existing.draft.activeId&&!existing.draft.draftId){
+   try{storage.setItem(PERSONAL_KEY,JSON.stringify({...existing,draft:{...existing.draft,draftId:crypto.randomUUID()}}));}catch{}
+  }
+  return;
+ }
  const schemes=await loadSchemes();
  // Another retained page or window may have written a real edit while fetching.
  const current=personalState(storage);if(validDraft(current.draft))return;

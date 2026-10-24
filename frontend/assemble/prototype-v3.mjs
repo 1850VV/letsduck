@@ -1,3 +1,5 @@
+// Printed materials must be initialized before model construction, including a cold API fallback.
+import './page.mjs';
 import {createProgressStore,progressScope} from './progress-store.mjs';
 import {personalState,PERSONAL_KEY} from '../shared/personal-state.mjs';
 import * as THREE from 'three';

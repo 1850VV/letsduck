@@ -15,7 +15,7 @@ test('an edit made while initialization is pending wins over the saved fallback'
 });
 test('valid legacy drafts including untouched drafts survive initialization; corrupt records can recover',async()=>{
  assert.equal(typeof state.ensurePersonalDraft,'function');const storage=memory();storage.setItem('dd-studio-personal',JSON.stringify({draft:{...scheme,updated:0},locks:['P4-01']}));
- await state.ensurePersonalDraft(storage,async()=>{throw Error('must not fetch');});assert.equal(JSON.parse(storage.getItem('dd-studio-personal')).draft.updated,0);
+ await state.ensurePersonalDraft(storage,async()=>{throw Error('must not fetch');});assert.equal(JSON.parse(storage.getItem('dd-studio-personal')).draft.updated,0);assert.equal(typeof JSON.parse(storage.getItem('dd-studio-personal')).draft.draftId,'string');
  for(const bad of ['{bad',JSON.stringify({draft:{design:{colors:[]}}})]){storage.setItem('dd-studio-personal',bad);await state.ensurePersonalDraft(storage,async()=>[scheme]);assert.equal(JSON.parse(storage.getItem('dd-studio-personal')).draft.activeId,'one');}
 });
 test('empty API and network failure keep initialization recoverable',async()=>{
