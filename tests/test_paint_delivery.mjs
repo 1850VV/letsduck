@@ -38,3 +38,10 @@ test('replacement, reopened review and failed plan invalidate all previous appro
  assert.equal(review.canExport('after'),false);
  review.confirm('materials',true);review.confirm('slice',true);assert.equal(review.canExport('after'),false);
 });
+test('withdrawing then rechecking approval cannot revive a download already in flight',()=>{
+ const review=workflow.createMaterialReview(),plan={parts:[{id:'a',plate:1}],slots:[{used:true}]};
+ review.setPlan(plan,'same');review.confirm('materials',true);review.confirm('slice',true);
+ const ticket=review.version;assert.equal(typeof ticket,'number');assert.equal(review.canExport('same',ticket),true);
+ review.confirm('materials',false);review.confirm('materials',true);
+ assert.equal(review.canExport('same'),true);assert.equal(review.canExport('same',ticket),false);
+});

@@ -16,12 +16,13 @@ export function toolShortcut(event, step) {
 }
 // Confirmation belongs to one successful plan. Reopening/replacing never carries it forward.
 export function createMaterialReview() {
- let plan=null,identity=null,materials=false,slice=false;
+ let plan=null,identity=null,materials=false,slice=false,version=0;
  return {
-  invalidate(){plan=null;identity=null;materials=false;slice=false;},
-  setPlan(next,key){plan=next;identity=key;materials=false;slice=false;},
-  confirm(field,value){if(field==='materials')materials=!!value;if(field==='slice')slice=!!value;},
-  canExport(key){return !!plan && key===identity && materials && slice;},
+  invalidate(){version++;plan=null;identity=null;materials=false;slice=false;},
+  setPlan(next,key){version++;plan=next;identity=key;materials=false;slice=false;},
+  confirm(field,value){if(!value && (field==='materials'&&materials || field==='slice'&&slice))version++;if(field==='materials')materials=!!value;if(field==='slice')slice=!!value;},
+  get version(){return version;},
+  canExport(key,ticket=version){return !!plan && ticket===version && key===identity && materials && slice;},
   get summary(){return plan ? {plates:new Set(plan.parts.map(p=>p.plate)).size,parts:plan.parts.length,materials:plan.slots.filter(s=>s.used).length} : null;}
  };
 }

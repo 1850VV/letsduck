@@ -31,16 +31,27 @@ Local evidence is ignored under `output/cd-ui-1024/`; it contains the isolated t
 
 ## Checks
 
-- `node --test tests/test_paint_delivery.mjs`: 5/5, after observed RED→GREEN for scope/shortcuts and review identity/reset.
-- `node --test tests/*.mjs`: 66 passed, 3 skipped, 0 failed. Three optional compressed-geometry tests skip because the independent asset copy contains only the compatible original geometry.
+- `node --test tests/test_paint_delivery.mjs`: 6/6, after observed RED→GREEN for scope/shortcuts and review identity/reset.
+- `node --test tests/*.mjs`: 67 passed, 3 skipped, 0 failed. Three optional compressed-geometry tests skip because the independent asset copy contains only the compatible original geometry.
 - `node --test tests/assembly/*.test.mjs`: 177/177 passed.
 - `.venv/bin/python -m unittest discover -s tests -v`: 78 run, 60 passed, 18 MySQL checks skipped because `DUCK_TEST_DATABASE_URL` is not configured. Initial borrowed environment failed four imports (missing required test dependencies); an owned environment synced from `requirements-dev.txt` passed.
 - `.venv/bin/python scripts/publication_audit.py`: no findings.
-- `tests/cd-ui-browser.js`: 54 real browser assertions passed. Browser logs additionally show the two expected optional-geometry 404 fallbacks and intentionally injected 503 failure paths.
+- `tests/cd-ui-browser.js`: 54 real browser assertions passed; `tests/cd-scope-browser.js`: 26 scope/lock/locale assertions passed; `tests/cd-review-browser.js`: 4 async/locale/export regressions passed. Browser logs additionally show the two expected optional-geometry 404 fallbacks and intentionally injected 503 failure paths.
 - Observed browser RED→GREEN: grid auto-placement squeezed stage to zero width; Space was intercepted by compare shortcut; brush scope incorrectly named the selected group; phone default swatches were covered by footer. All have browser reproductions and verified fixes.
 
 No performance benefit is claimed. The benchmark lock was respected before browser/heavy checks. No source or manufacturing geometry was modified. The production service and real personal database were not used.
 
 ## Delivery status
 
-Implementation committed locally; final independent review and publication receipt recorded below before handoff. The remote A/B branch was absent at the initial base check. Do not create or push another owner's base branch, merge, deploy, or switch the live personal service as part of this task.
+Implementation committed locally. Independent review found two Important export-dialog state issues; both were fixed with observed RED→GREEN regressions. No Critical or deferred Minor findings. The remote A/B branch was absent at the initial base check. Do not create or push another owner's base branch, merge, deploy, or switch the live personal service as part of this task.
+
+## Final review decisions and remaining boundaries
+
+- The established three-step navigation and complete advanced controls remain. C/D changes hierarchy rather than removing capabilities. The cost is one extra disclosure step for advanced operations.
+- The shared design artboard is coordinator-owned. This worktree has its own local verification board with copies of the frozen approved reference and real app evidence. The coordinator can attach those groups to the shared board; no shared board was edited.
+- Withdrawing either acknowledgement invalidates the in-flight export result even if it is rechecked before the response. The user must confirm and retry. A successful but outdated response is discarded without downloading.
+- A locale change refreshes idle review bodies immediately. During an active export, body refresh waits until completion, then presents fresh unchecked review controls. This preserves active status but temporarily retains its previous body language.
+- The reviewer did not run browser/GPU or regenerate assets. Executor browser evidence supplies technical checks and inspected actual downloads. Human visual/touch, listening quality and native-language quality remain separate pending checks.
+- A/B, E, F and G integration remains with their owners. MySQL runtime was not verified without a configured test database. No merge/deployment/live-service switch is authorized by this delivery.
+
+Review fixes also prevent checkbox toggles from re-enabling a busy 3MF button, add an independent handler guard, and recheck the original review generation after both thumbnail generation and response/blob reads. No re-review was requested; the skill requires one independent review followed by a tested fix pass.

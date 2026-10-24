@@ -761,9 +761,14 @@ $('#bgs').addEventListener('input', (e) => {
 document.addEventListener('click', (e) => {if (!e.target.closest('#bgs')) $('#bg-pop').hidden = true;});
 
 // ---------- export review: /api/plan checks every part, /api/export writes the recoloured 3MF ----------
-let plan = null,planRequest = 0;
+let plan = null,planRequest = 0,exporting3mf = false,refreshReviewAfterExport = false;
 const materialReview = createMaterialReview();
 const exportIdentity = () => JSON.stringify([model.source_sha256,name,design.assignments,design.colors]);
+function syncReviewButtons() {
+  const allowed=materialReview.canExport(exportIdentity());
+  if ($('#dl-bom')) $('#dl-bom').disabled=!allowed;
+  if ($('#dl-3mf')) $('#dl-3mf').disabled=!allowed || exporting3mf;
+}
 async function openExport() {
   const request = ++planRequest,identity = exportIdentity();plan = null;materialReview.invalidate();
   const dlg = $('#export-dialog'),body = $('#export-body');body.innerHTML = `<p class="muted">${_t("text.0306")}</p>`;if (!dlg.open) dlg.showModal();
@@ -789,26 +794,30 @@ async function openExport() {
     <div class="cd-checks"><label><input type="checkbox" id="review-materials">${_t('cd.confirmMaterials',{count:plan.parts.length})}</label><label><input type="checkbox" id="review-slice">${_t('cd.confirmSlice')}</label></div>
     <div class="sheet-foot"><button class="ghost-btn" id="dl-bom" disabled>${_t("text.0321")}</button><button class="primary" id="dl-3mf" disabled>${_t("text.0322")}</button></div><p class="ex-status" id="ex-status"></p>`;
     $('#dl-bom').onclick = downloadBOM;$('#dl-3mf').onclick = download3MF;
-    const confirm = () => {materialReview.confirm('materials',$('#review-materials').checked);materialReview.confirm('slice',$('#review-slice').checked);const allowed=materialReview.canExport(exportIdentity());$('#dl-bom').disabled=!allowed;$('#dl-3mf').disabled=!allowed;};
-    $('#review-materials').onchange=confirm;$('#review-slice').onchange=confirm;
+    const confirm = () => {materialReview.confirm('materials',$('#review-materials').checked);materialReview.confirm('slice',$('#review-slice').checked);syncReviewButtons();};
+    $('#review-materials').onchange=confirm;$('#review-slice').onchange=confirm;syncReviewButtons();
   } catch (error) {if (request !== planRequest) return;materialReview.invalidate();body.innerHTML = `<p class="warn">${esc(error.message)}</p>`;}
 }
 async function download3MF() {
-  if (!materialReview.canExport(exportIdentity())) return;
-  const identity = exportIdentity(),snapshot = clone(design),exportName = name;
+  if (exporting3mf || !materialReview.canExport(exportIdentity())) return;
+  const identity = exportIdentity(),ticket = materialReview.version,snapshot = clone(design),exportName = name;
+  const stillApproved = () => identity===exportIdentity() && materialReview.canExport(identity,ticket);
+  exporting3mf = true;syncReviewButtons();
   const btn = $('#dl-3mf'),status = $('#ex-status');btn.disabled = true;status.textContent = _t("text.0323");
   try {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     const thumbnails = await renderExportThumbnails(duck, snapshot.colors, {binaryUpload:true,view});
-    if (!materialReview.canExport(exportIdentity()) || identity !== exportIdentity()) return;
+    if (!stillApproved()) {status.textContent=_t('cd.reviewChanged');return;}
     const body=new FormData();body.append('plan',JSON.stringify({source_sha256:model.source_sha256,name:exportName,assignments:snapshot.assignments}));
     for(const [key,blob] of Object.entries(thumbnails))body.append(key,blob,key+'.png');
     const r = await fetch('/api/export', { method: 'POST', body });
     if (!r.ok) throw Error(errorText(await r.json().catch(() => ({}))));
-    const a = document.createElement('a');a.href = URL.createObjectURL(await r.blob());a.download = 'XGO-Duck-' + name + '-materials.3mf';a.click();setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    const blob=await r.blob();
+    if (!stillApproved()) {status.textContent=_t('cd.reviewChanged');return;}
+    const a = document.createElement('a');a.href = URL.createObjectURL(blob);a.download = 'XGO-Duck-' + exportName + '-materials.3mf';a.click();setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     status.textContent = _t("text.0325");
   } catch (error) {status.textContent = error.message;} finally
-  {btn.disabled = !materialReview.canExport(exportIdentity());}
+  {exporting3mf=false;syncReviewButtons();const refresh=refreshReviewAfterExport;refreshReviewAfterExport=false;if(refresh && $('#export-dialog').open)openExport();}
 }
 function nearestBambu(hex, kind) {return catalog.products.filter((p) => kindOf(p) === kind).map((p) => [p, deltaE(hex, p.hex)]).sort((x, y) => x[1] - y[1])[0][0];}
 function downloadBOM() {
@@ -935,7 +944,7 @@ _onLocale(() => {
   voiceKey = '';miniKey = '';renderAll();bindTranslations();renderHeader();renderStage();
   if (poseOpen) buildPose();
   renderToast();
-  if ($('#export-dialog').open && !$('#dl-3mf')?.disabled) openExport();
+  if ($('#export-dialog').open) {if(exporting3mf)refreshReviewAfterExport=true;else openExport();}
   if ($('#publish-dialog').open) {$('#publish-by').innerHTML = byline();$('#publish-source').textContent = provenance ? _t('text.0344', { v0: provenance.title, v1: provenance.author }) : _t('text.0345');}
   for (const old of inputs) {const e = old.id && document.getElementById(old.id);if (e) {e.value = old.value;e.checked = old.checked;}}
   if (focusId) document.getElementById(focusId)?.focus();
