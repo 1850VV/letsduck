@@ -9,7 +9,7 @@
 - 第一父提交：冻结资源优化 `cae8133316687202c4d410a72eb10277108b8ee3`。
 - 第二父提交：主控验收组合 `98d925fd257cdf0ccfa32c888f8d183ed3d67e9f`（state + idle/表面深度修复 + 默认 LOD）。
 - Git 自动合并成功，无文本冲突，无手工产品代码解决范围。后续本地提交仅适配旧导航测试及记录交付；完整交付 HEAD 见本任务最终回执。
-- `codex/optimization-assets` 及其 origin 跟踪头保留 `cae8133`；未 push、改写 PR #13、新建 PR 或聊天。其他工作树只读，未操作 8910、8876 或真实个人库。
+- `codex/optimization-assets` 及其 origin 跟踪头保留 `cae8133`，PR #13 不改写。最初只作本地整合；用户后续直接要求“把现有的改动都传到 git 仓库”供 Claude 审核，因此仅将本组合分支推送到同名远端分支。没有新增实现，不新建聊天；其他工作树只读，未操作 8910、8876 或真实个人库。
 
 测试服务仅用 8904、新建 `/tmp/duck-assets-integration-20261024-1542.sqlite3`；启动后确认 `/api/site` 为 personal、assembly=true，方案数为零。之后的方案均由测试脚本生成。不使用旧 browser-runner.py，也没有指向 8910 的写入或库清空操作。
 
