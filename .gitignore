@@ -49,3 +49,5 @@ storage-state*.json
 /assets/assembly/
 
 /assets/geometry.integrity.json
+
+/assets/*.gzip.json

@@ -148,6 +148,8 @@ def write_pack(assets):
         (assets / ('geometry.positions.bin' + suffix)).unlink(missing_ok=True)
     from asset_integrity import write_integrity
     write_integrity(assets)
+    from prepare_delivery import prepare_files, MODEL_FILES
+    prepare_files(assets, MODEL_FILES)
     return len(data)
 
 

@@ -42,6 +42,8 @@ def import_assets(read,target):
         for staged in sorted(Path(tmp).rglob('*')):
             if staged.is_file():
                 dest=target/staged.relative_to(tmp);dest.parent.mkdir(parents=True,exist_ok=True);staged.replace(dest)
+    from prepare_delivery import prepare_files
+    prepare_files(target, MANIFEST['files'])
     return sum(meta['bytes'] for meta in MANIFEST['files'].values())
 
 def main():

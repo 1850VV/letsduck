@@ -31,6 +31,7 @@ FRONTEND = REPO / 'frontend'
 from errors import payload  # noqa: E402
 from rules import Invalid  # noqa: E402
 from schemes import PersonalStore  # noqa: E402
+from static_delivery import prepared_gzip
 
 from export_transport import parse_multipart, ExportBodyError
 
@@ -236,13 +237,21 @@ class Handler(SimpleHTTPRequestHandler):
         accepts = self.headers.get('Accept-Encoding', '')
         gzip_ok = any(part.split(';')[0].strip() == 'gzip' and not re.search(r';\s*q=0(?:\.0*)?$', part)
                       for part in accepts.split(','))
-        if gzip_ok and target.suffix in ('.js', '.mjs', '.css', '.json', '.html', '.svg', '.bin', '.glb') and len(data) > 1024:
-            data = compressed(data)
+        use_gzip = gzip_ok and target.suffix in ('.js', '.mjs', '.css', '.json', '.html', '.svg', '.bin', '.glb') and len(data) > 1024
+        if use_gzip:
             headers.append(('Content-Encoding', 'gzip'))
-        etag = '"' + hashlib.sha256(data).hexdigest() + '"'
+        # The deterministic gzip representation is identified before computing it.
+        # A cache hit must not recompress a multi-MB mesh just to return 304.
+        raw_digest = hashlib.sha256(data).hexdigest()
+        prepared = prepared_gzip(target, raw_digest) if use_gzip else None
+        etag = '"' + (prepared[1] if prepared else raw_digest + ('-gzip6-v1' if use_gzip else '')) + '"'
+        if use_gzip and not prepared:
+            etag = 'W/' + etag  # Same decoded content, independent of platform gzip header details.
         headers += [('ETag', etag), ('Last-Modified', self.date_time_string(target.stat().st_mtime))]
-        if any(value.strip().removeprefix('W/') in (etag, '*') for value in self.headers.get('If-None-Match', '').split(',')):
+        if any(value.strip().removeprefix('W/') in (etag.removeprefix('W/'), '*') for value in self.headers.get('If-None-Match', '').split(',')):
             return self.send_body(304, b'', headers=headers)
+        if use_gzip:
+            data = prepared[0] if prepared else compressed(data)
         return self.send_body(200, data, self.extensions_map.get(target.suffix, 'application/octet-stream'), headers)
 
     def send_range(self, target):

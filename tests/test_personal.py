@@ -137,9 +137,12 @@ class PersonalTests(unittest.TestCase):
             self.assertEqual(gzip.decompress(data), (app.FRONTEND / 'locales/catalogs.mjs').read_bytes())
             etag = response.headers['ETag']
             self.assertEqual(response.headers['Cache-Control'], 'no-cache')
-        with self.assertRaises(HTTPError) as caught:
-            urlopen(Request(url, headers={'Accept-Encoding': 'gzip', 'If-None-Match': etag}))
-        self.assertEqual(caught.exception.code, 304)
+        from unittest.mock import patch
+        with patch.object(app, 'compressed', wraps=app.compressed) as compress:
+            with self.assertRaises(HTTPError) as caught:
+                urlopen(Request(url, headers={'Accept-Encoding': 'gzip', 'If-None-Match': etag}))
+            self.assertEqual(caught.exception.code, 304)
+            self.assertEqual(compress.call_count, 0, '304 must not compress the body')
         import http.client
         connection = http.client.HTTPConnection('127.0.0.1', self.servers[-1].server_address[1])
         try:
@@ -163,6 +166,35 @@ class PersonalTests(unittest.TestCase):
         with urlopen(Request(self.base + '/assets/catalog.json', headers={'If-None-Match': old})) as response:
             self.assertEqual(response.read(), b'new')
             self.assertNotEqual(response.headers['ETag'], old)
+
+    def test_prepared_gzip_skips_request_time_compression_and_rejects_stale_or_corrupt_sidecar(self):
+        import gzip, hashlib
+        from unittest.mock import patch
+        assets = Path(self.tmp.name) / 'prepared'
+        assets.mkdir()
+        data = b'synthetic geometry data' * 100
+        target = assets / 'geometry.bin'
+        target.write_bytes(data)
+        zipped = gzip.compress(data, mtime=0)
+        (assets / 'geometry.bin.gz').write_bytes(zipped)
+        meta = {'version': 1, 'raw': hashlib.sha256(data).hexdigest(), 'gzip': hashlib.sha256(zipped).hexdigest()}
+        (assets / 'geometry.bin.gzip.json').write_text(json.dumps(meta))
+        saved = app.ASSETS
+        app.ASSETS = assets
+        self.addCleanup(setattr, app, 'ASSETS', saved)
+        self.start()
+        request = Request(self.base + '/assets/geometry.bin', headers={'Accept-Encoding': 'gzip'})
+        with patch.object(app, 'compressed', wraps=app.compressed) as compress:
+            with urlopen(request) as response:
+                self.assertEqual(response.read(), zipped)
+            self.assertEqual(compress.call_count, 0)
+        (assets / 'geometry.bin.gz').write_bytes(b'broken')
+        with urlopen(request) as response:
+            self.assertEqual(gzip.decompress(response.read()), data)
+        (assets / 'geometry.bin.gz').write_bytes(zipped)
+        target.write_bytes(b'changed geometry data' * 100)
+        with urlopen(request) as response:
+            self.assertEqual(gzip.decompress(response.read()), b'changed geometry data' * 100)
 
     def test_assembly_models_use_conditional_compressed_delivery(self):
         import gzip

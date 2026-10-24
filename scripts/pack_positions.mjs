@@ -51,3 +51,6 @@ console.log(JSON.stringify({meshes:meshes.length,triangles:meshes.reduce((n,m)=>
 const integrity={version:1,model:hash(modelBytes),geometry:hash(raw),files:{'geometry.pack.bin':hash(pack),'geometry.positions.bin':hash(data)}};
 const manifest=path.join(assets,'geometry.integrity.json');
 await fs.writeFile(manifest+'.tmp',JSON.stringify(integrity));await fs.rename(manifest+'.tmp',manifest);
+
+const gzipMeta=name+'.gzip.json';
+await fs.writeFile(gzipMeta+'.tmp',JSON.stringify({version:1,raw:hash(data),gzip:hash(gz)}));await fs.rename(gzipMeta+'.tmp',gzipMeta);

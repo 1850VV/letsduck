@@ -45,3 +45,9 @@ The display pack retains DDG1's 16-bit coordinates, all triangles, and 64-bit pr
 个人版可用 `python3 scripts/import_local_assets.py /path/to/assets --positions` 一次准备 DDG1 和 POS1；此选项要求准备机器先执行 `npm ci`。普通启动和默认导入只用 Python 3.9 标准库。已有本地包可依次运行 `python3 scripts/pack_geometry.py assets`、`npm run pack:positions`。重新生成 DDG1 会移除旧 POS1，避免混用不同准备版本。
 
 两种生成器最后写入本地 `geometry.integrity.json`，记录原始网格、模型清单和压缩包的 SHA-256。打包交付个人版时应一起携带该文件。个人版每次提供压缩包前核对内容；缺失、损坏或模型清单变化时返回不可用，浏览器依次回退 DDG1、原始网格。该文件与衍生网格一样不提交 Git。所有个人版静态资源使用内容 ETag 和 `no-cache` 条件验证；更新/切换版本无需清浏览器缓存。API 与个人方案保持 `no-store`。JavaScript、语言包及网格按浏览器能力使用 gzip，同一语言表仍保留全部 12 种语言与英文 fallback。
+
+### 预压缩传输文件
+
+个人版优先使用经过校验的 `.gz` + `.gzip.json`，以免打开页面时压缩大网格。默认模型导入/`pack_geometry.py`、POS1 生成器及组装资产导入都会准备对应文件；已有资产可以执行 `python3 scripts/prepare_delivery.py assets` 补齐。它只生成传输副本，不修改原始模型、音视频或制造数据，也不需要额外 Python 包。
+
+打包本地个人版时保留这些忽略的衍生文件。服务端每次核对当前原始内容和 gzip 内容的 SHA-256，过期、损坏或缺失时安全使用动态压缩。304 条件响应在动态压缩前完成，因此热加载不会因为压缩缓存被其他模块挤出而重新压缩多 MB 的模型。
