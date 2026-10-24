@@ -1,3 +1,4 @@
+import {createHardwareLod} from './hardware-lod.mjs';
 import * as THREE from '../vendor/three.module.js';
 import {createContactPass} from './quality-occlusion.mjs';
 import {softenShadows} from './quality-shadows.mjs';
@@ -67,6 +68,7 @@ function studioEnvironment(renderer){
 }
 
 export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
+  const hardwareLod=createHardwareLod({enabled:new URLSearchParams(location.search).get('hardwareLod')!=='0'}),viewSize=new THREE.Vector2();
   const input=document.getElementById('render-quality'),bindings=[],overlays=[],cache=new Map(),geometryCache=new Map(),baseline={environment:scene.environment,environmentIntensity:scene.environmentIntensity,exposure:renderer.toneMappingExposure,toneMapping:renderer.toneMapping,pixelRatio:renderer.getPixelRatio(),shadowType:renderer.shadowMap.type,shadowSize:key.shadow.mapSize.clone(),shadowFar:key.shadow.camera.far,shadowNormalBias:key.shadow.normalBias,keyPosition:key.position.clone(),keyIntensity:key.intensity,keyColor:key.color.clone(),fillPosition:fill.position.clone(),fillIntensity:fill.intensity,fillColor:fill.color.clone(),hemiIntensity:hemi.intensity,groundOpacity:ground.material.opacity,groundMaterial:ground.material};
   const softGround=ground.material.clone();softGround.onBeforeCompile=softenShadows;softGround.customProgramCacheKey=()=>`duck-soft-ground-1`;
   let mode='current',studio=null,contact=null,dirty=true,attached=false,lastStats={calls:0,triangles:0};
@@ -115,11 +117,13 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
           const kind=m.metalness>.4||/bearing/i.test(id)?'metal':/h_eyes$/.test(id)?'lens':a.kind==='battery'||/sole|Pad/.test(id)||a.kind==='cable'&&l<.1?'rubber':/motor/i.test(id)&&l<.15?'motor':a.kind==='board'?'board':a.kind==='mesh'?'shell':'connector';cache.set(m,matteFinish(m,kind,edges));
         }return cache.get(m);});bindings.push({mesh,original,enhanced,sourceGeometry,enhancedGeometry});
       });}
+      hardwareLod.attach(scene);
       set(input.value||input.getAttribute('value'));attached=true;
     },
     sync(){if(attached)set(input.value||input.getAttribute('value'));},
     invalidate(){dirty=true;},
     render(world,camera,id='main'){
+      return hardwareLod.withView(camera,renderer.getSize(viewSize).y,id,()=>{
       if(mode!=='ultra'){renderer.render(world,camera);lastStats={calls:renderer.info.render.calls,triangles:renderer.info.render.triangles};return;}
       const auto=renderer.shadowMap.autoUpdate;renderer.shadowMap.autoUpdate=id==='main'&&dirty;
       lastStats=contact.render(world,camera,id);
@@ -128,8 +132,9 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
       const mask=camera.layers.mask,clear=renderer.autoClear;camera.layers.mask=2;renderer.autoClear=false;renderer.shadowMap.autoUpdate=false;renderer.render(world,camera);
       lastStats.calls+=renderer.info.render.calls;lastStats.triangles+=renderer.info.render.triangles;
       camera.layers.mask=mask;renderer.autoClear=clear;renderer.shadowMap.autoUpdate=auto;if(id==='main')dirty=false;
+      });
     },
     get renderStats(){return{...lastStats};},
-    get state(){return{mode,finish:mode==='ultra'?'matte-plastic':'original',pixelRatio:renderer.getPixelRatio(),shadowSize:key.shadow.mapSize.toArray(),materials:cache.size,edgeGeometries:geometryCache.size,contactViews:contact?.state||[]};}
+    get state(){return{hardwareLod:hardwareLod.state,mode,finish:mode==='ultra'?'matte-plastic':'original',pixelRatio:renderer.getPixelRatio(),shadowSize:key.shadow.mapSize.toArray(),materials:cache.size,edgeGeometries:geometryCache.size,contactViews:contact?.state||[]};}
   };
 }
