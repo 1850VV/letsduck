@@ -104,7 +104,7 @@ class PersonalTests(unittest.TestCase):
 
     def test_accounts_and_gallery_do_not_exist(self):
         self.start()
-        self.assertEqual(self.call('GET', '/api/site'), (200, {'publicUrl': '', 'edition': 'personal'}))
+        self.assertEqual(self.call('GET', '/api/site'), (200, {'publicUrl': '', 'edition': 'personal', 'assembly': (app.FRONTEND / 'assemble' / 'index.html').is_file()}))
         for method, path in [('POST', '/api/auth/register'), ('POST', '/api/auth/login'), ('GET', '/api/me'), ('PATCH', '/api/me'),
                              ('GET', '/api/works'), ('POST', '/api/works'), ('GET', '/api/works/w-1'), ('PUT', '/api/works/w-1/rating')]:
             with self.subTest(path=path, method=method):
@@ -126,6 +126,21 @@ class PersonalTests(unittest.TestCase):
                 with self.assertRaises(HTTPError) as caught:
                     urlopen(self.base + path)
                 self.assertEqual(caught.exception.code, 404)
+
+    def test_home_opens_at_root_and_the_studio_at_paint(self):
+        self.start()
+        pages = {'/': 'home.html', '/?from=launcher': 'home.html', '/paint': 'index.html', '/index.html': 'index.html'}
+        for path, name in pages.items():
+            with self.subTest(path=path), urlopen(self.base + path) as response:
+                self.assertEqual(response.read(), (app.FRONTEND / name).read_bytes())
+        # The studio's ./shared/ and ./studio/ links only resolve from /paint, so /paint/ goes back there.
+        opener = build_opener(NoRedirect)
+        for method in ['GET', 'HEAD']:
+            with self.subTest(method=method), opener.open(Request(self.base + '/paint/', method=method)) as response:
+                self.assertEqual((response.status, response.headers['Location'], response.read()), (308, '/paint', b''))
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(self.base + '/paint/index.html')
+        self.assertEqual(caught.exception.code, 404)
 
     def test_a_burst_of_module_requests_is_not_reset(self):
         # Opening the studio loads ~40 modules in parallel; none may be dropped.
