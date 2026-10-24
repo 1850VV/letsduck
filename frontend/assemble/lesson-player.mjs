@@ -5,7 +5,13 @@ export const PLAYBACK_RATES=Object.freeze([.5,1,1.5,2,3,4]);
 export function createLessonPlayer(timings){
   if(!timings.length)throw new Error('Lesson needs at least one step');
   let step=0,progress=1,playing=false,autoplay=false,rate=1,finished=false,phase='paused',hold=0,settle=0,last=null;
-  const timing=()=>timings[step];
+  // A timing may be a factory: expensive cue analysis belongs to the visited step, once.
+  const resolved=new Map();
+  const timing=()=>{
+    const value=timings[step];if(typeof value!=='function')return value;
+    if(!resolved.has(step))resolved.set(step,value());
+    return resolved.get(step);
+  };
   const state=()=>({step,progress,playing,autoplay,rate,finished,phase});
   const seek=(index,value=0,{play=false,auto=false}={})=>{
     step=Math.max(0,Math.min(timings.length-1,Math.trunc(index)));progress=Math.max(0,Math.min(1,value));playing=play;autoplay=auto;finished=false;

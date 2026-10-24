@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
-import { createAssemblyFocus, FOCUS_STEPS } from './assembly-focus.mjs';
+import { createAssemblyFocus, isFocusStep } from './assembly-focus.mjs';
 import { createAssemblyMagnifier } from './assembly-magnifier.mjs';
 import { buildFineCues } from './fine-cues.mjs';
 import {createLessonPlayer} from './lesson-player.mjs';
@@ -19,7 +19,7 @@ import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlug
 const $=id=>document.getElementById(id);
 const fmt=t=>`${Math.floor(t/60).toString().padStart(2,'0')}:${Math.floor(t%60).toString().padStart(2,'0')}`;
 let step=0,progress=1,playing=false,cameraTween=null,uiReady=false,ready=false;
-const lessonPlayer=createLessonPlayer(STEPS.map((s,i)=>{const focused=FOCUS_STEPS.has(s.id),count=buildFineCues(i).length;return{durationMs:s.duration*1000*(focused?Math.max(1.8,Math.min(4.5,count*.55)):1),holdMs:focused?900:0,settleMs:focused?1500:900};}));
+const lessonPlayer=createLessonPlayer(STEPS.map((s,i)=>()=>{const focused=isFocusStep(s.id),count=buildFineCues(i).length;return{durationMs:s.duration*1000*(focused?Math.max(1.8,Math.min(4.5,count*.55)):1),holdMs:focused?900:0,settleMs:focused?1500:900};}));
 const lessonSound=createLessonSound();
 let currentState=snapshot(0,1),guidanceEndState=snapshot(0,1),backTransition=null;
 const host=$('canvas-host'),stage=$('stage');
