@@ -73,7 +73,9 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(FRONTEND), **kwargs)
 
     def end_headers(self):
-        self.send_header('Cache-Control', 'no-store')
+        # Pages, code and models are checked on every visit, so an update is never served stale, yet an unchanged
+        # file comes from the browser's cache and pages can return through the back/forward cache. API answers are never kept.
+        self.send_header('Cache-Control', 'no-store' if self.path.startswith('/api/') else 'no-cache')
         self.send_header('X-Content-Type-Options', 'nosniff')
         super().end_headers()
 
@@ -185,7 +187,7 @@ class Handler(SimpleHTTPRequestHandler):
             target = ASSETS / name
             if name not in PUBLIC_ASSETS or not target.is_file():
                 return self.send_body(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
-            return self.send_body(200, target.read_bytes(), self.extensions_map.get(target.suffix, 'application/octet-stream'))
+            return self.send_file(target)
         if path.startswith('/assemble/assets/'):
             name = path[len('/assemble/assets/'):]
             if name not in ASSEMBLY or not (ASSETS / 'assembly' / name).is_file():
@@ -193,12 +195,22 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_range(ASSETS / 'assembly' / name)
         super().do_GET()
 
+    def send_file(self, target, headers=()):
+        """A model or media file, or 304 Not Modified when the browser already holds this version."""
+        stamp = self.date_time_string(int(target.stat().st_mtime))
+        if self.headers.get('If-Modified-Since') == stamp:
+            self.send_response(304)
+            self.send_header('Last-Modified', stamp)
+            return self.end_headers()
+        kind = self.extensions_map.get(target.suffix, 'application/octet-stream')
+        return self.send_body(200, target.read_bytes(), kind, [('Last-Modified', stamp), *headers])
+
     def send_range(self, target):
         """A local file whole, or one byte range of it so videos can seek (Safari will not play them otherwise)."""
         size, kind = target.stat().st_size, self.extensions_map.get(target.suffix, 'application/octet-stream')
         match = re.fullmatch(r'bytes=(\d*)-(\d*)', self.headers.get('Range', '').strip())
         if not match or not (match[1] or match[2]):
-            return self.send_body(200, target.read_bytes(), kind, [('Accept-Ranges', 'bytes')])
+            return self.send_file(target, [('Accept-Ranges', 'bytes')])
         if match[1]:
             start = int(match[1])
             end = min(int(match[2]), size - 1) if match[2] else min(start + CHUNK, size) - 1
