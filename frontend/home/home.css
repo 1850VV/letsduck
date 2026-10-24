@@ -1,5 +1,5 @@
 /* Personal edition home: two cards, 想涂鸦 (studio) and 想做鸭 (assembly tutorial). Approved prototype v1. */
-:root{--ink:#17243c;--muted:#7c89a2;--line:#e5e9f2;--blue:#4d6bfe;--blue-soft:#eef1ff;--orange:#ec6a24;--bg:#f5f6fa;--dark:#2a2f3a;--metal:#a9b1bd;
+:root{--ink:#17243c;--muted:#7c89a2;--line:#e5e9f2;--blue:#4d6bfe;--blue-soft:#eef1ff;--orange:#ec6a24;--bg:#f5f6fa;
   font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--bg);font-synthesis:none}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -61,27 +61,29 @@ button{font:inherit;color:inherit}
 .foot{margin-top:28px;display:flex;justify-content:center;gap:8px;align-items:center;color:#97a2b8;font-size:12.5px}
 .foot i{width:6px;height:6px;border-radius:50%;background:#5cc48d}
 
-/* duck drawing: printed parts take the scheme colours, hardware stays dark */
-.duck .part{transition:transform .7s cubic-bezier(.3,1.35,.5,1),fill .45s ease}
-.duck .printed{stroke:rgba(23,36,60,.16);stroke-width:1.5}
-.duck .hw{fill:var(--dark)}
-.duck .guide,.duck .screw{transition:opacity .4s ease}
-.paint .duck .guide,.paint .duck .screw{opacity:0}
-/* the build card starts as a kit of parts and snaps together on hover/focus */
-.build .duck [data-p=head]{transform:translateY(-24px)}
-.build .duck [data-p=neck]{transform:translateY(-12px)}
-.build .duck [data-p=legs]{transform:translateY(11px)}
-.build .duck [data-p=feet]{transform:translateY(22px)}
-.build .duck [data-p=hipL]{transform:translateX(-14px)}
-.build .duck [data-p=hipR]{transform:translateX(14px)}
-.build:is(:hover,:has(.cta:focus-visible)) .duck .part{transform:none}
-.build:is(:hover,:has(.cta:focus-visible)) .duck [data-p=head]{transition-delay:.12s}
-.build:is(:hover,:has(.cta:focus-visible)) .duck [data-p=feet]{transition-delay:.06s}
-.build:is(:hover,:has(.cta:focus-visible)) .duck :is(.guide,.screw){opacity:0}
-.swatches{display:flex;justify-content:center;gap:6px;margin-top:-2px;height:14px}
-.swatches i{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(23,36,60,.1);transition:transform .2s}
-.swatches i.on{transform:scale(1.25)}
-@media (prefers-reduced-motion:reduce){.duck .part,.choice,.cta .arrow{transition:none}}
+/* the MicroDuck sticker: head, face and jaw take the scheme colours */
+.art{position:relative}
+.art svg{width:100%;max-width:340px}
+.duck .part{transition:fill .5s ease}
+.duck .tool{transform-box:view-box}
+/* 想涂鸭: the brush makes a little stroke; 想做鸭: the wrench gives the nut half a turn */
+.paint:is(:hover,:has(.cta:focus-visible)) .duck .brush{animation:stroke 1.1s ease-in-out infinite;transform-origin:206px 172px}
+@keyframes stroke{0%,100%{transform:rotate(0)}30%{transform:rotate(-7deg) translate(4px,-2px)}65%{transform:rotate(4deg) translate(-3px,1px)}}
+.duck .splat{opacity:0;transform-box:view-box;transform-origin:300px 200px;transform:scale(.3)}
+.paint:is(:hover,:has(.cta:focus-visible)) .duck .splat{animation:splat 1.1s ease-out infinite}
+@keyframes splat{0%,30%{opacity:0;transform:scale(.3)}45%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15) translateY(8px)}}
+.duck .nut{transform-box:view-box}
+.build:is(:hover,:has(.cta:focus-visible)) .duck :is(.wrench,.nut){animation:turn 1.3s cubic-bezier(.4,0,.2,1) infinite;transform-origin:266px 171px}
+@keyframes turn{0%,100%{transform:rotate(0)}45%,60%{transform:rotate(-24deg)}}
+/* just painted: sparkles and a badge on the first visit after an edit */
+.sparkles path{opacity:0;fill:#ffc94a;transform-box:fill-box;transform-origin:center}
+.fresh .sparkles path{animation:twinkle 1.6s ease-out 2}
+.fresh .sparkles path:nth-child(2){animation-delay:.25s}.fresh .sparkles path:nth-child(3){animation-delay:.5s}.fresh .sparkles path:nth-child(4){animation-delay:.7s}
+@keyframes twinkle{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.6)}}
+.badge{position:absolute;top:8px;inset-inline-end:6px;padding:4px 9px;border-radius:999px;background:#fff;color:#c4521a;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 6px 14px -6px rgba(23,36,60,.35);opacity:0;transform:translateY(6px) scale(.9);transition:.35s;pointer-events:none}
+.paint .badge{color:var(--blue)}
+.fresh .badge{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.duck *{animation:none!important;transition:none!important}.choice,.cta .arrow{transition:none}}
 
 @media (max-width:760px){
   .top{padding:9px 16px}
@@ -91,11 +93,11 @@ button{font:inherit;color:inherit}
   .hello{font-size:24px}
   .lead{font-size:14px;margin-bottom:18px}
   .choices{grid-template-columns:1fr;gap:14px}
-  .choice{display:grid;grid-template-columns:104px 1fr;column-gap:14px;padding:16px;border-radius:20px}
+  .choice{display:grid;grid-template-columns:132px 1fr;column-gap:12px;padding:16px;border-radius:20px}
   .cta[href]::after{border-radius:20px}
   .choice .tag{grid-column:1/-1;justify-self:start;margin-bottom:6px}
-  .art{grid-row:2/4;height:150px;margin:0}
-  .swatches{display:none}
+  .art{grid-row:2/4;height:100px;margin:0}
+  .badge{top:-4px;inset-inline-end:-4px;font-size:10px;padding:3px 7px}
   .choice h2{font-size:26px;align-self:end}
   .desc{margin:4px 0 0;font-size:13px;line-height:1.6}
   .facts{display:none}
