@@ -110,3 +110,5 @@
 后续验证：系统 Python 个人版 15 通过；全部 Python 83 项，65 通过、18 项 MySQL 未配置跳过；新增生成器、坏/旧 gzip fallback、304 不压缩检查通过。Node 网格/拓扑/模型回退定向 7 通过、0 跳过（此前全量 228 已通过，未无理由重跑）。真实 Chromium 压缩/回退/语言/首次音乐回归通过。3MF 导出和场景实现未改，沿用已通过的导出结构证据。发行审计再次执行。
 
 后续完整模型导入（含 POS1）与 26 项组装资产导入均实跑成功，分别见 `import-followup-preparation.txt`、`assembly-followup-preparation.txt`；原始模型和音视频没有重写。当前规范证据文件 `resource-metrics.txt` / `python-tests.txt` / `personal-tests.txt` 已更新为后续结果，旧指标保留在 `initial-resource-metrics.txt`。所有本轮浏览器、诊断与普通 8904 服务均已退出；自己的性能锁已释放。
+
+后续修复实现提交：`58291d1727676a52dbe457fa150da2762ccbe86f`（此后仅追加交接 SHA 记录）。同一草稿 PR #13 继续承载资源优化；历史首切尾延迟仍按上文边界保留，未改变已批准的三页预热流程，也未切换正式服务。
