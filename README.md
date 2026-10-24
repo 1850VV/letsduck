@@ -72,7 +72,7 @@
 两个版本共用同一套前端 `frontend/`，前端通过 `/api/site` 得知当前版本：个人版隐藏登录、配色广场和发布。配色校验（`backend/rules.py`）和 3MF 导出（`backend/exporter.py`）只用标准库，两个版本共用，结果一致。
 
 ```
-frontend/   静态前端：index.html（涂装台）、gallery/（配色广场，仅服务器版）、shared/、lib/、locales/、vendor/
+frontend/   静态前端：index.html（涂装台）、home.html + home/（个人版首页）、gallery/（配色广场，仅服务器版）、shared/、lib/、locales/、vendor/
 personal/   个人版服务：app.py（静态文件 + 方案/导出接口）、schemes.py（本机 SQLite）
 backend/    服务器版 API：server.py（FastAPI 路由）、store.py / database.py（MySQL）、rules.py、exporter.py
 assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器版只读挂载）
@@ -84,7 +84,7 @@ assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器
 2. 双击启动：
    - **macOS**：`启动来做鸭.command`。用系统自带的 Python 3 就行；没有的话会弹出「安装命令行开发者工具」，点安装即可。第一次若提示无法验证开发者：在 Finder 里右键 → 打开。
    - **Windows**：`启动来做鸭.bat`。没有 Python 时会询问是否用 winget 安装 Python 3.12，或打开 python.org 下载页（安装时勾选 Add python.exe to PATH）。
-3. 浏览器自动打开 `http://127.0.0.1:8876/`（端口被占用时自动换下一个）。关闭启动窗口即退出。
+3. 浏览器自动打开 `http://127.0.0.1:8876/`（端口被占用时自动换下一个）：首页两张卡片，「想涂鸦」进涂装台（`/paint`），「想做鸭」进组装教程（接入前显示「即将开放」）。关闭启动窗口即退出。
 
 也可以在终端运行 `python3 run.py`（`--port` 改端口，`--no-open` 不自动开浏览器）。
 
