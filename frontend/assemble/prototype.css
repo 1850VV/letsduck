@@ -161,3 +161,10 @@ html,body{height:100%;overflow:hidden}
 @media(max-width:420px){.quality-control{position:absolute;right:85px;top:0}.quality-control>ryugi-select{font-size:10px}}
 @media(max-width:600px){:root{--view-font:10px;--view-pad:3px}h1{white-space:nowrap}}
 @media(max-width:500px){.view-tools{gap:2px}.section-heading .view-dock{padding:2px}.quality-control>ryugi-select{width:64px!important}}
+
+#observation-open,.observation-dialog button,.observation-dialog select{font:inherit;color:#3150d8;border:1px solid #d5dfff;background:#fff;border-radius:9px;padding:9px 12px;min-height:40px;cursor:pointer}
+#observation-open{font-size:11px}
+.observation-dialog{box-sizing:border-box;width:480px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;border:1px solid #e2e7f1;border-radius:20px;padding:24px;color:#33405a;background:#fff;box-shadow:0 18px 60px #1d295033;text-align:start}
+.observation-dialog::backdrop{background:#17233b66}.observation-dialog form{display:flex;justify-content:flex-end}.observation-dialog h2{font-size:20px;margin:6px 0 24px}.observation-dialog label{display:block;font-weight:650;font-size:14px;margin:20px 0 10px}.observation-dialog select{width:100%;color:#33405a}.observation-dialog p{font-size:12px;line-height:1.8;color:#6c7890}.observation-dialog h3{font-size:14px;margin-bottom:6px}.observation-dialog :focus-visible,#observation-open:focus-visible{outline:3px solid #a9b8ff;outline-offset:2px}
+.observation-options{display:flex;gap:8px}.observation-options button{flex:1}.observation-options button[aria-pressed=true]{background:#eaf0ff;border-color:#9eafff;color:#3150d8}.observation-dialog select[hidden]{display:none}
+@media(max-width:420px){#observation-open{position:absolute;right:85px;top:0;min-height:28px;padding:5px 7px;font-size:10px}}

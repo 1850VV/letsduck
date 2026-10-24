@@ -1,3 +1,5 @@
+import {observationSettings,refreshObservationSettings} from './observation-controller.mjs';
+import {applyObservationLighting} from './observation-lighting.mjs';
 import {createHardwareLod} from './hardware-lod.mjs';
 import * as THREE from '../vendor/three.module.js';
 import {createContactPass} from './quality-occlusion.mjs';
@@ -71,9 +73,10 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
   const hardwareLod=createHardwareLod({enabled:new URLSearchParams(location.search).get('hardwareLod')!=='0'}),viewSize=new THREE.Vector2();
   const input=document.getElementById('render-quality'),bindings=[],overlays=[],cache=new Map(),geometryCache=new Map(),baseline={environment:scene.environment,environmentIntensity:scene.environmentIntensity,exposure:renderer.toneMappingExposure,toneMapping:renderer.toneMapping,pixelRatio:renderer.getPixelRatio(),shadowType:renderer.shadowMap.type,shadowSize:key.shadow.mapSize.clone(),shadowFar:key.shadow.camera.far,shadowNormalBias:key.shadow.normalBias,keyPosition:key.position.clone(),keyIntensity:key.intensity,keyColor:key.color.clone(),fillPosition:fill.position.clone(),fillIntensity:fill.intensity,fillColor:fill.color.clone(),hemiIntensity:hemi.intensity,groundOpacity:ground.material.opacity,groundMaterial:ground.material};
   const softGround=ground.material.clone();softGround.onBeforeCompile=softenShadows;softGround.customProgramCacheKey=()=>`duck-soft-ground-1`;
-  let mode='current',studio=null,contact=null,dirty=true,attached=false,lastStats={calls:0,triangles:0};
-  function set(value){
-    const next=value==='ultra'?'ultra':'current',ultra=next==='ultra';if(next===mode&&attached)return;
+  let mode='current',lighting='neutral',studio=null,contact=null,dirty=true,attached=false,lastStats={calls:0,triangles:0};
+  function set(value,light=observationSettings.state.lighting){
+    const next=value==='ultra'?'ultra':'current',ultra=next==='ultra';if(next===mode&&light===lighting&&attached)return;
+    lighting=light;
     mode=next;
     for(const {object,mask}of overlays)object.layers.mask=ultra?2:mask;
     for(const {mesh,original,enhanced,sourceGeometry,enhancedGeometry}of bindings){
@@ -84,20 +87,20 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
       materials.forEach((m,i)=>{m.opacity=active[i].opacity;m.transparent=active[i].transparent;});mesh.material=Array.isArray(mesh.material)?materials:materials[0];
     }
     if(ultra){
-      studio??=studioEnvironment(renderer);contact??=createContactPass(renderer);
-      scene.environment=studio.texture;scene.environmentIntensity=.72;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.03;renderer.setPixelRatio(Math.min(devicePixelRatio*1.5,2.25));
-      hemi.intensity=.22;key.position.set(-280,500,330);key.intensity=3.2;key.color.set(0xfff0dd);fill.position.set(170,160,-130);fill.intensity=.5;fill.color.set(0xdce9ff);
-      ground.material=softGround;ground.material.opacity=.22;renderer.shadowMap.type=THREE.PCFShadowMap;key.shadow.mapSize.set(4096,4096);key.shadow.radius=3;key.shadow.camera.far=1100;key.shadow.normalBias=.08;
+      contact??=createContactPass(renderer);
+      renderer.setPixelRatio(Math.min(devicePixelRatio*1.5,2.25));
+      ground.material=softGround;ground.material.opacity=.22;renderer.shadowMap.type=THREE.PCFShadowMap;key.shadow.mapSize.set(4096,4096);key.shadow.radius=3;key.shadow.normalBias=.08;
     }else{
-      scene.environment=baseline.environment;scene.environmentIntensity=baseline.environmentIntensity;renderer.toneMappingExposure=baseline.exposure;renderer.toneMapping=baseline.toneMapping;renderer.setPixelRatio(baseline.pixelRatio);
-      hemi.intensity=baseline.hemiIntensity;key.position.copy(baseline.keyPosition);key.intensity=baseline.keyIntensity;key.color.copy(baseline.keyColor);fill.position.copy(baseline.fillPosition);fill.intensity=baseline.fillIntensity;fill.color.copy(baseline.fillColor);
-      ground.material=baseline.groundMaterial;ground.material.opacity=baseline.groundOpacity;renderer.shadowMap.type=baseline.shadowType;key.shadow.mapSize.copy(baseline.shadowSize);key.shadow.radius=1;key.shadow.camera.far=baseline.shadowFar;key.shadow.normalBias=baseline.shadowNormalBias;
+      renderer.setPixelRatio(baseline.pixelRatio);
+      ground.material=baseline.groundMaterial;ground.material.opacity=baseline.groundOpacity;renderer.shadowMap.type=baseline.shadowType;key.shadow.mapSize.copy(baseline.shadowSize);key.shadow.radius=1;key.shadow.normalBias=baseline.shadowNormalBias;
     }
+    applyObservationLighting(lighting,{scene,renderer,key,fill,hemi,baseline,environment:()=>studio??=studioEnvironment(renderer)});
     key.shadow.camera.updateProjectionMatrix();key.shadow.map?.dispose();key.shadow.map=null;key.shadow.needsUpdate=true;renderer.shadowMap.needsUpdate=true;dirty=true;
     scene.traverse(o=>{if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])m.needsUpdate=true;});
-    input.dataset.active=mode;input.title=ultra?'极致 · 细腻哑光、边缘柔光与摄影棚反射':'当前 · 原有材质和渲染';
+    input.value=mode;input.dataset.active=mode;
   }
-  input.addEventListener('ryugi-change',e=>set(e.detail.value));
+  input.addEventListener('change',()=>observationSettings.set('quality',input.value));
+  observationSettings.subscribe(state=>{if(attached)set(state.quality,state.lighting);globalThis.dispatchEvent?.(new Event('observation:change'));});
   return{
     attach(entities,actors){
       // Only through-surface instructional frames belong in the overlay pass.
@@ -118,9 +121,9 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
         }return cache.get(m);});bindings.push({mesh,original,enhanced,sourceGeometry,enhancedGeometry});
       });}
       hardwareLod.attach(scene);
-      set(input.value||input.getAttribute('value'));attached=true;
+      set(observationSettings.state.quality);attached=true;
     },
-    sync(){if(attached)set(input.value||input.getAttribute('value'));},
+    sync(){refreshObservationSettings();if(attached)set(observationSettings.state.quality);},
     invalidate(){dirty=true;},
     render(world,camera,id='main'){
       return hardwareLod.withView(camera,renderer.getSize(viewSize).y,id,()=>{
@@ -135,6 +138,6 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}){
       });
     },
     get renderStats(){return{...lastStats};},
-    get state(){return{hardwareLod:hardwareLod.state,mode,finish:mode==='ultra'?'matte-plastic':'original',pixelRatio:renderer.getPixelRatio(),shadowSize:key.shadow.mapSize.toArray(),materials:cache.size,edgeGeometries:geometryCache.size,contactViews:contact?.state||[]};}
+    get state(){return{hardwareLod:hardwareLod.state,mode,lighting,exposure:renderer.toneMappingExposure,environmentIntensity:scene.environmentIntensity,keyIntensity:key.intensity,hemiIntensity:hemi.intensity,finish:mode==='ultra'?'matte-plastic':'original',pixelRatio:renderer.getPixelRatio(),shadowSize:key.shadow.mapSize.toArray(),materials:cache.size,edgeGeometries:geometryCache.size,contactViews:contact?.state||[]};}
   };
 }

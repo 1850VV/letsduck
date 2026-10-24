@@ -324,6 +324,7 @@ const scheduler=createRenderScheduler({draw:render});
 const invalidate=()=>scheduler.invalidate();
 // OrbitControls emits change throughout damping, including input-driven changes.
 controls.addEventListener('change',invalidate);
+addEventListener('observation:change',invalidate);
 // Capture schedules after the current event's handlers have updated state. This
 // includes custom controls and magnifier dragging without observing our own DOM writes.
 for(const type of ['click','input','change','ryugi-change','pointerdown','pointerup','pointercancel','wheel'])document.addEventListener(type,invalidate,{capture:true,passive:true});
