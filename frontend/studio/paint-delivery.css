@@ -1,0 +1,45 @@
+/* Approved C/D hierarchy; the existing palette and tools remain available on demand. */
+.studio[data-step="2"]{grid-template-columns:0 minmax(0,1fr) 390px}
+.studio[data-step="2"]>.rail{display:none}
+.cd-refine{overflow:auto;display:block!important;padding:20px;flex:1;min-height:0}
+.cd-refine>.eyebrow{color:var(--blue);letter-spacing:0;margin:0 0 10px;font-size:12px}
+.cd-parts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.cd-parts button{background:#f7f8fc;border:1px solid var(--line);padding:8px 10px;border-radius:8px;font-size:12px;min-height:38px}
+.cd-parts button[aria-pressed="true"]{background:var(--blue-soft);border-color:#a9b8ff;color:var(--blue)}
+.cd-scope{background:var(--blue-soft);color:#3150d8;border-radius:8px;padding:12px;font-size:12px;line-height:1.7;margin:10px 0 16px;overflow-wrap:anywhere}
+.cd-refine .panel-head{padding:0 0 16px!important;border:0}.cd-refine .panel-head h2{font-size:15px}
+.cd-swatches{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.cd-swatch{height:44px;width:44px;border-radius:50%;background:var(--c);border:3px solid #fff;box-shadow:0 0 0 1px #ccd4e8}
+.cd-swatch[aria-pressed="true"]{box-shadow:0 0 0 3px var(--blue)}
+.cd-current{font-size:12px;line-height:1.6;color:var(--muted);margin:16px 0;overflow-wrap:anywhere}
+.cd-refine details,.cd-delivery details{margin:16px 0}
+.cd-refine summary,.cd-delivery summary{color:var(--blue);font-size:12px;cursor:pointer;padding:8px 0}
+.cd-refine .tools{position:static;display:flex;width:auto;max-width:none;box-shadow:none;backdrop-filter:none;flex-wrap:wrap}
+.cd-refine .cdock{min-height:360px;flex:none}.cd-refine .dock-body{overflow:visible}
+.cd-refine .pane-filament #lib-grid{min-height:140px;max-height:230px;overflow:auto}
+.cd-delivery{overflow:auto;display:block!important;padding:20px;flex:1;min-height:0}
+.cd-delivery h2{font-size:18px;margin:0 0 12px}.cd-delivery h3{font-size:17px;margin:0 0 12px}
+.cd-card{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.cd-card p{font-size:13px;line-height:1.7}.cd-card .muted{font-size:12px;color:var(--muted)}
+.cd-row{display:flex;gap:8px}.cd-row>button{flex:1;min-width:0;min-height:44px;border:1px solid #d6def6;border-radius:9px;background:white;font-size:13px;padding:8px}
+.cd-row>button.primary{background:var(--blue);color:white}
+.cd-card>.primary{min-height:44px;width:100%}
+.cd-save-status{display:block;color:var(--muted);font-size:12px;margin:10px 0}
+.cd-delivery .cdock{min-height:480px}.cd-delivery .panel-body{overflow:visible}
+.cd-checks{display:grid;gap:14px;border-top:1px solid var(--line);padding:16px 0;font-size:13px;line-height:1.7}
+.cd-checks label{display:flex;align-items:flex-start;gap:10px}.cd-checks input{flex:none;width:20px;height:20px;margin:2px}
+button:disabled{cursor:not-allowed}
+@media(min-width:1000px){.studio[data-step="3"]{grid-template-columns:0 minmax(0,1fr) 530px}.studio[data-step="3"]>.stage{margin:28px 12px 28px 28px}}
+body.phone .studio[data-step="2"] .rail{display:none!important}
+body.phone .cd-refine,body.phone .cd-delivery{flex:none;padding:12px 16px;overflow:visible}
+body.phone .cd-refine .panel-head:not(.brush-head) .sel-line{display:flex}
+body.phone .cd-refine .tools{position:static!important;display:flex;flex-direction:row;width:auto!important;max-width:100%!important;flex-wrap:wrap!important;gap:6px}
+body.phone .cd-refine .tools button{width:auto;min-height:42px;height:auto;border-radius:9px;padding:8px!important;font-size:12px!important;gap:5px}
+body.phone .cd-refine .tools button span{display:inline!important}
+body.phone .cd-refine .tools .tools-seg{display:flex!important;width:100%}
+body.phone .studio[data-step="2"] .panel-foot.finish{display:flex}
+body.phone .cd-delivery .panel-head{display:block}
+body.phone .cd-refine .hover-info{display:flex}
+body.phone .cd-refine .pane-filament #lib-grid{order:initial}
+body.phone .cd-refine .pane-filament>*{order:initial!important}
+@media(max-width:760px){.sheet .ex-stats{flex-wrap:wrap}.cd-card{padding:14px}.cd-row{flex-wrap:wrap}.cd-checks{font-size:12px}}

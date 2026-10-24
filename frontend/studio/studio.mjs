@@ -1,3 +1,4 @@
+import {paintScope, deliverySummary, toolShortcut} from '../lib/paint-delivery.mjs';
 import {hoverQueue} from '../shared/hover-queue.mjs';
 import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 涂装台: one stage, three steps (style → refine → showcase), plus schemes, A/B compare, group replace, close-up, arrange, colour finder, plates check,
@@ -88,6 +89,7 @@ function persist() {
 }
 
 let step = 1,stepsDone = new Set(),slots = slotsFromDesign(products, design.assignments, themeSlots(products, THEMES[0])),recipe = '经典',slotLocks = {},openSlot = null,activeTheme = null,styleTab = 'themes',showTab = 'move';
+let paintToolsOpen = false,paintPaletteOpen = false;
 let sel = { zone: 'head-shell', scope: 'all', part: null, mirror: true },tool = 'select',brush = null,search = '',replaceFrom = null,finder = '#FF8A3D',takeFrom = 'original',source = 'bambu',dockTab = 'filament',freeFinish = 'basic',freeAuto = true,pickToFree = false,brushMirror = true,brushKind = 'PLA',brushHover = null,toolBefore = 'select';
 let freeHsv = hexToHsv('#FF8A3D'),bgPref = 'auto',bgCustom = '#2B3A55';bgPref = read(KEY + '-bg') || 'auto';bgCustom = read(KEY + '-bgc') || bgCustom;
 if (!['auto', 'soft', 'sand', 'sage', 'night', 'custom'].includes(bgPref)) bgPref = 'auto';
@@ -95,6 +97,7 @@ let renamingId = null,compareId = 'original',splitOn = false,sideOn = false,focu
 const undo = [],redo = [];
 
 const view = createDuckView(duck);view.mount($('#stage'));view.setColors(design.colors);$('#loading').remove();
+const paintTools = $('#tools');
 const poster = createPosterDialog({ view, parts, products });
 const actions = createActionPlayer(view);
 // The playing action's button fills like a progress bar for exactly the action's length.
@@ -242,7 +245,8 @@ function renderRail() {
     return `<div class="zone ${on ? 'on' : ''} ${z.internal ? 'internal' : ''}"><button class="zone-main" data-zone="${z.id}"><span class="zone-chips">${chips(z.ids)}</span><span class="zone-name">${esc(z.name)}<small>${_t("text.0115", { v5: z.ids.length, v6: partById.get(z.ids[0]).material === 'TPU 90A' ? _t("text.0111") : 'PLA' })}</small></span></button><button class="zone-lock ${locked ? 'on' : ''}" data-lock="${z.id}" title="${_attr(locked ? _t("text.0112") : _t("text.0113"))}" aria-label="${_attr(_t("text.0116", { v10: esc(z.name) }))}">${locked ? '🔒' : '🔓'}</button>${part ? `<div class="zone-part">${_t("text.0114", { v0: esc(part.name) })}</div>` : ''}</div>`;}).join('');
   if (step === 2) $('#rail .zone.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
-function swatch(k, { current, extra = '' } = {}) {return `<button class="sw ${current ? 'on' : ''} ${isHex(k) ? 'free' : ''}" data-key="${k}" style="--c:${keyHex(k)}" title="${_attr(esc(keyName(k) + ' · ' + keySub(k)))}"><i></i><span>${esc(keyName(k))}<small>${esc(keySub(k))}${extra}</small></span></button>`;}
+const colorLabel = k => _t('cd.apply', {color:keyName(k),part:tool === 'brush' ? _t('text.0151') : selectionLabel()});
+function swatch(k, { current, extra = '' } = {}) {return `<button class="sw ${current ? 'on' : ''} ${isHex(k) ? 'free' : ''}" data-key="${k}" aria-label="${_attr(esc(colorLabel(k)))}" style="--c:${keyHex(k)}" title="${_attr(esc(keyName(k) + ' · ' + keySub(k)))}"><i></i><span>${esc(keyName(k))}<small>${esc(keySub(k))}${extra}</small></span></button>`;}
 // Step 1 · 选个起点: one page, four kinds of starting points, every card previews on hover and applies on click.
 // 白胚 (all white) · 经典配色 (4) · 灵感骰子 (4 at once, one per colour mapping) · 我的方案 (saved ones).
 const prodBy = (code, series) => catalog.products.find((p) => p.colorCode === code && p.series === series);
@@ -320,6 +324,16 @@ const brandList = (id, kind) => (id === 'bambu' ? catalog.products : [...product
 // Step 2 colour dock. Static structure renders once per selection; painting only refreshes the live parts
 // (current colour, in-use chips, selected rings), so hover, focus and scroll never jump.
 // Step 2 fits one screen: a two-line header, the tabs, and a pane with no folds or dropdowns.
+function scopeText() {
+  const actual = paintScope(parts, replaceFrom ? parts.filter(p => keyOf(p.id) === replaceFrom).map(p => p.id) : targetIds(), locks);
+  return esc(_t('cd.scope', {...actual,part:replaceFrom ? keyName(replaceFrom) : selectionLabel(),materials:actual.materials.join(' / ')}));
+}
+function quickPaintColors() {
+  const compatible = k => isHex(k) || products.has(k) && kindOf(products.get(k)) === gridKind();
+  const keys = [...new Set([...targetIds().map(keyOf),...recent,...used(),...brandList('bambu',gridKind()).map(p => p.id)])].filter(compatible).slice(0,8);
+  const current = new Set(tool === 'brush' ? [brush] : targetIds().map(keyOf));
+  return keys.map(k => `<button class="cd-swatch" data-key="${k}" style="--c:${keyHex(k)}" aria-label="${_attr(esc(colorLabel(k)))}" aria-pressed="${current.has(k)}" title="${_attr(esc(keyName(k)+' · '+keySub(k)))}"></button>`).join('');
+}
 function panelStep2() {
   const z = ZONES.find((z) => z.id === sel.zone),kind = selKind(),part = sel.part && partById.get(sel.part);
   const pairOf = part && paintTargets(parts, [part.id], true).find((id) => id !== part.id);
@@ -330,7 +344,14 @@ function panelStep2() {
       <div class="brush-opts"><label class="pill-check"><input type="checkbox" id="brush-mirror" ${brushMirror ? 'checked' : ''}>${_t("text.0154")}</label><div class="mini-seg" role="group" aria-label="${_attr(_t("text.0155"))}">${['PLA', 'TPU'].map((k) => `<button data-brush-kind="${k}" class="${brushKind === k ? 'on' : ''}">${k === 'PLA' ? 'PLA' : _t("text.0043")}</button>`).join('')}</div></div></div>` : `<div class="panel-head compact tight"><div class="sel-line"><h2>${
   esc(selectionLabel())}</h2><span class="kind-tag ${kind === 'TPU' ? 'tpu' : ''}">${kind === 'TPU' ? _t("text.0043") : 'PLA'}</span>${z.id === 'face' ? `<span class="info-dot" title="${_attr(_t("text.0156"))}">i</span>` : ''}</div>
       <div class="scope" role="group" aria-label="${_attr(_t("text.0159"))}">${scopes.map(([k, l]) => `<button class="${sel.scope === k ? 'on' : ''}" data-scope="${k}">${l}</button>`).join('')}${sel.scope === 'one' && pairOf ? `<label class="pill-check" title="${_attr(_t("text.0157", { v0: esc(partById.get(pairOf).name) }))}"><input type="checkbox" id="mirror" ${sel.mirror ? 'checked' : ''}>${_t("text.0158")}</label>` : ''}</div></div>`;
-  return head + dockHTML(finishes) + `<div class="panel-foot"><button class="primary" data-go="3">${_t("text.0160")}</button></div>`;
+  return `<div class="panel-body cd-refine"><div class="eyebrow">${_t('cd.part')}</div>
+    <div class="cd-parts">${ZONES.map(zone => `<button data-paint-zone="${zone.id}" aria-pressed="${sel.zone === zone.id}">${esc(zone.name)}</button>`).join('')}</div>
+    <div id="paint-scope" class="cd-scope" role="status">${scopeText()}</div>
+    ${head}<div class="eyebrow">${_t('cd.color')}</div><div id="paint-quick" class="cd-swatches">${quickPaintColors()}</div>
+    <div id="paint-current" class="cd-current"></div>
+    <details id="paint-tools" ${paintToolsOpen ? 'open' : ''}><summary>${_t('cd.tools')}</summary><div id="paint-tools-host"></div></details>
+    <details id="paint-palette" ${paintPaletteOpen ? 'open' : ''}><summary>${_t('cd.palette')}</summary>${dockHTML(finishes)}</details></div>
+    <div class="panel-foot finish"><button class="save-mine" id="finish-save">${_t('text.0220')}</button><button class="primary" data-go="3">${_t("text.0160")}</button></div>`;
 }
 function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${dockTab}">
     <div class="dock-tabs" role="tablist"><button data-tab="filament" role="tab">${_t("text.0167")}</button><button data-tab="free" role="tab">${_t("text.0168")}</button><i class="ink"></i></div>
@@ -359,12 +380,12 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
 const matchSearch = (p) => !search || (p.name + p.colorCode + (p.nameEn || '') + (p.brand || '')).toLowerCase().includes(search.toLowerCase());
 function buildGrid() {
   const g = $('#lib-grid');if (!g) return;const list = brandList(source, gridKind()).filter(matchSearch);
-  g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex}" aria-label="${_attr(esc(p.name))} ${_attr(esc(p.colorCode))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
+  g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex}" aria-label="${_attr(esc(colorLabel(p.id)))} ${_attr(esc(p.colorCode))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
   search ? _t("text.0184") : _t("text.0185")}</p>`;
   markGrid();
 }
 function markGrid() {const keys = new Set(tool === 'brush' ? [brush] : targetIds().map(keyOf)),one = keys.size === 1 ? [...keys][0] : null;$$('#lib-grid .dot').forEach((d) => d.classList.toggle('on', d.dataset.key === one));}
-const chip = (k, { count, on } = {}) => `<button class="chip ${on ? 'on' : ''} fin-${isHex(k) ? hexFinish(k) || 'basic' : finishOfProduct(products.get(k))}" data-key="${k}" style="--c:${keyHex(k)}" aria-label="${_attr(esc(keyName(k)))}">${count ? `<em>${count}</em>` : ''}</button>`;
+const chip = (k, { count, on } = {}) => `<button class="chip ${on ? 'on' : ''} fin-${isHex(k) ? hexFinish(k) || 'basic' : finishOfProduct(products.get(k))}" data-key="${k}" style="--c:${keyHex(k)}" aria-label="${_attr(esc(colorLabel(k)))}">${count ? `<em>${count}</em>` : ''}</button>`;
 function hoverInfo(k) {
   const el = $('#hover-info');if (!el) return;
   if (k) {el.innerHTML = `<i style="--c:${keyHex(k)}"></i><span><b>${esc(keyName(k))}</b><small>${esc(keySub(k))}</small></span><kbd>${_t("text.0186")}</kbd>`;el.classList.add('live');return;}
@@ -372,6 +393,9 @@ function hoverInfo(k) {
   el.innerHTML = keys.length === 1 && keys[0] ? `<i style="--c:${keyHex(keys[0])}"></i><span><b>${tool === 'brush' ? _t("text.0187") : _t("text.0188")}${esc(keyName(keys[0]))}</b><small>${esc(keySub(keys[0]))}${targetIds().some((id) => locks.has(id)) && tool !== 'brush' ? _t("text.0189") : ''}</small></span><kbd class="hover-hint">${_t("text.0190")}</kbd>` : `<span class="muted">${_t("text.0191", { v0: keys.length })}</span>`;
 }
 function updateStep2() {
+  if ($('#paint-scope')) $('#paint-scope').innerHTML = scopeText();
+  if ($('#paint-quick')) $('#paint-quick').innerHTML = quickPaintColors();
+  if ($('#paint-current')) $('#paint-current').textContent = [...new Set((tool === 'brush' ? [brush] : targetIds().map(keyOf)).filter(Boolean))].map(k => keyName(k)+' · '+keySub(k)).join(' / ');
   const ids = targetIds(),keys = [...new Set(ids.map(keyOf))],one = tool === 'brush' ? brush : keys.length === 1 ? keys[0] : null,kind = gridKind();
   if ($('#brush-bar')) $('#brush-bar').innerHTML = inkBar();
   if ($('#cur-bar')) $('#cur-bar').innerHTML = `<div class="cur-chips">${keys.slice(0, 4).map((k) => `<i style="--c:${keyHex(k)}"></i>`).join('')}</div><div class="cur-text"><b>${one ? esc(keyName(one)) : _t("text.0192", { v0: keys.length })}</b><small>${one ? esc(keySub(one)) : _t("text.0193")}${ids.some((id) => locks.has(id)) ? _t("text.0189") : ''}</small></div>`;
@@ -441,8 +465,10 @@ function fillPosterMini() {
   setTimeout(() => requestAnimationFrame(() => {const cv = drawPoster({ view, design: { ...design, name, author: account.user?.name || '' }, parts, products, before: ORIGINAL, opts: { ratio: '3:4', theme: 'light', materials: true, compare: false, author: true } }),small = document.createElement('canvas');small.width = 270;small.height = 360;small.getContext('2d').drawImage(cv, 0, 0, 270, 360);miniKey = key;img.dataset.src = small.toDataURL('image/png');if ($('#poster-mini') === img) {img.src = img.dataset.src;img.parentElement.classList.add('ready');}}), 60);
 }
 function renderPanel() {
+  if (paintTools.parentElement !== $('#stage')) $('#stage').append(paintTools);
   const panel = $('#panel'),top = $('#panel .panel-body')?.scrollTop || 0,outer = panel.scrollTop,again = panel.dataset.step === String(step);
   panel.innerHTML = step === 1 ? panelStep1() : step === 2 ? panelStep2() : panelStep3();panel.dataset.step = step;
+  if ($('#paint-tools-host')) $('#paint-tools-host').append(paintTools);
   if (again && $('#panel .panel-body')) $('#panel .panel-body').scrollTop = top;
   // On phones the panel itself scrolls under the pinned duck: keep the spot within a step, start a new step at the top.
   panel.scrollTop = again ? outer : 0;
@@ -502,7 +528,9 @@ $('#steps').onclick = (e) => {const b = e.target.closest('[data-step]');if (b) g
 // ---------- events: panel ----------
 let previewing = false;
 $('#panel').addEventListener('click', async (e) => {
-  const t = e.target,go = t.closest('[data-go]');if (go) return goStep(+go.dataset.go);
+  const t = e.target;
+  const zone = t.closest('[data-paint-zone]');if (zone) return select(zone.dataset.paintZone);
+  const go = t.closest('[data-go]');if (go) return goStep(+go.dataset.go);
   const ptab = t.closest('[data-ptab]');if (ptab) {showTab = ptab.dataset.ptab;$('#pdock').dataset.tab = showTab;if (showTab === 'share') fillPosterMini();return;}
   const keep = t.closest('[data-keep]');if (keep) {e.stopPropagation();keep.textContent = '★';return keepDice(keep.dataset.keep);}
   if (t.closest('#more-schemes')) {e.stopPropagation();menuOpen = true;return renderMenu();}
@@ -549,6 +577,7 @@ $('#panel').addEventListener('click', async (e) => {
   if (t.closest('#finish-save')) {if (activeId && !dirty()) return toast(_message(personal ? 'personal.saved' : "text.0268"));await saveScheme(false);return renderPanel();}
   if (t.closest('#publish')) return openPublish();
 });
+$('#panel').addEventListener('toggle', e => {if (e.target.id === 'paint-tools') paintToolsOpen=e.target.open;if(e.target.id === 'paint-palette')paintPaletteOpen=e.target.open;}, true);
 $('#panel').addEventListener('change', (e) => {
   if (e.target.id === 'mirror') {sel.mirror = e.target.checked;renderAll();}
   if (e.target.id === 'take-from') {takeFrom = e.target.value;}
@@ -786,7 +815,7 @@ $('#publish-form').onsubmit = async (e) => {
 
 // ---------- keyboard ----------
 addEventListener('keydown', (e) => {
-  if (e.target.matches('input,textarea,select') || document.querySelector('dialog[open]') || !$('#evo').hidden) return;
+  if (e.target.isContentEditable || e.target.matches('input,textarea,select') || document.querySelector('dialog[open]') || !$('#evo').hidden) return;
   const k = e.key.toLowerCase();
   if ((e.metaKey || e.ctrlKey) && k === 'z') {e.preventDefault();(e.shiftKey ? $('#redo') : $('#undo')).click();return;}
   if ((e.metaKey || e.ctrlKey) && k === 's') {e.preventDefault();saveScheme(false);return;}
@@ -794,10 +823,12 @@ addEventListener('keydown', (e) => {
   if (e.code === 'Space' && !e.repeat) {e.preventDefault();holdOn();return;}
   if (k === 'r' && step === 1) {$('#dice')?.click();return;}
   if (k === '1' || k === '2' || k === '3') {setLayout(['assembly', 'explode', 'arrange'][+k - 1]);return;}
-  if (k === 'f') return setFocused(!focused);
-  if (step !== 2) return;
-  if (k === 'p') return toggleSide();
-  if (k === 'escape' || k === 'v') setTool('select');else if (k === 'b') setTool(tool === 'brush' ? 'select' : 'brush');else if (k === 'i') setTool('pick');
+  const shortcut = toolShortcut(e, step);if (!shortcut) return;
+  e.preventDefault();paintToolsOpen = true;
+  if ($('#paint-tools')) $('#paint-tools').open = true;
+  if (shortcut === 'focus') {setFocused(!focused);toast(_message(focused ? 'text.0259' : 'text.0258'));}
+  else if (shortcut === 'side') {toggleSide();toast(_message('label.sidecopy'));}
+  else {setTool(shortcut);toast(_message({select:'label.select',brush:'label.brush',pick:'label.pick'}[shortcut]));}
 });
 addEventListener('keyup', (e) => {if (e.code === 'Space') holdOff();});
 
