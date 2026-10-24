@@ -56,3 +56,9 @@
 | 真实 3MF 结构保持 | HTTP 导出 CRC、35 零件、27 个源 `3D/` 条目逐字节不变 |
 | 完整测试 | Python 81 项中 63 通过、18 项真实 MySQL 因未配置跳过；Node 228 全通过；发行检查无发现 |
 | 人工视觉/交互与真实设备 | 未执行；本任务没有新增布局和翻译 |
+
+## 交付与清理
+
+实现提交：`cb092233299b255a9690983c8fdfb99dcb1e5f2f`（随后仅追加本交接记录）。从完整本地资产向独立输出目录执行 `python3 scripts/import_local_assets.py assets --target output/optimization-assets/imported --positions` 成功，见 `import-preparation.txt`。
+
+所有本任务直接 Playwright 脚本均在 finally 中关闭 context/browser，执行进程已退出；8904 测试服务及临时基线服务已停止，`lsof` 确认无监听。没有关闭其他任务浏览器或服务。自己的性能锁已释放；不改动他人锁。主控集成时应重新生成/带入忽略的压缩资产和完整性清单，再在实际运行版本上复测。代码 PR 以 `codex/personal-navigation` 为 base，草稿交付，不合并、不切服务。
