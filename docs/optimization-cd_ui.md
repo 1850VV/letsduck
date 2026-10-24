@@ -43,7 +43,7 @@ No performance benefit is claimed. The benchmark lock was respected before brows
 
 ## Delivery status
 
-Implementation committed locally. Independent review found two Important export-dialog state issues; both were fixed with observed RED→GREEN regressions. No Critical or deferred Minor findings. The remote A/B branch was absent at the initial base check. Do not create or push another owner's base branch, merge, deploy, or switch the live personal service as part of this task.
+Implementation committed locally. Independent review found two Important export-dialog state issues; both were fixed with observed RED→GREEN regressions. No Critical or deferred Minor findings. The remote A/B branch was absent at the initial base check and appeared during final handoff. Its fixed head is `1e88b87e2c0874889a1d5a142873485681b3b7ad`; the verified common ancestor with this branch is the required `8a581d216871d699fba93090700d2802142ca096`. The three-dot PR diff contains only C/D files. No A/B source was merged into this checkout; no merge/deployment/live-service switch occurred.
 
 ## Final review decisions and remaining boundaries
 
@@ -59,7 +59,7 @@ Review fixes also prevent checkbox toggles from re-enabling a busy 3MF button, a
 ## Confirmed handoff receipt
 
 - Source and review fixes: `d6d37fedc02b0d897faa296f374f562a7a68034d`. Own branch push succeeded; `git ls-remote` returned that SHA. GitHub API readback confirmed both commit identities use the repository no-reply email. Repository visibility readback was `PRIVATE`; no visibility setting was changed.
-- A/B remote branch still absent at final dependency check. The requested draft PR is **not created**: its required base is unavailable. The source branch is ready for the coordinator to open the stacked draft after publishing/fixing the A/B base. No substitute base or another owner's branch was created.
+- A/B dependency resolved on the last remote recheck: `codex/optimization-ab-ui` exists at `1e88b87e2c0874889a1d5a142873485681b3b7ad`, with expected common baseline and disjoint source scope. Draft PR uses that branch as requested; the confirmed URL is recorded below. No substitute base or another owner's branch was created.
 - Browser session `opt-cd-ui-1024` closed. Its daemon and seven descendant processes exited. Isolated 8906 service stopped; the preview server remains only for static visual review.
 - Local verification artifact: `.ryugi/artifacts/artboard/verify-cd-ui/`, four pending human groups (C desktop, C phone, D delivery, D materials), approved screenshots paired with actual screenshots and real desktop/touch recordings. Artifact warnings and pending-file lists are empty. This pending verdict is separate from initial Mock v1 design approval.
 - Evidence summary: 54 main browser checks + 26 scope/locale checks + 4 review regressions; full suites as listed above. The final desktop recording decodes cleanly. Manufacturing exports and PNGs remain local and uncommitted.
