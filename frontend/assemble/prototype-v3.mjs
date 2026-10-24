@@ -56,6 +56,7 @@ addEventListener('storage',event=>{
  if(event.key===null){clearTimeout(saveTimer);saveTimer=null;viewingDirty=false;}
  if(event.key===PERSONAL_KEY||event.key===null)syncViewingScope();
  if(ready&&(event.key===viewingStore.key(viewingScope)||event.key===null))restoreViewing();
+ if(ready&&viewingStore.isChecksKey(viewingScope,event.key))syncChecks();
 });
 
 let currentState=snapshot(0,1),guidanceEndState=snapshot(0,1),backTransition=null;
@@ -224,7 +225,7 @@ function renderSteps(chapter){
   for(let i=chapter.start;i<=chapter.end;i++){
     const b=document.createElement('button');b.id=`step-${i}`;b.className='step-option';b.type='button';b.dataset.step=String(i);
     for(const [cls,text] of [['number',String(i-chapter.start+1)],['title',STEPS[i].short],['time',fmt(STEPS[i].sourceStart)]]){const span=document.createElement('span');span.className=cls;span.textContent=text;b.append(span);}
-    b.addEventListener('click',()=>goStep(i));$('step-list').append(b);
+    b.addEventListener('click',()=>{goStep(i);$('sequence-dialog').close();});$('step-list').append(b);
   }
 }
 function syncReference(){
@@ -238,16 +239,30 @@ function syncInfo(){
   const s=STEPS[step],c=chapterFor(step),local=step-c.start+1;guidanceEndState=snapshot(step,1);renderSteps(c);$('software-guide').hidden=!s.software;$('servo-id-list').replaceChildren();for(const id of s.servoIds||[]){const tag=document.createElement('span');tag.textContent=`ID ${id}`;$('servo-id-list').append(tag);}
   $('phase-select').setAttribute('value',String(CHAPTERS.indexOf(c)));
   $('full-saved-step').value=String(step);$('step-title').textContent=s.title;$('instruction-summary-title').textContent=s.title;$('step-description').textContent=s.text;$('step-check').textContent=s.check+(fitsForParts(s.parts).length||s.id==='robot-complete'||s.overview?' 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。':'');
-  $('step-count').textContent=`${c.name} · ${local} / ${c.end-c.start+1}`;
+  $('step-count').textContent=`${step+1} / ${STEPS.length} · ${c.name} ${local}/${c.end-c.start+1}`;
   $('stage-step').textContent=s.complete?`${c.name} · 完成`:`${String(local).padStart(2,'0')}  ${s.short}`;
   $('source-time').textContent=`${fmt(s.sourceStart)}—${fmt(s.sourceEnd)}`;
   $('needed-parts').replaceChildren();const groups=new Set();
   for(const id of s.parts){const a=ACTORS[id];if(a.listGroup&&groups.has(a.listGroup))continue;if(a.listGroup)groups.add(a.listGroup);
     const b=document.createElement('button');b.type='button';b.id=`part-chip-${id}`;b.className='part-chip';b.style.setProperty('--c',a.color||'#9ba7b9');
-    const dot=document.createElement('i'),label=document.createElement('span');label.textContent=a.chip||a.label.split(' · ')[0];b.append(dot,label);b.addEventListener('click',()=>{$('instruction-dialog').close();selectActor(id);});$('needed-parts').append(b);}
-  for(const b of $('step-list').children){const n=Number(b.dataset.step);b.toggleAttribute('aria-current',n===step);if(n===step)b.setAttribute('aria-current','step');b.classList.toggle('done',n<step);b.querySelector('.number').textContent=n<step?'✓':STEPS[n].complete?'✓':String(n-c.start+1);}
+    const dot=document.createElement('i'),label=document.createElement('span');label.textContent=a.chip||a.label.split(' · ')[0];b.append(dot,label);b.addEventListener('click',()=>selectActor(id));$('needed-parts').append(b);}
+  $('progress-status').textContent='';syncChecks();
   clearPartInfo();syncReference();setAttributes();updateProgress();
 }
+function syncChecks(){
+ const checks=viewingStore.readChecks(viewingScope),c=chapterFor(step);
+ $('confirm-seen').checked=checks.seen.includes(STEPS[step].id);$('confirm-built').checked=checks.built.includes(STEPS[step].id);
+ $('progress-count').textContent=`观看 ${checks.seen.length}/${STEPS.length} · 实物 ${checks.built.length}/${STEPS.length}`;
+ for(const b of $('step-list').children){const n=Number(b.dataset.step),built=checks.built.includes(STEPS[n].id),seen=checks.seen.includes(STEPS[n].id);
+  if(n===step)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');
+  b.classList.toggle('done',built);b.classList.toggle('seen',seen);b.querySelector('.number').textContent=built?'✓':String(n-c.start+1);
+  b.setAttribute('aria-label',`${STEPS[n].title}${seen?' · 已看过':''}${built?' · 实物已装好':''}`);
+ }
+}
+for(const kind of ['seen','built'])$('confirm-'+kind).addEventListener('change',event=>{
+ const saved=viewingStore.setCheck(viewingScope,STEPS[step].id,kind,event.target.checked);
+ $('progress-status').textContent=saved?'':'进度未保存：浏览器存储不可用，请重试。';syncChecks();
+});
 function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   if(!ready)return;const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
   if(!playerDriven)lessonPlayer.seek(n,animate&&n>0?0:1,{play:animate&&n>0});
@@ -255,7 +270,7 @@ function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   assemblyFocus.reset();
   backTransition=back?{from:structuredClone(old),start:performance.now(),duration:650}:null;
   if(backTransition){progress=1;playing=false;}
-  syncInfo();cameraTo(STEPS[step].camera,STEPS[step].target,650/lessonPlayer.state.rate);
+  syncInfo();$('instruction-content').scrollTop=0;cameraTo(STEPS[step].camera,STEPS[step].target,650/lessonPlayer.state.rate);
   if(!backTransition)applyState(snapshot(step,progress));flushViewing();
 }
 function clearPartInfo(){
@@ -267,7 +282,10 @@ function selectActor(id,point=null){
   $('part-name').textContent=ACTORS[id].label;$('part-source').textContent=ACTORS[id].source;
   $('part-tooltip').hidden=false;stage.classList.add('has-part-info');
 }
-$('part-close').addEventListener('click',()=>{clearPartInfo();$('instruction-toggle').focus();});
+$('part-close').addEventListener('click',()=>{
+ const chip=$('part-chip-'+selected);clearPartInfo();
+ (chip?.getClientRects().length?chip:$('sequence-open')).focus();
+});
 let pointerDown=null;
 renderer.domElement.addEventListener('pointerdown',e=>{pointerDown=[e.clientX,e.clientY];});
 renderer.domElement.addEventListener('pointermove',e=>{if(pointerDown&&e.buttons&&Math.hypot(e.clientX-pointerDown[0],e.clientY-pointerDown[1])>5)cameraTween=null;});
@@ -278,15 +296,26 @@ renderer.domElement.addEventListener('pointerup',e=>{
   const hit=ray.intersectObjects(selectables.filter(o=>o.visible),true).find(h=>h.object.visible);
   if(hit)selectActor(hit.object.userData.actorId,hit.point);else clearPartInfo();
 });
-function openReference(){$('instruction-dialog').close();const p=$('reference-panel');p.hidden=false;$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
-function closeReference(){$('reference-panel').hidden=true;$('reference-toggle').setAttribute('aria-expanded','false');$('reference-video').pause();}
-$('instruction-toggle').addEventListener('click',()=>$('instruction-dialog').showModal());
-$('instruction-close').addEventListener('click',()=>$('instruction-dialog').close());
+function openReference(){const p=$('reference-panel');p.hidden=false;if(!p.open)p.showModal();$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
+function closeReference(){$('reference-panel').close();}
+$('reference-panel').addEventListener('close',()=>{$('reference-panel').hidden=true;$('reference-toggle').setAttribute('aria-expanded','false');$('reference-video').pause();});
+$('sequence-open').addEventListener('click',()=>$('sequence-dialog').showModal());
+$('sequence-close').addEventListener('click',()=>$('sequence-dialog').close());
+$('instruction-toggle').addEventListener('click',()=>{
+ const panel=document.querySelector('.instruction-column'),compact=panel.classList.toggle('compact');
+ $('instruction-toggle').setAttribute('aria-expanded',String(!compact));$('instruction-toggle-label').textContent=compact?'展开本步说明':'收起说明 · 留出观察空间';
+});
 $('reference-toggle').addEventListener('click',()=>{$('reference-panel').hidden?openReference():closeReference();});
 $('reference-close').addEventListener('click',closeReference);$('source-step').addEventListener('click',openReference);
 $('reference-video').addEventListener('timeupdate',()=>{const v=$('reference-video');if(v.currentTime>=STEPS[step].sourceEnd-chapterFor(step).videoStart-.04)v.pause();});
-$('start').addEventListener('click',()=>goStep(1));$('next').addEventListener('click',()=>goStep(step+1));$('back').addEventListener('click',()=>goStep(step-1,{animate:false,back:true}));
-$('replay').addEventListener('click',()=>goStep(step===OVERVIEW_STEP?STEPS.findIndex(s=>s.id==='final-power'):step));$('restart').addEventListener('click',()=>goStep(0));$('overview').addEventListener('click',()=>goStep(OVERVIEW_STEP,{animate:false}));
+// Frozen Mock v1: explicit prev/next/replay count as watched; drawer jumps,
+// restore and automatic playback never infer confirmations from position.
+function explicitViewing(index,options){
+ const saved=viewingStore.setCheck(viewingScope,STEPS[step].id,'seen',true);
+ goStep(index,options);if(!saved)$('progress-status').textContent='进度未保存：浏览器存储不可用，请重试。';
+}
+$('start').addEventListener('click',()=>explicitViewing(1));$('next').addEventListener('click',()=>explicitViewing(step+1));$('back').addEventListener('click',()=>explicitViewing(step-1,{animate:false,back:true}));
+$('replay').addEventListener('click',()=>explicitViewing(step===OVERVIEW_STEP?STEPS.findIndex(s=>s.id==='final-power'):step));$('restart').addEventListener('click',()=>goStep(0));$('overview').addEventListener('click',()=>goStep(OVERVIEW_STEP,{animate:false}));
 $('pause').addEventListener('click',()=>{playing?lessonPlayer.pause():lessonPlayer.resume();playing=lessonPlayer.state.playing;backTransition=null;flushViewing();setAttributes();});
 $('autoplay').addEventListener('click',()=>{if(!ready)return;if(lessonPlayer.state.autoplay){lessonPlayer.stopAuto();playing=false;setAttributes();}else{lessonPlayer.startAuto();goStep(0,{playerDriven:true});}});
 $('playback-rate').addEventListener('ryugi-change',ev=>{lessonPlayer.setRate(Number(ev.detail.value));setAttributes();});
