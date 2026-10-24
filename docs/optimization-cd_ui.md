@@ -55,3 +55,11 @@ Implementation committed locally. Independent review found two Important export-
 - A/B, E, F and G integration remains with their owners. MySQL runtime was not verified without a configured test database. No merge/deployment/live-service switch is authorized by this delivery.
 
 Review fixes also prevent checkbox toggles from re-enabling a busy 3MF button, add an independent handler guard, and recheck the original review generation after both thumbnail generation and response/blob reads. No re-review was requested; the skill requires one independent review followed by a tested fix pass.
+
+## Confirmed handoff receipt
+
+- Source and review fixes: `d6d37fedc02b0d897faa296f374f562a7a68034d`. Own branch push succeeded; `git ls-remote` returned that SHA. GitHub API readback confirmed both commit identities use the repository no-reply email. Repository visibility readback was `PRIVATE`; no visibility setting was changed.
+- A/B remote branch still absent at final dependency check. The requested draft PR is **not created**: its required base is unavailable. The source branch is ready for the coordinator to open the stacked draft after publishing/fixing the A/B base. No substitute base or another owner's branch was created.
+- Browser session `opt-cd-ui-1024` closed. Its daemon and seven descendant processes exited. Isolated 8906 service stopped; the preview server remains only for static visual review.
+- Local verification artifact: `.ryugi/artifacts/artboard/verify-cd-ui/`, four pending human groups (C desktop, C phone, D delivery, D materials), approved screenshots paired with actual screenshots and real desktop/touch recordings. Artifact warnings and pending-file lists are empty. This pending verdict is separate from initial Mock v1 design approval.
+- Evidence summary: 54 main browser checks + 26 scope/locale checks + 4 review regressions; full suites as listed above. The final desktop recording decodes cleanly. Manufacturing exports and PNGs remain local and uncommitted.
