@@ -37,6 +37,7 @@ test('pages reference only existing hashed build files, one stylesheet, and no i
   // Only pages, build/ and licence/brand files are published; no source modules.
   const files=fs.readdirSync(out,{recursive:true}).filter(f=>fs.statSync(path.join(out,f)).isFile()&&!f.startsWith('build'+path.sep));
   assert.deepEqual(files.filter(f=>/\.(?:m?js|css|py|json)$/.test(f)),[]);
+  assert.ok(!files.includes('home.html'),'the personal home page is not part of the server edition');
 });
 
 test('every build file has .br and .gz siblings with identical content',{skip},()=>{
