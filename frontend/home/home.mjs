@@ -1,7 +1,7 @@
-// Personal edition home: 想涂鸭 opens the studio, 想做鸭 the assembly tutorial (approved prototype v3). Both cards show
-// the MicroDuck sticker in the studio's current draft (read from the studio's own browser storage), so nothing is
-// loaded from the server except /api/site.
+// Personal home and studio share one draft. Restore the saved API fallback before the first render.
 import { applyBrand } from '../shared/brand.mjs';
+import {ensurePersonalDraft,PERSONAL_KEY} from '../shared/personal-state.mjs';
+import {api} from '../shared/api.mjs';
 import { readDraft } from '../shared/draft.mjs';
 import { loadSite } from '../shared/edition.mjs';
 import { t, getLocale, onLocale } from '../shared/i18n.mjs';
@@ -14,6 +14,7 @@ const site = await loadSite().catch(() => null);
 // The server edition opens its studio at /; this page belongs to the personal edition only.
 if (site && site.edition !== 'personal') location.replace('./');
 applyBrand();
+await ensurePersonalDraft(localStorage,()=>api('GET','/schemes')).catch(()=>{});
 
 // Each coloured area of the sticker is a part of the real duck; the sticker's own colours stand in until you paint.
 const SLOTS = { head: 'P4-01', face: 'P2-06', jaw: 'P2-01', body: 'P5-06', struct: 'P6-09', thigh: 'P5-01', shank: 'P6-04', foot: 'P2-03', sole: 'P1-03' };
@@ -153,6 +154,7 @@ function render() {
 }
 function load() {draft = readDraftSlots();fresh = pageActive()&&freshness(draft);render();}
 onLocale(render);
+addEventListener('storage',event=>{if(event.key===PERSONAL_KEY||event.key===null)load();});
 // Coming back with the browser's back button shows the draft as the studio left it.
 addEventListener('pageshow', (e) => {if (e.persisted) load();});
 load();

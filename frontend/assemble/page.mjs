@@ -2,6 +2,8 @@
 // wear the studio draft's colours and finishes in the studio's own material (or plain white, 白胚); servos, boards,
 // cables and screws keep their own.
 import { applyBrand } from '../shared/brand.mjs';
+import {ensurePersonalDraft,PERSONAL_KEY} from '../shared/personal-state.mjs';
+import {api} from '../shared/api.mjs';
 import { readDraft } from '../shared/draft.mjs';
 import { printedMaterial } from '../shared/duck-look.mjs';
 import { ACTORS } from './hardware-state.mjs';
@@ -9,12 +11,13 @@ import {onPageActivity} from '../shared/personal-page.mjs';
 
 const WHITE = '#F7F8FB';
 applyBrand();
+await ensurePersonalDraft(localStorage,()=>api('GET','/schemes')).catch(()=>{});
 const tag = document.createElement('span');
 tag.className = 'scheme-tag';
 document.querySelector('.header-name').after(tag);
 let signature;
 function refreshDraft(){
- const draft=readDraft(),next=JSON.stringify(draft&&[draft.name,draft.colors,draft.finishes]);
+ const draft=readDraft(),next=JSON.stringify(draft&&[draft.name,draft.colors,draft.finishes,draft.activeId]);
  if(next===signature)return;signature=next;
  for(const actor of Object.values(ACTORS)){
   const id=actor.sourceId||'';if(!/^P\d-\d\d$/.test(id))continue;
@@ -27,6 +30,7 @@ function refreshDraft(){
  tag.lastChild.textContent=draft?'配色 · '+draft.name:'白胚';
  dispatchEvent(new Event('personal:appearance'));
 }
+addEventListener('storage',event=>{if(event.key===PERSONAL_KEY||event.key===null)refreshDraft();});
 refreshDraft();onPageActivity(active=>{if(active)refreshDraft();});
 
 // Fade the studio's picture (see index.html) once prototype-v3.mjs marks the model ready.

@@ -1,3 +1,5 @@
+import {createProgressStore,progressScope} from './progress-store.mjs';
+import {personalState,PERSONAL_KEY} from '../shared/personal-state.mjs';
 import * as THREE from 'three';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
@@ -22,6 +24,37 @@ const fmt=t=>`${Math.floor(t/60).toString().padStart(2,'0')}:${Math.floor(t%60).
 let step=0,progress=1,playing=false,cameraTween=null,uiReady=false,ready=false;
 const lessonPlayer=createLessonPlayer(STEPS.map((s,i)=>()=>{const focused=isFocusStep(s.id),count=buildFineCues(i).length;return{durationMs:s.duration*1000*(focused?Math.max(1.8,Math.min(4.5,count*.55)):1),holdMs:focused?900:0,settleMs:focused?1500:900};}));
 const lessonSound=createLessonSound();
+const viewingStore=createProgressStore({getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},STEPS,'hardware-v3');
+let viewingScope=progressScope(personalState(localStorage).draft),saveTimer=null,restoringViewing=false,viewingDirty=false;
+function flushViewing(){
+ clearTimeout(saveTimer);saveTimer=null;
+ if(ready&&viewingDirty&&!restoringViewing){viewingStore.write(viewingScope,{step,progress});viewingDirty=false;}
+}
+function queueViewing(){
+ if(!ready||restoringViewing)return;viewingDirty=true;
+ if(!saveTimer)saveTimer=setTimeout(flushViewing,250);
+}
+function restoreViewing(){
+ clearTimeout(saveTimer);saveTimer=null;viewingDirty=false;restoringViewing=true;
+ const saved=viewingStore.read(viewingScope);
+ goStep(saved.step,{animate:false});progress=saved.progress;playing=false;backTransition=null;
+ lessonPlayer.seek(step,progress);resumePlayback=false;applyState(snapshot(step,progress));updateProgress();setAttributes();
+ restoringViewing=false;
+}
+function syncViewingScope(){
+ const next=progressScope(personalState(localStorage).draft);
+ if(next===viewingScope)return;
+ flushViewing();viewingScope=next;if(ready)restoreViewing();
+}
+addEventListener('pagehide',flushViewing);
+addEventListener('beforeunload',flushViewing);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flushViewing();});
+addEventListener('storage',event=>{
+ if(event.key===null){clearTimeout(saveTimer);saveTimer=null;viewingDirty=false;}
+ if(event.key===PERSONAL_KEY||event.key===null)syncViewingScope();
+ if(ready&&(event.key===viewingStore.key(viewingScope)||event.key===null))restoreViewing();
+});
+
 let currentState=snapshot(0,1),guidanceEndState=snapshot(0,1),backTransition=null;
 const host=$('canvas-host'),stage=$('stage');
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
@@ -179,7 +212,7 @@ function setAttributes(){
 }
 function updateProgress(){
   const v=Math.round(progress*100);$('motion-percent').textContent=`${v}%`;$('full-saved-progress').value=String(progress);
-  $('motion-progress').setAttribute('value',String(v));
+  $('motion-progress').setAttribute('value',String(v));queueViewing();
 }
 let renderedChapter=null,referenceChapter=null;
 function renderSteps(chapter){
@@ -220,7 +253,7 @@ function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   backTransition=back?{from:structuredClone(old),start:performance.now(),duration:650}:null;
   if(backTransition){progress=1;playing=false;}
   syncInfo();cameraTo(STEPS[step].camera,STEPS[step].target,650/lessonPlayer.state.rate);
-  if(!backTransition)applyState(snapshot(step,progress));
+  if(!backTransition)applyState(snapshot(step,progress));flushViewing();
 }
 function clearPartInfo(){
   $('part-tooltip').hidden=true;$('part-leader').toggleAttribute('hidden',true);stage.classList.remove('has-part-info');selected=null;selectedAnchor=null;selection.visible=false;
@@ -251,7 +284,7 @@ $('reference-close').addEventListener('click',closeReference);$('source-step').a
 $('reference-video').addEventListener('timeupdate',()=>{const v=$('reference-video');if(v.currentTime>=STEPS[step].sourceEnd-chapterFor(step).videoStart-.04)v.pause();});
 $('start').addEventListener('click',()=>goStep(1));$('next').addEventListener('click',()=>goStep(step+1));$('back').addEventListener('click',()=>goStep(step-1,{animate:false,back:true}));
 $('replay').addEventListener('click',()=>goStep(step===OVERVIEW_STEP?STEPS.findIndex(s=>s.id==='final-power'):step));$('restart').addEventListener('click',()=>goStep(0));$('overview').addEventListener('click',()=>goStep(OVERVIEW_STEP,{animate:false}));
-$('pause').addEventListener('click',()=>{playing?lessonPlayer.pause():lessonPlayer.resume();playing=lessonPlayer.state.playing;backTransition=null;setAttributes();});
+$('pause').addEventListener('click',()=>{playing?lessonPlayer.pause():lessonPlayer.resume();playing=lessonPlayer.state.playing;backTransition=null;flushViewing();setAttributes();});
 $('autoplay').addEventListener('click',()=>{if(!ready)return;if(lessonPlayer.state.autoplay){lessonPlayer.stopAuto();playing=false;setAttributes();}else{lessonPlayer.startAuto();goStep(0,{playerDriven:true});}});
 $('playback-rate').addEventListener('ryugi-change',ev=>{lessonPlayer.setRate(Number(ev.detail.value));setAttributes();});
 $('reset-view').addEventListener('click',()=>cameraTo(STEPS[step].camera,STEPS[step].target));
@@ -259,9 +292,9 @@ function sideView(direction){const view=cameraPreset(direction,STEPS[step]);came
 $('front-view').addEventListener('click',()=>sideView(1));
 $('back-view').addEventListener('click',()=>sideView(-1));
 $('phase-select').addEventListener('ryugi-change',ev=>{const c=CHAPTERS[Number(ev.detail.value)];if(c&&c.id!==chapterFor(step).id)goStep(c.start);});
-function restore(){if(!ready)return;const n=Number($('full-saved-step').value),p=Number($('full-saved-progress').value);goStep(n,{animate:false});progress=Math.max(0,Math.min(1,p));lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();}
+function restore(){if(!ready)return;const n=Number($('full-saved-step').value),p=Number($('full-saved-progress').value);goStep(n,{animate:false});progress=Math.max(0,Math.min(1,p));lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();flushViewing();}
 $('full-saved-step').addEventListener('change',restore);$('full-saved-step').addEventListener('input',restore);$('full-saved-progress').addEventListener('change',restore);
-function initUI(){if(uiReady)return;uiReady=true;document.documentElement.setAttribute('data-theme','light');lessonSound.syncControls();renderQuality.sync();lessonPlayer.setRate(Number($('playback-rate').value));const control=$('motion-progress');control.addEventListener('ryugi-change',ev=>{if(!ready)return;playing=false;backTransition=null;progress=Number(ev.detail.value)/100;lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();});setAttributes();}
+function initUI(){if(uiReady)return;uiReady=true;document.documentElement.setAttribute('data-theme','light');lessonSound.syncControls();renderQuality.sync();lessonPlayer.setRate(Number($('playback-rate').value));const control=$('motion-progress');control.addEventListener('ryugi-change',ev=>{if(!ready)return;playing=false;backTransition=null;progress=Number(ev.detail.value)/100;lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();flushViewing();});setAttributes();}
 document.addEventListener('ryugi-ui:ready',initUI,{once:true});if(customElements.get('ryugi-button'))initUI();
 
 function fit(){const {width,height}=host.getBoundingClientRect();if(width<1||height<1)return;renderer.setSize(width,height,false);camera.aspect=width/height;const scale=Math.max(1,1.07/camera.aspect);controls.minDistance=66*scale;controls.maxDistance=1100*scale;if(Math.abs(scale-aspectScale)>.001){camera.position.sub(controls.target).multiplyScalar(scale/aspectScale).add(controls.target);aspectScale=scale;cameraTween=null;}camera.updateProjectionMatrix();}
@@ -302,11 +335,11 @@ function render(now){
 }
 renderFrame=requestAnimationFrame(render);
 onPageActivity(active=>{
-  if(!active){hiddenAt=performance.now();resumePlayback=lessonPlayer.state.playing;lessonPlayer.pause();playing=false;cancelAnimationFrame(renderFrame);renderFrame=0;}
-  else{const elapsed=hiddenAt?performance.now()-hiddenAt:0;if(cameraTween)cameraTween.start+=elapsed;if(backTransition)backTransition.start+=elapsed;if(resumePlayback){lessonPlayer.resume();playing=lessonPlayer.state.playing;}fit();if(!renderFrame)renderFrame=requestAnimationFrame(render);}
+  if(!active){flushViewing();hiddenAt=performance.now();resumePlayback=lessonPlayer.state.playing;lessonPlayer.pause();playing=false;cancelAnimationFrame(renderFrame);renderFrame=0;}
+  else{syncViewingScope();const elapsed=hiddenAt?performance.now()-hiddenAt:0;if(cameraTween)cameraTween.start+=elapsed;if(backTransition)backTransition.start+=elapsed;if(resumePlayback){lessonPlayer.resume();playing=lessonPlayer.state.playing;}fit();if(!renderFrame)renderFrame=requestAnimationFrame(render);}
 });
 addEventListener('personal:appearance',()=>{
-  if(!ready)return;
+  syncViewingScope();if(!ready)return;
   for(const[id,root]of entities){const source=ACTORS[id].material;if(!source)continue;root.traverse(child=>{
     if(!child.isMesh)return;for(const material of [child.material].flat())if(material.userData?.printed){const opacity=material.opacity,transparent=material.transparent;material.copy(source);material.opacity=opacity;material.transparent=transparent||source.transparent;material.needsUpdate=true;}
   });}
@@ -325,7 +358,7 @@ async function load(){
     if(motor){const ports=ACTORS[p.id].servoPorts||[{position:[3,8.5,p.size[2]/2+.8],normal:[0,0,1]}];for(const port of ports){const socket=new THREE.Group(),body=mesh(new THREE.BoxGeometry(7,5,1.3),white);body.position.z=-.65;body.userData.focusPort={label:port.id||'舵机口'};socket.add(body);const inside=mesh(new THREE.BoxGeometry(5.4,3.4,.03),dark);inside.position.z=.01;socket.add(inside);socket.position.fromArray(port.position);socket.quaternion.copy(socketQuaternion(port));socket.userData.servoSocket=true;group.add(socket);}}
     entity(p.id,group);
   }
-  renderQuality.attach(entities,ACTORS);ready=true;fit();restore();$('loading').hidden=true;document.documentElement.dataset.ready='true';markPageReady();
+  renderQuality.attach(entities,ACTORS);ready=true;fit();viewingScope=progressScope(personalState(localStorage).draft);restoreViewing();$('loading').hidden=true;document.documentElement.dataset.ready='true';markPageReady();
 }
 load().catch(e=>{$('loading').textContent=`模型没有加载成功：${e.message}`;console.error(e);});
 // A read-only diagnostic surface for the prototype's browser acceptance checks.
