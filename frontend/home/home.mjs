@@ -2,6 +2,7 @@
 // in the studio's current draft (read from the studio's own browser storage), so nothing is loaded from the server
 // except /api/site.
 import { applyBrand } from '../shared/brand.mjs';
+import { readDraft } from '../shared/draft.mjs';
 import { loadSite } from '../shared/edition.mjs';
 import { t, getLocale, onLocale } from '../shared/i18n.mjs';
 
@@ -25,14 +26,9 @@ const OUTFITS = [
   { head: '#6FD6D0', accent: '#6FD6D0', body: '#F4F4F1', leg: '#F4F4F1', foot: '#F5C540' },
 ];
 
-// The studio saves { draft: { design, name, activeId, updated } } under this key; `updated` is set only by real edits.
-function readDraft() {
-  try {
-    const draft = JSON.parse(localStorage.getItem('dd-studio-personal'))?.draft;
-    if (!draft?.updated || !draft.design?.colors) return null;
-    const colors = Object.fromEntries(Object.entries(SLOTS).map(([slot, id]) => [slot, draft.design.colors[id] || BLANK[slot]]));
-    return { name: draft.name, saved: !!draft.activeId, updated: draft.updated, colors };
-  } catch {return null;}
+function readDraftSlots() {
+  const draft = readDraft();
+  return draft && { ...draft, colors: Object.fromEntries(Object.entries(SLOTS).map(([slot, id]) => [slot, draft.colors[id] || BLANK[slot]])) };
 }
 
 const DUCK = `<ellipse cx="100" cy="236" rx="72" ry="8" fill="rgba(23,36,60,.09)"/>
@@ -73,7 +69,7 @@ paintCard.addEventListener('mouseenter', tryOn);paintCard.addEventListener('mous
 $('#paint-go').addEventListener('focus', tryOn);$('#paint-go').addEventListener('blur', stop);
 
 function render() {
-  draft = readDraft();
+  draft = readDraftSlots();
   const name = draft && `<b>${esc(draft.name)}</b>`;
   $('#hello').textContent = t(draft ? 'home.helloBack' : 'home.hello');
   $('#lead').textContent = t(draft ? 'home.leadBack' : 'home.lead');
@@ -92,7 +88,7 @@ function render() {
     $('#build-context').innerHTML = `<span class="icon" aria-hidden="true">🧩</span><span class="grow">${esc(t('home.soon'))}<small>${esc(t('home.soonSub'))}</small></span>`;
     return;
   }
-  go.href = './assemble';go.removeAttribute('aria-disabled');
+  go.href = './assemble/';go.removeAttribute('aria-disabled');
   go.innerHTML = esc(t(draft ? 'home.buildWith' : 'home.buildGo')) + arrow;
   $('#build-context').innerHTML = draft
     ? `<span class="sw">${dots(draft.colors)}</span><span class="grow">${t('home.withColors', { name })}<small>${esc(t('home.withColorsSub'))}</small></span>`

@@ -1,0 +1,50 @@
+/* Looks for ui-elements.mjs, matching the prototype's Ryugi styling: light theme, #4d6bfe accent. */
+ryugi-button,ryugi-action-icon{display:inline-flex;align-items:stretch;box-sizing:border-box;flex:none;white-space:nowrap;user-select:none;cursor:pointer}
+ryugi-button{height:32px;padding:0 12px;border:1px solid transparent;border-radius:9px;font-size:13px;font-weight:600;color:#4c5a76;background:transparent;transition:background .15s,border-color .15s,filter .15s}
+ryugi-button[size=small]{height:28px;padding:0 10px;border-radius:8px;font-size:12px}
+ryugi-button[variant=outlined]{border-color:#d5dcf5;background:#fff;color:var(--blue,#4d6bfe)}
+ryugi-button[variant=filled]{border-color:var(--blue,#4d6bfe);background:var(--blue,#4d6bfe);color:#fff}
+ryugi-button[variant=borderless]:hover{background:#eef1f8}
+ryugi-button:not([variant=borderless]):hover{filter:brightness(.97)}
+ryugi-button[data-active=true]{border-color:var(--blue,#4d6bfe);background:#eef1ff;color:var(--blue,#4d6bfe)}
+ryugi-button>button,ryugi-action-icon>button{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;flex:1;min-width:0;font:inherit;color:inherit;border-radius:inherit;cursor:inherit}
+ryugi-button>button:focus-visible,ryugi-action-icon>button:focus-visible{outline:3px solid #a9b8ff;outline-offset:2px}
+ryugi-button svg{width:14px;height:14px;flex:none;fill:currentColor}
+ryugi-action-icon>button{width:24px;height:24px;border-radius:7px;color:var(--lobe-color-text,#7e8da7)}
+ryugi-action-icon>button:hover{background:#eef1f8}
+ryugi-action-icon svg{width:14px;height:14px}
+
+ryugi-select{display:inline-block;vertical-align:middle}
+ryugi-select>select{box-sizing:border-box;width:100%;height:28px;padding:0 6px;border:1px solid #d5dcf5;border-radius:8px;background:#fff;color:var(--ink,#17243c);font:inherit;font-size:inherit;cursor:pointer}
+ryugi-select>select:focus-visible{outline:3px solid #a9b8ff;outline-offset:1px}
+
+ryugi-slider{display:flex;align-items:center;min-width:60px}
+ryugi-slider>input{--fill:0%;width:100%;height:16px;margin:0;background:transparent;appearance:none;-webkit-appearance:none;cursor:pointer}
+ryugi-slider>input::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--slider-fill,var(--blue,#4d6bfe)) var(--fill),var(--slider-track,#e0e6f3) var(--fill))}
+ryugi-slider>input::-moz-range-track{height:4px;border-radius:2px;background:var(--slider-track,#e0e6f3)}
+ryugi-slider>input::-moz-range-progress{height:4px;border-radius:2px;background:var(--slider-fill,var(--blue,#4d6bfe))}
+ryugi-slider>input::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-5px;border-radius:50%;background:var(--slider-fill,var(--blue,#4d6bfe));border:2px solid #fff;box-shadow:0 0 0 1px #becbf5}
+ryugi-slider>input::-moz-range-thumb{width:10px;height:10px;border-radius:50%;background:var(--slider-fill,var(--blue,#4d6bfe));border:2px solid #fff;box-shadow:0 0 0 1px #becbf5}
+ryugi-slider>input:focus-visible{outline:3px solid #a9b8ff;outline-offset:2px;border-radius:4px}
+#motion-progress{--slider-fill:#7d91f0}
+
+ryugi-switch{display:inline-flex}
+ryugi-switch>input{appearance:none;-webkit-appearance:none;position:relative;width:32px;height:18px;margin:0;border-radius:9px;background:#d5dbe8;cursor:pointer;transition:background .15s}
+ryugi-switch>input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(23,36,60,.25);transition:transform .15s}
+ryugi-switch>input:checked{background:var(--blue,#4d6bfe)}
+ryugi-switch>input:checked::after{transform:translateX(14px)}
+ryugi-switch>input:focus-visible{outline:3px solid #a9b8ff;outline-offset:2px}
+
+/* letsduck header: the shared logo links back to the home page */
+.top .brand{text-decoration:none;color:inherit}
+.top .brand .logo{width:36px;height:36px;flex:none;filter:drop-shadow(0 3px 6px #4d6bfe33)}
+.top .wordmark{display:flex;flex-direction:column;width:auto;height:auto;line-height:1.05}
+.top .wordmark b{font-size:17px;font-weight:800;letter-spacing:1px;color:var(--ink,#17243c)}
+.top .wordmark small{font-size:10px;letter-spacing:.8px;color:#8a94ab;font-weight:600}
+.top>ryugi-button{margin-right:0}
+.top>ryugi-button+ryugi-button{margin-left:0}
+.top .scheme-tag{display:inline-flex;align-items:center;gap:4px;max-width:220px;padding:4px 10px 4px 6px;border:1px solid var(--line,#e5e9f2);border-radius:999px;background:#f7f8fc;font-size:12px;color:#5d6b88;white-space:nowrap}
+.top .scheme-tag i{width:12px;height:12px;flex:none;border-radius:50%;box-shadow:0 0 0 1px rgba(23,36,60,.14)}
+.top .scheme-tag i+i{margin-left:-6px}
+.top .scheme-tag span{margin-left:4px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:600px){.top .wordmark{display:none}.top .scheme-tag{max-width:150px}}

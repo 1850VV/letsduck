@@ -46,3 +46,4 @@ storage-state*.json
 /assets/*.gz
 /assets/*.tmp
 /.venv
+/assets/assembly/

@@ -38,6 +38,9 @@ PUBLIC_ASSETS = {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bi
 NOT_FOUND = {'error': '未知接口', 'code': 'request.not_found', 'params': {}}
 # The home page opens at /, the studio (frontend/index.html) at /paint. No trailing slash keeps the studio's ./ links at the root.
 PAGES = {'/': '/home.html', '/paint': '/index.html'}
+# The assembly guide's models, videos and music: local-only, imported by scripts/import_assembly_assets.py.
+ASSEMBLY = json.loads((REPO / 'scripts' / 'assembly-assets.json').read_text())['files']
+CHUNK = 4 << 20  # an open-ended Range gets at most this much; players ask for the rest as they need it
 log = logging.getLogger('doodleduck')
 
 try:
@@ -62,7 +65,8 @@ class Handler(SimpleHTTPRequestHandler):
     # Explicit types: on Windows the registry can map .js/.mjs to text/plain, which breaks ES modules.
     extensions_map = {'': 'application/octet-stream', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript',
                       '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml',
-                      '.png': 'image/png', '.txt': 'text/plain; charset=utf-8', '.bin': 'application/octet-stream'}
+                      '.png': 'image/png', '.txt': 'text/plain; charset=utf-8', '.bin': 'application/octet-stream',
+                      '.glb': 'model/gltf-binary', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg'}
     store = None
 
     def __init__(self, *args, **kwargs):
@@ -129,7 +133,7 @@ class Handler(SimpleHTTPRequestHandler):
         if method == 'GET' and path == '/api/health':
             return {'version': VERSION, 'export': bool(exporter), 'source_sha256': exporter.MODEL['source_sha256'] if exporter else None}
         if method == 'GET' and path == '/api/site':
-            return {'publicUrl': '', 'edition': 'personal', 'assembly': (FRONTEND / 'assemble' / 'index.html').is_file()}
+            return {'publicUrl': '', 'edition': 'personal', 'assembly': assembly_ready()}
         if method == 'GET' and path == '/api/catalog':
             return self.need_exporter('耗材色表未加载', 'validation.29').CATALOG
         if method == 'GET' and path == '/api/schemes':
@@ -182,7 +186,30 @@ class Handler(SimpleHTTPRequestHandler):
             if name not in PUBLIC_ASSETS or not target.is_file():
                 return self.send_body(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
             return self.send_body(200, target.read_bytes(), self.extensions_map.get(target.suffix, 'application/octet-stream'))
+        if path.startswith('/assemble/assets/'):
+            name = path[len('/assemble/assets/'):]
+            if name not in ASSEMBLY or not (ASSETS / 'assembly' / name).is_file():
+                return self.send_body(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
+            return self.send_range(ASSETS / 'assembly' / name)
         super().do_GET()
+
+    def send_range(self, target):
+        """A local file whole, or one byte range of it so videos can seek (Safari will not play them otherwise)."""
+        size, kind = target.stat().st_size, self.extensions_map.get(target.suffix, 'application/octet-stream')
+        match = re.fullmatch(r'bytes=(\d*)-(\d*)', self.headers.get('Range', '').strip())
+        if not match or not (match[1] or match[2]):
+            return self.send_body(200, target.read_bytes(), kind, [('Accept-Ranges', 'bytes')])
+        if match[1]:
+            start = int(match[1])
+            end = min(int(match[2]), size - 1) if match[2] else min(start + CHUNK, size) - 1
+        else:  # bytes=-N: the last N bytes
+            start, end = max(size - int(match[2]), 0), size - 1
+        if start >= size or start > end:
+            return self.send_body(416, b'', kind, [('Content-Range', 'bytes */%d' % size)])
+        with target.open('rb') as file:
+            file.seek(start)
+            data = file.read(end - start + 1)
+        return self.send_body(206, data, kind, [('Accept-Ranges', 'bytes'), ('Content-Range', 'bytes %d-%d/%d' % (start, end, size))])
 
     def redirect(self, status, location):
         self.send_response(status)
@@ -198,7 +225,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_HEAD(self):
         path = urlparse(self.path).path
-        if path.startswith(('/api/', '/assets/', '/gallery')) or path == '/paint/':
+        if path.startswith(('/api/', '/assets/', '/gallery', '/assemble/assets/')) or path == '/paint/':
             return self.do_GET()
         super().do_HEAD()
 
@@ -213,6 +240,10 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_PATCH(self):
         self.handle_api('PATCH')
+
+
+def assembly_ready():
+    return (FRONTEND / 'assemble' / 'index.html').is_file() and all((ASSETS / 'assembly' / name).is_file() for name in ASSEMBLY)
 
 
 class Server(ThreadingHTTPServer):
