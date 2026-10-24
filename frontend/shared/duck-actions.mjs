@@ -61,7 +61,7 @@ function makeSock() {
 }
 
 export function createActionPlayer(view) {
-  let run = null,audio = null,sound = true,sock = null,sockAnim = null,listeners = new Set(),resumeSpin = false,frame = 0,seed = 100,speech = null,idlePose = null;
+  let run = null,audio = null,sound = true,sock = null,sockAnim = null,listeners = new Set(),resumeSpin = false,frame = 0,seed = 100,speech = null,idlePose = null,active=true,hiddenAt=0;
   const calls = new Map(),emit = () => listeners.forEach((f) => f(run?.action.id || null));
   // Renders (and caches) one call: samples plus a 10 ms loudness envelope that drives the beak.
   function call(tag, variant) {
@@ -104,6 +104,7 @@ export function createActionPlayer(view) {
   }
   function sample(tracks, t) {const pose = {};for (const [ch, pts] of Object.entries(tracks)) {let i = pts.findIndex((p) => p[0] > t);if (i === -1) {pose[ch] = pts.at(-1)[1];continue;}if (i === 0) {pose[ch] = pts[0][1];continue;}const [t0, v0] = pts[i - 1],[t1, v1] = pts[i];pose[ch] = v0 + (v1 - v0) * ease((t - t0) / (t1 - t0 || 1));}return pose;}
   function loop(now) {
+    if(!active)return;
     frame = requestAnimationFrame(loop);if(sockAnim)view.invalidate();stepSock(now);
     if (!run) {
       // A call outside an action only moves the beak, on top of whatever pose the duck holds.
@@ -128,6 +129,11 @@ export function createActionPlayer(view) {
   }
   frame = requestAnimationFrame(loop);
   return {
+    setActive(value){
+      if(active===value)return;active=value;
+      if(!active){hiddenAt=performance.now();cancelAnimationFrame(frame);audio?.suspend().catch(()=>{});}
+      else{const elapsed=performance.now()-hiddenAt;if(run)run.start+=elapsed;if(speech)speech.start+=elapsed;if(sockAnim?.start!=null)sockAnim.start+=elapsed;if(run||speech)audio?.resume().catch(()=>{});frame=requestAnimationFrame(loop);}
+    },
     play: (id) => start(id), show: () => start(SHOW[0], SHOW.slice(1)), say,
     // Review aid: freeze an action at a moment (events up to that moment still fire).
     hold(id, t) {if (run?.action.id !== id) start(id);run.hold = t;}, release() {if (run) run.hold = null;},

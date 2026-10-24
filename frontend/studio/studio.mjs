@@ -14,6 +14,7 @@ import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
 import { loadSite } from '../shared/edition.mjs';
+import {markPageReady,onPageActivity,isPersonalPage} from '../shared/personal-page.mjs';
 applyBrand();
 
 const $ = (s) => document.querySelector(s),$$ = (s) => [...document.querySelectorAll(s)];
@@ -808,7 +809,7 @@ const COACH = KEY + '-coach';let seen = !!read(COACH);
 // The assembly guide shows this picture of the duck in the same stage until its own model has loaded.
 function handOff() {
   try {const r = view.canvas.getBoundingClientRect(),s = Math.min(devicePixelRatio, 1.5);
-    sessionStorage.setItem('dd-handoff', JSON.stringify({ at: Date.now(), image: view.snapshot(Math.round(r.width * s), Math.round(r.height * s)).toDataURL('image/webp', .85) }));} catch {}
+    if(!isPersonalPage())sessionStorage.setItem('dd-handoff', JSON.stringify({ at: Date.now(), image: view.snapshot(Math.round(r.width * s), Math.round(r.height * s)).toDataURL('image/webp', .85) }));} catch {}
 }
 // Unsaved work becomes a scheme before something replaces the draft.
 async function backupDraft() {
@@ -823,7 +824,7 @@ async function importLook(text, src = '') {
   const d = decodeLook(parts, products, code),[title, author, workId] = decodeURIComponent(src || '').split('|');
   await backupDraft();
   design = { colors: d.colors, assignments: d.assignments };voiceSalt = 0;slots = slotsFromDesign(products, d.assignments, slots);name = _t("text.0351", { v0: d.name || title || _t("text.0352") });provenance = title ? { title, author: author || _t("text.0353"), ...(workId ? { workId } : {}) } : null;activeId = null;
-  view.setColors(design.colors);stepsDone.add(1);persist();return d.name || title || _t("text.0354");
+  undo.length=0;redo.length=0;view.setColors(design.colors);stepsDone.add(1);persist();return d.name || title || _t("text.0354");
 }
 if (personal) {
   try {
@@ -841,21 +842,24 @@ if (personal) {
   if (owner) {schemes = [];owner = null;activeId = null;persist();}
   onAccount(() => syncSchemes());
 }
-const look = location.hash.match(/^#look=([^&]+)(?:&src=(.*))?$/),openId = location.hash.match(/^#scheme=(.+)$/);
+async function acceptHash(hash){
+const look = hash.match(/^#look=([^&]+)(?:&src=(.*))?$/),openId = hash.match(/^#scheme=(.+)$/);
 if (look) {try {const n = await importLook(look[1], look[2]);step = 2;seen = true;setTimeout(() => toast(_message("text.0355", { v0: n })), 300);} catch (error) {toast(error.message);}history.replaceState(null, '', location.pathname);}
 // 我的方案 in the gallery opens a saved scheme here with #scheme=<id>.
-if (openId) {const s = schemes.find((x) => x.id === decodeURIComponent(openId[1]));if (s) {design = clone(s.design);name = s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = s.id;slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);stepsDone.add(1);step = 2;seen = true;persist();setTimeout(() => toast(_message("text.0071", { v0: s.name })), 300);}history.replaceState(null, '', location.pathname);}
+if (openId) {const s = schemes.find((x) => x.id === decodeURIComponent(openId[1]));if (s) {design = clone(s.design);name = s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = s.id;slots = slotsFromDesign(products, design.assignments, slots);undo.length=0;redo.length=0;view.setColors(design.colors);stepsDone.add(1);step = 2;seen = true;persist();setTimeout(() => toast(_message("text.0071", { v0: s.name })), 300);}history.replaceState(null, '', location.pathname);}
 // 或者新开一只 on the personal home page arrives as #new: start again from the original colours.
 // With no room left to back up unsaved work, the draft stays open instead of being lost.
-if (location.hash === '#new') {
+if (hash === '#new') {
   if (dirty() && schemes.length >= 30) setTimeout(() => toast(_message("text.0066")), 300);
   else try {
     await backupDraft();
     design = clone(ORIGINAL);name = _t("text.0047");provenance = null;voiceSalt = 0;activeId = null;
-    slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);stepsDone.clear();step = 1;persist();
+    slots = slotsFromDesign(products, design.assignments, slots);undo.length=0;redo.length=0;view.setColors(design.colors);stepsDone.clear();step = 1;persist();
   } catch (error) {toast(error.message);}
   history.replaceState(null, '', location.pathname);
 }
+}
+await acceptHash(location.hash);
 if (!personal && (!seen || location.hash === '#coach')) $('#coach').hidden = false;
 const coachDone = () => {$('#coach').hidden = true;try {localStorage.setItem(COACH, '1');} catch {}};
 $('#coach-go').onclick = coachDone;
@@ -874,3 +878,11 @@ _onLocale(() => {
   for (const old of inputs) {const e = old.id && document.getElementById(old.id);if (e) {e.value = old.value;e.checked = old.checked;}}
   if (focusId) document.getElementById(focusId)?.focus();
 });
+
+// A retained studio keeps its selection, undo stack and GPU scene when another page is visible.
+onPageActivity(async(active,{href}={})=>{
+  if(active&&href){const hash=new URL(href,location.origin).hash;if(hash){await acceptHash(hash);renderAll(true);}}
+  view.setActive(active);actions.setActive(active);
+});
+// Finish the initial card thumbnails before advertising the cached page as prepared.
+(function prepared(){if([...document.querySelectorAll('[data-thumb]')].some(img=>!img.src))requestAnimationFrame(prepared);else markPageReady();})();

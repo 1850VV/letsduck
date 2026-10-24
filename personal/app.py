@@ -36,8 +36,8 @@ MAX_BODY = 8_000_000
 ID = re.compile(r'^[\w-]{1,64}$')
 PUBLIC_ASSETS = {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'geometry.positions.bin', 'export-schema.json'}
 NOT_FOUND = {'error': '未知接口', 'code': 'request.not_found', 'params': {}}
-# The home page opens at /, the studio (frontend/index.html) at /paint. No trailing slash keeps the studio's ./ links at the root.
-PAGES = {'/': '/home.html', '/paint': '/index.html'}
+# Personal routes share one shell. Existing standalone documents remain available inside it and for recovery.
+PAGES = {'/': '/personal.html', '/paint': '/personal.html', '/assemble/': '/personal.html'}
 # The assembly guide's models, videos and music: local-only, imported by scripts/import_assembly_assets.py.
 ASSEMBLY = json.loads((REPO / 'scripts' / 'assembly-assets.json').read_text())['files']
 CHUNK = 4 << 20  # an open-ended Range gets at most this much; players ask for the rest as they need it

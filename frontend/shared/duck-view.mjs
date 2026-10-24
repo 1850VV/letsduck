@@ -78,7 +78,7 @@ export function createDuckView(data) {
     rig.position.y += P.lift;root.updateMatrixWorld(true);
   }
 
-  let revision=0;
+  let revision=0,active=true,hiddenAt=0;
   const schedule=demandLoop(animate),invalidate=()=>{revision++;schedule();};
   const draw=adaptiveDraw(renderer,scene,camera);let finishState='';
   const originalMeshes=new Set(objects);
@@ -191,7 +191,7 @@ export function createDuckView(data) {
   controls.addEventListener('change', invalidate);
   renderer.domElement.addEventListener('webglcontextrestored',invalidate);
   function animate() {
-    if(!renderer.domElement.isConnected)return false;
+    if(!active||!renderer.domElement.isConnected)return false;
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
     if (turntable && !tween) root.rotation.y += .006;
@@ -241,7 +241,7 @@ export function createDuckView(data) {
     });
     exportQueue=run.catch(()=>{});return run;
   }
-  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
+  return { invalidate, mount, setActive(value){if(active===value)return;active=value;if(active){if(tween)tween.start+=performance.now()-hiddenAt;invalidate();}else hiddenAt=performance.now();}, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
     setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},

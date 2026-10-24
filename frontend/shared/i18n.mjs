@@ -31,6 +31,12 @@ export const getLocale=()=>state.locale;
 export const getLanguageChoice=()=>state.choice;
 export const onLocale=fn=>state.subscribe(fn);
 export const setLocale=code=>state.select(code);
+// Retained documents share the browser preference, without reloading their 3D scenes.
+globalThis.addEventListener?.('storage',event=>{
+  if(event.key&&event.key!==KEY)return;
+  let choice;try{choice=storage?.getItem(KEY);}catch{}
+  const next=supported.has(choice)?choice:'auto';if(next!==state.choice)state.select(next);
+});
 export function translate(locale,key,params={}){
   const message=catalogs[locale]?.[key]??catalogs.en[key]??key;
   return message.replace(/\{(\w+)\}/g,(token,name)=>Object.hasOwn(params,name)?typeof params[name]==='number'?new Intl.NumberFormat(supported.has(locale)?locale:'en').format(params[name]):String(params[name]):token);

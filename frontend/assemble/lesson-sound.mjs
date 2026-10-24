@@ -1,4 +1,5 @@
 import {shouldPlayCompletion} from './sound-policy.mjs';
+import {onPageActivity,pageActive} from '../shared/personal-page.mjs';
 
 const tracks={
   satie:{file:'piano-satie-gymnopedie.mp3',label:'萨蒂 · 第一号吉姆诺佩蒂'},
@@ -29,7 +30,7 @@ export function createLessonSound(){
     fadeTimer=setTimeout(finish,duration+25);
   }
   async function startMusic(){
-    if(!enabled||volume===0)return;
+    if(!pageActive()||!enabled||volume===0)return;
     const token=++request;error='';cancelFade();
     try{
       music.playbackRate=1;await music.play();
@@ -77,6 +78,7 @@ export function createLessonSound(){
   music.addEventListener('playing',status);music.addEventListener('pause',status);
   music.addEventListener('error',()=>{error='钢琴曲暂时无法播放，可切换曲目重试';status();});
   window.addEventListener('pagehide',()=>{++request;cancelFade();music.pause();cue.pause();});
+  onPageActivity(active=>{if(active){startMusic();}else{++request;cancelFade();music.pause();cue.pause();}});
   status();startMusic();
   return{
     syncControls(){

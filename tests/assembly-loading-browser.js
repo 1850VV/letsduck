@@ -21,15 +21,21 @@ try{
    await route.fulfill({response,body:source.replace(entry,'function observedBuildFineCues(index){')+
     '\nexport function buildFineCues(index){window.assemblyCueSteps.add(index);return observedBuildFineCues(index);}\n'});
   });
-  await page.goto(base+'/');await page.locator('#build-go').click();
-  await page.waitForFunction(()=>window.anklePrototype?.state.ready,{timeout:60000});
-  result.startupSteps=await page.evaluate(()=>[...assemblyCueSteps].sort((a,b)=>a-b));
+  await page.goto(base+'/');
+  const shell=await page.locator('script[src="/shared/personal-shell.mjs"]').count();
+  if(shell)await page.waitForFunction(()=>document.documentElement.dataset.page==='home');
+  const home=shell?page.frame({name:'personal-home'}):page;
+  await home.locator('#build-go').click();
+  if(shell)await page.waitForFunction(()=>document.documentElement.dataset.page==='assemble',null,{timeout:60000});
+  const guide=shell?page.frame({name:'personal-assemble'}):page;
+  await guide.waitForFunction(()=>window.anklePrototype?.state.ready,null,{timeout:60000});
+  result.startupSteps=await guide.evaluate(()=>[...assemblyCueSteps].sort((a,b)=>a-b));
   assert.deepEqual(result.startupSteps,[0],'startup must only calculate the visible step, not all 111 steps');
-  assert.equal(await page.locator('#loading').isVisible(),false);
+  assert.equal(await guide.locator('#loading').isVisible(),false);
   await page.screenshot({path:new URL('ready.png',out).pathname});
-  await page.locator('#overview button').click();
-  await page.waitForFunction(()=>anklePrototype.state.step===110&&!anklePrototype.state.cameraTransition);
-  result.afterOverview=await page.evaluate(()=>[...assemblyCueSteps].sort((a,b)=>a-b));
+  await guide.locator('#overview button').click();
+  await guide.waitForFunction(()=>anklePrototype.state.step===110&&!anklePrototype.state.cameraTransition);
+  result.afterOverview=await guide.evaluate(()=>[...assemblyCueSteps].sort((a,b)=>a-b));
   assert.deepEqual(result.afterOverview,[0,110],'jumping ahead must leave unvisited intermediate steps unresolved');
   assert.deepEqual(result.errors,[]);
   console.log(JSON.stringify(result));
