@@ -282,7 +282,10 @@ function selectActor(id,point=null){
   $('part-name').textContent=ACTORS[id].label;$('part-source').textContent=ACTORS[id].source;
   $('part-tooltip').hidden=false;stage.classList.add('has-part-info');
 }
-$('part-close').addEventListener('click',()=>{clearPartInfo();$('instruction-toggle').focus();});
+$('part-close').addEventListener('click',()=>{
+ const chip=$('part-chip-'+selected);clearPartInfo();
+ (chip?.getClientRects().length?chip:$('sequence-open')).focus();
+});
 let pointerDown=null;
 renderer.domElement.addEventListener('pointerdown',e=>{pointerDown=[e.clientX,e.clientY];});
 renderer.domElement.addEventListener('pointermove',e=>{if(pointerDown&&e.buttons&&Math.hypot(e.clientX-pointerDown[0],e.clientY-pointerDown[1])>5)cameraTween=null;});

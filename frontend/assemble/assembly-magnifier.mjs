@@ -11,7 +11,11 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
   const restore=()=>{try{manual=position.value?JSON.parse(position.value):null;}catch{manual=null;}autoPlaced='';};
   saved.addEventListener('change',()=>{autoPlaced='';});position.addEventListener('change',restore);
   const choose=value=>{saved.value=value;savedStep.value=currentStep;autoPlaced='';};
-  $('focus-zoom-close').addEventListener('click',()=>{choose('0');toggle.querySelector('button')?.focus();});
+  $('focus-zoom-close').addEventListener('click',()=>{
+    choose('0');
+    const settings=$('view-settings'),button=!settings||settings.open?toggle.querySelector('button'):null;
+    [button,settings?.querySelector('summary'),$('sequence-open')].find(el=>el?.getClientRects().length)?.focus();
+  });
   toggle.addEventListener('click',()=>{if(!toggle.hasAttribute('disabled'))choose(details.visible?'0':'2');});
   handle.addEventListener('pointerdown',e=>{if(e.target.closest('button,ryugi-action-icon'))return;const r=panel.getBoundingClientRect(),s=stage.getBoundingClientRect();drag={x:e.clientX,y:e.clientY,left:r.left-s.left,top:r.top-s.top};handle.setPointerCapture(e.pointerId);e.preventDefault();});
   handle.addEventListener('pointermove',e=>{if(!drag)return;place(drag.left+e.clientX-drag.x,drag.top+e.clientY-drag.y);});
