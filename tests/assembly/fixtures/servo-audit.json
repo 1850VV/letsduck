@@ -1,0 +1,4203 @@
+{
+  "schemaVersion": 1,
+  "approval": "output/hardware-photo-batch/approval-v2.json",
+  "scope": "read-only geometric audit; no tutorial or GLB modified",
+  "sourceSceneUnits": "millimetres",
+  "glbUnits": "metres",
+  "transformOrder": "P_actor = t_mm + R * (1000 * p_glb_m). Scale only each imported GLB root, outside translation node; do not fit GLB bounding box to old size.",
+  "bodyDimensionsMm": [
+    34,
+    20,
+    23
+  ],
+  "completeDiscEnvelopeMm": 29,
+  "maxShaftRadialAlignmentErrorMm": 0.00036621095690255313,
+  "physicalFitVerified": false,
+  "electricalMappingVerified": false,
+  "actors": {
+    "p_motor": {
+      "sourceId": "right_knee_0",
+      "sourceVertexCount": 482,
+      "oldEnvelopeMm": [
+        29.00008773803711,
+        34.00047302246094,
+        20.00046157836914
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        -7.499797821044922,
+        -0.00007987022399902344
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          -1.5707963267948966,
+          -1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0.5,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0.5,
+        -7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        -1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.000217383491917249,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          -11.95,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            1.2246467991473532e-16
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          0.5
+        ],
+        "translationMm": [
+          12.95,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "position": [
+            3,
+            8.5,
+            10.8
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -10.9,
+            1,
+            8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -10.9,
+            1,
+            -8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": null,
+      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "frontSideEvidence": "one-sided-source; setup preview may show both approved discs"
+    },
+    "motor": {
+      "sourceId": "right_knee_0",
+      "sourceVertexCount": 482,
+      "oldEnvelopeMm": [
+        29.00008773803711,
+        34.00047302246094,
+        20.00046157836914
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        -7.499797821044922,
+        -0.00007987022399902344
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          -1.5707963267948966,
+          -1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0.5,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0.5,
+        -7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        -1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.000217383491917249,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          -11.95,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            1.2246467991473532e-16
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          0.5
+        ],
+        "translationMm": [
+          12.95,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "position": [
+            3,
+            8.5,
+            10.8
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "教学接口；精确键位与针脚待核"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -10.9,
+            1,
+            8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -10.9,
+            1,
+            -8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "horn",
+        "screwActorId": "hornScrew",
+        "discSide": "front",
+        "removeStep": 1,
+        "removed": true,
+        "moduleIndex": 1,
+        "moduleLocalRemoveStep": 1,
+        "globalRemoveStep": 10,
+        "globalRemoveStepId": "r-horn",
+        "currentSeatedWorldMm": [
+          -65.6,
+          26,
+          -17.75
+        ],
+        "newSeatedWorldMm": [
+          -61.95089263916016,
+          25.998424530029297,
+          -17.74871826171875
+        ],
+        "seatedCorrectionWorldMm": [
+          3.6491073608398352,
+          -0.001575469970703125,
+          0.00128173828125
+        ],
+        "newDesiredQuaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "newDesiredEulerXYZRadians": [
+          -1.5707963267948966,
+          -1.5707963267948966,
+          0
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          -64.00089263916016,
+          25.998424530029297,
+          -17.74871826171875
+        ],
+        "preserveTrayWorldMm": [
+          -95,
+          10,
+          12.25
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "frontSideEvidence": "front disc side fixed by old single disc and removal action"
+    },
+    "l_motor": {
+      "sourceId": "left_knee_0",
+      "sourceVertexCount": 482,
+      "oldEnvelopeMm": [
+        29.000076293945312,
+        34.00030517578125,
+        20.00054359436035
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        -7.499898672103882,
+        0.00023984909057617188
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          1.5707963267948966,
+          1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          -0.5,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        -0.5,
+        -7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.00026037459319593786,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          11.95,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            -1.2246467991473532e-16,
+            0,
+            -1
+          ],
+          [
+            -1,
+            0,
+            1.2246467991473532e-16
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5000000000000001,
+          0.5,
+          -0.5
+        ],
+        "translationMm": [
+          -12.95,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "position": [
+            -3,
+            8.5,
+            10.8
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "教学接口；精确键位与针脚待核"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            10.9,
+            1,
+            -8.2
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            10.9,
+            1,
+            8.2
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "l_horn",
+        "screwActorId": "l_hornScrew",
+        "discSide": "front",
+        "removeStep": 10,
+        "removed": true,
+        "moduleIndex": 1,
+        "moduleLocalRemoveStep": 10,
+        "globalRemoveStep": 19,
+        "globalRemoveStepId": "l-horn",
+        "currentSeatedWorldMm": [
+          65.6,
+          26,
+          -17.75
+        ],
+        "newSeatedWorldMm": [
+          61.95070190429688,
+          25.998355865478516,
+          -17.74834442138672
+        ],
+        "seatedCorrectionWorldMm": [
+          -3.6492980957031165,
+          -0.001644134521484375,
+          0.00165557861328125
+        ],
+        "newDesiredQuaternionXYZW": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "newDesiredEulerXYZRadians": [
+          1.5707963267948966,
+          1.5707963267948966,
+          0
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          64.00070190429688,
+          25.998355865478516,
+          -17.74834442138672
+        ],
+        "preserveTrayWorldMm": [
+          95,
+          10,
+          12.25
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "frontSideEvidence": "front disc side fixed by old single disc and removal action"
+    },
+    "r_upperMotor": {
+      "sourceId": "right_hip_pitch_2",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        30.00008773803711,
+        20.001983642578125,
+        34.00101852416992
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        0.0003662109375,
+        7.5
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "eulerXYZRadians": [
+          -3.141592653589793,
+          -1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        0,
+        7.5
+      ],
+      "shaftAxisLocal": [
+        -1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.0003662109375,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "translationMm": [
+          -12.45,
+          0,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ]
+        ],
+        "quaternionXYZW": [
+          0.7071067811865476,
+          0,
+          0.7071067811865475,
+          0
+        ],
+        "translationMm": [
+          12.45,
+          0,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "position": [
+            -5,
+            6,
+            17.80050926208496
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        },
+        {
+          "position": [
+            5,
+            6,
+            17.80050926208496
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -11.4,
+            8.2,
+            -1
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -11.4,
+            -8.2,
+            -1
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": true,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "r_upperHorn",
+        "screwActorId": "r_upperHornScrew",
+        "discSide": "front",
+        "removeStep": 32,
+        "removed": true,
+        "moduleIndex": 1,
+        "moduleLocalRemoveStep": 32,
+        "globalRemoveStep": 41,
+        "globalRemoveStepId": "r-top-horn",
+        "currentSeatedWorldMm": [
+          -72,
+          90,
+          18
+        ],
+        "newSeatedWorldMm": [
+          -66.95005340576172,
+          89.99990844726562,
+          18.000078201293945
+        ],
+        "seatedCorrectionWorldMm": [
+          5.049946594238278,
+          -0.000091552734375,
+          0.0000782012939453125
+        ],
+        "newDesiredQuaternionXYZW": [
+          -0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "newDesiredEulerXYZRadians": [
+          -3.141592653589793,
+          -1.5707963267948966,
+          0
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          -0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          -69.00005340576172,
+          89.99990844726562,
+          18.000078201293945
+        ],
+        "preserveTrayWorldMm": [
+          -96,
+          3,
+          60
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front sign selected to match removable outer horn"
+    },
+    "l_upperMotor": {
+      "sourceId": "left_hip_pitch_0",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        30.000049591064453,
+        20.001815795898438,
+        34.0010986328125
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        0.0003662109375,
+        7.4999998807907104
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          0.7071067811865475,
+          0,
+          0.7071067811865476
+        ],
+        "eulerXYZRadians": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        0,
+        7.5
+      ],
+      "shaftAxisLocal": [
+        1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.00036621095690255313,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          0.7071067811865475,
+          0,
+          0.7071067811865476
+        ],
+        "translationMm": [
+          12.45,
+          0,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            -1.2246467991473532e-16,
+            0,
+            -1
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          -0.7071067811865476,
+          0,
+          0.7071067811865475
+        ],
+        "translationMm": [
+          -12.45,
+          0,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "position": [
+            -5,
+            6,
+            17.80054931640625
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        },
+        {
+          "position": [
+            5,
+            6,
+            17.80054931640625
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            11.4,
+            -8.2,
+            -1
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            11.4,
+            8.2,
+            -1
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        0,
+        1
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": true,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "l_upperHorn",
+        "screwActorId": "l_upperHornScrew",
+        "discSide": "front",
+        "removeStep": 33,
+        "removed": true,
+        "moduleIndex": 1,
+        "moduleLocalRemoveStep": 33,
+        "globalRemoveStep": 42,
+        "globalRemoveStepId": "l-top-horn",
+        "currentSeatedWorldMm": [
+          72,
+          90,
+          18
+        ],
+        "newSeatedWorldMm": [
+          66.95006866455078,
+          89.99980163574219,
+          18.00034999847412
+        ],
+        "seatedCorrectionWorldMm": [
+          -5.049931335449216,
+          -0.0001983642578125,
+          0.00034999847412109375
+        ],
+        "newDesiredQuaternionXYZW": [
+          0,
+          0.7071067811865475,
+          0,
+          0.7071067811865476
+        ],
+        "newDesiredEulerXYZRadians": [
+          0,
+          1.5707963267948966,
+          0
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          0,
+          0.7071067811865475,
+          0,
+          0.7071067811865476
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          69.00006866455078,
+          89.99980163574219,
+          18.00034999847412
+        ],
+        "preserveTrayWorldMm": [
+          96,
+          3,
+          60
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front sign selected to match removable outer horn"
+    },
+    "r_lowerMotor": {
+      "sourceId": "right_hip_pitch_3",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        30.000083923339844,
+        34.00130081176758,
+        20.001697540283203
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        -7.500001907348633,
+        0.0003647804260253906
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          -1.5707963267948966,
+          -1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        -7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        -1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.0003647854125236816,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          -12.45,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            1.2246467991473532e-16
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          0.5
+        ],
+        "translationMm": [
+          12.45,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "position": [
+            -5,
+            6,
+            10.800848770141602
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        },
+        {
+          "position": [
+            5,
+            6,
+            10.800848770141602
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -11.4,
+            1,
+            8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -11.4,
+            1,
+            -8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        0,
+        1
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": true,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": null,
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front sign convention: outward side; source has symmetric discs"
+    },
+    "l_lowerMotor": {
+      "sourceId": "left_hip_pitch_4",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        30.000049591064453,
+        34.00113296508789,
+        20.001779556274414
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        -7.500001907348633,
+        0.0003647804260253906
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          1.5707963267948966,
+          1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        -7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.0003647854125236816,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          12.45,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            -1.2246467991473532e-16,
+            0,
+            -1
+          ],
+          [
+            -1,
+            0,
+            1.2246467991473532e-16
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5000000000000001,
+          0.5,
+          -0.5
+        ],
+        "translationMm": [
+          -12.45,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "position": [
+            -5,
+            6,
+            10.800889778137208
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        },
+        {
+          "position": [
+            5,
+            6,
+            10.800889778137208
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "双插座教学锚点；物理修订与电气针脚待核"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            11.4,
+            1,
+            -8.2
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            11.4,
+            1,
+            8.2
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": true,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": null,
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front sign convention: outward side; source has symmetric discs"
+    },
+    "t_motor10": {
+      "sourceId": "trunk_base_0",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        19.999999523162842,
+        30,
+        34.000000953674316
+      ],
+      "oldDepthAxisIndex": 1,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        0,
+        7.499999284744263
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          -1.5707963267948966,
+          0,
+          1.5707963267948966
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        0,
+        7.5
+      ],
+      "shaftAxisLocal": [
+        0,
+        1,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 7.152557373046875e-7,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          0,
+          12.45,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1.2246467991473532e-16,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          -0.5
+        ],
+        "translationMm": [
+          0,
+          -12.45,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -11.3,
+            7,
+            -3
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            11.3,
+            7,
+            -3
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            8.2,
+            11.4,
+            -1
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -8.2,
+            11.4,
+            -1
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "t_motor10Horn",
+        "screwActorId": "t_motor10HornScrew",
+        "discSide": "rear",
+        "removeStep": null,
+        "removed": false,
+        "moduleIndex": 2,
+        "moduleLocalRemoveStep": null,
+        "globalRemoveStep": null,
+        "globalRemoveStepId": null,
+        "currentSeatedWorldMm": [
+          -17.5,
+          104.5,
+          20
+        ],
+        "newSeatedWorldMm": [
+          -17.50000023841858,
+          106.55,
+          19.999999523162842
+        ],
+        "seatedCorrectionWorldMm": [
+          -2.384185791015625e-7,
+          2.049999999999997,
+          -4.76837158203125e-7
+        ],
+        "newDesiredQuaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          -0.5
+        ],
+        "newDesiredEulerXYZRadians": [
+          1.5707963267948968,
+          0,
+          1.5707963267948966
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          -1.1102230246251565e-16,
+          0.7071067811865476,
+          -5.551115123125783e-17,
+          -0.7071067811865475
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          -17.50000023841858,
+          104.5,
+          19.999999523162842
+        ],
+        "preserveTrayWorldMm": [
+          -17.5,
+          104.5,
+          20
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front +Y chosen by old socket cue at +Y; retained horn is REAR"
+    },
+    "t_motor20": {
+      "sourceId": "trunk_base_4",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        19.999999523162842,
+        30,
+        34.000000953674316
+      ],
+      "oldDepthAxisIndex": 1,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        0,
+        7.499999284744263
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          -1.5707963267948966,
+          0,
+          1.5707963267948966
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        0,
+        7.5
+      ],
+      "shaftAxisLocal": [
+        0,
+        1,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 7.152557373046875e-7,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          0,
+          12.45,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1.2246467991473532e-16,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          -0.5
+        ],
+        "translationMm": [
+          0,
+          -12.45,
+          7.5
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -11.3,
+            7,
+            -3
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            11.3,
+            7,
+            -3
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            8.2,
+            11.4,
+            -1
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -8.2,
+            11.4,
+            -1
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            -1
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "t_motor20Horn",
+        "screwActorId": "t_motor20HornScrew",
+        "discSide": "rear",
+        "removeStep": null,
+        "removed": false,
+        "moduleIndex": 2,
+        "moduleLocalRemoveStep": null,
+        "globalRemoveStep": null,
+        "globalRemoveStepId": null,
+        "currentSeatedWorldMm": [
+          17.5,
+          104.5,
+          20
+        ],
+        "newSeatedWorldMm": [
+          17.50000023841858,
+          106.55,
+          19.999999523162842
+        ],
+        "seatedCorrectionWorldMm": [
+          2.384185791015625e-7,
+          2.049999999999997,
+          -4.76837158203125e-7
+        ],
+        "newDesiredQuaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          -0.5
+        ],
+        "newDesiredEulerXYZRadians": [
+          1.5707963267948968,
+          0,
+          1.5707963267948966
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          -1.1102230246251565e-16,
+          0.7071067811865476,
+          -5.551115123125783e-17,
+          -0.7071067811865475
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          17.50000023841858,
+          104.5,
+          19.999999523162842
+        ],
+        "preserveTrayWorldMm": [
+          17.5,
+          104.5,
+          20
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front +Y chosen by old socket cue at +Y; retained horn is REAR"
+    },
+    "t_motor11": {
+      "sourceId": "right_hip_yaw_3",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        20.000083923339844,
+        34.00016784667969,
+        30.000047206878662
+      ],
+      "oldDepthAxisIndex": 2,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        7.5,
+        0
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.7071067811865475,
+          0.7071067811865476,
+          0,
+          0
+        ],
+        "eulerXYZRadians": [
+          -3.141592653589793,
+          0,
+          1.5707963267948966
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        0,
+        0,
+        -1
+      ],
+      "shaftRadialAlignmentErrorMm": 0,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.7071067811865475,
+          0.7071067811865476,
+          0,
+          0
+        ],
+        "translationMm": [
+          0,
+          7.5,
+          -12.45
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ],
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ]
+        ],
+        "quaternionXYZW": [
+          4.329780281177466e-17,
+          -4.329780281177466e-17,
+          0.7071067811865475,
+          0.7071067811865476
+        ],
+        "translationMm": [
+          0,
+          7.5,
+          12.45
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -11.3,
+            -3,
+            -7
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            11.3,
+            -3,
+            -7
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            8.2,
+            -1,
+            -11.4
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            0,
+            -1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -8.2,
+            -1,
+            -11.4
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            0,
+            -1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "t_motor11Horn",
+        "screwActorId": "t_motor11HornScrew",
+        "discSide": "front",
+        "removeStep": 8,
+        "removed": true,
+        "moduleIndex": 2,
+        "moduleLocalRemoveStep": 8,
+        "globalRemoveStep": 58,
+        "globalRemoveStepId": "t-roll-horns",
+        "currentSeatedWorldMm": [
+          -17.5,
+          90,
+          3.5001060962677
+        ],
+        "newSeatedWorldMm": [
+          -17.5,
+          90,
+          7.550106096267701
+        ],
+        "seatedCorrectionWorldMm": [
+          0,
+          0,
+          4.050000000000001
+        ],
+        "newDesiredQuaternionXYZW": [
+          -0.7071067811865475,
+          0.7071067811865476,
+          0,
+          0
+        ],
+        "newDesiredEulerXYZRadians": [
+          -3.141592653589793,
+          0,
+          1.5707963267948966
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          -0.5,
+          0.5000000000000001,
+          -0.4999999999999999,
+          0.5
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          -17.5,
+          90,
+          5.500106096267701
+        ],
+        "preserveTrayWorldMm": [
+          -104,
+          3.5,
+          100
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front sign selected to match removal action"
+    },
+    "t_motor21": {
+      "sourceId": "left_hip_yaw_1",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        20.000083923339844,
+        34.00016784667969,
+        30.000047206878662
+      ],
+      "oldDepthAxisIndex": 2,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        7.5,
+        0
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.7071067811865475,
+          0.7071067811865476,
+          0,
+          0
+        ],
+        "eulerXYZRadians": [
+          -3.141592653589793,
+          0,
+          1.5707963267948966
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        0,
+        0,
+        -1
+      ],
+      "shaftRadialAlignmentErrorMm": 0,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.7071067811865475,
+          0.7071067811865476,
+          0,
+          0
+        ],
+        "translationMm": [
+          0,
+          7.5,
+          -12.45
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ],
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ]
+        ],
+        "quaternionXYZW": [
+          4.329780281177466e-17,
+          -4.329780281177466e-17,
+          0.7071067811865475,
+          0.7071067811865476
+        ],
+        "translationMm": [
+          0,
+          7.5,
+          12.45
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -11.3,
+            -3,
+            -7
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            11.3,
+            -3,
+            -7
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            8.2,
+            -1,
+            -11.4
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            0,
+            -1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -8.2,
+            -1,
+            -11.4
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            0,
+            -1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "t_motor21Horn",
+        "screwActorId": "t_motor21HornScrew",
+        "discSide": "front",
+        "removeStep": 8,
+        "removed": true,
+        "moduleIndex": 2,
+        "moduleLocalRemoveStep": 8,
+        "globalRemoveStep": 58,
+        "globalRemoveStepId": "t-roll-horns",
+        "currentSeatedWorldMm": [
+          17.5,
+          90,
+          3.5001060962677
+        ],
+        "newSeatedWorldMm": [
+          17.5,
+          90,
+          7.550106096267701
+        ],
+        "seatedCorrectionWorldMm": [
+          0,
+          0,
+          4.050000000000001
+        ],
+        "newDesiredQuaternionXYZW": [
+          -0.7071067811865475,
+          0.7071067811865476,
+          0,
+          0
+        ],
+        "newDesiredEulerXYZRadians": [
+          -3.141592653589793,
+          0,
+          1.5707963267948966
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          -0.5,
+          0.5000000000000001,
+          -0.4999999999999999,
+          0.5
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          17.5,
+          90,
+          5.500106096267701
+        ],
+        "preserveTrayWorldMm": [
+          104,
+          3.5,
+          100
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front sign selected to match removal action"
+    },
+    "h_motor32": {
+      "sourceId": "head_yaw_2",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        34.00017070770264,
+        30.00006103515625,
+        20.000083923339844
+      ],
+      "oldDepthAxisIndex": 1,
+      "oldFittedShaftLinePointLocalMm": [
+        7.500000715255737,
+        0,
+        0
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          0.7071067811865475,
+          0.7071067811865476,
+          0
+        ],
+        "eulerXYZRadians": [
+          -1.5707963267948966,
+          0,
+          -3.141592653589793
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        7.5,
+        0,
+        0
+      ],
+      "shaftAxisLocal": [
+        0,
+        1,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 7.152557373046875e-7,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          0.7071067811865475,
+          0.7071067811865476,
+          0
+        ],
+        "translationMm": [
+          7.5,
+          12.45,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ],
+          [
+            -1.2246467991473532e-16,
+            0,
+            -1
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.7071067811865475,
+          -4.329780281177466e-17,
+          -4.329780281177466e-17,
+          0.7071067811865476
+        ],
+        "translationMm": [
+          7.5,
+          -12.45,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -3,
+            7,
+            -11.3
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            -3,
+            7,
+            11.3
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -1,
+            11.4,
+            -8.2
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            -1,
+            0,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -1,
+            11.4,
+            8.2
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            -1,
+            0,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        0,
+        1
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": null,
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front +Y convention chosen by old source socket cue; both source discs symmetric"
+    },
+    "h_motor33": {
+      "sourceId": "head_roll_2",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        34.00014877319336,
+        20.00042724609375,
+        30.000044345855713
+      ],
+      "oldDepthAxisIndex": 2,
+      "oldFittedShaftLinePointLocalMm": [
+        7.500000238418579,
+        0.00006103515625,
+        0
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          1,
+          0,
+          0
+        ],
+        "eulerXYZRadians": [
+          -3.141592653589793,
+          0,
+          -3.141592653589793
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        7.5,
+        0,
+        0
+      ],
+      "shaftAxisLocal": [
+        0,
+        0,
+        -1
+      ],
+      "shaftRadialAlignmentErrorMm": 0.00006103562190951096,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          1,
+          0,
+          0
+        ],
+        "translationMm": [
+          7.5,
+          0,
+          -12.45
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ]
+        ],
+        "quaternionXYZW": [
+          0,
+          -6.123233995736766e-17,
+          0,
+          1
+        ],
+        "translationMm": [
+          7.5,
+          0,
+          12.45
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -3,
+            -11.3,
+            -7
+          ],
+          "normal": [
+            0,
+            -1,
+            0
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            -3,
+            11.3,
+            -7
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            1,
+            0,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -1,
+            -8.2,
+            -11.4
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            -1,
+            0,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -1,
+            8.2,
+            -11.4
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            -1,
+            0,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        0,
+        1
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "h_coreHorn",
+        "screwActorId": "h_coreHornScrew",
+        "discSide": "front",
+        "removeStep": 5,
+        "removed": true,
+        "moduleIndex": 3,
+        "moduleLocalRemoveStep": 5,
+        "globalRemoveStep": 73,
+        "globalRemoveStepId": "head-core-horn-wire",
+        "currentSeatedWorldMm": [
+          0,
+          223.75,
+          -6.65
+        ],
+        "newSeatedWorldMm": [
+          -0.000247955322265625,
+          223.74966430664062,
+          -3.8501839160919182
+        ],
+        "seatedCorrectionWorldMm": [
+          -0.000247955322265625,
+          -0.000335693359375,
+          2.799816083908082
+        ],
+        "newDesiredQuaternionXYZW": [
+          0,
+          1,
+          0,
+          0
+        ],
+        "newDesiredEulerXYZRadians": [
+          -3.141592653589793,
+          0,
+          -3.141592653589793
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          0,
+          0.7071067811865476,
+          0,
+          0.7071067811865475
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          -0.000247955322265625,
+          223.74966430664062,
+          -5.900183916091918
+        ],
+        "preserveTrayWorldMm": [
+          77,
+          213,
+          -1
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front sign selected to match removal action"
+    },
+    "h_mouthMotor": {
+      "sourceId": "head_roll_0",
+      "sourceVertexCount": 482,
+      "oldEnvelopeMm": [
+        29.000038146972656,
+        20.00042724609375,
+        34.00014877319336
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        0.0000457763671875,
+        -7.499998092651367
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "eulerXYZRadians": [
+          3.141592653589793,
+          1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          -0.5,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        -0.5,
+        0,
+        -7.5
+      ],
+      "shaftAxisLocal": [
+        1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.000045816086385590795,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "translationMm": [
+          11.95,
+          0,
+          -7.5
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            -1.2246467991473532e-16,
+            0,
+            -1
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            -1,
+            0,
+            1.2246467991473532e-16
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "translationMm": [
+          -12.95,
+          0,
+          -7.5
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -7.5,
+            -11.3,
+            3
+          ],
+          "normal": [
+            0,
+            -1,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            -7.5,
+            11.3,
+            3
+          ],
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            10.9,
+            8.2,
+            1
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            10.9,
+            -8.2,
+            1
+          ],
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": {
+        "actorId": "h_mouthHorn",
+        "screwActorId": "h_mouthHornScrew",
+        "discSide": "front",
+        "removeStep": 8,
+        "removed": true,
+        "moduleIndex": 3,
+        "moduleLocalRemoveStep": 8,
+        "globalRemoveStep": 76,
+        "globalRemoveStepId": "head-mouth-horn-wire",
+        "currentSeatedWorldMm": [
+          41.25,
+          226.55,
+          41
+        ],
+        "newSeatedWorldMm": [
+          37.94973297119141,
+          226.55020141601562,
+          40.99979591369629
+        ],
+        "seatedCorrectionWorldMm": [
+          -3.300267028808591,
+          0.00020141601561363132,
+          -0.0002040863037109375
+        ],
+        "newDesiredQuaternionXYZW": [
+          0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "newDesiredEulerXYZRadians": [
+          3.141592653589793,
+          1.5707963267948966,
+          0
+        ],
+        "ifKeepingOldActorRotationChildQuaternionXYZW": [
+          0.7071067811865475,
+          0,
+          0.7071067811865476,
+          0
+        ],
+        "newRetainingHeadOuterFaceWorldMm": [
+          39.999732971191406,
+          226.55020141601562,
+          40.99979591369629
+        ],
+        "preserveTrayWorldMm": [
+          77,
+          204,
+          -1
+        ]
+      },
+      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "frontSideEvidence": "front disc side fixed by old single disc and removal action"
+    },
+    "h_motor30": {
+      "sourceId": "neck_pitch_3",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        30.000021934509277,
+        34.00006103515625,
+        20.000207901000977
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        -7.5,
+        0.00002765655517578125
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "eulerXYZRadians": [
+          -1.5707963267948966,
+          -1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        -7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        -1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.00002765655517578125,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          -12.45,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ],
+          [
+            -1,
+            0,
+            1.2246467991473532e-16
+          ],
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5000000000000001,
+          0.5,
+          -0.5,
+          0.5
+        ],
+        "translationMm": [
+          12.45,
+          -7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -7,
+            3,
+            -11.3
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            -7,
+            3,
+            11.3
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -11.4,
+            1,
+            8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -11.4,
+            1,
+            -8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        1,
+        0
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": null,
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front -X convention chosen by old source socket cue; both source discs symmetric"
+    },
+    "h_motor31": {
+      "sourceId": "neck_pitch_1",
+      "sourceVertexCount": 754,
+      "oldEnvelopeMm": [
+        30.000021934509277,
+        34.00006103515625,
+        20.000207901000977
+      ],
+      "oldDepthAxisIndex": 0,
+      "oldFittedShaftLinePointLocalMm": [
+        0,
+        7.5,
+        -0.00002574920654296875
+      ],
+      "bodyParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5,
+          0.5,
+          -0.5
+        ],
+        "eulerXYZRadians": [
+          1.5707963267948966,
+          -1.5707963267948966,
+          0
+        ],
+        "translationMm": [
+          0,
+          0,
+          0
+        ],
+        "scale": 1000
+      },
+      "shaftPointLocalMm": [
+        0,
+        7.5,
+        0
+      ],
+      "shaftAxisLocal": [
+        -1,
+        0,
+        0
+      ],
+      "shaftRadialAlignmentErrorMm": 0.00002574920654296875,
+      "frontHornParent": {
+        "rotationMatrixRows": [
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          -0.5,
+          0.5,
+          0.5,
+          -0.5
+        ],
+        "translationMm": [
+          -12.45,
+          7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "rearHornParent": {
+        "rotationMatrixRows": [
+          [
+            1.2246467991473532e-16,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            -1.2246467991473532e-16
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "quaternionXYZW": [
+          0.5000000000000001,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "translationMm": [
+          12.45,
+          7.5,
+          0
+        ],
+        "scale": 1000
+      },
+      "oldPorts": [
+        {
+          "id": "bus-a",
+          "position": [
+            -7,
+            -3,
+            -11.3
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        },
+        {
+          "id": "bus-b",
+          "position": [
+            -7,
+            -3,
+            11.3
+          ],
+          "normal": [
+            0,
+            0,
+            1
+          ],
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "evidence": "source-face-cue; illustrative-socket; pinout-unverified"
+        }
+      ],
+      "nativePorts": [
+        {
+          "id": "native-minus-y",
+          "position": [
+            -11.4,
+            -1,
+            -8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            -1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            -8.2,
+            11.4
+          ]
+        },
+        {
+          "id": "native-plus-y",
+          "position": [
+            -11.4,
+            -1,
+            8.2
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "tangent": [
+            0,
+            -1,
+            0
+          ],
+          "nativePositionMm": [
+            1,
+            8.2,
+            11.4
+          ]
+        }
+      ],
+      "replaceOldPortSlotsWithNativeIndex": [
+        0,
+        1
+      ],
+      "portSlotAssignmentGeometricallyAmbiguous": false,
+      "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
+      "existingHorn": null,
+      "fixedDiscPolicySourceMatched": "both independent discs, except side owned by existing horn actor",
+      "frontSideEvidence": "front -X convention chosen by old source socket cue; both source discs symmetric"
+    }
+  },
+  "hornNodes": {
+    "frontFile": "models/servo-horn.glb",
+    "rearFile": "models/servo-rear-horn.glb",
+    "nativeGeometrySameOrientation": true,
+    "discNodes": [
+      "eight-hole-disc",
+      "shaft-hub"
+    ],
+    "retainingScrewNode": "retaining-screw",
+    "nativeDiscSeatMm": [
+      0,
+      0,
+      0
+    ],
+    "nativeBoundsZMm": [
+      -0.95,
+      2.05
+    ],
+    "retainingScrewBoundsZMm": [
+      1.5,
+      2.05
+    ],
+    "screwActorRecenterMm": [
+      0,
+      0,
+      2.05
+    ],
+    "screwActorRecenterMeaning": "Subtract [0,0,0.00205] metres from retaining-screw mesh in native coordinates; bind outer head face to screw actor position. Actor local +Z is outward after adapter. Retaining head only; no shaft or pointed supplied screw is invented.",
+    "noDuplicateRule": "Existing Horn actor owns its disc side and existing HornScrew actor owns retaining-screw. Exclude those nodes from fixed body group; never combine complete hd1910-servo.glb with separate discs.",
+    "sourceMatchedRearFor482": "Mechanical actors motor/l_motor/h_mouthMotor had opposite small hub only. Keep rear eight-hole-disc and retaining-screw absent unless source/package decision explicitly adds them. Optional shaft-hub alone is geometrical surrogate, radius differs and fit unverified. Preparation p_motor may show both approved discs."
+  },
+  "sockets": {
+    "nativePorts": [
+      {
+        "id": "native-minus-y",
+        "position": [
+          1,
+          -8.2,
+          11.4
+        ],
+        "normal": [
+          0,
+          0,
+          1
+        ],
+        "tangent": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "native-plus-y",
+        "position": [
+          1,
+          8.2,
+          11.4
+        ],
+        "normal": [
+          0,
+          0,
+          1
+        ],
+        "tangent": [
+          1,
+          0,
+          0
+        ]
+      }
+    ],
+    "nativeOpeningPlaneZMm": 11.4,
+    "replaceSyntheticSockets": true,
+    "reason": "servo-body.glb already includes socket shells and contacts. Existing prototype-v3.mjs synthesized servoSocket geometry would duplicate them.",
+    "plugDockOffsetMm": 2.25,
+    "oldOffsetMm": 1.65,
+    "formula": "dock_actor_local = t_body + R_body * socketNativePositionMm + R_body*[0,0,1]*2.25. World = actorPosePosition + actorQuaternion*dock_actor_local."
+  },
+  "cable": {
+    "file": "models/servo-cable.glb",
+    "wireNodeNames": [
+      "wire-1",
+      "wire-2",
+      "wire-3"
+    ],
+    "nativeWireRadiusMm": 0.52,
+    "nativeWireSpacingMm": 1.3,
+    "plugDimensionsMm": [
+      7.5,
+      4.5,
+      5.6
+    ],
+    "nativeMatingFaceDirection": [
+      0,
+      1,
+      0
+    ],
+    "nativeMatingFaceOffsetMm": 2.25,
+    "canonicalMatingFaceDirection": [
+      0,
+      0,
+      -1
+    ],
+    "canonicalAdapterEulerXYZRadians": [
+      -1.5707963267948966,
+      0,
+      0
+    ],
+    "canonicalAdapterQuaternionXYZW": [
+      -0.7071067811865475,
+      0,
+      0,
+      0.7071067811865476
+    ],
+    "adapterFormula": "socketQuaternion(port) * Rx(-pi/2); native +Y -> -port.normal, native +X -> port.tangent, native +Z -> port.normal cross port.tangent",
+    "ends": [
+      {
+        "end": 0,
+        "nodeNames": [
+          "white-plug-0",
+          "plug-contact-0-0",
+          "plug-contact-0-1",
+          "plug-contact-0-2"
+        ],
+        "nativeCentreMm": [
+          0,
+          0,
+          -67
+        ],
+        "recenterSubtractMetres": [
+          0,
+          0,
+          -0.067
+        ],
+        "nativeWireExitAnchorRelativeMm": [
+          0,
+          0,
+          2
+        ],
+        "nativeWireExitTangent": [
+          0,
+          0,
+          1
+        ],
+        "canonicalWireExitAnchorRelativeMm": [
+          0,
+          2,
+          0
+        ],
+        "canonicalWireExitTangent": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "end": 1,
+        "nodeNames": [
+          "white-plug-1",
+          "plug-contact-1-0",
+          "plug-contact-1-1",
+          "plug-contact-1-2"
+        ],
+        "nativeCentreMm": [
+          0,
+          0,
+          67
+        ],
+        "recenterSubtractMetres": [
+          0,
+          0,
+          0.067
+        ],
+        "nativeWireExitAnchorRelativeMm": [
+          0,
+          0,
+          -2
+        ],
+        "nativeWireExitTangent": [
+          0,
+          0,
+          -1
+        ],
+        "canonicalWireExitAnchorRelativeMm": [
+          0,
+          -2,
+          0
+        ],
+        "canonicalWireExitTangent": [
+          0,
+          -1,
+          0
+        ]
+      }
+    ],
+    "individualNativeWireExitAnchors": "add native X offsets [-1.3,0,1.3] mm to the listed centre-line exit anchor; original source wire endpoints at z +/-65 mm. Native wire actual tube extrema extend to +/-65.37039 due bend cross-section.",
+    "routing": "Keep extracted plug meshes at physical size. Rebuild 3 black tubes along teaching path, anchored at transformed plug wireExit anchors. Do not uniformly scale/deform both white plugs to fit fixed 134 mm original centre separation. The socket neighbor should follow transformed side exit tangent instead of assuming normal-axis wire exit.",
+    "materials": "Clone PBR material objects with maps retained. servo-body photographed-label material real-HD1910M-label contains embedded texture; never replace it by actor color."
+  },
+  "limitations": [
+    "Axis line and 34x20x23 housing align to existing source geometry; this is not collision, bore, tolerance, physical fit, cable length or electrical validation.",
+    "Two-sided old source geometry does not identify front vs back. Explicit front sign conventions are recorded per actor; their source shaft line remains exact regardless of sign.",
+    "New socket locations and plug construction are approved appearance estimates. Geometric nearest port-slot assignment does not identify real daisy-chain ports or pins.",
+    "New 29 mm full disc envelope is 1 mm shorter than older 30 mm double-disc source; do not stretch it to 30 or shrink to 23. Old removal seated actors were deliberately offset outside old geometry; reset initial seat to new 12.45 mm native seating and preserve tray endpoints/action order.",
+    "Original retaining-screw node is an estimated visible head, not a verified full screw. The unknown supplied short pointed screw remains excluded."
+  ]
+}

@@ -1,0 +1,109 @@
+{
+ "gitPath": "prototypes/assembly-tutorial/assets",
+ "files": {
+  "full-assembly.bin": {
+   "bytes": 4596288,
+   "sha256": "35cc5671703b8603ca5295f10d1b37a934b2766bee7ca1867535e33879133c35"
+  },
+  "full-assembly.json": {
+   "bytes": 21240,
+   "sha256": "76fea475b8072852a0042e1f9cc8ae226049a6381bd512f8b2262310aaa61ed5"
+  },
+  "assembly-complete.mp3": {
+   "bytes": 12323,
+   "sha256": "099ebf907d0d4ca4ce657cb5d3e2ea85dfe50002e265acbfee7b6ab656d4c990"
+  },
+  "piano-satie-gymnopedie.mp3": {
+   "bytes": 2620462,
+   "sha256": "f1c725f597de29ef715ac78633561c66d0401cbaa695df4393bee09aab04b5a9"
+  },
+  "piano-mozart-andante.mp3": {
+   "bytes": 3092524,
+   "sha256": "d6b9f8ddb3a30b67e9d73a009c1e074667e1e61fee87a83c88ef007a80fa0093"
+  },
+  "full-prepare.mp4": {
+   "bytes": 5051672,
+   "sha256": "860b26546367f96a620cece4ed27f60a607dd623b834d99ea0635d3e874c8b9d"
+  },
+  "full-torso.mp4": {
+   "bytes": 22533460,
+   "sha256": "fff3bcb5f43185662b60ad2b9af87948f66b735f1e366195cd7541718facd3dd"
+  },
+  "full-head.mp4": {
+   "bytes": 28414182,
+   "sha256": "8858a04c1c2a898904a4fc14231c572e2f5c8b78fa244ec85bf2ebf704ef0af7"
+  },
+  "full-final.mp4": {
+   "bytes": 14684780,
+   "sha256": "5f7545053b01b360a0da92e2feab2ea26241063d30cb5128dc135a7e98aceeec"
+  },
+  "full-calibration.mp4": {
+   "bytes": 5949828,
+   "sha256": "ee87c6e4051500e571d0dd34c5b45236ce875584af65e239e91b7a4e14b4b146"
+  },
+  "reference-02m06-03m14.mp4": {
+   "bytes": 6454144,
+   "sha256": "47f0fa2d5423ae3f8c977d7d939be0f1f1b1b5b01731fa46d3a4ac4205b3cc11"
+  },
+  "reference-left-ankle.mp4": {
+   "bytes": 3946983,
+   "sha256": "815713277bedb1e1b4b1527ee9abfaf9b9ca8d301e5a76783b813df6999fae17"
+  },
+  "reference-right-leg.mp4": {
+   "bytes": 5231248,
+   "sha256": "4ca82f6a2a0cd192634d29373c259eaf4a924571f346b7bbbb9008351269af5b"
+  },
+  "reference-left-leg.mp4": {
+   "bytes": 5141945,
+   "sha256": "4069d586892c91d347f51723c4bcf0f2ed10f7a61e179975db2ce64b79779a8b"
+  },
+  "reference-leg-finish.mp4": {
+   "bytes": 8457412,
+   "sha256": "30011494f0f0f1b3e8b760cc1e3a400de6d50da36cbffe121b8a9a9dc26bb444"
+  },
+  "hardware-v2/ATTRIBUTION.txt": {
+   "bytes": 608,
+   "sha256": "3fc7b21c19106469c85d6535af055a594087cef68208137eefdfcd11779dc5ee"
+  },
+  "hardware-v2/extension-board.glb": {
+   "bytes": 1169336,
+   "sha256": "fc8386bb3f2d2bce9e8bf1d07f858a4657327b935699f721c27438dff27dbd63"
+  },
+  "hardware-v2/hd1910-servo.glb": {
+   "bytes": 1017320,
+   "sha256": "243091cc9372d4beebbd2a1c815c7dddd0773721e23eb6cb844bb935af6f8f42"
+  },
+  "hardware-v2/screw-m23x8.glb": {
+   "bytes": 1440816,
+   "sha256": "208622a3f424a931666733fe5fa7b2c27b2e40c4b2ea16f2e3363e8b3b717fa0"
+  },
+  "hardware-v2/screw-m2x6.glb": {
+   "bytes": 1356048,
+   "sha256": "1fe490c8fa5df475ec4c4dec8933c5d1df2f75e7555ceaca28185b419524a0e8"
+  },
+  "hardware-v2/screw-m3x16.glb": {
+   "bytes": 1145388,
+   "sha256": "c2de6fc27bed2cd5d9b53ecf370114f0eb2cf9180d70f472ba73ae211e11c847"
+  },
+  "hardware-v2/servo-body.glb": {
+   "bytes": 900736,
+   "sha256": "4549e9c6156be1650c3777a023c492e633ae36e26fb732eac11c2e05c84a8e63"
+  },
+  "hardware-v2/servo-cable.glb": {
+   "bytes": 80360,
+   "sha256": "61997d83851e951d12a83e4b119ad8d1c4a16a45b843dc39e573c169361af99f"
+  },
+  "hardware-v2/servo-horn.glb": {
+   "bytes": 87312,
+   "sha256": "e167293c36f9aaa82e2a722bb35de17df266c49a954024398241cc72c7598dc1"
+  },
+  "hardware-v2/servo-rear-horn.glb": {
+   "bytes": 87316,
+   "sha256": "9f2f80c63b80f11f2dd847379a481e7c0ee418bf11d550697601dc06f50ba611"
+  },
+  "hardware-v2/uno-q.glb": {
+   "bytes": 2248708,
+   "sha256": "fad5729ecf80e3dabe046398f6808dfee37a20d959a74a5aa620c93b8800227b"
+  }
+ }
+}
