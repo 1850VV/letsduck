@@ -57,3 +57,38 @@ Pillow compared `clean-before-current.png` / `clean-after-current.png` and the u
 GitHub CLI authentication initially failed; a later `gh auth status` succeeded, so native `git push` and authenticated `gh pr create` completed the delivery. Draft PR: https://github.com/1850VV/letsduck/pull/12, targeting `codex/personal-navigation`. No merge/deploy is authorized here.
 
 Cleanup receipt: task session `opt-idle-1024` closed successfully. Its daemon PID 63566, browser PID 63576 and test server PID 63438 exited; port 8902 has no listener. The task benchmark lock was released after verifying its owner. Other browsers and the production service were preserved. The final full commit SHA is recorded in the delivery chat (this document identifies the implementation SHA independently).
+
+## Preview follow-up: hardware surface flicker
+
+The owner reported flickering Arduino/UNO board and servo surfaces during the 8902 preview. The hardware contains photographed surfaces close to solid geometry: the servo label is approximately 0.015 mm above its casing. Exact duplicate-triangle inspection did not find duplicate triangles in the sampled UNO, extension board or servo. The original main and detail cameras used a fixed 0.1 mm near plane, which wastes depth precision at overview distances. This was reproduced independently of the scheduler: changing only camera depth precision removed almost all large pixel jumps under subpixel camera motion. Material polygon offset was also tested in the browser but was less effective; no offset or model edits were retained.
+
+The fix adds `camera-depth.mjs`: near distance is 1% of the distance from the camera to its observed target, with a 0.1 mm minimum. Both the main camera and magnifier use it. The helper updates the projection and its inverse together. Field of view, target, model vertices, texture/PBR properties, far distance and lesson data remain unchanged. Close detail views therefore use a close near plane; distant views can distinguish hardware labels from casing surfaces.
+
+Evidence is in the separate ignored folder `output/playwright/opt-idle-flicker-1024/`. `depth-experiment.txt` isolates near-plane changes from source geometry. `surface-results.json` and `verify-surfaces.js` compare the actual baseline and fixed render loops. The test isolates one hardware actor at 500 mm, uses a 10° field of view to make the artifact visible, and alternates the camera by ±0.001 mm for eight real captured frames. Counts below are opaque pixels with an RGB change greater than 24 between consecutive frames. This is a controlled visual regression, not FPS or GPU timing.
+
+| Surface / mode | Before | After |
+| --- | ---: | ---: |
+| UNO board, current | 719 | 1 |
+| Servo, current | 3,185 | 1 |
+| UNO board, ultra | 946 | 7 |
+| Servo, ultra | 4,677 | 0 |
+
+Remaining changes are sparse edge pixels from the deliberate camera motion; pixel-level equality during actual motion is not expected. No claim of zero change under all camera positions is made.
+
+`functional.json` records checks against the actual uninstrumented source route in both modes: overview, step-12 detail, minimum orbit distance, replay/pause, hidden/visible restoration, and 390×844 resize. Every stable two-second window had zero WebGL draw submissions. Main and magnifier screenshots were inspected for foreground clipping; both remain visible in the sampled near view. The browser-only scene probe is confined to ignored evidence files, not the production diagnostics.
+
+Regression tests first failed with the original depth policy because label/casing depth collapsed at 500 mm. The new tests verify 24-bit depth separation at 66/500/1100 mm and unchanged framing, close foreground visibility and inverse-projection round-trip at 18 mm. Final suites: Node 229 passed / 3 existing skips; full Python 60 passed / 18 MySQL skips; personal Python 11 passed. Publication audit and diff checks are required before the follow-up commit.
+
+The local verify artboard `verify-hardware-surface` contains real before/after screenshots and two-second H.264 replays of the captured micro-motion frames (4 fps, no synthesized imagery). Its structural warnings and pending files are empty. Human visual acceptance was completed on 2026-10-24: the owner stated “现在看起来不闪了”. The artboard API independently records both `board` and `servo` as `pass`, with `evidenceUpdated=false` and no reject threads (23:07 Asia/Shanghai). The running 8902 preview remains available. The 8876 service is not changed.
+
+
+## Controller handoff after owner acceptance — 2026-10-24
+
+- User instruction: organize these optimization/fix results for the controller; do not switch 8876.
+- Idle-render implementation: `9103d2432a244c6a8b3c001c532bce8f1dab93ec`. Initial delivery/documentation head: `2acf7e85f5ec607df2240f85c5a2caa8b5366d9a`.
+- Surface-flicker fix and tests: `9b24e8bcb4aeee583555dfdf85c761c106a35d72`. This is the distinct follow-up for a controller baseline that already contains idle scheduling. Check ancestry and the current owning source before integration; do not replay an already-integrated optimization blindly.
+- PR #12 remains an OPEN DRAFT targeting `codex/personal-navigation`. This handoff does not merge it, change the base branch, or authorize a production-service switch.
+- Summary: stable two-second WebGL submissions dropped to zero in both quality modes; the isolated hardware surface regression dropped large pixel jumps to sparse motion-edge differences; both hardware verify groups and the owner's live preview acceptance passed.
+- Full evidence and limitations are above. Updated tests: 229 Node passes / 3 skips, 60 full-Python passes / 18 MySQL skips, 11 personal-Python passes; publication audit 291 files / no findings. No source code changed after these tests; this handoff adds documentation only.
+- Current preview: 8902 is running from this assigned worktree with the dedicated temporary test database (PID 84606 at handoff verification). The original 8876 listener remains PID 52333; no restart, checkout, merge, or service switch was performed there. Earlier cleanup statements in this document describe the first automated test run, before the owner requested reopening 8902.
+- Task-owned Playwright sessions and browsers are closed. The local verify-artboard server is retained for review. Model assets, screenshots, databases and browser state remain local and ignored.
