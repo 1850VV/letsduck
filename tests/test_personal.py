@@ -129,7 +129,7 @@ class PersonalTests(unittest.TestCase):
 
     def test_home_opens_at_root_and_the_studio_at_paint(self):
         self.start()
-        pages = {'/': 'home.html', '/?from=launcher': 'home.html', '/paint': 'index.html', '/index.html': 'index.html'}
+        pages = {'/': 'personal.html', '/?from=launcher': 'personal.html', '/paint': 'personal.html', '/index.html': 'index.html', '/home.html': 'home.html'}
         for path, name in pages.items():
             with self.subTest(path=path), urlopen(self.base + path) as response:
                 self.assertEqual(response.read(), (app.FRONTEND / name).read_bytes())
@@ -142,6 +142,14 @@ class PersonalTests(unittest.TestCase):
             urlopen(self.base + '/paint/index.html')
         self.assertEqual(caught.exception.code, 404)
 
+    def test_personal_routes_share_one_application_shell(self):
+        self.start()
+        with urlopen(self.base + '/') as response:
+            home = response.read()
+        for path in ['/paint', '/assemble/']:
+            with self.subTest(path=path), urlopen(self.base + path) as response:
+                self.assertEqual(response.read(), home)
+
     def test_assembly_guide_serves_listed_local_assets_with_byte_ranges(self):
         assets = Path(self.tmp.name) / 'assets'
         (assets / 'assembly').mkdir(parents=True)
@@ -152,6 +160,8 @@ class PersonalTests(unittest.TestCase):
         self.addCleanup(lambda: setattr(app, 'ASSETS', saved[0]) or setattr(app, 'ASSEMBLY', saved[1]) or setattr(app, 'CHUNK', saved[2]))
         self.start()
         with urlopen(self.base + '/assemble/') as response:
+            self.assertEqual(response.read(), (app.FRONTEND / 'personal.html').read_bytes())
+        with urlopen(self.base + '/assemble/index.html') as response:
             self.assertEqual(response.read(), (app.FRONTEND / 'assemble' / 'index.html').read_bytes())
         self.assertTrue(app.assembly_ready())
         url = self.base + '/assemble/assets/clip.mp4'

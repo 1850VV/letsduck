@@ -5,6 +5,7 @@ import { applyBrand } from '../shared/brand.mjs';
 import { readDraft } from '../shared/draft.mjs';
 import { loadSite } from '../shared/edition.mjs';
 import { t, getLocale, onLocale } from '../shared/i18n.mjs';
+import {markPageReady,onPageActivity,pageActive} from '../shared/personal-page.mjs';
 
 const $ = (s) => document.querySelector(s);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -150,8 +151,10 @@ function render() {
     ? `<span class="sw">${dots(draft.colors)}</span><span class="grow">${t('home.withColors', { name })}<small>${esc(t('home.withColorsSub'))}</small></span>`
     : `<span class="icon" aria-hidden="true">🦆</span><span class="grow">${esc(t('home.blank'))}<small>${esc(t('home.blankSub'))}</small></span>`;
 }
-function load() {draft = readDraftSlots();fresh = freshness(draft);render();}
+function load() {draft = readDraftSlots();fresh = pageActive()&&freshness(draft);render();}
 onLocale(render);
 // Coming back with the browser's back button shows the draft as the studio left it.
 addEventListener('pageshow', (e) => {if (e.persisted) load();});
 load();
+onPageActivity(active=>{if(active)load();});
+markPageReady();

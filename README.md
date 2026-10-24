@@ -161,6 +161,8 @@ node --test tests/*.mjs
 
 ## 文档
 
+- [个人版页面往返性能与验证](docs/personal-navigation.md)
+
 - [部署模式、数据迁移、备份和回退](docs/deployment.md)
 - [性能集成、实测结果与待验收边界](docs/performance-integration.md)
 - [项目结构与边界](docs/project.md)

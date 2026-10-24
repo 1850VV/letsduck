@@ -12,6 +12,7 @@ import {fitsForParts} from './model-fit.mjs';
 import {buildCableCurve} from './cable-path.mjs';
 import {loadHardwareModels} from './hardware-models.mjs';
 import {LOOK} from '../shared/duck-look.mjs';
+import {markPageReady,onPageActivity,renderActive} from '../shared/personal-page.mjs';
 import { STEPS,CHAPTERS,ACTORS,snapshot,chapterFor,OVERVIEW_STEP,PLUG_PAIRS } from './hardware-state.mjs';
 
 import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlugQuaternion,interpolatePose,socketQuaternion} from './render-pose.mjs';
@@ -282,8 +283,10 @@ function updatePartLeader(){
   if($('part-leader-line').getAttribute('points')!==points)$('part-leader-line').setAttribute('points',points);
   $('part-leader-dot').setAttribute('cx',x);$('part-leader-dot').setAttribute('cy',y);leader.toggleAttribute('hidden',false);
 }
+let renderFrame=0,hiddenAt=0,resumePlayback=false;
 function render(now){
-  requestAnimationFrame(render);
+  if(!renderActive()){renderFrame=0;return;}
+  renderFrame=requestAnimationFrame(render);
   if(ready){const before=lessonPlayer.state,playback=lessonPlayer.tick(now);lessonSound.observe(before,playback,now);if(playback.step!==step)goStep(playback.step,{playerDriven:true});else{const moved=progress!==playback.progress,wasPlaying=playing;progress=playback.progress;playing=playback.playing;if(moved){applyState(snapshot(step,progress));updateProgress();}if(wasPlaying!==playing||before.phase!==playback.phase)setAttributes();}}
   if(backTransition){const t=Math.min(1,(now-backTransition.start)/backTransition.duration),ease=t*t*(3-2*t),target=snapshot(step,1),state={};
     for(const [id,b] of Object.entries(target)){const a=backTransition.from[id]||b;state[id]=interpolatePose(ACTORS[id],a,b,ease);}
@@ -297,7 +300,18 @@ function render(now){
   hint.dataset.focus=focus.phase;
   renderQuality.render(scene,camera);assemblyMagnifier.render(focus,now,ready?STEPS[step].id:null);updatePartLeader();
 }
-requestAnimationFrame(render);
+renderFrame=requestAnimationFrame(render);
+onPageActivity(active=>{
+  if(!active){hiddenAt=performance.now();resumePlayback=lessonPlayer.state.playing;lessonPlayer.pause();playing=false;cancelAnimationFrame(renderFrame);renderFrame=0;}
+  else{const elapsed=hiddenAt?performance.now()-hiddenAt:0;if(cameraTween)cameraTween.start+=elapsed;if(backTransition)backTransition.start+=elapsed;if(resumePlayback){lessonPlayer.resume();playing=lessonPlayer.state.playing;}fit();if(!renderFrame)renderFrame=requestAnimationFrame(render);}
+});
+addEventListener('personal:appearance',()=>{
+  if(!ready)return;
+  for(const[id,root]of entities){const source=ACTORS[id].material;if(!source)continue;root.traverse(child=>{
+    if(!child.isMesh)return;for(const material of [child.material].flat())if(material.userData?.printed){const opacity=material.opacity,transparent=material.transparent;material.copy(source);material.opacity=opacity;material.transparent=transparent||source.transparent;material.needsUpdate=true;}
+  });}
+  renderQuality.invalidate();syncInfo();
+});
 async function load(){
   const [manifest,binary,models]=await Promise.all([fetch('./assets/full-assembly.json').then(r=>{if(!r.ok)throw Error('模型清单加载失败');return r.json();}),fetch('./assets/full-assembly.bin').then(r=>{if(!r.ok)throw Error('模型几何加载失败');return r.arrayBuffer();}),loadHardwareModels()]);
   hardwareModels=models;createActors();
@@ -311,7 +325,7 @@ async function load(){
     if(motor){const ports=ACTORS[p.id].servoPorts||[{position:[3,8.5,p.size[2]/2+.8],normal:[0,0,1]}];for(const port of ports){const socket=new THREE.Group(),body=mesh(new THREE.BoxGeometry(7,5,1.3),white);body.position.z=-.65;body.userData.focusPort={label:port.id||'舵机口'};socket.add(body);const inside=mesh(new THREE.BoxGeometry(5.4,3.4,.03),dark);inside.position.z=.01;socket.add(inside);socket.position.fromArray(port.position);socket.quaternion.copy(socketQuaternion(port));socket.userData.servoSocket=true;group.add(socket);}}
     entity(p.id,group);
   }
-  renderQuality.attach(entities,ACTORS);ready=true;fit();restore();$('loading').hidden=true;document.documentElement.dataset.ready='true';
+  renderQuality.attach(entities,ACTORS);ready=true;fit();restore();$('loading').hidden=true;document.documentElement.dataset.ready='true';markPageReady();
 }
 load().catch(e=>{$('loading').textContent=`模型没有加载成功：${e.message}`;console.error(e);});
 // A read-only diagnostic surface for the prototype's browser acceptance checks.
