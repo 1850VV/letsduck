@@ -1,0 +1,338 @@
+{
+  "tutorial": "hardware-v3",
+  "steps": [
+    {
+      "id": "prepare-intro"
+    },
+    {
+      "id": "prepare-boards"
+    },
+    {
+      "id": "prepare-battery"
+    },
+    {
+      "id": "prepare-servo"
+    },
+    {
+      "id": "prepare-usb"
+    },
+    {
+      "id": "prepare-app"
+    },
+    {
+      "id": "prepare-scan"
+    },
+    {
+      "id": "prepare-id"
+    },
+    {
+      "id": "prepare-all-ids"
+    },
+    {
+      "id": "r-prepare"
+    },
+    {
+      "id": "r-horn"
+    },
+    {
+      "id": "r-plug"
+    },
+    {
+      "id": "r-shank"
+    },
+    {
+      "id": "r-foot"
+    },
+    {
+      "id": "r-small-bearing"
+    },
+    {
+      "id": "r-axle"
+    },
+    {
+      "id": "r-tighten"
+    },
+    {
+      "id": "r-ankle-done"
+    },
+    {
+      "id": "l-prepare"
+    },
+    {
+      "id": "l-horn"
+    },
+    {
+      "id": "l-plug"
+    },
+    {
+      "id": "l-shank"
+    },
+    {
+      "id": "l-foot"
+    },
+    {
+      "id": "l-small-bearing"
+    },
+    {
+      "id": "l-axle"
+    },
+    {
+      "id": "l-tighten"
+    },
+    {
+      "id": "l-ankle-done"
+    },
+    {
+      "id": "r-pair"
+    },
+    {
+      "id": "r-support"
+    },
+    {
+      "id": "r-bearing"
+    },
+    {
+      "id": "r-join"
+    },
+    {
+      "id": "r-wire-a"
+    },
+    {
+      "id": "r-wire-b"
+    },
+    {
+      "id": "r-leg-done"
+    },
+    {
+      "id": "l-pair"
+    },
+    {
+      "id": "l-support"
+    },
+    {
+      "id": "l-bearing"
+    },
+    {
+      "id": "l-join"
+    },
+    {
+      "id": "l-wire-a"
+    },
+    {
+      "id": "l-wire-b"
+    },
+    {
+      "id": "l-leg-done"
+    },
+    {
+      "id": "r-top-horn"
+    },
+    {
+      "id": "l-top-horn"
+    },
+    {
+      "id": "r-top-bearing"
+    },
+    {
+      "id": "r-top-link"
+    },
+    {
+      "id": "l-top-bearing"
+    },
+    {
+      "id": "l-top-link"
+    },
+    {
+      "id": "r-sole"
+    },
+    {
+      "id": "l-sole"
+    },
+    {
+      "id": "legs-complete"
+    },
+    {
+      "id": "t-pair"
+    },
+    {
+      "id": "t-support"
+    },
+    {
+      "id": "t-wire"
+    },
+    {
+      "id": "t-backplate-front"
+    },
+    {
+      "id": "t-backplate-back"
+    },
+    {
+      "id": "t-yaw-r"
+    },
+    {
+      "id": "t-yaw-l"
+    },
+    {
+      "id": "t-roll-pair"
+    },
+    {
+      "id": "t-roll-horns"
+    },
+    {
+      "id": "t-motor-r"
+    },
+    {
+      "id": "t-cover-r"
+    },
+    {
+      "id": "t-bearing-r"
+    },
+    {
+      "id": "t-join-r"
+    },
+    {
+      "id": "t-motor-l"
+    },
+    {
+      "id": "t-cover-l"
+    },
+    {
+      "id": "t-bearing-l"
+    },
+    {
+      "id": "t-join-l"
+    },
+    {
+      "id": "t-complete"
+    },
+    {
+      "id": "head-yaw-motor"
+    },
+    {
+      "id": "head-yaw-wire"
+    },
+    {
+      "id": "head-bearings"
+    },
+    {
+      "id": "head-roll-motor"
+    },
+    {
+      "id": "head-core-join"
+    },
+    {
+      "id": "head-core-horn-wire"
+    },
+    {
+      "id": "head-platform"
+    },
+    {
+      "id": "head-mouth-prepare"
+    },
+    {
+      "id": "head-mouth-horn-wire"
+    },
+    {
+      "id": "head-mouth-jaw"
+    },
+    {
+      "id": "head-servo-support"
+    },
+    {
+      "id": "head-platform-fix"
+    },
+    {
+      "id": "head-mouth-check"
+    },
+    {
+      "id": "head-neck-pair"
+    },
+    {
+      "id": "head-neck-plate"
+    },
+    {
+      "id": "head-neck-join"
+    },
+    {
+      "id": "head-neck-fix"
+    },
+    {
+      "id": "head-neck-wire"
+    },
+    {
+      "id": "head-shell"
+    },
+    {
+      "id": "head-shell-fix"
+    },
+    {
+      "id": "head-eyes"
+    },
+    {
+      "id": "head-lower-tape"
+    },
+    {
+      "id": "head-lower-pad"
+    },
+    {
+      "id": "head-upper-tape"
+    },
+    {
+      "id": "head-upper-pad-check"
+    },
+    {
+      "id": "final-battery"
+    },
+    {
+      "id": "final-tray"
+    },
+    {
+      "id": "final-body-shells"
+    },
+    {
+      "id": "final-head-join"
+    },
+    {
+      "id": "final-board-mate"
+    },
+    {
+      "id": "final-board-mount"
+    },
+    {
+      "id": "final-power"
+    },
+    {
+      "id": "final-buses"
+    },
+    {
+      "id": "final-thigh-first"
+    },
+    {
+      "id": "final-route"
+    },
+    {
+      "id": "final-thigh-second"
+    },
+    {
+      "id": "calibration-power"
+    },
+    {
+      "id": "calibration-start"
+    },
+    {
+      "id": "calibration-servos"
+    },
+    {
+      "id": "calibration-pose"
+    },
+    {
+      "id": "calibration-exit"
+    },
+    {
+      "id": "calibration-default"
+    },
+    {
+      "id": "robot-complete"
+    }
+  ]
+}

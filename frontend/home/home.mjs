@@ -1,3 +1,4 @@
+import {assemblySummary,refreshData} from './data.mjs';
 // Personal home and studio share one draft. Restore the saved API fallback before the first render.
 import { applyBrand } from '../shared/brand.mjs';
 import {ensurePersonalDraft,PERSONAL_KEY} from '../shared/personal-state.mjs';
@@ -147,14 +148,14 @@ function render() {
     return;
   }
   go.href = './assemble/';go.removeAttribute('aria-disabled');
-  go.innerHTML = esc(t(draft ? 'home.buildWith' : 'home.buildGo')) + arrow;
+  go.innerHTML = esc(assemblySummary()||t(draft ? 'home.buildWith' : 'home.buildGo')) + arrow;
   $('#build-context').innerHTML = draft
     ? `<span class="sw">${dots(draft.colors)}</span><span class="grow">${t('home.withColors', { name })}<small>${esc(t('home.withColorsSub'))}</small></span>`
     : `<span class="icon" aria-hidden="true">🦆</span><span class="grow">${esc(t('home.blank'))}<small>${esc(t('home.blankSub'))}</small></span>`;
 }
-function load() {draft = readDraftSlots();fresh = pageActive()&&freshness(draft);render();}
+function load() {refreshData();draft = readDraftSlots();fresh = pageActive()&&freshness(draft);render();}
 onLocale(render);
-addEventListener('storage',event=>{if(event.key===PERSONAL_KEY||event.key===null)load();});
+addEventListener('storage',event=>{if(event.key===PERSONAL_KEY||event.key===null||event.key?.startsWith('dd-assembly-'))load();});
 // Coming back with the browser's back button shows the draft as the studio left it.
 addEventListener('pageshow', (e) => {if (e.persisted) load();});
 load();

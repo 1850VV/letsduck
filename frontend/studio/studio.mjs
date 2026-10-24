@@ -1,3 +1,6 @@
+import {createEditGuard} from '../shared/edit-guard.mjs';
+import {copyProgress} from '../shared/backup-adapter.mjs';
+import {createSaveStatus} from '../shared/save-status.mjs';
 import {hoverQueue} from '../shared/hover-queue.mjs';
 import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 涂装台: one stage, three steps (style → refine → showcase), plus schemes, A/B compare, group replace, close-up, arrange, colour finder, plates check,
@@ -82,9 +85,11 @@ const dirty = () => {
 };
 // `updated` changes only when the draft itself does, so the personal home page can say when it was last edited.
 let draftUpdated = saved.draft?.updated || 0,draftShape = JSON.stringify([design, name, activeId]);
+const editGuard=personal?createEditGuard(localStorage):null;
 function persist() {
+  if(personal&&!editGuard.current()){toast(_message('data.changed'));return false;}
   const shape = JSON.stringify([design, name, activeId]);if (shape !== draftShape) {draftShape = shape;draftUpdated = Date.now();}
-  try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, ...(personal?{draftId}:{}), voiceSalt, updated: draftUpdated }, ...(!personal ? {schemes, owner} : {}), recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}
+  try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, ...(personal?{draftId}:{}), voiceSalt, updated: draftUpdated }, ...(!personal ? {schemes, owner} : {}), recent, locks: [...locks] }));editGuard?.accept();} catch {toast(_message("text.0048"));}
 }
 
 let step = 1,stepsDone = new Set(),slots = slotsFromDesign(products, design.assignments, themeSlots(products, THEMES[0])),recipe = '经典',slotLocks = {},openSlot = null,activeTheme = null,styleTab = 'themes',showTab = 'move';
@@ -118,8 +123,10 @@ $('#undo').onclick = () => {const h = undo.pop();if (!h) return;redo.push({ desi
 $('#redo').onclick = () => {const h = redo.pop();if (!h) return;undo.push({ design: clone(design), label: h.label });restore(h, _message("text.0056"));};
 
 // ---------- schemes (named saves, max 30, private). Signed in: kept on the server, this browser keeps a cache. ----------
-const schemeBody = (s) => ({ name: s.name, design: s.design, provenance: s.provenance, voiceSalt: s.voiceSalt || 0 });
+const schemeBody = (s) => ({ name: s.name, design: s.design, provenance: s.provenance, voiceSalt: s.voiceSalt || 0, ...(personal?{expectedRevision:s.revision??null}:{}) });
 async function personalWrite(method, id, body) {
+  if(!editGuard.current()){toast(_message('data.changed'));return null;}
+  if(method==='DELETE'&&body===undefined)body={expectedRevision:schemes.find(s=>s.id===id)?.revision??null};
   try {return await api(method, '/schemes/' + encodeURIComponent(id), body);}
   catch (error) {toast(_message('personal.saveFailed', {error: () => error.message}));return null;}
 }
@@ -139,16 +146,23 @@ async function syncSchemes() {
 const savedWhere = () => personal ? _t('personal.savedWhere') : account.user ? '' : _t("text.0061");
 const newId = () => 's-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const when = (value) => {const minutes = Math.round((Date.now() - value) / 60000);return minutes < 1 ? _t('text.0062') : minutes < 60 ? relativeTime(-minutes, 'minute') : minutes < 1440 ? relativeTime(-Math.round(minutes / 60), 'hour') : relativeTime(-Math.round(minutes / 1440), 'day');};
+const sharedSaveStatus=createSaveStatus(detail=>window.dispatchEvent(new CustomEvent('duck:save-status',{detail})));
 let savingScheme = false;
 async function saveScheme(asNew) {
   if (personal) {
+    if(!editGuard.current()){toast(_message('data.changed'));return false;}
     if (savingScheme) return false;
     const old = !asNew && schemes.find(s => s.id === activeId);
     if (!old && schemes.length >= 30) {toast(_message('text.0066'));return false;}
     const candidate = {id: old ? old.id : newId(), name: asNew && activeId ? _t('text.0067', {v0:name}) : name,
-      design: clone(design), provenance, voiceSalt};
+      design: clone(design), provenance, voiceSalt, revision:old?.revision};
     savingScheme = true;$('#scheme-state').textContent = _t('personal.saving');
-    const result = await personalWrite('PUT', candidate.id, schemeBody(candidate));
+    let result;try{result=await sharedSaveStatus.save(candidate,async c=>{
+      // Copy before the database write. If metadata/storage fails, the original identity stays authoritative.
+      if(!old){const {steps}=await fetch('/shared/backup-steps.json').then(r=>{if(!r.ok)throw Error('backup.tutorial');return r.json();});copyProgress(localStorage,steps,activeId?'scheme:'+activeId:'draft:'+draftId,'scheme:'+c.id);}
+      if(!editGuard.current())throw Error(_t('data.changed'));
+      return api('PUT','/schemes/'+encodeURIComponent(c.id),schemeBody(c));
+    });}catch(error){toast(_message('personal.saveFailed',{error:()=>error.message}));}
     savingScheme = false;
     if (!result) {renderHeader();return false;}
     if (old) Object.assign(old, result);else schemes.unshift(result);
@@ -186,7 +200,7 @@ $('#scheme-menu').addEventListener('click', async (e) => {
   const del = t.closest('[data-delete]');if (del) {const at = schemes.findIndex((s) => s.id === del.dataset.delete),s = schemes[at],wasActive = activeId === s.id;
     if (personal && !await personalWrite('DELETE', s.id)) return;
     schemes = schemes.filter((x) => x !== s);if (wasActive) activeId = null;if (compareId === s.id) compareId = 'original';persist();if (!personal) dropScheme(s.id);renderAll();
-    return toast(_message("text.0094", { v0: s.name }), async () => {if (personal && !await personalWrite('PUT', s.id, schemeBody(s))) return;schemes.splice(at, 0, s);if (wasActive) activeId = s.id;persist();if (!personal) pushScheme(s);renderAll();toast(_message("text.0095", { v0: ()=>s.name }));});}
+    return toast(_message("text.0094", { v0: s.name }), async () => {if (personal) {const restored=await personalWrite('PUT', s.id, {...schemeBody(s),expectedRevision:null});if(!restored)return;Object.assign(s,restored);}schemes.splice(at, 0, s);if (wasActive) activeId = s.id;persist();if (!personal) pushScheme(s);renderAll();toast(_message("text.0095", { v0: ()=>s.name }));});}
   const cf = t.closest('[data-confirm]');if (cf) {const id = pendingOpen;if (cf.dataset.confirm === 'cancel') {pendingOpen = null;return renderMenu();}if (cf.dataset.confirm === 'save' && !await saveScheme(false)) return;return openScheme(id);}
   const op = t.closest('[data-open]');if (op) {const id = op.dataset.open;if (id === activeId || id === 'original' && !activeId && !dirty()) return;if (dirty()) {pendingOpen = id;return renderMenu();}return openScheme(id);}
 });
@@ -885,8 +899,12 @@ _onLocale(() => {
 
 // A retained studio keeps its selection, undo stack and GPU scene when another page is visible.
 onPageActivity(async(active,{href}={})=>{
-  if(active&&href){const hash=new URL(href,location.origin).hash;if(hash){await acceptHash(hash);renderAll(true);}}
+  if(active&&href){const hash=new URL(href,location.origin).hash;if(hash==='#save'){menuOpen=true;renderMenu();$('#sm-name')?.focus();}else if(hash){await acceptHash(hash);renderAll(true);}}
   view.setActive(active);actions.setActive(active);
 });
 // Finish the initial card thumbnails before advertising the cached page as prepared.
 (function prepared(){if([...document.querySelectorAll('[data-thumb]')].some(img=>!img.src))requestAnimationFrame(prepared);else markPageReady();})();
+
+// C/D uses the same named-save entry point and observes duck:save-status.
+window.requestSchemeSave=()=>{menuOpen=true;renderMenu();$('#sm-name')?.focus();};
+if(location.hash==='#save')window.requestSchemeSave();

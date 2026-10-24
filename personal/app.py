@@ -136,12 +136,24 @@ class Handler(SimpleHTTPRequestHandler):
             return {'publicUrl': '', 'edition': 'personal', 'assembly': assembly_ready()}
         if method == 'GET' and path == '/api/catalog':
             return self.need_exporter('耗材色表未加载', 'validation.29').CATALOG
+        if method == 'POST' and path == '/api/backup/export':
+            return self.store.export_backup(self.read_json())
+        if method == 'POST' and path == '/api/backup/preview':
+            return self.store.preview_backup(self.read_json())
+        if method == 'POST' and path == '/api/backup/import':
+            body = self.read_json()
+            return self.store.import_backup(body.get('bundle'), body.get('mode'), body.get('revision'), body.get('operation'))
+        if method == 'POST' and path == '/api/backup/recovery':
+            body = self.read_json()
+            return self.store.recovery_backup(body.get('recovery'), body.get('browser'))
+        if method == 'POST' and path == '/api/backup/restore':
+            return self.store.restore_backup(self.read_json().get('recovery'))
         if method == 'GET' and path == '/api/schemes':
             return self.store.schemes()
         if method == 'PUT' and scheme:
             return self.store.save_scheme(scheme.group(1), self.read_json())
         if method == 'DELETE' and scheme:
-            self.store.delete_scheme(scheme.group(1))
+            self.store.delete_scheme(scheme.group(1), self.read_json().get('expectedRevision') if self.headers.get('Content-Length') else None)
             return {'ok': True}
         if method == 'POST' and path == '/api/plan':
             return self.need_exporter().plan(self.read_json())
