@@ -28,7 +28,7 @@ Ruling: exact tutorial step IDs are validated against a small generated metadata
 | --- | --- |
 | Two independent databases, colors/counts, API roundtrip, keep both, overwrite, durable recovery, invalid IDs/relations and injected SQLite transaction failure | 6 targeted Python tests passed; `output/playwright/e-data/python-tests-final.log` full suite below |
 | Whole Python suite | 84 tests, OK, 18 skipped because no configured MySQL test database. Initial shared venv run had 4 import errors for missing httpx2; rerun in this worktree's own locked-dependency venv passed. |
-| Whole Node suite | 80 tests: 77 passed, 3 skipped by existing environment guards; 0 failed. Targeted modules include max-confirmation compact journal, sparse writes, capacity failure before DB commit, concurrent progress, recovery API compensation, edit guard, migration and save states. |
+| Top-level Node checks (initial report; not complete assembly coverage) | 80 tests: 77 passed, 3 skipped by existing environment guards; 0 failed. Targeted modules include max-confirmation compact journal, sparse writes, capacity failure before DB commit, concurrent progress, recovery API compensation, edit guard, migration and save states. |
 | Publication audit | 311 files checked, zero findings. No binaries or test databases staged. |
 | Actual UI backup export/import | `browser-check.log`: real download, same-name keep-both and review-before-overwrite, scheme ID remap, resume + seen/built preserved, truncated and newer-version files rejected. Actual 35-part design used. |
 | Actual save + localization | `save-check.log`: home opens real save menu, injected PUT 500 retains edit, retry writes SQLite, all 12 locale switches and 390px horizontal-overflow checks pass. |
@@ -57,3 +57,9 @@ Local review artifact: `.ryugi/artifacts/artboard/e-data-verification/` (local a
 Screenshots/recording are local, ignored and uncommitted. This separate verification artifact respects the coordinator's exclusive ownership of the original shared artboard/registry.
 
 Final fix-pass regression: interrupted first-save progress migration removes partial destination records, retains source progress and keeps the draft identity; RED→GREEN.
+
+## Verification correction: assembly Node suite included
+
+The original 80-test Node result covered only `tests/*.mjs`. Calling that the whole Node suite was incomplete; it did not establish the required assembly regression result.
+
+Ran `node --test tests/*.mjs tests/assembly/*.mjs` on the delivered E branch: **257 tests, 254 passed, 3 skipped, 0 failed**, exit code 0. No production change was required. The original combined output is retained locally at `output/playwright/e-data/node-tests-with-assembly.log` (SHA-256 `b8783c78fb50f0dcb48806a38165b0abba41dcd7c0f6726fad10f2829b23f4e9`). The three skips remain the existing top-level environment guards; all 177 additional assembly tests passed. No browser or test service was started for this follow-up.
