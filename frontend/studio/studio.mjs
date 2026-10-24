@@ -12,7 +12,7 @@ import { createActionPlayer, ACTIONS, VOICES, describeVoice, seedFromText } from
 import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
 import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
-import {ensurePersonalDraft,validDraft,personalState} from '../shared/personal-state.mjs';
+import {ensurePersonalDraft,validDraft,personalState,newDraftId} from '../shared/personal-state.mjs';
 import { api } from '../shared/api.mjs';
 import { loadSite } from '../shared/edition.mjs';
 import {markPageReady,onPageActivity,isPersonalPage} from '../shared/personal-page.mjs';
@@ -70,7 +70,7 @@ const KEY = personal ? 'dd-studio-personal' : 'dd-studio',read = (k) => {try {re
 if(personal)await ensurePersonalDraft(localStorage,()=>api('GET','/schemes')).catch(()=>{});
 let saved = {};try {saved = personal?personalState(localStorage):JSON.parse(read(KEY)) || {};} catch {}
 if(personal&&!validDraft(saved.draft))delete saved.draft;
-let draftId=saved.draft?.draftId||crypto.randomUUID();
+let draftId=saved.draft?.draftId||newDraftId();
 let defaultName = !saved.draft?.name;
 let design = saved.draft?.design || clone(ORIGINAL),name = saved.draft?.name || _t("text.0047"),provenance = saved.draft?.provenance || null;
 let schemes = Array.isArray(saved.schemes) ? saved.schemes : [],owner = saved.owner || null,activeId = saved.draft?.activeId || null,recent = Array.isArray(saved.recent)?saved.recent:[],locks = new Set(Array.isArray(saved.locks)?saved.locks:[]),voiceSalt = saved.draft?.voiceSalt || 0;
@@ -84,7 +84,7 @@ const dirty = () => {
 let draftUpdated = saved.draft?.updated || 0,draftShape = JSON.stringify([design, name, activeId]);
 function persist() {
   const shape = JSON.stringify([design, name, activeId]);if (shape !== draftShape) {draftShape = shape;draftUpdated = Date.now();}
-  try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, draftId, voiceSalt, updated: draftUpdated }, ...(!personal ? {schemes, owner} : {}), recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}
+  try {localStorage.setItem(KEY, JSON.stringify({ draft: { design, name, provenance, activeId, ...(personal?{draftId}:{}), voiceSalt, updated: draftUpdated }, ...(!personal ? {schemes, owner} : {}), recent, locks: [...locks] }));} catch {toast(_message("text.0048"));}
 }
 
 let step = 1,stepsDone = new Set(),slots = slotsFromDesign(products, design.assignments, themeSlots(products, THEMES[0])),recipe = '经典',slotLocks = {},openSlot = null,activeTheme = null,styleTab = 'themes',showTab = 'move';
@@ -161,7 +161,7 @@ async function saveScheme(asNew) {
 }
 function openScheme(id) {
   const s = id === 'original' ? { get name() {return _t("text.0069");}, design: ORIGINAL, provenance: null } : schemes.find((s) => s.id === id);if (!s) return;
-  undo.push({ design: clone(design), get label() {return _t("text.0070");} });design = clone(s.design);name = id === 'original' ? _t("text.0047") : s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = id === 'original' ? null : id;if(id==='original')draftId=crypto.randomUUID();
+  undo.push({ design: clone(design), get label() {return _t("text.0070");} });design = clone(s.design);name = id === 'original' ? _t("text.0047") : s.name;provenance = s.provenance || null;voiceSalt = s.voiceSalt || 0;activeId = id === 'original' ? null : id;if(id==='original')draftId=newDraftId();
   slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);pendingOpen = null;menuOpen = false;persist();renderAll();toast(_message("text.0071", { v0: ()=>s.name }));
 }
 function renderMenu() {
@@ -827,7 +827,7 @@ async function importLook(text, src = '') {
   const raw = String(text).trim(),code = (raw.match(/#look=([^&\s]+)/) || [, raw])[1];
   const d = decodeLook(parts, products, code),[title, author, workId] = decodeURIComponent(src || '').split('|');
   await backupDraft();
-  design = { colors: d.colors, assignments: d.assignments };voiceSalt = 0;slots = slotsFromDesign(products, d.assignments, slots);name = _t("text.0351", { v0: d.name || title || _t("text.0352") });provenance = title ? { title, author: author || _t("text.0353"), ...(workId ? { workId } : {}) } : null;activeId = null;draftId=crypto.randomUUID();
+  design = { colors: d.colors, assignments: d.assignments };voiceSalt = 0;slots = slotsFromDesign(products, d.assignments, slots);name = _t("text.0351", { v0: d.name || title || _t("text.0352") });provenance = title ? { title, author: author || _t("text.0353"), ...(workId ? { workId } : {}) } : null;activeId = null;draftId=newDraftId();
   undo.length=0;redo.length=0;view.setColors(design.colors);stepsDone.add(1);persist();return d.name || title || _t("text.0354");
 }
 if (personal) {
@@ -857,7 +857,7 @@ if (hash === '#new') {
   if (dirty() && schemes.length >= 30) setTimeout(() => toast(_message("text.0066")), 300);
   else try {
     await backupDraft();
-    design = clone(ORIGINAL);name = _t("text.0047");provenance = null;voiceSalt = 0;activeId = null;draftId=crypto.randomUUID();
+    design = clone(ORIGINAL);name = _t("text.0047");provenance = null;voiceSalt = 0;activeId = null;draftId=newDraftId();
     slots = slotsFromDesign(products, design.assignments, slots);undo.length=0;redo.length=0;view.setColors(design.colors);stepsDone.clear();step = 1;persist();
   } catch (error) {toast(error.message);}
   history.replaceState(null, '', location.pathname);

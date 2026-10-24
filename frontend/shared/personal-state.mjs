@@ -1,6 +1,8 @@
 // Shared startup for independently loaded personal pages. Only reads the API;
 // never turns a browser fallback into a write to a user's named scheme.
 export const PERSONAL_KEY='dd-studio-personal';
+// Local identity only, not an authentication token; HTTP origins may lack randomUUID.
+export const newDraftId=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 const record=value=>value&&typeof value==='object'&&!Array.isArray(value);
 export function validDraft(draft){
  return record(draft)&&typeof draft.name==='string'&&record(draft.design)&&record(draft.design.colors)
@@ -15,7 +17,7 @@ export async function ensurePersonalDraft(storage,loadSchemes){
  if(validDraft(existing.draft)){
   // Give legacy unsaved drafts an identity before either the guide or studio opens.
   if(!existing.draft.activeId&&!existing.draft.draftId){
-   try{storage.setItem(PERSONAL_KEY,JSON.stringify({...existing,draft:{...existing.draft,draftId:crypto.randomUUID()}}));}catch{}
+   try{storage.setItem(PERSONAL_KEY,JSON.stringify({...existing,draft:{...existing.draft,draftId:newDraftId()}}));}catch{}
   }
   return;
  }

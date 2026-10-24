@@ -35,3 +35,8 @@ test('unsaved designs have stable distinct scopes; named schemes retain identity
  assert.equal(typeof progress.progressScope,'function');const a={draftId:'draft-a',design:scheme.design,name:'a'},b={...a,draftId:'draft-b',design:{...scheme.design,colors:{'P4-01':'#654321'}}};
  assert.equal(progress.progressScope(a),progress.progressScope(structuredClone(a)));assert.equal(progress.progressScope(a),progress.progressScope({...a,design:b.design}));assert.notEqual(progress.progressScope(a),progress.progressScope(b));assert.equal(progress.progressScope({...a,activeId:'one'}),progress.progressScope({...b,activeId:'one'}));
 });
+
+test('legacy draft identity also works when randomUUID is unavailable on HTTP origins',async()=>{
+ const storage=memory();storage.setItem('dd-studio-personal',JSON.stringify({draft:{...scheme,updated:0}}));
+ const descriptor=Object.getOwnPropertyDescriptor(globalThis,'crypto');try{Object.defineProperty(globalThis,'crypto',{value:{},configurable:true});await state.ensurePersonalDraft(storage,async()=>[]);assert.equal(typeof JSON.parse(storage.getItem('dd-studio-personal')).draft.draftId,'string');}finally{if(descriptor)Object.defineProperty(globalThis,'crypto',descriptor);else delete globalThis.crypto;}
+});
