@@ -43,12 +43,17 @@ export function decodePositions(buffer,decoder,model) {
 }
 export function creased(positions, indices) {
   const n = positions.length / 3, T = indices.length / 3, mul = (1 + 1e-10) * 1e2;
-  const weld = new Int32Array(n), seen = new Map();
+  // Weld vertices that share a 0.01 mm grid cell: an integer hash table, since a string key per vertex was most of the load time.
+  const weld = new Int32Array(n), cells = new Int32Array(n * 3), mask = (1 << 32 - Math.clz32(n * 2)) - 1, slots = new Int32Array(mask + 1).fill(-1);
+  let W = 0;
   for (let i = 0; i < n; i++) {
-    const key = `${~~(positions[i * 3] * mul)},${~~(positions[i * 3 + 1] * mul)},${~~(positions[i * 3 + 2] * mul)}`;
-    let id = seen.get(key); if (id === undefined) seen.set(key, id = seen.size); weld[i] = id;
+    const x = ~~(positions[i * 3] * mul), y = ~~(positions[i * 3 + 1] * mul), z = ~~(positions[i * 3 + 2] * mul);
+    let h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(z, 83492791)) & mask, id;
+    while ((id = slots[h]) >= 0 && (cells[id * 3] !== x || cells[id * 3 + 1] !== y || cells[id * 3 + 2] !== z)) h = h + 1 & mask;
+    if (id < 0) {id = slots[h] = W++; cells[id * 3] = x; cells[id * 3 + 1] = y; cells[id * 3 + 2] = z;}
+    weld[i] = id;
   }
-  const W = seen.size, fn = new Float32Array(T * 3), count = new Int32Array(W + 1);
+  const fn = new Float32Array(T * 3), count = new Int32Array(W + 1);
   for (let t = 0; t < T; t++) {
     const a = indices[t * 3] * 3, b = indices[t * 3 + 1] * 3, c = indices[t * 3 + 2] * 3;
     const ux = positions[c] - positions[b], uy = positions[c + 1] - positions[b + 1], uz = positions[c + 2] - positions[b + 2];
