@@ -11,7 +11,9 @@ export function createProgressStore(storage,steps,tutorial){
  // Ordered IDs isolate revised/reordered tutorials; bump tutorial for semantic changes with unchanged IDs.
  const prefix='dd-assembly-view:'+JSON.stringify([1,tutorial,steps.map(s=>s.id)])+':';
  const key=scope=>prefix+scope;
- const checksPrefix=scope=>'dd-assembly-check:'+JSON.stringify([1,tutorial,steps.map(s=>s.id),scope])+':';
+ // Confirmations follow semantic step IDs within a tutorial version, rather
+ // than duplicating the full ordered tutorial in every field's storage key.
+ const checksPrefix=scope=>'dd-assembly-check:'+JSON.stringify([1,tutorial,scope])+':';
  const checkKey=(scope,id,kind)=>checksPrefix(scope)+JSON.stringify([id,kind]);
  const valid=value=>Number.isInteger(value?.step)&&value.step>=0&&value.step<steps.length
   &&Number.isFinite(value.progress)&&value.progress>=0&&value.progress<=1;

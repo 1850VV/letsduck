@@ -38,3 +38,15 @@ test('unavailable storage reports failure without claiming a confirmation',()=>{
  assert.equal(store.setCheck('a','plug','built',true),false);
  assert.deepEqual(store.readChecks('a'),{seen:[],built:[]});
 });
+test('all 30 supported schemes can retain 111 two-field confirmations within a 5 MiB store',()=>{
+ const values=new Map(),steps=Array.from({length:111},(_,i)=>({id:'assembly-step-'+i}));let bytes=0;
+ const storage={getItem:key=>values.get(key)??null,setItem(key,value){
+  const next=bytes+2*(key.length+value.length)-(values.has(key)?2*(key.length+values.get(key).length):0);
+  if(next>5*1024*1024)throw Error('quota');values.set(key,value);bytes=next;
+ }};
+ const store=createProgressStore(storage,steps,'hardware-v3');
+ for(let scheme=0;scheme<30;scheme++)for(const {id}of steps)for(const kind of ['seen','built']){
+  assert.equal(store.setCheck('scheme:'+scheme,id,kind,true),true,'supported scheme confirmation must fit');
+ }
+ assert.equal(store.readChecks('scheme:29').built.length,111);
+});
