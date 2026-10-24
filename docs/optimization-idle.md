@@ -54,4 +54,6 @@ Pillow compared `clean-before-current.png` / `clean-after-current.png` and the u
 - `python3 scripts/publication_audit.py`: no findings, including newly staged code/tests. `git diff --check` and syntax checks passed.
 - Browser console includes existing hidden paint preload 404s for missing `geometry.positions.bin` / `geometry.pack.bin`. Assembly assets loaded. Packed asset delivery is assigned to a separate task; this change does not synthesize or publish those assets.
 
-GitHub CLI authentication was invalid; the authenticated connected GitHub plugin is the PR fallback. Git push uses native git. No merge/deploy is authorized here. PR and final evidence/cleanup receipt are recorded in the delivery chat. Only the task-owned managed browser session and test server are closed; other applications are preserved.
+GitHub CLI authentication initially failed; a later `gh auth status` succeeded, so native `git push` and authenticated `gh pr create` completed the delivery. Draft PR: https://github.com/1850VV/letsduck/pull/12, targeting `codex/personal-navigation`. No merge/deploy is authorized here.
+
+Cleanup receipt: task session `opt-idle-1024` closed successfully. Its daemon PID 63566, browser PID 63576 and test server PID 63438 exited; port 8902 has no listener. The task benchmark lock was released after verifying its owner. Other browsers and the production service were preserved. The final full commit SHA is recorded in the delivery chat (this document identifies the implementation SHA independently).
