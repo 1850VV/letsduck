@@ -2387,6 +2387,8 @@ export default {
     "观看 {seen}/{total} · 实物 {built}/{total}": "觀看 {seen}/{total} · 實體 {built}/{total}",
     "{chapter} · {local} / {total}": "{chapter} · {local} / {total}",
     "{chapter} · 完成": "{chapter} · 完成",
-    "{local}  {short}": "{local} {short}"
+    "{local}  {short}": "{local} {short}",
+    "红框": "紅框",
+    "绿框": "綠框"
   }
 };

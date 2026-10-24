@@ -40,3 +40,16 @@ test('complete corpora reject missing fields, changed identifiers and Chinese fa
  const result=await auditAssemblyLocales();assert.deepEqual(result.sourceDrift,[]);
  for(const row of result.reports)assert.deepEqual(row.errors,[],row.locale);
 });
+test('real locale data covers every focus action and retains technical warnings',async()=>{
+ const {loadAssemblyLocale,localizeFocus}=await import('../frontend/assemble/assembly-i18n.mjs');
+ for(const locale of ['zh-Hans','zh-Hant','en','ja','ko','fr','de','es','pt-BR','ru','ar','hi']){
+  const copy=await loadAssemblyLocale(locale);
+  for(const status of ['拧入中','已紧固','预拧中','预拧到位','正在取下','已取下','插接中','已接合','整理中','余量已留好','压入中','已就位','模型配合待核']){
+   for(const detailTitle of ['螺丝放大','舵盘放大','轴承放大','踝轴放大','线端放大','接头放大']){
+    const output=localizeFocus({detailTitle,detailStatus:'1/4 · '+status,message:'红框 · '+status,detailPhase:'pending'},copy);
+    assert.ok(output.detailTitle&&output.detailStatus.includes('1/4'));assert.equal(output.detailPhase,'pending');
+    if(!['zh-Hans','zh-Hant','ja'].includes(locale))assert.equal(/[\u3400-\u9fff]/u.test(output.message+output.detailTitle+output.detailStatus),false,locale);
+   }
+  }
+ }
+});

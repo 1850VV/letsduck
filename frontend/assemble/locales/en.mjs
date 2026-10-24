@@ -202,7 +202,7 @@ export default {
       "short": "Fixed thigh support",
       "title": "Fixed double eyelet thigh support",
       "text": "Fit the white double round hole support to the pair of servo, align the four fixed positions, and screw in the four M2×6 as shown in the video.",
-      "check": "Check hole by hole and then fix. The hole position and installation coordination are still prototype indications.",
+      "check": "Check hole by hole and then fix. The hole position and installation fit are still prototype indications.",
       "caption": "M2×6 ×4 · Fixed support"
     },
     "r-bearing": {
@@ -251,7 +251,7 @@ export default {
       "short": "Fixed thigh support",
       "title": "Fixed double eyelet thigh support",
       "text": "Fit the white double round hole support to the pair of servo, align the four fixed positions, and screw in the four M2×6 as shown in the video.",
-      "check": "Check hole by hole and then fix. The hole position and installation coordination are still prototype indications.",
+      "check": "Check hole by hole and then fix. The hole position and installation fit are still prototype indications.",
       "caption": "M2×6 ×4 · Fixed support"
     },
     "l-bearing": {
@@ -356,7 +356,7 @@ export default {
       "short": "Arrange double servo",
       "title": "Arrange numbered ID20 and ID10",
       "text": "Arrange two centered servo according to the desktop perspective of the source video: ID20 on the left side of the screen and ID10 on the right side. Keep them original servo horn.",
-      "check": "The left and right of the screen does not directly equal the left and right of the robot. The grid is placed according to the existing coordinates of the whole machine, and the installation coordination is pending physical verification.",
+      "check": "The left and right of the screen does not directly equal the left and right of the robot. The grid is placed according to the existing coordinates of the whole machine, and the installation fit is pending physical verification.",
       "caption": "Screen left 20 · Screen right 10"
     },
     "t-support": {
@@ -433,7 +433,7 @@ export default {
       "short": "Press the right large bearing",
       "title": "Before attaching the legs, press into the right interface size bearing",
       "text": "Press the screen after 11:18, press the new 16×22×4 mm large bearing axially into the upper connector of the independent right leg, and then prepare to connect to the body.",
-      "check": "This is not the upper end bearing already installed in the leg module. This step only presses the new bearing, and the right leg is still in the ready position; coaxial cooperation is a signal.",
+      "check": "This is not the upper end bearing already installed in the leg module. This step only presses the new bearing, and the right leg is still in the ready position; coaxial fit is a signal.",
       "caption": "First press bearing · The intact leg will not move for the time being."
     },
     "t-join-r": {
@@ -559,7 +559,7 @@ export default {
       "short": "Fixed chin output side",
       "title": "Four holes on the output side of the fixed chin",
       "text": "According to the instructions of the second four M2×6 on the original piece, fix it from the outside of the driving side of the chin. The four-hole axis of the P2-01 source mesh is used here.",
-      "check": "The installed screws then open and close together with the chin. The source mesh hole axis can be verified, but the physical specifications and coordination still need to be verified.",
+      "check": "The installed screws then open and close together with the chin. The source mesh hole axis can be verified, but the physical specifications and fit still need to be verified.",
       "caption": "Chin output side · M2×6 ×4"
     },
     "head-mouth-check": {
@@ -664,7 +664,7 @@ export default {
       "short": "Install battery compartment",
       "title": "Secure the battery compartment containing the battery to the body",
       "text": "Align the battery and battery compartment as an assembly to the back of the body, and fix it with 4 M2×6 countersunk head and flat tail self-tapping screws as shown in the video.",
-      "check": "Align first and then fix, keeping the power cord out; the screw position and coordination are teaching instructions, and you must check the actual object hole by hole.",
+      "check": "Align first and then fix, keeping the power cord out; the screw position and fit are teaching instructions, and you must check the actual object hole by hole.",
       "caption": "The components are in place as a whole · M2×6 ×4"
     },
     "final-body-shells": {
@@ -692,7 +692,7 @@ export default {
       "short": "fixed controller",
       "title": "Fix the inserted two-plate assembly to the body",
       "text": "Keeping the two boards mated, move the controller assembly to the back of your body. The source video is marked 4 and M3×16; this model only demonstrates insertion in two near-coaxial holes, and the other two are reserved for verification.",
-      "check": "The original piece has 4 pieces; the 2 holes of this model are nearly coaxial, and the 2 holes are approximately 1.27mm misaligned. The completed state of passing through the two plates is not shown yet. The source plate shape, hole position, PCB thickness and pin row pitch have not been stretched or patched; the body support and physical coordination need to be verified.",
+      "check": "The original piece has 4 pieces; the 2 holes of this model are nearly coaxial, and the 2 holes are approximately 1.27mm misaligned. The completed state of passing through the two plates is not shown yet. The source plate shape, hole position, PCB thickness and pin row pitch have not been stretched or patched; the body support and physical fit need to be verified.",
       "caption": "Original film M3×16 ×4 · Demonstrates 2 holes, and the other 2 holes are to be verified"
     },
     "final-power": {
@@ -880,7 +880,7 @@ export default {
     },
     "horn": {
       "label": "servo horn removed from the right",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "hornScrew": {
       "label": "Right servo horn central original screw",
@@ -952,7 +952,7 @@ export default {
     },
     "l_horn": {
       "label": "servo horn removed from the left",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "l_hornScrew": {
       "label": "Left servo horn center original screw",
@@ -1007,7 +1007,7 @@ export default {
     },
     "r_support": {
       "label": "Right thigh support · P5-04",
-      "source": "Real 3MF grid · Coordination to be verified"
+      "source": "Real 3MF grid · fit to be verified"
     },
     "r_lowerBearing": {
       "label": "Right big bearing · 16×22×4",
@@ -1055,7 +1055,7 @@ export default {
     },
     "r_upperHorn": {
       "label": "Original servo horn on the upper right",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "r_upperHornScrew": {
       "label": "Original central screw on the upper right side",
@@ -1063,7 +1063,7 @@ export default {
     },
     "r_topLink": {
       "label": "Upper right connector · P3-04",
-      "source": "Real 3MF grid · Coordination to be verified"
+      "source": "Real 3MF grid · fit to be verified"
     },
     "r_topBearing": {
       "label": "Right connector large bearing",
@@ -1091,7 +1091,7 @@ export default {
     },
     "r_sole": {
       "label": "Right foot sole cushion · P1-03",
-      "source": "Real 3MF grid · Coordination to be verified"
+      "source": "Real 3MF grid · fit to be verified"
     },
     "r_soleScrew0": {
       "label": "Right fixing screw 1 · M2×6",
@@ -1133,7 +1133,7 @@ export default {
     },
     "l_support": {
       "label": "Left thigh support · P5-05",
-      "source": "Real 3MF grid · Coordination to be verified"
+      "source": "Real 3MF grid · fit to be verified"
     },
     "l_lowerBearing": {
       "label": "Zuo Dabearing · 16×22×4",
@@ -1181,7 +1181,7 @@ export default {
     },
     "l_upperHorn": {
       "label": "Original servo horn on the upper left",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "l_upperHornScrew": {
       "label": "Original central screw on the upper left side",
@@ -1189,7 +1189,7 @@ export default {
     },
     "l_topLink": {
       "label": "Upper left connector · P3-05",
-      "source": "Real 3MF grid · Coordination to be verified"
+      "source": "Real 3MF grid · fit to be verified"
     },
     "l_topBearing": {
       "label": "Left connector large bearing",
@@ -1217,7 +1217,7 @@ export default {
     },
     "l_sole": {
       "label": "Left foot sole cushion · P1-04",
-      "source": "Real 3MF grid · Coordination to be verified"
+      "source": "Real 3MF grid · fit to be verified"
     },
     "l_soleScrew0": {
       "label": "Left fixing screw 1 · M2×6",
@@ -1255,7 +1255,7 @@ export default {
     },
     "t_motor10Horn": {
       "label": "ID10 original servo horn (reserved)",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "t_motor10HornScrew": {
       "label": "ID10 original central screw",
@@ -1267,7 +1267,7 @@ export default {
     },
     "t_motor20Horn": {
       "label": "ID20 original servo horn (reserved)",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "t_motor20HornScrew": {
       "label": "ID20 original central screw",
@@ -1275,7 +1275,7 @@ export default {
     },
     "t_support": {
       "label": "Hip Yaw Support · P6-09",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_supportScrew0": {
       "label": "Fixing screw 1 · M2×6",
@@ -1311,7 +1311,7 @@ export default {
     },
     "t_backplate": {
       "label": "Body back panel · P4-03",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_backFrontScrew0": {
       "label": "Fixing screw 1 · M2×6",
@@ -1331,11 +1331,11 @@ export default {
     },
     "t_yawR": {
       "label": "Right Yaw connector · P6-06",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_yawBearingR": {
       "label": "Right Yaw Large connector bearing · 16×22×4",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_yawScrewR0": {
       "label": "Right connecting piece fixing screw diagram · M2×6 · Side-by-side quantity to be verified",
@@ -1359,7 +1359,7 @@ export default {
     },
     "t_motor11Horn": {
       "label": "ID11 Original servo horn",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "t_motor11HornScrew": {
       "label": "ID11 original central fixing screw",
@@ -1379,7 +1379,7 @@ export default {
     },
     "t_coverR": {
       "label": "Right Roll servo cover · P6-02",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_coverScrewR0": {
       "label": "Fixing screw 1 · M2×6",
@@ -1399,7 +1399,7 @@ export default {
     },
     "t_legBearingR": {
       "label": "The right leg interface is large bearing · 16×22×4",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_legScrewR0": {
       "label": "Fixing screw 1 · M2×6",
@@ -1419,11 +1419,11 @@ export default {
     },
     "t_yawL": {
       "label": "Left Yaw connector · P6-07",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_yawBearingL": {
       "label": "Left Yaw Large connector bearing · 16×22×4",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_yawScrewL0": {
       "label": "Instructions for fixing screws of the left connecting piece · M2×6 · Quantity by side to be verified",
@@ -1447,7 +1447,7 @@ export default {
     },
     "t_motor21Horn": {
       "label": "ID21 Original servo horn",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "t_motor21HornScrew": {
       "label": "ID21 original central fixing screw",
@@ -1467,7 +1467,7 @@ export default {
     },
     "t_coverL": {
       "label": "Left Roll servo cover · P6-03",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_coverScrewL0": {
       "label": "Fixing screw 1 · M2×6",
@@ -1487,7 +1487,7 @@ export default {
     },
     "t_legBearingL": {
       "label": "The left leg interface is large bearing · 16×22×4",
-      "source": "Real source mesh·Video corresponding candidate, hole position/coordination needs to be verified"
+      "source": "Real source mesh·Video corresponding candidate, hole position/fit needs to be verified"
     },
     "t_legScrewL0": {
       "label": "Fixing screw 1 · M2×6",
@@ -1507,7 +1507,7 @@ export default {
     },
     "h_pitchSupport": {
       "label": "First bracket · P6-01",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_motor32": {
       "label": "Head rotation servo · ID32 candidate",
@@ -1535,7 +1535,7 @@ export default {
     },
     "h_yawSupport": {
       "label": "Second opening bracket · P6-08",
-      "source": "Real print grid·Video correspondence and coordination are subject to verification; the source video comes with the second bracket/ID33 subassembly, and the physical coordination is subject to verification"
+      "source": "Real print grid·Video correspondence and fit are subject to verification; the source video comes with the second bracket/ID33 subassembly, and the physical fit is subject to verification"
     },
     "h_bearingFront": {
       "label": "Big head bearing former candidate · 16×22×4",
@@ -1547,7 +1547,7 @@ export default {
     },
     "h_bearingCrown": {
       "label": "First bracket large bearing · seat candidate",
-      "source": "Reuse head_yaw_1 complete annular grid; along the P6-01 source cylinder axis x=-0.01, z=40.99, the bottom surface falls on the approximately y=206.24 shoulder surface; axial seating surface candidates and physical coordination need to be verified"
+      "source": "Reuse head_yaw_1 complete annular grid; along the P6-01 source cylinder axis x=-0.01, z=40.99, the bottom surface falls on the approximately y=206.24 shoulder surface; axial seating surface candidates and physical fit need to be verified"
     },
     "h_motor33": {
       "label": "Head second servo · ID33 candidate",
@@ -1595,7 +1595,7 @@ export default {
     },
     "h_platform": {
       "label": "Head platform · P2-02",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_mouthMotor": {
       "label": "Mouth servo · Video 33 / Official 34, pending verification",
@@ -1603,11 +1603,11 @@ export default {
     },
     "h_jaw": {
       "label": "Chin · P2-01",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_servoSupport": {
       "label": "Head servo fixing piece · P4-02",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_supportScrew0": {
       "label": "M2×6 Fixing screw 1 · Hole location indication",
@@ -1659,7 +1659,7 @@ export default {
     },
     "h_neckA": {
       "label": "Neck connecting plate A · P3-02 candidate",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_neckAScrew0": {
       "label": "M2×6 Fixing screw 1 · Hole location indication",
@@ -1683,7 +1683,7 @@ export default {
     },
     "h_neckB": {
       "label": "Neck connecting plate B · P3-03 candidate",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_neckBScrew0": {
       "label": "M2×6 Fixing screw 1 · Hole location indication",
@@ -1747,7 +1747,7 @@ export default {
     },
     "h_shell": {
       "label": "Head cover · P4-01",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_shellScrew0": {
       "label": "M2×6 Fixing screw 1 · Hole location indication",
@@ -1761,19 +1761,19 @@ export default {
     },
     "h_eyeShell": {
       "label": "Eye circles · P2-06 candidate",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_eyes": {
       "label": "Eye gadgets · P3-01 candidate",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_upperPad": {
       "label": "Lip cushion · P1-02 candidate",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_lowerPad": {
       "label": "Lower mouth cushion · P1-01 candidate",
-      "source": "Real printout grid · Video correspondence and coordination to be verified"
+      "source": "Real printout grid · Video correspondence and fit to be verified"
     },
     "h_wire32": {
       "label": "ID32 reserved line · Endpoint indication",
@@ -1813,7 +1813,7 @@ export default {
     },
     "h_coreHorn": {
       "label": "Retained original servo horn",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "h_coreHornScrew": {
       "label": "Original central fixing screw · Specifications to be verified",
@@ -1821,7 +1821,7 @@ export default {
     },
     "h_mouthHorn": {
       "label": "Retained original servo horn",
-      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified"
+      "source": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified"
     },
     "h_mouthHornScrew": {
       "label": "Original central fixing screw · Specifications to be verified",
@@ -1837,94 +1837,94 @@ export default {
     },
     "f_batteryTray": {
       "label": "Battery compartment · P5-03",
-      "source": "Real source mesh · Mounting holes and coordination to be verified"
+      "source": "Real source mesh · Mounting holes and fit to be verified"
     },
     "f_sideR": {
       "label": "Body right shell · P5-06",
-      "source": "Real source mesh · Mounting holes and coordination to be verified"
+      "source": "Real source mesh · Mounting holes and fit to be verified"
     },
     "f_sideL": {
       "label": "Body left shell · P5-07",
-      "source": "Real source mesh · Mounting holes and coordination to be verified"
+      "source": "Real source mesh · Mounting holes and fit to be verified"
     },
     "f_thighR": {
       "label": "Thigh right shell · P5-01",
-      "source": "Real source mesh · Mounting holes and coordination to be verified"
+      "source": "Real source mesh · Mounting holes and fit to be verified"
     },
     "f_thighL": {
       "label": "Thigh left shell · P5-02",
-      "source": "Real source mesh · Mounting holes and coordination to be verified"
+      "source": "Real source mesh · Mounting holes and fit to be verified"
     },
     "f_battery": {
       "label": "Battery pack · Actual size to be verified",
       "source": "Follow the trunk_base_8 concept outline · Non-physical measurement"
     },
     "f_trayScrew0": {
-      "label": "M2×6 Set screw 1 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 1 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_trayScrew1": {
-      "label": "M2×6 Set screw 2 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 2 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_trayScrew2": {
-      "label": "M2×6 Set screw 3 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 3 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_trayScrew3": {
-      "label": "M2×6 Set screw 4 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 4 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_bodyScrew0": {
-      "label": "M2×6 Set screw 1 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 1 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_bodyScrew1": {
-      "label": "M2×6 Set screw 2 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 2 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_bodyScrew2": {
-      "label": "M2×6 Set screw 3 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 3 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_bodyScrew3": {
-      "label": "M2×6 Set screw 4 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 4 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_bodyScrew4": {
-      "label": "M2×6 Set screw 5 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 5 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewR0": {
-      "label": "M2×6 Set screw 1 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 1 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewR1": {
-      "label": "M2×6 Set screw 2 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 2 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewR2": {
-      "label": "M2×6 Set screw 3 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 3 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewR3": {
-      "label": "M2×6 Set screw 4 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 4 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewL0": {
-      "label": "M2×6 Set screw 1 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 1 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewL1": {
-      "label": "M2×6 Set screw 2 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 2 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewL2": {
-      "label": "M2×6 Set screw 3 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 3 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_neckScrewL3": {
-      "label": "M2×6 Set screw 4 · source mesh hole candidate",
+      "label": "M2×6 fixing screw 4 · source mesh hole candidate",
       "source": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified."
     },
     "f_boardScrew0": {
@@ -1944,19 +1944,19 @@ export default {
       "source": "Source GLB hole position comparison; 2 holes are nearly coaxial, and 2 holes are approximately 1.27mm misaligned; the holes are not modified or the physical fit is presumed"
     },
     "f_thighScrewR0": {
-      "label": "M2.3×4 Set screw 1 · source mesh hole candidate",
+      "label": "M2.3×4 fixing screw 1 · source mesh hole candidate",
       "source": "P5-01 source geometry.bin round hole fitting · The actual object and the specific hole use need to be verified"
     },
     "f_thighScrewR1": {
-      "label": "M2.3×4 Set screw 2 · source mesh hole candidate",
+      "label": "M2.3×4 fixing screw 2 · source mesh hole candidate",
       "source": "P5-01 source geometry.bin round hole fitting · The actual object and the specific hole use need to be verified"
     },
     "f_thighScrewL0": {
-      "label": "M2.3×4 Set screw 1 · source mesh hole candidate",
+      "label": "M2.3×4 fixing screw 1 · source mesh hole candidate",
       "source": "P5-02 source geometry.bin round hole fitting · The actual object and the specific hole use need to be verified"
     },
     "f_thighScrewL1": {
-      "label": "M2.3×4 Set screw 2 · source mesh hole candidate",
+      "label": "M2.3×4 fixing screw 2 · source mesh hole candidate",
       "source": "P5-02 source geometry.bin round hole fitting · The actual object and the specific hole use need to be verified"
     },
     "f_uno": {
@@ -2059,7 +2059,7 @@ export default {
     "脚掌固定螺丝 3 · M2×6": "Foot fixing screw 3 · M2×6",
     "脚掌固定螺丝 4 · M2×6": "Foot fixing screw 4 · M2×6",
     "踝轴固定螺丝 · M2.3×8": "Ankle shaft fixing screw · M2.3×8",
-    "新增教学示意 · 配合未核验": "Added teaching instructions · Cooperation has not been verified",
+    "新增教学示意 · 配合未核验": "Added teaching instructions · fit has not been verified",
     "拧入中": "Screwing in",
     "已紧固": "Tightened",
     "预拧中": "Pre-screwed",
@@ -2072,19 +2072,19 @@ export default {
     "余量已留好": "The balance has been reserved",
     "压入中": "Pressing in",
     "已就位": "Already in place",
-    "模型配合待核": "Model coordination to be verified",
-    "螺丝放大": "screw enlargement",
-    "舵盘放大": "servo horn enlarge",
+    "模型配合待核": "Fit not verified",
+    "螺丝放大": "Screw detail",
+    "舵盘放大": "Servo horn detail",
     "放大": "enlarge",
-    "线端放大": "Line end amplification",
-    "接头放大": "Connector amplification",
+    "线端放大": "Wire-end detail",
+    "接头放大": "Connector detail",
     "{value} · {value}": "{value} · {value}",
     "局部放大": "local magnification",
     "本步可手动开关；换步后，小部位自动开启，大部位默认关闭": "This step can be turned on and off manually; after changing steps, small parts will be automatically turned on, and large parts will be turned off by default.",
     "本步暂无需要放大的装配细节": "There are no assembly details that need to be enlarged in this step.",
     "局部放大 · ": "Partial zoom ·",
-    "开": "open",
-    "关": "close",
+    "开": "On",
+    "关": "Off",
     " · 剖视": "· Cross-section",
     "对准接口": "Align interface",
     "窗口": "window",
@@ -2115,7 +2115,7 @@ export default {
     "固定大腿支撑": "Fixed thigh support",
     "固定双圆孔大腿支撑": "Fixed double eyelet thigh support",
     "把白色双圆孔支撑贴合这对舵机，对齐四个固定位置，按视频拧入四颗 M2×6。": "Fit the white double round hole support to the pair of servo, align the four fixed positions, and screw in the four M2×6 as shown in the video.",
-    "逐孔核对后固定。孔位与安装配合仍是原型示意。": "Check hole by hole and then fix. The hole position and installation coordination are still prototype indications.",
+    "逐孔核对后固定。孔位与安装配合仍是原型示意。": "Check hole by hole and then fix. The hole position and installation fit are still prototype indications.",
     "M2×6 ×4 · 固定支撑": "M2×6 ×4 · Fixed support",
     "压入大轴承": "Press in the big bearing",
     "压入连接脚踝的大轴承": "Press into the large bearing that connects the ankle",
@@ -2187,7 +2187,7 @@ export default {
     "{value}{value}": "{value}{value}",
     "舵机": "servo",
     "小轴承": "Smallbearing",
-    "真实 3MF 网格 · 配合待核验": "Real 3MF grid · Coordination to be verified",
+    "真实 3MF 网格 · 配合待核验": "Real 3MF grid · fit to be verified",
     "现有硬件网格": "Existing hardware grid",
     "教学简模 · 孔位待核验": "Simple teaching model · Hole positions to be verified",
     "{value}固定螺丝 {value} · M2×6": "{value} fixing screw {value} · M2×6",
@@ -2259,11 +2259,11 @@ export default {
     "M3×16 固定螺丝 {value} · 孔位待核": "M3×16 Fixing screw {value} · Hole location to be verified",
     "源GLB孔位比较；2孔近共轴，另2孔约1.27mm错位；不修改孔或推定实物配合": "Source GLB hole position comparison; 2 holes are nearly coaxial, and 2 holes are approximately 1.27mm misaligned; the holes are not modified or the physical fit is presumed",
     "已确认 v2 舵机外观 · HD-1910-C001 / HD1910M；转轴按建模坐标适配，配合与针脚未实物验证": "Confirmed v2 servo appearance · HD-1910-C001 / HD1910M; the shaft is adapted according to the modeling coordinates, and the fit and pins have not been physically verified.",
-    "已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical coordination is still to be verified",
+    "已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核": "Confirmed v2 independent servo horn appearance · Disassembly according to steps; physical fit is still to be verified",
     "已确认 v2 三芯插头外观与三根黑线；线长、走线和针脚仍为未核验教学示意": "The appearance of the v2 three-core plug and three black wires have been confirmed; the wire length, wiring and pins are still unverified teaching instructions",
     "已确认 v2 指定规格螺丝外观 · 孔位用途、扭矩与实体配合未实物验证": "The appearance of the screws with specified specifications of v2 has been confirmed. The hole position, torque and physical fit have not been physically verified.",
     "保持两块板的插合关系，将控制器组件移到身体背部。原片标示 4 颗 M3×16；本模型只在两处近共轴孔演示插入，另两处保留待核。": "Keeping the two boards mated, move the controller assembly to the back of your body. The source video is marked 4 and M3×16; this model only demonstrates insertion in two near-coaxial holes, and the other two are reserved for verification.",
-    "原片4颗；本模型2孔近共轴，另2孔约1.27mm错位，暂不显示穿过两板的完成态。源板形、孔位、PCB厚度和排针节距均未拉伸或补孔；身体支撑与实体配合待核。": "The original piece has 4 pieces; the 2 holes of this model are nearly coaxial, and the 2 holes are approximately 1.27mm misaligned. The completed state of passing through the two plates is not shown yet. The source plate shape, hole position, PCB thickness and pin row pitch have not been stretched or patched; the body support and physical coordination need to be verified.",
+    "原片4颗；本模型2孔近共轴，另2孔约1.27mm错位，暂不显示穿过两板的完成态。源板形、孔位、PCB厚度和排针节距均未拉伸或补孔；身体支撑与实体配合待核。": "The original piece has 4 pieces; the 2 holes of this model are nearly coaxial, and the 2 holes are approximately 1.27mm misaligned. The completed state of passing through the two plates is not shown yet. The source plate shape, hole position, PCB thickness and pin row pitch have not been stretched or patched; the body support and physical fit need to be verified.",
     "原片 M3×16 ×4 · 演示2孔，另2孔待核": "Original film M3×16 ×4 · Demonstrates 2 holes, and the other 2 holes are to be verified",
     "采用已确认板卡模型；32针对齐与12.3mm建模间距已核对，孔位部分为照片估算。两处安装孔约1.27mm错位，实物插合、公差与电气针脚未验证。": "The confirmed board model is used; 32 pin alignment and 12.3mm modeling spacing have been checked, and the hole locations are estimated from photos. The two mounting holes are misaligned by about 1.27mm, and the physical insertion, tolerances and electrical pins have not been verified.",
     "采用已确认照片模型。四组32针按建模坐标对齐；PCB和接口未按总包络拉伸。板间净空、键位、电气映射和实物配合仍待核。": "Features confirmed photo model. The four sets of 32 pins are aligned according to the modeling coordinates; PCB and the interface are not stretched according to the total envelope. Board clearance, key locations, electrical mapping and physical fit are still to be verified.",
@@ -2333,7 +2333,7 @@ export default {
     "开始组装": "Start assembling",
     "下一步 →": "Next →",
     "从头再看": "Look at it from the beginning",
-    "v4.1 走线复核版 · 新插头与部分3MF支架/外壳有几何干涉，红框部位配合待核。": "v4.1 wiring review version · The new plug has geometric interference with some 3MF brackets/casings, and the coordination of the red box parts needs to be verified.",
+    "v4.1 走线复核版 · 新插头与部分3MF支架/外壳有几何干涉，红框部位配合待核。": "v4.1 wiring review version · The new plug has geometric interference with some 3MF brackets/casings, and the fit of the red box parts needs to be verified.",
     "组装步骤": "Assembly steps",
     "组装顺序": "Assembly sequence",
     "选择组装阶段": "Select assembly stage",
@@ -2358,7 +2358,7 @@ export default {
     "教学说明 · 不连接或控制真实设备": "Tutorial Notes · No connection or control of real devices",
     "本步用到": "Used in this step",
     "看这一步的原片": "Watch the original video of this step",
-    "教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。": "Teaching instructions: Hole positions, connection coordination, board modifications and line endpoints have not yet been physically verified.",
+    "教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。": "Teaching instructions: Hole positions, connection fit, board modifications and line endpoints have not yet been physically verified.",
     "原片对照": "Original film comparison",
     "收起原片": "Close the source video",
     "截取自你提供的视频 · 20:58—23:10": "Extracted from the video you provided · 20:58—23:10",
@@ -2380,13 +2380,15 @@ export default {
     "完成检查": "Complete inspection",
     "已看过此步": "Already seen this step",
     "我已检查实物并装好": "I have checked the physical object and installed it",
-    "教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。接头键位、实际插座、针脚和极性未核验。": "Teaching instructions: Hole positions, connection coordination, board modifications and line endpoints have not yet been physically verified. Connector keys, actual sockets, pins and polarity have not been verified.",
+    "教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。接头键位、实际插座、针脚和极性未核验。": "Teaching instructions: Hole positions, connection fit, board modifications and line endpoints have not yet been physically verified. Connector keys, actual sockets, pins and polarity have not been verified.",
     "观察设置 · 视角 / 聚焦 / 画质": "Observation Settings·Viewing/Focus/Image Quality",
     "播放设置 · 进度 / 倍率 / 声音": "Playback Settings · Progress/Magnification/Sound",
     "收起组装顺序": "Collapse assembly sequence",
     "观看 {seen}/{total} · 实物 {built}/{total}": "Watch {seen}/{total} · Actual {built}/{total}",
     "{chapter} · {local} / {total}": "{chapter} · {local} / {total}",
     "{chapter} · 完成": "{chapter} · Complete",
-    "{local}  {short}": "{local} {short}"
+    "{local}  {short}": "{local} {short}",
+    "红框": "Red frame",
+    "绿框": "Green frame"
   }
 };
