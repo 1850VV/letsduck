@@ -20,7 +20,8 @@ import zlib from 'node:zlib';
 const SRC=path.dirname(fileURLToPath(import.meta.url));
 const PAGES=['index.html','gallery/index.html'];
 const MODEL=['/assets/model.json','/assets/catalog.json'],PACK='/assets/geometry.positions.bin'; // fetched by shared/model-loader.mjs
-const BUILD_ONLY=new Set(['build.mjs','package.json','package-lock.json','node_modules','Dockerfile','.dockerignore','nginx.conf']);
+// Not published: build tooling, and the personal edition's home page (personal/app.py serves it at /).
+const BUILD_ONLY=new Set(['build.mjs','package.json','package-lock.json','node_modules','Dockerfile','.dockerignore','nginx.conf','home.html']);
 const CODE=/\.(?:mjs|js|css)$/;
 
 export async function build(out) {

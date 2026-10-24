@@ -4,6 +4,7 @@
 import {catalogs} from './catalogs.mjs';
 import {extra} from './extra.mjs';
 import {personalMessages} from './personal.mjs';
-const merged=Object.fromEntries(Object.keys(catalogs).map(code=>[code,{...catalogs[code],...extra[code],...personalMessages[code]}]));
+import {homeMessages} from './home.mjs';
+const merged=Object.fromEntries(Object.keys(catalogs).map(code=>[code,{...catalogs[code],...extra[code],...personalMessages[code],...homeMessages[code]}]));
 // Resolves at least the requested locales; here that is all of them.
 export async function loadCatalogs(codes){return merged;}

@@ -1,0 +1,105 @@
+/* Personal edition home: two cards, 想涂鸦 (studio) and 想做鸭 (assembly tutorial). Approved prototype v1. */
+:root{--ink:#17243c;--muted:#7c89a2;--line:#e5e9f2;--blue:#4d6bfe;--blue-soft:#eef1ff;--orange:#ec6a24;--bg:#f5f6fa;--dark:#2a2f3a;--metal:#a9b1bd;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--bg);font-synthesis:none}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;background:var(--bg)}
+button{font:inherit;color:inherit}
+
+.top{display:flex;align-items:center;gap:12px;min-height:66px;padding:0 28px;background:#fff;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:inherit;margin-inline-end:auto}
+.brand .logo{width:38px;height:38px;flex:none;filter:drop-shadow(0 3px 6px #4d6bfe33);transition:transform .2s}
+.brand:hover .logo{transform:rotate(-6deg) scale(1.05)}
+.wordmark{display:flex;flex-direction:column;line-height:1.05}
+.wordmark b{font-size:19px;font-weight:800;letter-spacing:1px;color:var(--ink)}
+.wordmark small{font-size:11px;letter-spacing:.8px;color:#8a94ab;font-weight:600}
+
+.home{max-width:1080px;margin:0 auto;padding:44px 28px 40px}
+.hello{margin:0 0 6px;font-size:30px;font-weight:800;letter-spacing:.5px}
+.lead{margin:0 0 28px;color:var(--muted);font-size:15px;line-height:1.7}
+
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.choice{position:relative;display:flex;flex-direction:column;border-radius:26px;padding:26px 26px 22px;border:1px solid transparent;transition:transform .25s ease,box-shadow .25s ease}
+.choice.paint{background:linear-gradient(160deg,#f3f5ff 0%,#e3e9ff 100%);border-color:#dbe2ff}
+.choice.build{background:linear-gradient(160deg,#fff4ea 0%,#ffe1cc 100%);border-color:#ffdcc4}
+.choice:has(.cta[href]):hover{transform:translateY(-3px);box-shadow:0 18px 40px -18px rgba(23,36,60,.35)}
+.choice:has(.cta:focus-visible){box-shadow:0 0 0 3px #fff,0 0 0 6px var(--blue)}
+.choice.build:has(.cta:focus-visible){box-shadow:0 0 0 3px #fff,0 0 0 6px var(--orange)}
+
+.tag{align-self:flex-start;font-size:12px;font-weight:700;letter-spacing:2px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.75)}
+.paint .tag{color:var(--blue)}.build .tag{color:#c4521a}
+.art{height:236px;display:flex;align-items:center;justify-content:center;margin:6px 0 4px}
+.art svg{height:100%;width:auto;overflow:visible}
+.choice h2{margin:0;font-size:34px;font-weight:800;letter-spacing:1px}
+.desc{margin:8px 0 14px;font-size:14.5px;line-height:1.7;color:#4a5670}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:0;list-style:none}
+.facts li{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.7);color:#56627c}
+
+/* the "your scheme" line inside a card */
+.context{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.82);border-radius:14px;padding:10px 12px;margin:0 0 14px;font-size:13px;line-height:1.45;min-height:52px}
+.context .sw{display:flex;flex:none}
+.context .sw i{width:16px;height:16px;border-radius:50%;border:2px solid #fff;margin-inline-start:-5px;box-shadow:0 0 0 1px rgba(23,36,60,.08)}
+.context .sw i:first-child{margin-inline-start:0}
+.context b{font-weight:700}
+.context small{display:block;color:var(--muted);font-size:12px}
+.context .grow{flex:1;min-width:0}
+.context .icon{width:28px;height:28px;flex:none;border-radius:9px;display:grid;place-items:center;font-size:15px;background:#fff}
+
+/* the button is the card's link; its ::after stretches over the whole card */
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto;min-height:50px;padding:0 14px;border-radius:14px;font-size:16px;font-weight:700;color:#fff;text-decoration:none;text-align:center;outline:none}
+.cta[href]::after{content:'';position:absolute;inset:0;border-radius:26px}
+.paint .cta{background:var(--blue);box-shadow:0 10px 22px -10px rgba(77,107,254,.9)}
+.build .cta{background:var(--orange);box-shadow:0 10px 22px -10px rgba(236,106,36,.9)}
+.build .cta:not([href]){background:#e7c9b5;box-shadow:none;cursor:default}
+.cta .arrow{transition:transform .25s ease}
+.choice:hover .cta .arrow{transform:translateX(4px)}
+[dir=rtl] .cta .arrow{transform:scaleX(-1)}
+[dir=rtl] .choice:hover .cta .arrow{transform:scaleX(-1) translateX(4px)}
+.alt{position:relative;z-index:1;margin-top:10px;text-align:center;font-size:13px;color:var(--muted)}
+.alt a{color:inherit;padding:2px 4px;text-decoration:underline;text-underline-offset:3px}
+
+.foot{margin-top:28px;display:flex;justify-content:center;gap:8px;align-items:center;color:#97a2b8;font-size:12.5px}
+.foot i{width:6px;height:6px;border-radius:50%;background:#5cc48d}
+
+/* duck drawing: printed parts take the scheme colours, hardware stays dark */
+.duck .part{transition:transform .7s cubic-bezier(.3,1.35,.5,1),fill .45s ease}
+.duck .printed{stroke:rgba(23,36,60,.16);stroke-width:1.5}
+.duck .hw{fill:var(--dark)}
+.duck .guide,.duck .screw{transition:opacity .4s ease}
+.paint .duck .guide,.paint .duck .screw{opacity:0}
+/* the build card starts as a kit of parts and snaps together on hover/focus */
+.build .duck [data-p=head]{transform:translateY(-24px)}
+.build .duck [data-p=neck]{transform:translateY(-12px)}
+.build .duck [data-p=legs]{transform:translateY(11px)}
+.build .duck [data-p=feet]{transform:translateY(22px)}
+.build .duck [data-p=hipL]{transform:translateX(-14px)}
+.build .duck [data-p=hipR]{transform:translateX(14px)}
+.build:is(:hover,:has(.cta:focus-visible)) .duck .part{transform:none}
+.build:is(:hover,:has(.cta:focus-visible)) .duck [data-p=head]{transition-delay:.12s}
+.build:is(:hover,:has(.cta:focus-visible)) .duck [data-p=feet]{transition-delay:.06s}
+.build:is(:hover,:has(.cta:focus-visible)) .duck :is(.guide,.screw){opacity:0}
+.swatches{display:flex;justify-content:center;gap:6px;margin-top:-2px;height:14px}
+.swatches i{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(23,36,60,.1);transition:transform .2s}
+.swatches i.on{transform:scale(1.25)}
+@media (prefers-reduced-motion:reduce){.duck .part,.choice,.cta .arrow{transition:none}}
+
+@media (max-width:760px){
+  .top{padding:9px 16px}
+  .brand .logo{width:34px;height:34px}
+  .wordmark b{font-size:17px}
+  .home{padding:22px 16px 28px}
+  .hello{font-size:24px}
+  .lead{font-size:14px;margin-bottom:18px}
+  .choices{grid-template-columns:1fr;gap:14px}
+  .choice{display:grid;grid-template-columns:104px 1fr;column-gap:14px;padding:16px;border-radius:20px}
+  .cta[href]::after{border-radius:20px}
+  .choice .tag{grid-column:1/-1;justify-self:start;margin-bottom:6px}
+  .art{grid-row:2/4;height:150px;margin:0}
+  .swatches{display:none}
+  .choice h2{font-size:26px;align-self:end}
+  .desc{margin:4px 0 0;font-size:13px;line-height:1.6}
+  .facts{display:none}
+  .context,.cta,.alt{grid-column:1/-1}
+  .context{margin:12px 0 10px}
+  .cta{min-height:46px;font-size:15px}
+}

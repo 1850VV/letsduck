@@ -36,6 +36,8 @@ MAX_BODY = 8_000_000
 ID = re.compile(r'^[\w-]{1,64}$')
 PUBLIC_ASSETS = {'model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'geometry.positions.bin', 'export-schema.json'}
 NOT_FOUND = {'error': '未知接口', 'code': 'request.not_found', 'params': {}}
+# The home page opens at /, the studio (frontend/index.html) at /paint. No trailing slash keeps the studio's ./ links at the root.
+PAGES = {'/': '/home.html', '/paint': '/index.html'}
 log = logging.getLogger('doodleduck')
 
 try:
@@ -127,7 +129,7 @@ class Handler(SimpleHTTPRequestHandler):
         if method == 'GET' and path == '/api/health':
             return {'version': VERSION, 'export': bool(exporter), 'source_sha256': exporter.MODEL['source_sha256'] if exporter else None}
         if method == 'GET' and path == '/api/site':
-            return {'publicUrl': '', 'edition': 'personal'}
+            return {'publicUrl': '', 'edition': 'personal', 'assembly': (FRONTEND / 'assemble' / 'index.html').is_file()}
         if method == 'GET' and path == '/api/catalog':
             return self.need_exporter('耗材色表未加载', 'validation.29').CATALOG
         if method == 'GET' and path == '/api/schemes':
@@ -171,10 +173,9 @@ class Handler(SimpleHTTPRequestHandler):
         if path.startswith('/api/'):
             return self.handle_api('GET')
         if path.rstrip('/') == '/gallery' or path.startswith('/gallery/'):
-            self.send_response(303)
-            self.send_header('Location', '/')
-            self.send_header('Content-Length', '0')
-            return self.end_headers()
+            return self.redirect(303, '/')
+        if path == '/paint/':
+            return self.redirect(308, '/paint')
         if path.startswith('/assets/'):
             name = path[len('/assets/'):]
             target = ASSETS / name
@@ -183,11 +184,21 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_body(200, target.read_bytes(), self.extensions_map.get(target.suffix, 'application/octet-stream'))
         super().do_GET()
 
+    def redirect(self, status, location):
+        self.send_response(status)
+        self.send_header('Location', location)
+        self.send_header('Content-Length', '0')
+        self.end_headers()
+
+    def translate_path(self, path):
+        return super().translate_path(PAGES.get(urlparse(path).path, path))
+
     def list_directory(self, path):
         self.send_body(404, {'error': '文件不存在', 'code': 'request.not_found', 'params': {}})
 
     def do_HEAD(self):
-        if urlparse(self.path).path.startswith(('/api/', '/assets/', '/gallery')):
+        path = urlparse(self.path).path
+        if path.startswith(('/api/', '/assets/', '/gallery')) or path == '/paint/':
             return self.do_GET()
         super().do_HEAD()
 
