@@ -4,7 +4,7 @@ import { _electron as electron } from 'playwright';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -88,7 +88,7 @@ try {
   // Reopen the exact installed path with instrumentation to inspect the result.
   await launch(); assert.equal(await application.evaluate(({ app }) => app.getVersion()), to);
   const final = await phase('idle'); assert.equal(final.currentVersion, to);
-  assert.equal(await page.locator('#letsduck-update button').textContent(), 'v' + to);
+  assert.equal((await page.locator('#letsduck-update button').textContent()).trim(), 'v' + to);
   assert.deepEqual(await page.evaluate(keys => Object.fromEntries(keys.map(k => [k, localStorage.getItem(k)])), Object.keys(retained)), retained);
   assert.deepEqual(await page.evaluate(() => fetch('/api/schemes').then(r => r.json())), schemesBefore);
   const health = await page.evaluate(() => fetch('/api/health').then(r => r.json())); assert.equal(health.export, true);

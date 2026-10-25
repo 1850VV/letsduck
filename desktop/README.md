@@ -77,7 +77,7 @@ Windows 使用每用户安装，不要求先装 Python/Node；卸载默认保留
 
 免费测试阶段，Windows 使用未签名的每用户 NSIS 包，首次下载运行可能显示未知发布者或 SmartScreen 提示。这不等于通过 Windows 发布者认证。Mac 在没有 Developer ID 时只构建无更新源的临时签名包，手动安装测试；构建器拒绝给临时签名 Mac 包嵌入自动更新源。获得分发证书后，再完成公证和真实两版本升级验收。
 
-`Desktop candidate` 工作流支持完整素材 Release、发行仓库、版本号和目标平台输入。素材包放在源码私有仓库的专用 Release 中，仅供构建读取；该 Release 不能是草稿，因为构建凭证只有读取权限。客户端中不含读取私有仓库的凭证。Windows 的真实升级验收通过同一工作流的 `upgrade_from` 输入启动，`release_version` 是目标版本；运行前两个版本的安装包和目标版本的 `beta.yml` 必须已在公开发行通道可匿名读取。构建和测试工作流均不自动发布公开文件。
+`Desktop candidate` 工作流支持完整素材 Release、发行仓库、版本号和目标平台输入。素材包放在源码私有仓库的专用 Release 中，仅供构建读取；保持为非草稿，便于只读凭证的构建流程下载。客户端中不含读取私有仓库的凭证。Windows 的真实升级验收通过同一工作流的 `upgrade_from` 输入启动，`release_version` 是目标版本；运行前两个版本的安装包和目标版本的 `beta.yml` 必须已在公开发行通道可匿名读取。构建和测试工作流均不自动发布公开文件。
 
 手动构建产物存入源码私有仓库的 `desktop-candidate-<run_id>-<平台>-<架构>` Release，真实升级证据存入 `desktop-upgrade-evidence-<run_id>` Release，不占 Actions artifact 存储配额。上传只取输出目录顶层的安装包、blockmap 和更新清单，不上传未打包目录中的 EXE。构建及验收 job 的 `contents: write` 用于保存这些私有产物；公开发行仍是独立步骤。
 
