@@ -1,7 +1,7 @@
 import { app, BrowserWindow, protocol, shell, utilityProcess, session, dialog, ipcMain, type IpcMainInvokeEvent } from 'electron';
 import { existsSync, mkdirSync, appendFileSync } from 'node:fs';
 import { join, resolve, basename, extname } from 'node:path';
-import { APP_ORIGIN, localURL, externalURL, proxyURL } from './navigation.js';
+import { APP_ORIGIN, localURL, localPermission, externalURL, proxyURL } from './navigation.js';
 import { readFile } from 'node:fs/promises';
 import electronUpdater from 'electron-updater';
 import { UpdateController } from './updates.js';
@@ -45,8 +45,8 @@ async function boot() {
     const rewritten = new Headers(response.headers); rewritten.set('location', APP_ORIGIN + next.pathname + next.search + next.hash);
     return new Response(response.body, { status: response.status, headers: rewritten });
   });
-  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
-  session.defaultSession.setPermissionCheckHandler(() => false);
+  session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) => callback(wc === window?.webContents && localPermission(permission, details.requestingUrl)));
+  session.defaultSession.setPermissionCheckHandler((wc, permission, origin, details) => wc === window?.webContents && localPermission(permission, details.requestingUrl || origin));
   const downloads = new Set<Electron.DownloadItem>();
   session.defaultSession.on('will-download', (_event, item) => {
     downloads.add(item); item.once('done', () => downloads.delete(item));

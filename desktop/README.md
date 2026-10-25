@@ -17,7 +17,7 @@ npm start
 
 - `npm test`：协议、SQLite 兼容、导出对照、HTTP/视频 Range、更新控制器检查。Python 对照测试使用 `PYTHON` 指定的解释器，默认 `python3`。
 - `DUCK_REAL_ASSETS=../assets npm test`：增加真实模型的 Python/Node 逐文件导出比较。
-- `npm run smoke`：用临时数据目录打开实际 Electron，检查方案保存、失败保存、配色码、重启后偏好与教程页面。根目录需先安装 Playwright 依赖。`DUCK_APP_EXECUTABLE` 可指定打包后的可执行文件，此时直接检查包内素材。
+- `npm run smoke`：用临时数据目录打开实际 Electron，检查方案保存、失败保存、配色码、复制权限、3MF/BOM 与海报下载、重启后偏好、教程视频播放和定位。根目录需先安装 Playwright 依赖。`DUCK_APP_EXECUTABLE` 可指定打包后的可执行文件，此时直接检查包内素材。
 - `node scripts/update-smoke.mjs`：在实际客户端模拟已确认的更新状态，检查提示、收起、重试和等待；只模拟状态，不执行安装，也不能代替真实版本升级。
 - `node scripts/benchmark.mjs`：同机交替比较原 Python 与 Node 的保存和真实模型导出。设 `DUCK_BROWSER_BENCH=1` 增加相同 Chromium 的首帧与三轮 30 秒帧间隔比较。结果写入忽略的 `output/desktop-benchmark/`。这不代替打包应用的整进程资源和三平台验收。
 - `npm run host`：仅运行 Node 本地服务，默认使用动态端口并输出地址；`DUCK_PORT` 可指定端口。
