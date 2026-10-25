@@ -30,3 +30,21 @@ test('完整教程逐一经过111步和14阶段，没有漏步或循环',()=>{
 test('无效倍率不会污染状态，终点继续播放不会循环',()=>{
  const p=player([{durationMs:100}]);p.setRate(0);p.setRate(NaN);assert.equal(p.state.rate,1);p.startAuto();p.tick(0);p.tick(1000);p.tick(3000);p.resume();p.tick(4000);assert.deepEqual([p.state.step,p.state.progress,p.state.playing],[0,1,false]);
 });
+
+// Catches evaluating every step before playback, or treating an unresolved timing as a duration.
+test('step timings can be resolved on demand without calculating later steps',()=>{
+ const p=player([()=>({durationMs:1000,holdMs:100}),()=>{throw Error('Unvisited step must stay unresolved');}]);
+ p.seek(0,0,{play:true});p.tick(0);p.tick(50);assert.equal(p.state.progress,0);
+ p.tick(600);assert.equal(p.state.progress,.5);
+});
+
+// Catches recalculating expensive cue-based timings on every frame or revisiting a step.
+test('lazy timings are reused across frames and revisits while autoplay keeps each step duration',()=>{
+ let first=0,second=0;
+ const p=player([()=>({durationMs:++first===1?1000:100,settleMs:200}),()=>({durationMs:++second===1?2000:100,settleMs:200})]);
+ p.startAuto();p.tick(0);p.tick(500);assert.equal(p.state.progress,.5);
+ p.tick(1000);p.tick(1200);assert.equal(p.state.step,1);
+ p.tick(2200);assert.equal(p.state.progress,.5);
+ p.seek(0,0,{play:true});p.tick(3000);p.tick(3500);assert.equal(p.state.progress,.5);
+ assert.deepEqual([first,second],[1,1]);
+});

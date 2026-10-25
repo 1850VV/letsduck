@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {updateAssemblyCameraDepth} from './camera-depth.mjs';
 import {withDetailSection} from './detail-section.mjs';
 
 // A second camera in the same scene and WebGL context. No model/camera transforms
@@ -63,8 +64,10 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
       const distance=Math.min(maxDistance,Math.max(18,fitDistance)),destination=center.clone().addScaledVector(approach,distance);
       if(context!==id||!initialized){lens.position.copy(destination);lens.userData.target=center.clone();initialized=true;context=id;}
       else{lens.position.lerp(destination,.2);lens.userData.target.lerp(center,.2);}
+      const animating=lens.position.distanceToSquared(destination)>1e-8||lens.userData.target.distanceToSquared(center)>1e-8;
+      if(!animating){lens.position.copy(destination);lens.userData.target.copy(center);}
       const offset=lens.position.clone().sub(lens.userData.target);if(offset.length()>maxDistance)lens.position.copy(lens.userData.target).add(offset.setLength(maxDistance));
-      lens.lookAt(lens.userData.target);lens.updateProjectionMatrix();lens.updateMatrixWorld();
+      lens.lookAt(lens.userData.target);updateAssemblyCameraDepth(lens,lens.userData.target);lens.updateProjectionMatrix();lens.updateMatrixWorld();
       const lensScale=h/(2*lens.position.distanceTo(lens.userData.target)*Math.tan(THREE.MathUtils.degToRad(16))),zoom=lensScale/mainScale;
       $('focus-zoom-factor').textContent=zoom.toFixed(1)+'×';$('focus-zoom-title').textContent=(focus.detailTitle||'接头放大')+(stepId==='head-shell-fix'?' · 剖视':'');$('focus-zoom-status').textContent=focus.detailStatus||(focus.phase==='completed'?'已接合':'对准接口');panel.dataset.phase=focus.detailPhase||focus.phase;
       panel.setAttribute('aria-label',(focus.detailTitle||'接头放大')+'窗口');view.setAttribute('aria-label','当前装配部位的实时三维放大画面');
@@ -75,7 +78,7 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
       const p=project(target),stageRect=stage.getBoundingClientRect(),box=panel.getBoundingClientRect(),left=box.left-stageRect.left,right=box.right-stageRect.left,top=box.top-stageRect.top,bottom=box.bottom-stageRect.top;
       const endX=Math.max(left,Math.min(right,p.x)),endY=p.y<top?top:p.y>bottom?bottom:Math.max(top,Math.min(bottom,p.y));
       const line=$('focus-zoom-line');line.setAttribute('x1',p.x);line.setAttribute('y1',p.y);line.setAttribute('x2',endX);line.setAttribute('y2',endY);$('focus-zoom-dot').setAttribute('cx',p.x);$('focus-zoom-dot').setAttribute('cy',p.y);
-      details={visible:true,available,automatic,choice:saved.value,id,zoom,center:center.toArray(),rect:{x,y,w,h},phase:focus.detailPhase||focus.phase,manual:!!manual,section:stepId==='head-shell-fix'};
+      details={visible:true,animating,available,automatic,choice:saved.value,id,zoom,center:center.toArray(),rect:{x,y,w,h},phase:focus.detailPhase||focus.phase,manual:!!manual,section:stepId==='head-shell-fix'};
     }
   };
 }
