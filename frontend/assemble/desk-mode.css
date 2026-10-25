@@ -1,0 +1,64 @@
+/* Desk mode and the stage helpers that ship with it (desk-mode.mjs). */
+.desk-toggle{margin-left:6px;height:28px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#4c5b79;font-size:12px;font-weight:600;cursor:pointer}
+.desk-toggle[aria-pressed=true]{background:var(--blue-soft);border-color:#d5dfff;color:var(--blue)}
+.stage kbd,.kit kbd{font:600 10px ui-monospace,monospace;border:1px solid currentColor;border-radius:5px;padding:1px 5px;opacity:.65}
+
+.journey{position:absolute;top:0;left:0;right:0;z-index:3;display:flex;gap:3px;height:8px;pointer-events:none}
+.journey span{flex:1;background:#dfe5f1}
+.journey span.done{background:#a9b8ff}
+.journey span.current{background:linear-gradient(90deg,var(--blue) var(--p,0%),#c9d3ff var(--p,0%))}
+
+.stage-pill{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border:1px solid #e1e6f2;border-radius:9px;background:#ffffffe6;color:#4c5b79;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px #263c650d}
+.stuck-pill{left:22px;bottom:22px;color:#a24b00;border-color:#f4d7b5;background:#fff7eef0}
+.recenter-pill{left:50%;top:18px;transform:translateX(-50%)}
+
+.guard-card{position:absolute;z-index:4;top:58px;right:18px;width:min(340px,calc(100% - 36px));padding:10px;border:1px solid #f1d2d3;border-radius:14px;background:#fff;box-shadow:0 10px 30px #263c6514}
+.guard-card>b{display:block;margin:0 2px 8px;font-size:12px;color:#d93d42}
+.guard-card>div{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.guard-card figure{margin:0;padding:6px;border-radius:10px;display:grid;gap:4px;text-align:center}
+.guard-card svg{width:100%;height:auto}
+.guard-card figcaption{font-size:11px;font-weight:650;line-height:1.4}
+.guard-card .ok{background:#e6f6ef;color:#1f9d6a}
+.guard-card .bad{background:#fdecec;color:#d93d42}
+
+.desk-caption{display:none}
+.reference-check{font-size:13px;line-height:1.7;color:#7a4a00;background:#fff7ee;border-radius:10px;padding:8px 10px;margin:10px 0 0}
+.reference-check:empty{display:none}
+
+.kit{position:absolute;z-index:6;top:16px;left:16px;bottom:16px;width:min(400px,calc(100% - 32px));overflow:auto;display:flex;flex-direction:column;gap:12px;padding:20px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 14px 50px #263c6518}
+.kit-eyebrow,.kit-label{margin:0;font-size:11px;color:var(--muted)}
+.kit h2{margin:0;font-size:24px;letter-spacing:-.6px}
+.kit ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.kit-parts li{display:flex;align-items:center;gap:9px;font-size:14px}
+.kit-parts i{width:14px;height:14px;border-radius:4px;flex:none;border:1.5px solid #b8c0cf}
+.kit li b{margin-left:auto;font:650 13px ui-monospace,monospace;color:#4c5b79}
+.kit-screws{margin-top:8px!important}
+.kit-screws li{display:flex;align-items:center;gap:12px;border:1px dashed #cfd8ea;border-radius:10px;padding:8px 10px}
+.kit-screws span{font:650 14px ui-monospace,monospace}
+.kit-screws small{display:block;font:500 10px Inter,sans-serif;color:var(--muted)}
+.kit-go{margin-top:auto;height:48px;border:0;border-radius:12px;background:var(--blue);color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* Desk mode: one big caption, no side column, big buttons. */
+body.desk .section-heading,body.desk .instruction-column>:not(.reference-panel),body.desk .prototype-note,body.desk .scrub-row,body.desk .stage-top,body.desk .animation-state{display:none}
+body.desk .instruction-column{display:contents}
+body.desk .workspace{grid-template-columns:minmax(0,1fr)}
+body.desk .model-column{grid-column:1/-1;grid-row:2}
+body.desk .player-bar{grid-row:3}
+body.desk .desk-caption{display:grid;gap:8px;position:absolute;z-index:3;left:24px;right:24px;bottom:22px;pointer-events:none}
+body.desk #desk-count{font:650 clamp(14px,1.2vw,18px) ui-monospace,monospace;color:var(--blue)}
+body.desk #desk-title{margin:0;font-size:clamp(26px,3.2vw,44px);line-height:1.2;letter-spacing:-1px;text-wrap:balance;text-shadow:0 0 18px #fff,0 0 4px #fff}
+body.desk #desk-specs{display:flex;gap:8px;flex-wrap:wrap}
+body.desk #desk-specs span{font:700 clamp(18px,2.4vw,34px) ui-monospace,monospace;color:#2f49c9;background:var(--blue-soft);border-radius:12px;padding:6px 14px}
+body.desk .stuck-pill{bottom:auto;top:18px;left:18px;height:40px;font-size:14px}
+body.desk .guard-card{top:auto;bottom:22px;width:min(420px,calc(100% - 36px))}
+@media(min-width:801px){body.desk .stage:has(.guard-card:not([hidden])) .desk-caption{right:calc(min(420px,100% - 36px) + 42px)}}
+body.desk .guard-card figcaption{font-size:13px}
+body.desk{--player-height:60px;--player-pad:26px;--player-secondary-pad:18px}
+body.desk .player-buttons>ryugi-button{font-size:17px}
+body.desk .player-buttons>#next,body.desk .player-buttons>#start{font-size:19px}
+@media(max-width:800px){
+  .desk-toggle{display:none}
+  body.desk .desk-caption{left:12px;right:12px;bottom:12px}
+  .guard-card{top:auto;bottom:62px}
+  body.desk .guard-card{top:66px;bottom:auto}
+}

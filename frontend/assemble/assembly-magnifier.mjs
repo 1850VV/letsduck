@@ -45,7 +45,9 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
           const w=panel.offsetWidth,h=panel.offsetHeight,W=stage.clientWidth,H=stage.clientHeight;
           const anchors=focus.boxes.map(b=>project(new THREE.Vector3(...b.center)));
           const positions=[[W-w-10,50],[W-w-10,H-h-14],[10,H-h-14],[10,50]];
-          const cost=([x,y])=>anchors.reduce((n,p)=>n+(p.x>x-18&&p.x<x+w+18&&p.y>y-18&&p.y<y+h+18?1000:0),0)+(x<80&&y<75?80:0);
+          const s=stage.getBoundingClientRect(),cards=[...stage.querySelectorAll('.guard-card:not([hidden])')].map(c=>c.getBoundingClientRect());
+          const covers=([x,y])=>cards.some(c=>x<c.right-s.left&&x+w>c.left-s.left&&y<c.bottom-s.top&&y+h>c.top-s.top);
+          const cost=([x,y])=>anchors.reduce((n,p)=>n+(p.x>x-18&&p.x<x+w+18&&p.y>y-18&&p.y<y+h+18?1000:0),0)+(x<80&&y<75?80:0)+(covers([x,y])?500:0);
           positions.sort((a,b)=>cost(a)-cost(b));place(...positions[0]);
         }
       }
