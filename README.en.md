@@ -9,7 +9,7 @@ A painting studio for the XGO Duck V2 robot duck: pick colours in three steps, m
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Click a card and the duck changes its colours"></p>
 
-**The project has obtained permission to use and distribute the required assets with the desktop client.** Desktop installers include the source 3MF, model and mesh data, filament data, assembly models, tutorial videos and audio. Users do not need to obtain a separate asset pack. Assets retain their own terms and credits; bundling them does not put them under MIT. Source code and large assets are managed separately in Git, so source development and server deployments still require the complete asset directory. See [local assets](docs/local-assets.md) (Chinese).
+**The project has obtained permission to use and distribute the required assets with the desktop client.** Desktop installers include the source 3MF, model and mesh data, filament data, assembly models, tutorial videos and audio. Users do not need to obtain a separate asset pack. Assets retain their own terms and credits; bundling them does not put them under MIT. Source code is stored in Git; large assets are managed separately. Source development and server deployments still require the complete asset directory. See [local assets](docs/local-assets.md) (Chinese).
 
 ## Three steps
 

@@ -19,7 +19,7 @@ python3 run.py --no-open
 
 **仅下载一份 3MF 不足以运行当前版本。** 还需要与它匹配的装配清单、二进制网格、目录和导出描述。本仓库暂未提供从任意 3MF 自动生成完整配准结果的生产级流程。`tools/history/` 保存了早期处理脚本，依赖当时的中间文件、第三方模型、NumPy/Trimesh/SciPy 等工具和特定版本，不是经过清洁环境验证的一键安装器。
 
-模型持有者应自行确认所需用途的权利。软件 MIT 授权不覆盖上述资产。不要使用 `git add -f` 上传它们，也不要把完整本地运行目录打成公开 Release 附件。
+上述应用素材已有随客户端分发的授权，软件 MIT 授权不覆盖素材本身。额外替换的素材需有相应用途的授权。大型素材继续放在源码 Git 之外；分发使用构建出的安装包或仅含素材的资产包，不包含本地数据库、账号配置等个人运行数据。
 
 ## 组装教程资产
 
@@ -34,10 +34,10 @@ python3 scripts/import_assembly_assets.py /path/to/assembly/assets              
 
 ## 验证含义
 
-公开 CI 验证源码、导入工具和发布检查；完整测试使用本地资产执行。缺少资产时，启动器明确提示缺失文件，不生成替代模型，也不会将空白预览称为运行成功。
+默认 CI 验证源码、导入工具和发布检查；完整测试需要完整资产目录。桌面构建工作流可在手动触发时读取已授权的资产包。缺少资产时，启动器明确提示缺失文件，不生成替代模型，也不会将空白预览称为运行成功。
 
 ## Optional smaller display model
 
-After importing the local assets, run `npm ci && npm run pack:positions` on a build machine with Node.js. This generates local-only `geometry.positions.bin` and precompressed variants. Package them alongside the existing assets; do not commit them. The installed application still needs only Python. If the pack or Worker is unavailable, the browser uses the original DDG1 path.
+After importing the local assets, run `npm ci && npm run pack:positions` on a build machine with Node.js. This generates local-only `geometry.positions.bin` and precompressed variants. Keep them alongside the existing assets; do not commit them. Python editions still need only Python at runtime. The desktop installer bundles its Node.js runtime and all three geometry formats. If the pack or Worker is unavailable, the browser uses the original DDG1 path.
 
-The display pack retains DDG1's 16-bit coordinates, all triangles, and 64-bit print matrices. It does not remove the original source's existing quantization error. Normals are generated in a Worker. The accepted shared export uses the same downloaded pack, computes print normals lazily in a Worker, and reuses the view renderer and geometry. The legacy pack remains packaged as a compatibility fallback; a successful shared export does not fetch it. The source 3MF still remains on the server.
+The display pack retains DDG1's 16-bit coordinates, all triangles, and 64-bit print matrices. It does not remove the original source's existing quantization error. Normals are generated in a Worker. The accepted shared export uses the same downloaded pack, computes print normals lazily in a Worker, and reuses the view renderer and geometry. The legacy pack remains packaged as a compatibility fallback; a successful shared export does not fetch it. The source 3MF is read by the local desktop backend or server backend and is not exposed through static HTTP routes.

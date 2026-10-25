@@ -76,7 +76,7 @@ frontend/   静态前端：index.html（涂装台）、home.html + home/（个�
 personal/   个人版服务：app.py（静态文件 + 方案/导出接口）、schemes.py（本机 SQLite）
 backend/    服务器版 API：server.py（FastAPI 路由）、store.py / database.py（MySQL）、rules.py、exporter.py
 desktop/    桌面个人版：Electron + TypeScript/Node.js + Cordis，Windows / macOS 构建与更新
-assets/     已授权的应用素材（Git 单独管理；桌面构建打进安装包，服务器版只读挂载）
+assets/     已授权的应用素材（不进入源码 Git；桌面构建打进安装包，服务器版只读挂载）
 ```
 
 ## 桌面客户端（开发候选）
