@@ -58,7 +58,7 @@ Windows 使用每用户安装，不要求先装 Python/Node；卸载默认保留
 
 当前内测选择直接发送安装包，只给受邀朋友，不创建公开发行仓库，也不要求测试者使用 GitHub 账号。`0.1.0-beta.3` 三个平台的完整包均不配置更新源；Logo 右侧按钮显示实际版本，不自动联网检查。它们不包含账号 token 或下载凭据。后续暂时手动安装新版本，保留原有个人数据；私有下载源和真实自动升级尚未验收。下面的匿名更新配置仅是后续可选方案，不代表已获公开发行许可。
 
-打包本轮内测包时不设置 `DUCK_UPDATE_BASE`、`DUCK_UPDATE_URL`、`DUCK_UPDATE_REPOSITORY`。手动工作流只填写完整素材 Release 和版本号，三个更新源输入均留空。Windows 为每用户安装；Mac 打开 DMG 后将应用拖到「应用程序」。尚无 Windows 发布者签名或 Apple Developer ID 公证，系统可能提示开发者未验证。Mac 的逐应用「仍要打开」入口见 [Apple 安装说明](https://support.apple.com/en-us/102445)，不要关闭全局系统保护。
+打包本轮内测包时不设置 `DUCK_UPDATE_BASE`、`DUCK_UPDATE_URL`、`DUCK_UPDATE_REPOSITORY`。手动工作流只填写完整素材 Release 和版本号，更新源输入均留空。Windows 为每用户安装；Mac 打开 DMG 后将应用拖到「应用程序」。尚无 Windows 发布者签名或 Apple Developer ID 公证，系统可能提示开发者未验证。Mac 的逐应用「仍要打开」入口见 [Apple 安装说明](https://support.apple.com/en-us/102445)，不要关闭全局系统保护。
 
 `node desktop/scripts/installed-smoke.mjs` 从仓库根目录执行：在临时目录实装当前平台的完整包，再运行相同的方案、导出、视频、重启数据保留检查。Windows 只允许在一次性 CI runner 运行；Mac 使用只读挂载、复制应用、卸载 DMG 后启动，结束时清理临时安装。此检查不等于带隔离标记的朋友电脑通过系统安全提示，也不等于真实自动升级。
 
