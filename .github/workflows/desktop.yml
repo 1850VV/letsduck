@@ -35,6 +35,11 @@ on:
         description: 'Recheck an existing Windows candidate Release without rebuilding'
         type: string
         required: false
+      verify_renderer:
+        description: 'Renderer for the isolated recheck only; does not change the installer'
+        type: choice
+        options: [default, swiftshader]
+        default: default
 permissions:
   contents: read
 jobs:
@@ -155,6 +160,7 @@ jobs:
     env:
       DUCK_RELEASE_VERSION: ${{ inputs.release_version }}
       DUCK_BUILD_ARCH: x64
+      DUCK_TEST_ANGLE: ${{ inputs.verify_renderer }}
     defaults:
       run:
         shell: bash

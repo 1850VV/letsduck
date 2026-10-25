@@ -7,11 +7,14 @@ import assert from 'node:assert/strict';
 const require = createRequire(import.meta.url), root = resolve(import.meta.dirname, '../..'), temp = await mkdtemp(join(tmpdir(), 'letsduck-electron-'));
 const output = join(root, 'output/desktop-smoke'); await mkdir(output, { recursive: true }); await mkdir(join(temp, 'downloads'));
 const errors = [], processes = []; let application;
+const renderer = process.env.DUCK_TEST_ANGLE === 'swiftshader' ? 'swiftshader' : 'default';
 const launch = async () => {
   const packaged = process.env.DUCK_APP_EXECUTABLE;
   const env = { ...process.env, DUCK_PERSONAL_DB: join(temp, 'personal.db'), DUCK_DESKTOP_DATA: join(temp, 'profile') };
   if (packaged) delete env.DUCK_ASSETS; else env.DUCK_ASSETS = process.env.DUCK_REAL_ASSETS || join(root, 'assets');
-  const app = await electron.launch({ executablePath: packaged || require('electron'), args: packaged ? [] : [join(root, 'desktop')], env, timeout: 60000 });
+  const args = packaged ? [] : [join(root, 'desktop')];
+  if (renderer === 'swiftshader') args.push('--use-angle=swiftshader');
+  const app = await electron.launch({ executablePath: packaged || require('electron'), args, env, timeout: 60000 });
   processes.push(app.process()); app.process().stderr.on('data', data => process.stderr.write(data));
   await app.evaluate(({ app }, downloads) => app.setPath('downloads', downloads), join(temp, 'downloads'));
   return app;
@@ -23,8 +26,7 @@ const downloadFile = async (page, selector) => {
   assert.equal(download.state, 'completed');
   return readFile(download.path);
 };
-// Resize the native Electron window. Browser viewport emulation can leave the
-// Windows input widget out of sync after switching between mobile/desktop sizes.
+// Exercise actual Electron window resizing rather than browser viewport emulation.
 const resizeWindow = async (page, size) => {
   const window = await application.browserWindow(page);
   await window.evaluate((window, size) => { window.setMinimumSize(Math.min(800, size.width), Math.min(600, size.height)); window.setContentSize(size.width, size.height); }, size);
@@ -34,6 +36,8 @@ try {
   application = await launch(); const page = await application.firstWindow();
   await application.context().tracing.start({ screenshots: true, snapshots: true });
   const identity = await application.evaluate(({ app }) => ({ version: app.getVersion(), packaged: app.isPackaged, arch: process.arch }));
+  const graphics = await application.evaluate(async ({ app }) => ({ features: app.getGPUFeatureStatus(), info: await app.getGPUInfo('basic') }));
+  await writeFile(join(output, 'environment.json'), JSON.stringify({ identity, renderer, graphics }, null, 2));
   if (process.env.DUCK_EXPECTED_VERSION) assert.equal(identity.version, process.env.DUCK_EXPECTED_VERSION);
   if (process.env.DUCK_BUILD_ARCH) assert.equal(identity.arch, process.env.DUCK_BUILD_ARCH);
   page.on('pageerror', e => errors.push(String(e))); await page.waitForURL('duck://app/');
@@ -89,10 +93,12 @@ try {
   await reopened.screenshot({ path: join(output, 'video.png') });
   await reopened.locator('#reference-close').click();
   assert.deepEqual(errors, []);
-  await writeFile(join(output, 'result.json'), JSON.stringify({ identity, personal, versions, packaged: Boolean(process.env.DUCK_APP_EXECUTABLE), exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard, video, stableOriginPersistence: true, errors }, null, 2));
+  await writeFile(join(output, 'result.json'), JSON.stringify({ identity, renderer, personal, versions, packaged: Boolean(process.env.DUCK_APP_EXECUTABLE), exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard, video, stableOriginPersistence: true, errors }, null, 2));
   console.log(JSON.stringify({ personal, exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard, video, stableOriginPersistence: true, errors }));
 } catch (error) {
-  if (application) { const page = (await application.windows())[0]; if (page) { await page.screenshot({ path: join(output, 'failure.png') }); console.error(await page.evaluate(() => ({ url: location.href, width: innerWidth, height: innerHeight, importButton: document.querySelector('#import-code')?.outerHTML, display: document.querySelector('#import-code') && getComputedStyle(document.querySelector('#import-code')).display, state: window.studioProto?.state?.step }))); } }
+  await writeFile(join(output, 'failure-details.json'), JSON.stringify({ renderer, error: error.stack || String(error), errors }, null, 2));
+  // A stalled renderer may also reject screenshots. Keep the original failure.
+  if (application) { const page = (await application.windows())[0]; if (page) await page.screenshot({ path: join(output, 'failure.png'), timeout: 5000 }).catch(e => console.error('Failure screenshot unavailable:', e.message)); }
   throw error;
 } finally {
   if (application) { await application.context().tracing.stop({ path: join(output, 'last-session.zip') }).catch(() => {}); await application.close(); }
