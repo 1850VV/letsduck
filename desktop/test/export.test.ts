@@ -9,13 +9,14 @@ import { Exporter, THUMBNAILS } from '../src/export/exporter.js';
 import { repackZip } from '../src/export/zip.js';
 
 const backend = fileURLToPath(new URL('../../backend', import.meta.url));
+// The compatibility oracle must read UTF-8 asset JSON consistently on Windows too.
 test('real licensed source: Python and Node produce the same printable model and BOM', { skip: !process.env.DUCK_REAL_ASSETS }, () => {
   const assets = process.env.DUCK_REAL_ASSETS!;
   const model = JSON.parse(readFileSync(assets + '/model.json', 'utf8')), catalog = JSON.parse(readFileSync(assets + '/catalog.json', 'utf8'));
   const assignments = Object.fromEntries(model.parts.map((p: any) => [p.id, catalog.products.find((x: any) => x.series === p.material && x.hex === p.color).id]));
   assignments['P2-03'] = 'bambu-GFA00-10200'; assignments['P1-03'] = 'bambu-GFU03-51601';
   const payload = { source_sha256: model.source_sha256, assignments, name: '真实模型比较', thumbnails: Object.fromEntries(THUMBNAILS.map(n => [n, 'data:image/png;base64,' + png().toString('base64')])) };
-  const python = JSON.parse(execFileSync(process.env.PYTHON || 'python3', ['-c', `import sys,json,base64;sys.path.insert(0,sys.argv[1]);import exporter;out,report=exporter.export_3mf(json.load(sys.stdin));print(json.dumps({'archive':base64.b64encode(out).decode(),'report':report}))`, backend], { env: { ...process.env, DUCK_ASSETS: assets }, input: JSON.stringify(payload), encoding: 'utf8', maxBuffer: 128 << 20 }));
+  const python = JSON.parse(execFileSync(process.env.PYTHON || 'python3', ['-X', 'utf8', '-c', `import sys,json,base64;sys.path.insert(0,sys.argv[1]);import exporter;out,report=exporter.export_3mf(json.load(sys.stdin));print(json.dumps({'archive':base64.b64encode(out).decode(),'report':report}))`, backend], { env: { ...process.env, DUCK_ASSETS: assets }, input: JSON.stringify(payload), encoding: 'utf8', maxBuffer: 128 << 20 }));
   const { content, report } = new Exporter(assets).export(payload), a = unzipSync(Buffer.from(python.archive, 'base64')), b = unzipSync(content);
   delete report.createdAt; delete python.report.createdAt; assert.deepEqual(report, python.report);
   assert.deepEqual(Object.keys(a).sort(), Object.keys(b).sort());
@@ -29,7 +30,7 @@ test('produces the same material plan and print configuration as Python while pr
   const f = fixture();
   try {
     f.payload.assignments.p0 = 'blue'; f.payload.assignments.p7 = 'red';
-    const python = JSON.parse(execFileSync(process.env.PYTHON || 'python3', ['-c', `import sys,json,base64;sys.path.insert(0,sys.argv[1]);import exporter;out,report=exporter.export_3mf(json.load(sys.stdin));print(json.dumps({'archive':base64.b64encode(out).decode(),'report':report}))`, backend], { env: { ...process.env, DUCK_ASSETS: f.assets }, input: JSON.stringify(f.payload), encoding: 'utf8' }));
+    const python = JSON.parse(execFileSync(process.env.PYTHON || 'python3', ['-X', 'utf8', '-c', `import sys,json,base64;sys.path.insert(0,sys.argv[1]);import exporter;out,report=exporter.export_3mf(json.load(sys.stdin));print(json.dumps({'archive':base64.b64encode(out).decode(),'report':report}))`, backend], { env: { ...process.env, DUCK_ASSETS: f.assets }, input: JSON.stringify(f.payload), encoding: 'utf8' }));
     const engine = new Exporter(f.assets); const { content, report } = engine.export(f.payload);
     const a = unzipSync(Buffer.from(python.archive, 'base64')), b = unzipSync(content);
     delete report.createdAt; delete python.report.createdAt;
