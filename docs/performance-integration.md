@@ -4,7 +4,7 @@ Base: `4cdc08d` (main); experiment reference: `d1e5bc7`. Preserve all UI and mat
 
 Approved stages: (1) full-resolution position pack + Worker normals + exact print matrices; (2) demand rendering, no preserved framebuffer, original-sort depth prepass where measurements justify it; (3) asynchronous GPU hover picking with coarse bounds and stale-result suppression; (4) ZIP entry reuse and binary thumbnail upload. On 2026-10-23 the user also explicitly approved shared export geometry and all three candidate image groups on the “正式集成” artboard page (basic, silk, translucent). The artboard records all three as passed. The user subsequently approved transmission at 0.5; its separate integration and measurements are recorded in [Transmission 0.5](transmission-half.md).
 
-Not approved for integration: drag resolution at 0.67. Rejected: near-to-far sorting and transmission at 0.33. No automatic quality reduction may cross this boundary. Windows GPU/CPU performance remains unmeasured.
+The user subsequently accepted the dynamic drag resolution at 0.67, conditional on removing transition stalls before a separate PR. Its implementation and measurements are in [Drag buffer reuse](drag-buffer-reuse.md). Rejected: near-to-far sorting and transmission at 0.33. No automatic quality reduction may cross this boundary. Windows GPU/CPU performance remains unmeasured.
 
 ## 1. Model
 
@@ -70,4 +70,4 @@ Keep Three.js and the existing Python service for this integration. The measured
 
 The additional gallery-detail locale-switch assertion remains a known pre-existing failure: both untouched baseline and candidate drift about 0.9 mm in the largest camera coordinate; their final positions differ by less than 0.002 mm. It was reproduced before this follow-up, not claimed as fixed or reclassified as a pass. Gallery code is unchanged.
 
-All four implementation stages have targeted checks. Windows hardware, real mobile GPU timing, public-network cold starts, and local MySQL integration were not measured here. Per-language bundles and Three.js trimming are not included. The three integrated main-view image groups, shared export geometry and subsequent transmission 0.5 are accepted. Drag downscale acceptance and Windows hardware measurements remain separate from automated checks. The existing running studio is not switched by these source changes.
+All four implementation stages have targeted checks. Windows hardware, real mobile GPU timing, public-network cold starts, and local MySQL integration were not measured here. Per-language bundles and Three.js trimming are not included. The three integrated main-view image groups, shared export geometry, subsequent transmission 0.5 and dynamic drag 0.67 quality are accepted. Windows hardware measurements remain separate from automated checks. The existing running studio is not switched by these source changes.
