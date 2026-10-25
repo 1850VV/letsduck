@@ -32,7 +32,8 @@ const ART={
         `<svg viewBox="0 0 150 90"><rect x="20" y="40" width="110" height="40" fill="#f4f5f9" stroke="#d4d9e3"/><rect x="62" y="44" width="26" height="10" rx="2" fill="#a9b1bd"/><rect x="72" y="54" width="6" height="30" fill="#8d97a6"/><path d="M50 40c6 8 12 8 18 2m14 0c6 6 12 6 18-2" stroke="#e5484d" stroke-width="2" fill="none"/></svg>`,'拧到打滑，打印孔就废了','贴平就停'],
 };
 // Only steps that are easy to get wrong and hard to undo get a card. It never blocks the step.
-const guardFor=id=>/horn/.test(id)?ART.horn:/-plug$/.test(id)?ART.plug:/tighten/.test(id)?ART.screw:null;
+const plugSteps=new Set(['r-wire-a','l-wire-a','t-wire','t-motor-r','t-motor-l','head-yaw-wire','head-neck-wire','final-power','final-buses']);
+const guardFor=id=>/horn/.test(id)?ART.horn:/-plug$/.test(id)||plugSteps.has(id)?ART.plug:/tighten/.test(id)?ART.screw:null;
 
 function screwSVG({d,len}){
   const mm=3*96/25.4,head=d*2,w=(len+1.2)*mm+4,h=head*mm+4,y=2+(head-d)/2*mm;
