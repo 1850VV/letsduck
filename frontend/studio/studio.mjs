@@ -8,6 +8,7 @@ import { ZONES, schemePatch } from '../lib/duck-workbench.mjs';
 import { SLOTS, RECIPES, THEMES, quickDesign, rollSlots, themeSlots, designNotes, decodeLook, slotsFromDesign } from '../lib/quick-style.mjs';
 import { sideParts, paintTargets } from '../lib/color-workflows.mjs';
 import { createEvolution } from '../lib/evolution.mjs';
+import { createLineup } from './lineup.mjs';
 import { createActionPlayer, ACTIONS, VOICES, describeVoice, seedFromText } from '../shared/duck-actions.mjs';
 import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
 import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
@@ -220,7 +221,7 @@ function renderCompare() {
 }
 $('#cmp-pick').onclick = (e) => {e.stopPropagation();const m = $('#cmp-menu');m.hidden = !m.hidden;};
 $('#cmp-menu').onclick = (e) => {const b = e.target.closest('[data-cmp]');if (b) {compareId = b.dataset.cmp;} else if (e.target.closest('[data-cmp-split]')) {splitOn = !splitOn;if (splitOn && sideOn) toggleSide(false);}renderCompare();$('#cmp-menu').hidden = true;};
-const holdOn = () => {view.setColors(compareColors());$('#hold').classList.add('on');},holdOff = () => {view.setColors(design.colors);$('#hold').classList.remove('on');};
+const holdOn = () => {if (step === 1) return;view.setColors(compareColors());$('#hold').classList.add('on');},holdOff = () => {view.setColors(design.colors);$('#hold').classList.remove('on');};
 $('#hold').addEventListener('pointerdown', holdOn);$('#hold').addEventListener('pointerup', holdOff);$('#hold').addEventListener('pointerleave', holdOff);
 
 // ---------- selection ----------
@@ -251,52 +252,61 @@ function renderRail() {
   if (step === 2) $('#rail .zone.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 function swatch(k, { current, extra = '' } = {}) {return `<button class="sw ${current ? 'on' : ''} ${isHex(k) ? 'free' : ''}" data-key="${k}" style="--c:${keyHex(k)}" title="${_attr(esc(keyName(k) + ' · ' + keySub(k)))}"><i></i><span>${esc(keyName(k))}<small>${esc(keySub(k))}${extra}</small></span></button>`;}
-// Step 1 · 选个起点: one page, four kinds of starting points, every card previews on hover and applies on click.
-// 白胚 (all white) · 经典配色 (4) · 灵感骰子 (4 at once, one per colour mapping) · 我的方案 (saved ones).
+// Step 1 · 选个起点: the stage itself is the picker. Four real ducks stand in a row (studio/lineup.mjs); the tabs
+// swap the squad between 经典配色, 灵感骰子 and 我的方案, 白胚 starts from all white. Clicking a duck dresses the
+// design in it, going on to step 2 walks that duck into the studio.
 const prodBy = (code, series) => catalog.products.find((p) => p.colorCode === code && p.series === series);
 const BLANK = (() => {const w = prodBy('10100', 'PLA Basic'),t = prodBy('51105', 'TPU 90A');return { colors: Object.fromEntries(parts.map((p) => [p.id, (p.material === 'TPU 90A' ? t : w).hex.toUpperCase()])), assignments: Object.fromEntries(parts.map((p) => [p.id, (p.material === 'TPU 90A' ? t : w).id])) };})();
-let CLASSICS = [['original', _t("text.0117"), _t("text.0118"), ORIGINAL], ...[1, 2, 6].map((i) => ['theme-' + i, THEMES[i].name, _t("text.0119", { v0: _label(THEMES[i].recipe) }), quickDesign(parts, products, themeSlots(products, THEMES[i]), THEMES[i].recipe)])];
-let DICE_STYLES = [['经典', _t("text.0120")], ['撞色', _t("text.0121")], ['双拼', _t("text.0122")], ['低调', _t("text.0123")]];
-// Dice cards are drawn like hextech cards: each slot keeps its style, can be locked, rerolled alone, or saved.
-let diceDraw = 0,diceSet = [],startId = null;
-function drawCard(i) {const [r, hint] = DICE_STYLES[i],sl = rollSlots(products, slots, r, { recipe: true }).slots,id = `dice-${++diceDraw}`,design = quickDesign(parts, products, sl, r);thumbCache.set(id, view.thumbnail(design.colors, 320, 240));const number = diceDraw;return { id, get name() {return _label(r) + ' #' + number;}, get hint() {return DICE_STYLES[i][1];}, recipe: r, design, locked: false };}
-function rollDice() {diceSet = DICE_STYLES.map((_, i) => drawCard(i));}
+let CLASSICS = [['original', _t("text.0117"), ORIGINAL], ...[1, 2, 6].map((i) => ['theme-' + i, THEMES[i].name, quickDesign(parts, products, themeSlots(products, THEMES[i]), THEMES[i].recipe)])];
+const DICE_STYLES = ['经典', '撞色', '双拼', '低调'];
+// Each dice slot keeps its style and can be locked, rerolled alone, or kept as a scheme.
+let diceDraw = 0,diceSet = [],startId = null,startTab = 'classic',minePage = 0,squadKey = '';
+function drawCard(i) {const r = DICE_STYLES[i],design = quickDesign(parts, products, rollSlots(products, slots, r, { recipe: true }).slots, r),id = `dice-${++diceDraw}`,number = diceDraw;return { id, get name() {return _label(r) + ' #' + number;}, recipe: r, design, locked: false };}
 function startOf(id) {
   if (id === 'blank') return { get name() {return _t("text.0124");}, design: BLANK };
-  const c = CLASSICS.find((x) => x[0] === id);if (c) return { get name() {return CLASSICS.find((x) => x[0] === id)[1];}, design: c[3] };
+  const c = CLASSICS.find((x) => x[0] === id);if (c) return { get name() {return CLASSICS.find((x) => x[0] === id)[1];}, design: c[2] };
   const d = diceSet.find((x) => x.id === id);if (d) return { get name() {return d.name;}, design: d.design };
   const sc = id.startsWith('scheme-') && schemes.find((x) => x.id === id.slice(7));if (sc) return { name: sc.name, design: sc.design, scheme: sc };
   return null;
 }
-// Everything fits one screen: a slim 白胚 strip, then three rows of four small cards. The model on the
-// left is the big preview (hover a card), so the cards only need to be recognisable.
-const startCard = (id, title, extra = '') => `<button class="mini" role="option" data-start="${id}" title="${_attr(esc(title))}"><img data-thumb="${id}" alt=""><span>${esc(title)}</span>${extra}</button>`;
-const diceCell = (d, i) => `<div class="dice-cell ${d.locked ? 'locked' : ''}" data-dice-cell="${i}"><button class="mini" role="option" data-start="${d.id}" title="${_attr(esc(_label(d.recipe) + ' · ' + d.hint))}"><img src="${thumbCache.get(d.id) || ''}" class="ready" alt=""><span>${esc(_label(d.recipe))}</span></button>
-  <div class="dice-ctl"><button data-dice-lock="${i}" aria-pressed="${d.locked}" title="${_attr(d.locked ? _t("text.0112") : _t("text.0125"))}">${d.locked ? '🔒' : '🔓'}</button><span><button data-dice-one="${i}" ${d.locked ? 'disabled' : ''} title="${_attr(_t("text.0126"))}">↻</button><button data-keep="${d.id}" title="${_attr(_t("text.0127"))}">☆</button></span></div></div>`;
-const diceCards = () => diceSet.map(diceCell).join('');
-// Flip: turn the card edge-on, swap in the new draw while it is invisible, turn it back with a glint.
-function flipCard(i, delay = 0) {
-  setTimeout(() => {const cell = $(`[data-dice-cell="${i}"]`);if (!cell) return;cell.classList.add('flip-out');
-    setTimeout(() => {diceSet[i] = drawCard(i);const fresh = document.createElement('div');fresh.innerHTML = diceCell(diceSet[i], i);const nc = fresh.firstElementChild;nc.classList.add('flip-in');cell.replaceWith(nc);updateStep1();setTimeout(() => nc.classList.remove('flip-in'), 520);}, 180);
-  }, delay);
+const minePages = () => Math.max(1, Math.ceil(schemes.length / 4));
+// The four starting points on stage now: [id, label].
+function squad() {
+  if (startTab === 'dice') return diceSet.map((d) => [d.id, _label(d.recipe)]);
+  if (startTab === 'mine') {minePage = Math.min(minePage, minePages() - 1);return schemes.slice(minePage * 4, minePage * 4 + 4).map((s) => ['scheme-' + s.id, s.name]);}
+  return CLASSICS.map((c) => [c[0], c[1]]);
 }
-function rerollAll() {const open = diceSet.map((d, i) => d.locked ? null : i).filter((i) => i !== null);if (!open.length) return toast(_message("text.0128"));open.forEach((i, k) => flipCard(i, k * 85));}
-function panelStep1() {
-  if (!diceSet.length) rollDice();
-  const more = schemes.length - 3,mine = schemes.slice(0, more > 1 ? 3 : 4);
-  return `<div class="panel-head compact"><span class="eyebrow">${_t("text.0132")}</span><div class="sel-line"><h2>${_t("text.0133")}</h2><span class="kind-tag">${_t("text.0134")}</span></div></div>
-  <div class="panel-body starts one-screen" id="starts">
-    <button class="blank-strip" data-start="blank"><i></i><span><b>${_t("text.0124")}</b><small>${_t("text.0135")}</small></span><em>→</em></button>
-    <section><div class="strip"><span>${_t("text.0136")}</span></div><div class="mini-row">${CLASSICS.map((c) => startCard(c[0], c[1])).join('')}</div></section>
-    <section><div class="strip"><span>${_t("text.0137")} <small class="hover-hint">${_t("text.0138")}</small></span><button class="reroll" id="dice"><span class="die">🎲</span> ${_t("text.0139")} <kbd>R</kbd></button></div><div class="mini-row" id="dice-grid">${diceCards()}</div></section>
-    <section><div class="strip"><span>${_t("text.0140")}</span>${schemes.length ? `<small>${_t("text.0129", { v0: schemes.length })}</small>` : ''}</div><div class="mini-row">${mine.map((m) => startCard('scheme-' + m.id, m.name)).join('')}${more > 1 ? `<button class="mini more" id="more-schemes"><b>+${more}</b><span>${_t("text.0130")}</span></button>` : ''}${schemes.length ? '' : `<div class="mini-empty">${_t("text.0131")}</div>`}</div></section>
-  </div>
-  <div class="panel-foot"><button class="primary" data-go="2" id="start-go"></button></div>`;
+const finishesOf = (d) => Object.fromEntries(parts.map((p) => {const k = d.assignments?.[p.id];return [p.id, k && products.has(k) ? finishOfProduct(products.get(k)) : d.finishes?.[p.id] || (partKind(p) === 'TPU' ? 'tpu' : 'basic')];}));
+const squadKeyOf = (list) => startTab + '|' + list.map(([id]) => id + (id.startsWith('scheme-') ? JSON.stringify(startOf(id).design.colors) : '')).join(',');
+const lookOf = (id) => {const d = startOf(id).design;return { colors: d.colors, finishes: finishesOf(d) };};
+const lineup = createLineup(view, { tags: $('#lineup-tags'), onPick: (i) => {const s = squad()[i];if (s) applyStart(s[0]);}, onStart: (i) => {const s = squad()[i];if (s) {applyStart(s[0]);goStep(2);}} });
+// The overlay re-renders freely; the ducks only change when the squad itself does.
+function renderStarts() {
+  const box = $('#lineup');box.hidden = step !== 1;if (step !== 1) return;
+  if (!diceSet.length) diceSet = DICE_STYLES.map((_, i) => drawCard(i));
+  const list = squad(),key = squadKeyOf(list);
+  if (key !== squadKey || !lineup.active) {squadKey = key;lineup.show(list.map(([id]) => lookOf(id)));}
+  const tabs = [['classic', _t("text.0136")], ['dice', _t("text.0137")], ['mine', _t("text.0140"), schemes.length ? `<small>${schemes.length}</small>` : '']];
+  $('#lineup-tabs').innerHTML = tabs.map(([k, label, extra = '']) => `<button role="tab" data-start-tab="${k}" aria-selected="${startTab === k}" class="${startTab === k ? 'on' : ''}">${label}${extra}</button>`).join('');
+  $('#lineup-tags').innerHTML = list.map(([id, label], i) => {
+    const d = startTab === 'dice' && diceSet[i];
+    const ctl = d ? `<span class="ctl"><button data-dice-lock="${i}" aria-pressed="${d.locked}" title="${_attr(d.locked ? _t("text.0112") : _t("text.0125"))}">${d.locked ? '🔒' : '🔓'}</button><button data-dice-one="${i}" ${d.locked ? 'disabled' : ''} title="${_attr(_t("text.0126"))}">↻</button><button data-keep="${d.id}" title="${_attr(_t("text.0127"))}">☆</button></span>` : '';
+    return `<div class="lineup-tag ${id === startId ? 'on' : ''} ${d?.locked ? 'locked' : ''}" data-slot="${i}"><button data-start="${id}">${esc(label)}</button>${ctl}</div>`;
+  }).join('');
+  const paged = startTab === 'mine' && minePages() > 1;$('#lineup-prev').hidden = $('#lineup-next').hidden = !paged;$('#lineup-prev').disabled = minePage === 0;$('#lineup-next').disabled = minePage >= minePages() - 1;
+  $('#lineup-empty').hidden = !(startTab === 'mine' && !schemes.length);$('#lineup-dice').hidden = startTab !== 'dice';
+  const at = list.findIndex(([id]) => id === startId),s = at >= 0 && startOf(startId);lineup.select(at);
+  $('#start-go').textContent = s ? _t("text.0141", { v0: s.name }) : _t("text.0142");lineup.place();
 }
-function updateStep1() {
-  $$('[data-start]').forEach((b) => b.classList.toggle('on', b.dataset.start === startId));
-  const s = startId && startOf(startId);$('#start-go').textContent = s ? `${_t("text.0141", { v0: s.name })}` : _t("text.0142");
+function setStartTab(tab) {if (tab === startTab) return;startTab = tab;minePage = 0;renderStarts();}
+function rerollAll() {
+  if (startTab !== 'dice') return setStartTab('dice');
+  const open = diceSet.map((d, i) => d.locked ? null : i).filter((i) => i !== null);if (!open.length) return toast(_message("text.0128"));
+  const die = $('#lineup-dice .die');die.classList.remove('roll');void die.offsetWidth;die.classList.add('roll');
+  open.forEach((i, k) => rerollOne(i, k * 90));
 }
+// A rerolled duck spins into its new colours on its own, so the squad is not swapped.
+function rerollOne(i, delay = 0) {if (startId === diceSet[i].id) startId = null;diceSet[i] = drawCard(i);squadKey = squadKeyOf(squad());lineup.spin(i, lookOf(diceSet[i].id), delay);renderStarts();}
 function applyStart(id) {
   const s = startOf(id);if (!s) return;startId = id;
   if (s.scheme) {openScheme(s.scheme.id);return;}
@@ -307,7 +317,7 @@ async function keepDice(id) {
   const d = diceSet.find((x) => x.id === id);if (!d) return;if (schemes.length >= 30) return toast(_message("text.0144"));
   const s = { id: newId(), name: d.name, design: clone(d.design), provenance: null, voiceSalt: 0, created: Date.now(), updated: Date.now() };
   if (personal) {const result = await personalWrite('PUT', s.id, schemeBody(s));if (!result) return;Object.assign(s,result);}
-  schemes.unshift(s);persist();if (!personal) pushScheme(s);renderPanel();toast(_message("text.0145", { v0: d.name, v1: savedWhere() }));
+  schemes.unshift(s);persist();if (!personal) pushScheme(s);renderStarts();toast(_message("text.0145", { v0: d.name, v1: savedWhere() }));
 }
 const selKind = () => partKind(partById.get(ZONES.find((z) => z.id === sel.zone).ids[0]));
 // In 刷子 mode the swatches load the brush instead of painting a selection, so they list the brush's material.
@@ -450,7 +460,7 @@ function fillPosterMini() {
 }
 function renderPanel() {
   const panel = $('#panel'),top = $('#panel .panel-body')?.scrollTop || 0,outer = panel.scrollTop,again = panel.dataset.step === String(step);
-  panel.innerHTML = step === 1 ? panelStep1() : step === 2 ? panelStep2() : panelStep3();panel.dataset.step = step;
+  panel.innerHTML = step === 1 ? '' : step === 2 ? panelStep2() : panelStep3();panel.dataset.step = step;
   if (again && $('#panel .panel-body')) $('#panel .panel-body').scrollTop = top;
   // On phones the panel itself scrolls under the pinned duck: keep the spot within a step, start a new step at the top.
   panel.scrollTop = again ? outer : 0;
@@ -459,10 +469,8 @@ function renderPanel() {
   if (step === 3 && showTab === 'share') fillPosterMini();
   if (step === 3 && $('.joint-grid')) syncPose();
   if (step !== 2 && poseOpen) togglePose(false);
-  if (step === 1) {fillThumbs();updateStep1();}if (step === 2) {buildGrid();updateStep2();}
+  renderStarts();if (step === 2) {buildGrid();updateStep2();}
 }
-const thumbCache = new Map();
-function fillThumbs() {const imgs = $$('[data-thumb]');(function next() {const img = imgs.find((i) => !i.src);if (!img) return;const id = img.dataset.thumb,s = startOf(id),key = id.startsWith('scheme-') ? id + JSON.stringify(s?.design.colors) : id;if (s && !thumbCache.has(key)) thumbCache.set(key, view.thumbnail(s.design.colors, 320, 240));img.src = thumbCache.get(key) || 'data:,';img.classList.add('ready');requestAnimationFrame(next);})();}
 function renderSteps() {$$('#steps button').forEach((b) => {const n = +b.dataset.step;b.classList.toggle('on', n === step);b.classList.toggle('done', stepsDone.has(n) && n !== step);});$('#studio').dataset.step = step;}
 function renderStage() {
   const ids = step === 2 && tool === 'select' ? replaceFrom ? parts.filter((p) => keyOf(p.id) === replaceFrom).map((p) => p.id) : targetIds() : [];if (!brushHover) view.setHighlight(ids, []);
@@ -475,7 +483,7 @@ function renderStage() {
   view.setFinishes(Object.fromEntries(parts.map((p) => [p.id, keyFinish(keyOf(p.id), p.id)])));
   // 自动背景: light selections get a mid-tone backdrop so white parts never melt into it.
   const look = (step === 2 ? targetIds() : ['P4-01', 'P5-06', 'P5-07', 'P5-01', 'P5-02', 'P2-03', 'P2-04']).map((id) => lum(design.colors[id])),avg = look.reduce((a, b) => a + b, 0) / look.length;
-  $('#stage').dataset.bg = bgPref === 'auto' ? avg > .55 ? 'mid' : 'soft' : bgPref;$$('#bgs [data-bg]').forEach((b) => b.classList.toggle('on', b.dataset.bg === bgPref));paintBg();
+  $('#stage').dataset.bg = bgPref === 'auto' ? avg > .55 && step !== 1 ? 'mid' : 'soft' : bgPref;$$('#bgs [data-bg]').forEach((b) => b.classList.toggle('on', b.dataset.bg === bgPref));paintBg();
   // The enlarged copy stands beside the duck in the same view; it follows the current selection.
   const showSide = sideOn && step === 2 && !splitOn && view.layout !== 'arrange',ids2 = targetIds(),scale = view.setSideCopy(showSide ? ids2 : null, $('#side-label'));
   $('#side-label').textContent = _t("text.0257", { v0: scale.toFixed(1), v1: selectionLabel() });$('#side-toggle').setAttribute('aria-pressed', sideOn);
@@ -492,10 +500,11 @@ async function updateVoice() {
   const code = lookCode({ ...design, name: '' }, parts, products, false),key = (code.startsWith('v1.') ? code : 'colors:' + parts.map((p) => keyOf(p.id)).join(',')) + (voiceSalt ? '#' + voiceSalt : '');if (key === voiceKey) return;voiceKey = key;
   const seed = await seedFromText(key);if (key !== voiceKey) return;actions.seed = seed;voiceDesc = describeVoice(seed);const el = $('#voice-desc');if (el) el.textContent = voiceDesc + ' · #' + seed.toString(16).padStart(8, '0');
 }
-function renderAll(lite = false) {renderHeader();renderSteps();renderRail();if (lite && step === 2 && $('#cdock')) updateStep2();else if (lite && step === 1 && $('#sdock')) updateStep1();else renderPanel();renderStage();renderCompare();renderMenu();$('#undo').disabled = !undo.length;$('#redo').disabled = !redo.length;updateVoice();}
+function renderAll(lite = false) {renderHeader();renderSteps();renderRail();if (lite && step === 2 && $('#cdock')) updateStep2();else if (lite && step === 1) renderStarts();else renderPanel();renderStage();renderCompare();renderMenu();$('#undo').disabled = !undo.length;$('#redo').disabled = !redo.length;updateVoice();}
 function goStep(n) {
   if (step === 3 && n !== 3) {actions.stop();applyPose();}
   if (focused && n !== 2) {focused = false;focusKey = '';view.view('hero');}
+  if (step === 1 && n !== 1) lineup.hide(squad().findIndex(([id]) => id === startId));
   step = n;if (n > 1) stepsDone.add(n - 1);replaceFrom = null;
   if (n === 3) {if (view.layout === 'arrange') setLayout('assembly');view.setTurntable(true);tool = 'select';} else if (view.turntable) {view.setTurntable(false);view.resetSpin();}
   renderAll();
@@ -512,12 +521,6 @@ let previewing = false;
 $('#panel').addEventListener('click', async (e) => {
   const t = e.target,go = t.closest('[data-go]');if (go) return goStep(+go.dataset.go);
   const ptab = t.closest('[data-ptab]');if (ptab) {showTab = ptab.dataset.ptab;$('#pdock').dataset.tab = showTab;if (showTab === 'share') fillPosterMini();return;}
-  const keep = t.closest('[data-keep]');if (keep) {e.stopPropagation();keep.textContent = '★';return keepDice(keep.dataset.keep);}
-  if (t.closest('#more-schemes')) {e.stopPropagation();menuOpen = true;return renderMenu();}
-  const card = t.closest('[data-start]');if (card) {card.classList.remove('pop');void card.offsetWidth;card.classList.add('pop');return applyStart(card.dataset.start);}
-  if (t.closest('#dice')) {const die = $('.die');die?.classList.remove('roll');void die?.offsetWidth;die?.classList.add('roll');return rerollAll();}
-  const dl = t.closest('[data-dice-lock]');if (dl) {const i = +dl.dataset.diceLock,d = diceSet[i];d.locked = !d.locked;const cell = dl.closest('.dice-cell');cell.classList.toggle('locked', d.locked);dl.textContent = d.locked ? '🔒' : '🔓';dl.setAttribute('aria-pressed', d.locked);dl.title = d.locked ? _t("text.0112") : _t("text.0125");cell.querySelector('[data-dice-one]').disabled = d.locked;return;}
-  const one = t.closest('[data-dice-one]');if (one) {if (!diceSet[+one.dataset.diceOne].locked) flipCard(+one.dataset.diceOne);return;}
   const rp = t.closest('[data-replace]');if (rp) {replaceFrom = replaceFrom === rp.dataset.replace ? null : rp.dataset.replace;renderPanel();return renderStage();}
   if (t.closest('#replace-cancel')) {replaceFrom = null;renderPanel();return renderStage();}
   const sw = t.closest('[data-key]');
@@ -573,20 +576,18 @@ $('#panel').addEventListener('input', (e) => {
 });
 // Hovering a swatch previews it on the model; leaving restores the real design.
 $('#panel').addEventListener('pointerover', (e) => {
-  const unlocked = (d) => ({ ...design.colors, ...Object.fromEntries(Object.entries(d.colors).filter(([id]) => !locks.has(id))) });
-  const th = e.target.closest('[data-start]');if (th) {const st = startOf(th.dataset.start);if (st) {previewing = true;view.setColors(unlocked(st.design));}return;}
   const sw = e.target.closest('[data-key]');if (!sw) return;const k = sw.dataset.key;if (step === 2) hoverInfo(k);if (tool === 'brush' && !replaceFrom) return;
   if (step !== 2) return;
   const ids = (replaceFrom ? parts.filter((x) => keyOf(x.id) === replaceFrom).map((x) => x.id) : targetIds()).filter((id) => !locks.has(id) && fits(id, k));if (!ids.length) return;
   previewing = true;view.setColors({ ...design.colors, ...Object.fromEntries(ids.map((id) => [id, keyHex(k)])) });
 });
-$('#panel').addEventListener('pointerout', (e) => {if (e.target.closest('[data-key],[data-start]') && !e.relatedTarget?.closest?.('[data-key],[data-start]')) {if (step === 2) hoverInfo(null);if (previewing && !freeDrag) {previewing = false;view.setColors(design.colors);}}});
-$('#panel').addEventListener('focusin', (e) => {if (e.target.matches('.dot,.chip,.theme,.mini,.blank-strip')) e.target.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));});
-$('#panel').addEventListener('focusout', (e) => {if (e.target.matches('.dot,.chip,.theme,.mini,.blank-strip')) e.target.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, relatedTarget: e.relatedTarget }));});
+$('#panel').addEventListener('pointerout', (e) => {if (e.target.closest('[data-key]') && !e.relatedTarget?.closest?.('[data-key]')) {if (step === 2) hoverInfo(null);if (previewing && !freeDrag) {previewing = false;view.setColors(design.colors);}}});
+$('#panel').addEventListener('focusin', (e) => {if (e.target.matches('.dot,.chip,.theme')) e.target.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));});
+$('#panel').addEventListener('focusout', (e) => {if (e.target.matches('.dot,.chip,.theme')) e.target.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, relatedTarget: e.relatedTarget }));});
 // Arrow keys walk the swatch grid; Enter/Space (native button) paints.
 $('#panel').addEventListener('keydown', (e) => {
-  const grid = e.target.closest('#lib-grid,.themes,.mini-row');if (!grid || !e.target.matches('.dot,.theme,.mini') || !e.key.startsWith('Arrow')) return;e.preventDefault();
-  const dots = [...grid.querySelectorAll('.dot,.theme,.mini')],i = dots.indexOf(e.target),cols = dots.filter((d) => d.offsetTop === dots[0].offsetTop).length;
+  const grid = e.target.closest('#lib-grid,.themes');if (!grid || !e.target.matches('.dot,.theme') || !e.key.startsWith('Arrow')) return;e.preventDefault();
+  const dots = [...grid.querySelectorAll('.dot,.theme')],i = dots.indexOf(e.target),cols = dots.filter((d) => d.offsetTop === dots[0].offsetTop).length;
   const j = { ArrowLeft: i - 1, ArrowRight: i + 1, ArrowUp: i - cols, ArrowDown: i + cols }[e.key];dots[Math.max(0, Math.min(dots.length - 1, j))]?.focus();
 });
 // SV square: drag previews live on the model; releasing paints once (one undo step).
@@ -604,10 +605,24 @@ $('#rail').addEventListener('dblclick', (e) => {if (e.target.closest('[data-zone
 $('#rail').addEventListener('pointerover', (e) => {const zb = e.target.closest('[data-zone]');if (zb && zb.dataset.zone !== sel.zone) view.setHighlight(targetIds(), ZONES.find((z) => z.id === zb.dataset.zone).ids);});
 $('#rail').addEventListener('pointerleave', () => renderStage());
 
+// ---------- events: step 1 lineup ----------
+$('#lineup').addEventListener('click', (e) => {
+  const t = e.target,tab = t.closest('[data-start-tab]');if (tab) return setStartTab(tab.dataset.startTab);
+  const keep = t.closest('[data-keep]');if (keep) {keep.textContent = '★';return keepDice(keep.dataset.keep);}
+  const dl = t.closest('[data-dice-lock]');if (dl) {const d = diceSet[+dl.dataset.diceLock];d.locked = !d.locked;return renderStarts();}
+  const one = t.closest('[data-dice-one]');if (one) {if (!diceSet[+one.dataset.diceOne].locked) rerollOne(+one.dataset.diceOne);return;}
+  if (t.closest('#lineup-dice')) return rerollAll();
+  const page = t.closest('#lineup-prev,#lineup-next');if (page) {minePage += page.id === 'lineup-next' ? 1 : -1;return renderStarts();}
+  const go = t.closest('[data-go]');if (go) return goStep(+go.dataset.go);
+  // 白胚 is not one of the four on stage, so it goes straight on to painting.
+  const start = t.closest('[data-start]');if (start) {applyStart(start.dataset.start);if (start.dataset.start === 'blank') goStep(2);return;}
+});
+$('#lineup').addEventListener('dblclick', (e) => {const start = e.target.closest('[data-start]');if (start && start.dataset.start !== 'blank') goStep(2);});
+
 // ---------- events: stage ----------
 const stage = $('#stage');let down = null;
 const hover=hoverQueue(({clientX,clientY})=>view.pickAsync(clientX,clientY),showHover);
-stage.addEventListener('pointerdown', (e) => {hover.cancel();if (e.target === view.canvas) down = { x: e.clientX, y: e.clientY };});
+stage.addEventListener('pointerdown', (e) => {hover.cancel();if (e.target === view.canvas && step !== 1) down = { x: e.clientX, y: e.clientY };});
 function stageClick(e) {
   const id = view.pick(e.clientX, e.clientY);if (!id) {if (step === 2 && tool === 'select' && !replaceFrom) {sel.part = null;sel.scope = 'all';renderAll();}return;}
   const z = zoneOf(id),p = partById.get(id);
@@ -631,7 +646,7 @@ stage.addEventListener('pointerup', (e) => {
 // Double-click focuses whatever the two clicks selected; double-clicking again returns to the whole duck.
 stage.addEventListener('dblclick', (e) => {if (e.target === view.canvas && step === 2 && (focused || view.pick(e.clientX, e.clientY))) setFocused(!focused);});
 stage.addEventListener('pointermove', (e) => {
-  if (e.buttons || e.target !== view.canvas) {hover.cancel();$('#part-tag').hidden = true;return;}
+  if (e.buttons || e.target !== view.canvas || step === 1) {hover.cancel();$('#part-tag').hidden = true;return;}
   hover.submit({clientX:e.clientX,clientY:e.clientY});
 });
 function showHover(id,e) {const tag=$('#part-tag');
@@ -800,7 +815,13 @@ addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && k === 's') {e.preventDefault();saveScheme(false);return;}
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.code === 'Space' && !e.repeat) {e.preventDefault();holdOn();return;}
-  if (k === 'r' && step === 1) {$('#dice')?.click();return;}
+  if (step === 1) {
+    const list = squad(),tabs = ['classic', 'dice', 'mine'];
+    if (k === 'r') rerollAll();else if (/^[1-4]$/.test(k) && list[+k - 1]) applyStart(list[+k - 1][0]);
+    else if (k === 'arrowright' || k === 'arrowleft') {const next = tabs[tabs.indexOf(startTab) + (k === 'arrowright' ? 1 : -1)];if (next) setStartTab(next);}
+    else if (k === 'enter' && !e.target.closest('button,a')) goStep(2);
+    return;
+  }
   if (k === '1' || k === '2' || k === '3') {setLayout(['assembly', 'explode', 'arrange'][+k - 1]);return;}
   if (k === 'f') return setFocused(!focused);
   if (step !== 2) return;
@@ -874,7 +895,7 @@ const coachDone = () => {$('#coach').hidden = true;try {localStorage.setItem(COA
 $('#coach-go').onclick = coachDone;
 $('#coach-login').hidden = personal || !!account.user;$('#coach-login').onclick = () => {coachDone();requireLogin('').catch(() => {});};
 renderAll();
-window.studioProto = { view, actions, get state() {return { step, sel, tool, brush, name, activeId, dirty: dirty(), schemes: schemes.length, locks: [...locks], undo: undo.length, layout: view.layout, sideOn, focused, splitOn, compareId, replaceFrom, colors: design.colors, provenance };} };_onLocale(() => {DEMO_BRANDS = [{ id: 'esun', name: 'eSUN', series: 'PLA+', colors: [[_t("text.0001"), '#F3EFE2'], [_t("text.0002"), '#1D1D1F'], [_t("text.0003"), '#8B8F95'], [_t("text.0004"), '#D3262D'], [_t("text.0005"), '#F07A22'], [_t("text.0006"), '#F5D42C'], [_t("text.0007"), '#4CA848'], [_t("text.0008"), '#8ED3B4'], [_t("text.0009"), '#4DA2DA'], [_t("text.0010"), '#1F3E8C'], [_t("text.0011"), '#6A3E9E'], [_t("text.0012"), '#F1A2BC']] }, { id: 'polymaker', name: 'Polymaker', series: 'PolyTerra PLA', colors: [[_t("text.0013"), '#ECE8DF'], [_t("text.0014"), '#2A2A2C'], [_t("text.0015"), '#9C9A93'], [_t("text.0016"), '#B53A2F'], [_t("text.0017"), '#E0813D'], [_t("text.0018"), '#E9C65A'], [_t("text.0019"), '#4F7A4A'], [_t("text.0020"), '#7FA9C9'], [_t("text.0021"), '#2C3E66'], [_t("text.0022"), '#A893C4'], [_t("text.0023"), '#D88A97'], [_t("text.0024"), '#A26A42']] }, { id: 'sunlu', name: 'SUNLU', series: 'PLA', colors: [[_t("text.0025"), '#F7F7F5'], [_t("text.0026"), '#161616'], [_t("text.0027"), '#B7B9BC'], [_t("text.0028"), '#E0242B'], [_t("text.0029"), '#F68A1E'], [_t("text.0030"), '#FBD11B'], [_t("text.0031"), '#79C043'], [_t("text.0032"), '#1E9FD0'], [_t("text.0033"), '#2350B4'], [_t("text.0034"), '#7A3FB0'], [_t("text.0035"), '#F27AA6'], [_t("text.0036"), '#DDE6EA']] }];BRANDS = [{ id: 'bambu', get short() {return _t("text.0038");} }, ...DEMO_BRANDS.map((b) => ({ id: b.id, short: b.name, demo: true }))];CLASSICS = [['original', _t("text.0117"), _t("text.0118"), ORIGINAL], ...[1, 2, 6].map((i) => ['theme-' + i, THEMES[i].name, _t("text.0119", { v0: _label(THEMES[i].recipe) }), quickDesign(parts, products, themeSlots(products, THEMES[i]), THEMES[i].recipe)])];DICE_STYLES = [['经典', _t("text.0120")], ['撞色', _t("text.0121")], ['双拼', _t("text.0122")], ['低调', _t("text.0123")]];POSE_SLIDERS = [[_t("text.0283"), 'jaw', _t("text.0284"), 0, 28, '°'], [_t("text.0283"), 'headPitch', _t("text.0285"), -30, 50, '°'], [_t("text.0283"), 'headYaw', _t("text.0286"), -45, 45, '°'], [_t("text.0283"), 'headRoll', _t("text.0287"), -15, 15, '°'], [_t("text.0283"), 'neck', _t("text.0288"), -20, 80, '°'], [_t("text.0289"), 'crouch', _t("text.0290"), 0, 100, '%'], [_t("text.0289"), 'trunk', _t("text.0291"), -15, 25, '°'], [_t("text.0292"), 'legL', _t("text.0293"), 0, 100, '%'], [_t("text.0292"), 'legR', _t("text.0294"), 0, 100, '%']];MOVE_POSES = [[_t("text.0284"), '😮', 1], [_t("text.0295"), '👇', 2], [_t("text.0293"), '🦵', 4], [_t("text.0287"), '🤔', 5]];POSE_PRESETS = [[_t("text.0296"), {}], [_t("text.0297"), { jaw: 24, headPitch: -20 }], [_t("text.0295"), { neck: 45, headPitch: 35 }], [_t("text.0298"), { crouch: 100, trunk: -15, neck: -8 }], [_t("text.0293"), { legL: 70, headRoll: 6 }], [_t("text.0299"), { headRoll: 12, headYaw: 20, jaw: 8 }]];});
+window.studioProto = { view, actions, get state() {return { step, sel, tool, brush, name, activeId, dirty: dirty(), schemes: schemes.length, locks: [...locks], undo: undo.length, layout: view.layout, sideOn, focused, splitOn, compareId, replaceFrom, colors: design.colors, provenance };} };_onLocale(() => {DEMO_BRANDS = [{ id: 'esun', name: 'eSUN', series: 'PLA+', colors: [[_t("text.0001"), '#F3EFE2'], [_t("text.0002"), '#1D1D1F'], [_t("text.0003"), '#8B8F95'], [_t("text.0004"), '#D3262D'], [_t("text.0005"), '#F07A22'], [_t("text.0006"), '#F5D42C'], [_t("text.0007"), '#4CA848'], [_t("text.0008"), '#8ED3B4'], [_t("text.0009"), '#4DA2DA'], [_t("text.0010"), '#1F3E8C'], [_t("text.0011"), '#6A3E9E'], [_t("text.0012"), '#F1A2BC']] }, { id: 'polymaker', name: 'Polymaker', series: 'PolyTerra PLA', colors: [[_t("text.0013"), '#ECE8DF'], [_t("text.0014"), '#2A2A2C'], [_t("text.0015"), '#9C9A93'], [_t("text.0016"), '#B53A2F'], [_t("text.0017"), '#E0813D'], [_t("text.0018"), '#E9C65A'], [_t("text.0019"), '#4F7A4A'], [_t("text.0020"), '#7FA9C9'], [_t("text.0021"), '#2C3E66'], [_t("text.0022"), '#A893C4'], [_t("text.0023"), '#D88A97'], [_t("text.0024"), '#A26A42']] }, { id: 'sunlu', name: 'SUNLU', series: 'PLA', colors: [[_t("text.0025"), '#F7F7F5'], [_t("text.0026"), '#161616'], [_t("text.0027"), '#B7B9BC'], [_t("text.0028"), '#E0242B'], [_t("text.0029"), '#F68A1E'], [_t("text.0030"), '#FBD11B'], [_t("text.0031"), '#79C043'], [_t("text.0032"), '#1E9FD0'], [_t("text.0033"), '#2350B4'], [_t("text.0034"), '#7A3FB0'], [_t("text.0035"), '#F27AA6'], [_t("text.0036"), '#DDE6EA']] }];BRANDS = [{ id: 'bambu', get short() {return _t("text.0038");} }, ...DEMO_BRANDS.map((b) => ({ id: b.id, short: b.name, demo: true }))];CLASSICS = CLASSICS.map(([id, , d], i) => [id, i ? THEMES[[1, 2, 6][i - 1]].name : _t("text.0117"), d]);POSE_SLIDERS = [[_t("text.0283"), 'jaw', _t("text.0284"), 0, 28, '°'], [_t("text.0283"), 'headPitch', _t("text.0285"), -30, 50, '°'], [_t("text.0283"), 'headYaw', _t("text.0286"), -45, 45, '°'], [_t("text.0283"), 'headRoll', _t("text.0287"), -15, 15, '°'], [_t("text.0283"), 'neck', _t("text.0288"), -20, 80, '°'], [_t("text.0289"), 'crouch', _t("text.0290"), 0, 100, '%'], [_t("text.0289"), 'trunk', _t("text.0291"), -15, 25, '°'], [_t("text.0292"), 'legL', _t("text.0293"), 0, 100, '%'], [_t("text.0292"), 'legR', _t("text.0294"), 0, 100, '%']];MOVE_POSES = [[_t("text.0284"), '😮', 1], [_t("text.0295"), '👇', 2], [_t("text.0293"), '🦵', 4], [_t("text.0287"), '🤔', 5]];POSE_PRESETS = [[_t("text.0296"), {}], [_t("text.0297"), { jaw: 24, headPitch: -20 }], [_t("text.0295"), { neck: 45, headPitch: 35 }], [_t("text.0298"), { crouch: 100, trunk: -15, neck: -8 }], [_t("text.0293"), { legL: 70, headRoll: 6 }], [_t("text.0299"), { headRoll: 12, headYaw: 20, jaw: 8 }]];});
 
 _onLocale(() => {
   const active = document.activeElement,focusId = active?.id;
