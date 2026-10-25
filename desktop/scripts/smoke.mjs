@@ -23,6 +23,13 @@ const downloadFile = async (page, selector) => {
   assert.equal(download.state, 'completed');
   return readFile(download.path);
 };
+// Resize the native Electron window. Browser viewport emulation can leave the
+// Windows input widget out of sync after switching between mobile/desktop sizes.
+const resizeWindow = async (page, size) => {
+  const window = await application.browserWindow(page);
+  await window.evaluate((window, size) => { window.setMinimumSize(Math.min(800, size.width), Math.min(600, size.height)); window.setContentSize(size.width, size.height); }, size);
+  await page.waitForFunction(size => innerWidth === size.width && innerHeight === size.height, size);
+};
 try {
   application = await launch(); const page = await application.firstWindow();
   await application.context().tracing.start({ screenshots: true, snapshots: true });
@@ -44,13 +51,13 @@ try {
   // Playwright routing does not intercept Electron custom protocols. Inject the
   // same failing response at fetch so all existing browser assertions still run.
   const adapted = new Proxy(page, { get(target, key) {
-    if (key === 'setViewportSize') return async size => { await page.setViewportSize(size); await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))); if (size.width <= 760 && await page.locator('.ph-more').isVisible()) await page.locator('.ph-more').click(); };
+    if (key === 'setViewportSize') return async size => { await resizeWindow(page, size); if (size.width <= 760 && await page.locator('.ph-more').isVisible()) await page.locator('.ph-more').click(); };
     if (key === 'route') return async () => page.evaluate(() => { window.smokeFetch = window.fetch; window.fetch = (url, options) => String(url).includes('/api/schemes/') && options?.method === 'PUT' ? Promise.resolve(new Response(JSON.stringify({ error: 'test', code: 'server.failed', params: {} }), { status: 503, headers: { 'Content-Type': 'application/json' } })) : window.smokeFetch(url, options); });
     if (key === 'unroute') return async () => page.evaluate(() => { window.fetch = window.smokeFetch; delete window.smokeFetch; });
     const value = target[key]; return typeof value === 'function' ? value.bind(target) : value;
   } });
   const personal = await eval(baseline.replace('http://127.0.0.1:18886/', 'duck://app/paint'))(adapted);
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await resizeWindow(page, { width: 1280, height: 800 });
   await page.locator('button[data-step="1"]').first().click();
   await page.locator('[data-start="original"]').click();
   await page.locator('button[data-step="3"]').first().click();
