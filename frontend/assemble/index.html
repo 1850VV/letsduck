@@ -21,7 +21,7 @@
         <div id="loading" role="status">正在加载现有模型…</div>
         <div class="stage-top"><span class="step-label" id="stage-step">准备零件</span><span class="real-model">真实零件网格</span></div>
         <div id="canvas-host" aria-label="可旋转的整机三维模型"></div>
-        <script>/* Arriving from the studio: its picture of this duck holds the stage until the model loads (page.mjs fades it). */try{const h=JSON.parse(sessionStorage.getItem('dd-handoff'));sessionStorage.removeItem('dd-handoff');if(h&&Date.now()-h.at<15000){document.documentElement.classList.add('arriving');const i=new Image();i.className='handoff';i.alt='';i.decoding='sync';i.src=h.image;document.currentScript.before(i);}}catch{}</script>
+        <script>/* Arriving from the studio, its picture of this duck holds the stage until the model loads; otherwise the stage as the last visit left it (page.mjs fades either). */try{const h=JSON.parse(sessionStorage.getItem('dd-handoff'));sessionStorage.removeItem('dd-handoff');let src=h&&Date.now()-h.at<15000&&h.image,kind='handoff';if(src)document.documentElement.classList.add('arriving');else{const s=JSON.parse(localStorage.getItem('letsduck-still-assemble'));if(s&&s.vw===innerWidth&&s.vh===innerHeight){src=s.image;kind='handoff still';}}if(src){const i=new Image();i.className=kind;i.alt='';i.decoding='sync';i.src=src;document.currentScript.before(i);}}catch{}</script>
         <svg id="focus-zoom-leader" class="focus-zoom-leader" aria-hidden="true" hidden><line id="focus-zoom-line" stroke="#4d6bfe" stroke-width="1"/><circle id="focus-zoom-dot" r="2" fill="#4d6bfe"/></svg>
         <section id="focus-zoom" class="focus-zoom" aria-label="接头局部放大窗" hidden>
           <div id="focus-zoom-handle" class="focus-zoom-handle" title="拖动放大窗"><b id="focus-zoom-title">接头放大</b><span id="focus-zoom-factor"></span><ryugi-action-icon id="focus-zoom-close" icon="x" title="收起局部放大" aria-label="收起局部放大" size="small"></ryugi-action-icon></div>
@@ -50,7 +50,7 @@
           </section>
         </details></div><span></span><ryugi-button id="start" variant="filled" icon="play" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">开始组装</ryugi-button><ryugi-button id="next" variant="filled" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">下一步 →</ryugi-button><ryugi-button id="restart" variant="filled" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650" hidden>从头再看</ryugi-button></div>
       </div>
-      <p class="prototype-note"><span class="note-dot"></span>v4.1 走线复核版 · 新插头与部分3MF支架/外壳有几何干涉，红框部位配合待核。</p>
+      <p class="prototype-note"><span class="note-dot"></span>新插头与部分3MF支架/外壳有几何干涉，红框部位配合待核。</p>
     <aside class="instruction-column" aria-label="组装步骤">
       <div class="lesson-list"><div class="lesson-list-heading"><b>组装顺序</b><div class="chapter-picker"><ryugi-select id="phase-select" value="13" size="small" aria-label="选择组装阶段" style="width:100%;font-size:11px"><ryugi-option value="0">1 · 准备与编号</ryugi-option><ryugi-option value="1">2 · 右脚踝</ryugi-option><ryugi-option value="2">3 · 左脚踝</ryugi-option><ryugi-option value="3">4 · 右腿连接</ryugi-option><ryugi-option value="4">5 · 左腿连接</ryugi-option><ryugi-option value="5">6 · 双腿收尾</ryugi-option><ryugi-option value="6">7 · 身体与髋支撑</ryugi-option><ryugi-option value="7">8 · 髋电机与接腿</ryugi-option><ryugi-option value="8">9 · 头部旋转与接线</ryugi-option><ryugi-option value="9">10 · 嘴部与双舵机脖子</ryugi-option><ryugi-option value="10">11 · 头盖与嘴部软垫</ryugi-option><ryugi-option value="11">12 · 身体与头颈总装</ryugi-option><ryugi-option value="12">13 · 电控与外壳收尾</ryugi-option><ryugi-option value="13">14 · 校准与完成</ryugi-option></ryugi-select></div></div><nav id="step-list" aria-label="选择组装步骤"></nav></div>
       <button id="instruction-toggle" class="instruction-toggle" type="button" aria-haspopup="dialog"><span id="instruction-summary-title">先认清这几件</span><b>本步说明 ↗</b></button>
@@ -74,7 +74,7 @@
   </main>
   <input type="hidden" id="full-saved-step" value="0"><input type="hidden" id="full-saved-progress" value="1">
   <input type="hidden" id="focus-zoom-saved" value="1"><input type="hidden" id="focus-zoom-step" value=""><input type="hidden" id="focus-zoom-position" value="">
-  <audio id="piano-audio" loop preload="auto" playsinline crossorigin="anonymous"></audio>
+  <audio id="piano-audio" loop preload="none" playsinline crossorigin="anonymous"></audio>
   <audio id="completion-audio" preload="auto" playsinline crossorigin="anonymous"></audio>
   <script type="module" src="ui-elements.mjs"></script>
   <script type="module" src="page.mjs"></script>

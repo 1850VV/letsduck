@@ -145,7 +145,9 @@ function render() {
     return;
   }
   go.href = './assemble/';go.removeAttribute('aria-disabled');
-  go.innerHTML = esc(t(draft ? 'home.buildWith' : 'home.buildGo')) + arrow;
+  let built = null;try {built = JSON.parse(localStorage.getItem('letsduck-assembly'));} catch {}
+  const resume = built?.step > 0 && built.step < built.total - 1;
+  go.innerHTML = esc(resume ? t('home.buildResume', { step: built.step + 1, total: built.total }) : t(draft ? 'home.buildWith' : 'home.buildGo')) + arrow;
   $('#build-context').innerHTML = draft
     ? `<span class="sw">${dots(draft.colors)}</span><span class="grow">${t('home.withColors', { name })}<small>${esc(t('home.withColorsSub'))}</small></span>`
     : `<span class="icon" aria-hidden="true">🦆</span><span class="grow">${esc(t('home.blank'))}<small>${esc(t('home.blankSub'))}</small></span>`;

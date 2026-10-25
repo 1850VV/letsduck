@@ -2,11 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { toCreasedNormals } from '../vendor/BufferGeometryUtils.js';
-import { createAssemblyFocus, FOCUS_STEPS } from './assembly-focus.mjs';
+import { createAssemblyFocus, isFocusStep } from './assembly-focus.mjs';
 import { createAssemblyMagnifier } from './assembly-magnifier.mjs';
 import { buildFineCues } from './fine-cues.mjs';
 import {createLessonPlayer} from './lesson-player.mjs';
 import {createLessonSound} from './lesson-sound.mjs';
+import {updateAssemblyCameraDepth} from './camera-depth.mjs';
+import {createRenderScheduler} from './render-scheduler.mjs';
+import {stillURL} from '../shared/still.mjs';
 import {createRenderQuality} from './render-quality.mjs';
 import {fitsForParts} from './model-fit.mjs';
 import {buildCableCurve} from './cable-path.mjs';
@@ -19,7 +22,7 @@ import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlug
 const $=id=>document.getElementById(id);
 const fmt=t=>`${Math.floor(t/60).toString().padStart(2,'0')}:${Math.floor(t%60).toString().padStart(2,'0')}`;
 let step=0,progress=1,playing=false,cameraTween=null,uiReady=false,ready=false;
-const lessonPlayer=createLessonPlayer(STEPS.map((s,i)=>{const focused=FOCUS_STEPS.has(s.id),count=buildFineCues(i).length;return{durationMs:s.duration*1000*(focused?Math.max(1.8,Math.min(4.5,count*.55)):1),holdMs:focused?900:0,settleMs:focused?1500:900};}));
+const lessonPlayer=createLessonPlayer(STEPS.map((s,i)=>()=>{const focused=isFocusStep(s.id),count=buildFineCues(i).length;return{durationMs:s.duration*1000*(focused?Math.max(1.8,Math.min(4.5,count*.55)):1),holdMs:focused?900:0,settleMs:focused?1500:900};}));
 const lessonSound=createLessonSound();
 let currentState=snapshot(0,1),guidanceEndState=snapshot(0,1),backTransition=null;
 const host=$('canvas-host'),stage=$('stage');
@@ -146,7 +149,7 @@ const assemblyFocus=createAssemblyFocus(scene,entities,cableRecords);
 const assemblyMagnifier=createAssemblyMagnifier({renderer,scene,camera,stage,host,renderView:(world,view)=>renderQuality.render(world,view,'detail')});
 let selected=null,selectedAnchor=null;
 function applyState(state){
-  currentState=state;renderQuality.invalidate();
+  currentState=state;renderQuality.invalidate();invalidate();
   for(const [id,obj] of entities){const pose=state[id];if(!pose)continue;obj.visible=pose.visible&&pose.opacity>.001;
     obj.position.set(...pose.position);
     if(ACTORS[id].kind==='cable'&&obj.visible)updateCable(id,pose.points);
@@ -200,7 +203,7 @@ function syncReference(){
 function syncInfo(){
   const s=STEPS[step],c=chapterFor(step),local=step-c.start+1;guidanceEndState=snapshot(step,1);renderSteps(c);$('software-guide').hidden=!s.software;$('servo-id-list').replaceChildren();for(const id of s.servoIds||[]){const tag=document.createElement('span');tag.textContent=`ID ${id}`;$('servo-id-list').append(tag);}
   $('phase-select').setAttribute('value',String(CHAPTERS.indexOf(c)));
-  $('full-saved-step').value=String(step);$('step-title').textContent=s.title;$('instruction-summary-title').textContent=s.title;$('step-description').textContent=s.text;$('step-check').textContent=s.check+(fitsForParts(s.parts).length||s.id==='robot-complete'||s.overview?' 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。':'');
+  $('full-saved-step').value=String(step);if(ready)try{localStorage.setItem(SAVED_STEP,JSON.stringify({step,total:STEPS.length}));}catch{}$('step-title').textContent=s.title;$('instruction-summary-title').textContent=s.title;$('step-description').textContent=s.text;$('step-check').textContent=s.check+(fitsForParts(s.parts).length||s.id==='robot-complete'||s.overview?' 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。':'');
   $('step-count').textContent=`${c.name} · ${local} / ${c.end-c.start+1}`;
   $('stage-step').textContent=s.complete?`${c.name} · 完成`:`${String(local).padStart(2,'0')}  ${s.short}`;
   $('source-time').textContent=`${fmt(s.sourceStart)}—${fmt(s.sourceEnd)}`;
@@ -258,12 +261,24 @@ function sideView(direction){const view=cameraPreset(direction,STEPS[step]);came
 $('front-view').addEventListener('click',()=>sideView(1));
 $('back-view').addEventListener('click',()=>sideView(-1));
 $('phase-select').addEventListener('ryugi-change',ev=>{const c=CHAPTERS[Number(ev.detail.value)];if(c&&c.id!==chapterFor(step).id)goStep(c.start);});
+// The guide reopens at the step you left; the home page reads the same key for its button.
+const SAVED_STEP='letsduck-assembly';
+let resumeView=null;
+function resumeSaved(){if($('full-saved-step').value!=='0')return;try{const saved=JSON.parse(localStorage.getItem(SAVED_STEP));if(saved.step>0&&saved.step<STEPS.length){$('full-saved-step').value=String(saved.step);resumeView=saved;}}catch{}}
+// Reopen at the camera the last visit left, so its still (index.html) and the first live frame match.
+function resumeCamera(){if(resumeView?.camera&&resumeView.step===step){cameraTween=null;camera.position.fromArray(resumeView.camera);controls.target.fromArray(resumeView.target);controls.update();}resumeView=null;}
+const STILL='letsduck-still-assemble';
+addEventListener('pagehide',()=>{if(!ready)return;try{
+  localStorage.setItem(SAVED_STEP,JSON.stringify({step,total:STEPS.length,camera:camera.position.toArray(),target:controls.target.toArray()}));
+  // The main view only: the magnifier's picture belongs inside its frame, which appears with the live page.
+  renderQuality.render(scene,camera);localStorage.setItem(STILL,JSON.stringify({vw:innerWidth,vh:innerHeight,image:stillURL(renderer.domElement,host.clientWidth)}));
+}catch{}});
 function restore(){if(!ready)return;const n=Number($('full-saved-step').value),p=Number($('full-saved-progress').value);goStep(n,{animate:false});progress=Math.max(0,Math.min(1,p));lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();}
 $('full-saved-step').addEventListener('change',restore);$('full-saved-step').addEventListener('input',restore);$('full-saved-progress').addEventListener('change',restore);
 function initUI(){if(uiReady)return;uiReady=true;document.documentElement.setAttribute('data-theme','light');lessonSound.syncControls();renderQuality.sync();lessonPlayer.setRate(Number($('playback-rate').value));const control=$('motion-progress');control.addEventListener('ryugi-change',ev=>{if(!ready)return;playing=false;backTransition=null;progress=Number(ev.detail.value)/100;lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();});setAttributes();}
 document.addEventListener('ryugi-ui:ready',initUI,{once:true});if(customElements.get('ryugi-button'))initUI();
 
-function fit(){const {width,height}=host.getBoundingClientRect();if(width<1||height<1)return;renderer.setSize(width,height,false);camera.aspect=width/height;const scale=Math.max(1,1.07/camera.aspect);controls.minDistance=66*scale;controls.maxDistance=1100*scale;if(Math.abs(scale-aspectScale)>.001){camera.position.sub(controls.target).multiplyScalar(scale/aspectScale).add(controls.target);aspectScale=scale;cameraTween=null;}camera.updateProjectionMatrix();}
+function fit(){const {width,height}=host.getBoundingClientRect();if(width<1||height<1)return;renderer.setSize(width,height,false);camera.aspect=width/height;const scale=Math.max(1,1.07/camera.aspect);controls.minDistance=66*scale;controls.maxDistance=1100*scale;if(Math.abs(scale-aspectScale)>.001){camera.position.sub(controls.target).multiplyScalar(scale/aspectScale).add(controls.target);aspectScale=scale;cameraTween=null;}camera.updateProjectionMatrix();invalidate();}
 new ResizeObserver(fit).observe(host);
 function updateActionLabel(){
   const caption=STEPS[step].caption,active=ready&&!!caption,label=$('action-indicator');label.hidden=!active;$('motion-label').hidden=active;
@@ -282,22 +297,34 @@ function updatePartLeader(){
   if($('part-leader-line').getAttribute('points')!==points)$('part-leader-line').setAttribute('points',points);
   $('part-leader-dot').setAttribute('cx',x);$('part-leader-dot').setAttribute('cy',y);leader.toggleAttribute('hidden',false);
 }
+const scheduler=createRenderScheduler({draw:render});
+const invalidate=()=>scheduler.invalidate();
+// OrbitControls emits change throughout damping, including input-driven changes.
+controls.addEventListener('change',invalidate);
+// Capture schedules after the current event's handlers have updated state. This
+// includes custom controls and magnifier dragging without observing our own DOM writes.
+for(const type of ['click','input','change','ryugi-change','pointerdown','pointerup','pointercancel','wheel'])document.addEventListener(type,invalidate,{capture:true,passive:true});
+document.addEventListener('pointermove',event=>{if(event.buttons)invalidate();},{capture:true,passive:true});
+const previousLoad=THREE.DefaultLoadingManager.onLoad;
+THREE.DefaultLoadingManager.onLoad=()=>{previousLoad?.();renderQuality.invalidate();invalidate();};
+document.addEventListener('visibilitychange',()=>scheduler.setActive(!document.hidden));
 function render(now){
-  requestAnimationFrame(render);
+  if(document.hidden)return false;
   if(ready){const before=lessonPlayer.state,playback=lessonPlayer.tick(now);lessonSound.observe(before,playback,now);if(playback.step!==step)goStep(playback.step,{playerDriven:true});else{const moved=progress!==playback.progress,wasPlaying=playing;progress=playback.progress;playing=playback.playing;if(moved){applyState(snapshot(step,progress));updateProgress();}if(wasPlaying!==playing||before.phase!==playback.phase)setAttributes();}}
   if(backTransition){const t=Math.min(1,(now-backTransition.start)/backTransition.duration),ease=t*t*(3-2*t),target=snapshot(step,1),state={};
     for(const [id,b] of Object.entries(target)){const a=backTransition.from[id]||b;state[id]=interpolatePose(ACTORS[id],a,b,ease);}
     applyState(state);if(t>=1){backTransition=null;applyState(target);}}
   if(cameraTween){const t=Math.min(1,(now-cameraTween.start)/cameraTween.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(cameraTween.from,cameraTween.to,ease);controls.target.lerpVectors(cameraTween.fromTarget,cameraTween.toTarget,ease);if(t>=1)cameraTween=null;}
-  controls.update();updateActionLabel();
+  const cameraMoving=controls.update();updateAssemblyCameraDepth(camera,controls.target);updateActionLabel();
   const focus=ready?assemblyFocus.update(STEPS[step].id,progress,currentState,guidanceEndState,now,!!backTransition,camera,host.clientHeight):{phase:'none'};
   if(focus.phase!=='none')guideArrow.visible=false;
   const hint=document.querySelector('.real-model'),message=focus.message||(focus.phase==='aligning'?'红框 · 对准这两处':focus.phase==='completed'?'绿框 · 本次已装好':'真实零件网格');
   if(hint.textContent!==message)hint.textContent=message;
   hint.dataset.focus=focus.phase;
   renderQuality.render(scene,camera);assemblyMagnifier.render(focus,now,ready?STEPS[step].id:null);updatePartLeader();
+  return playing||!!backTransition||!!cameraTween||cameraMoving||focus.animating||assemblyMagnifier.state.animating;
 }
-requestAnimationFrame(render);
+invalidate();
 async function load(){
   const [manifest,binary,models]=await Promise.all([fetch('./assets/full-assembly.json').then(r=>{if(!r.ok)throw Error('模型清单加载失败');return r.json();}),fetch('./assets/full-assembly.bin').then(r=>{if(!r.ok)throw Error('模型几何加载失败');return r.arrayBuffer();}),loadHardwareModels()]);
   hardwareModels=models;createActors();
@@ -311,7 +338,7 @@ async function load(){
     if(motor){const ports=ACTORS[p.id].servoPorts||[{position:[3,8.5,p.size[2]/2+.8],normal:[0,0,1]}];for(const port of ports){const socket=new THREE.Group(),body=mesh(new THREE.BoxGeometry(7,5,1.3),white);body.position.z=-.65;body.userData.focusPort={label:port.id||'舵机口'};socket.add(body);const inside=mesh(new THREE.BoxGeometry(5.4,3.4,.03),dark);inside.position.z=.01;socket.add(inside);socket.position.fromArray(port.position);socket.quaternion.copy(socketQuaternion(port));socket.userData.servoSocket=true;group.add(socket);}}
     entity(p.id,group);
   }
-  renderQuality.attach(entities,ACTORS);ready=true;fit();restore();$('loading').hidden=true;document.documentElement.dataset.ready='true';
+  renderQuality.attach(entities,ACTORS);ready=true;fit();resumeSaved();restore();resumeCamera();$('loading').hidden=true;document.documentElement.dataset.ready='true';performance.mark('duck-ready');
 }
 load().catch(e=>{$('loading').textContent=`模型没有加载成功：${e.message}`;console.error(e);});
 // A read-only diagnostic surface for the prototype's browser acceptance checks.

@@ -81,5 +81,3 @@ export function selectFineCue(cues,progress){
  if(identical.length>1){const next=cues.filter(c=>c.from>latest+.0001).map(c=>c.from),until=Math.min(identical[0].to,...next);const t=Math.max(0,Math.min(.999999,(progress-latest)/Math.max(.001,until-latest)));return identical[Math.floor(t*identical.length)];}
  return near[0];
 }
-
-export const FINE_STEPS=new Set(STEPS.filter((_,i)=>buildFineCues(i).length).map(s=>s.id));

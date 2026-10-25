@@ -10,3 +10,13 @@ This public source repository is separate from any private deployment or origina
 - Use native git and authenticated gh for repository operations. Confirm external writes and read back publication visibility and commit identity.
 - Use managed Chromium in isolated test sessions; close task-owned sessions and verify process cleanup.
 - Keep author contact details private where appropriate; use a verified GitHub no-reply identity for public commits.
+
+## Keep it simple (added 2026-10-25 after the Codex optimization round was rolled back)
+
+- The personal edition is one person on one computer. Do not add machinery a single local user never needs: hidden prewarmed iframes, extra caches or integrity manifests, write-ahead journals, locks, conflict dialogs, per-request hashing.
+- A change must earn its place with a user-visible win (first frame, battery, fewer clicks). Measure it, say the number in the PR, and prefer deleting code to adding it.
+- Never add steps, checkboxes or confirmations to a user flow. Printing ends at exporting the recoloured 3MF + BOM; no print-workflow features.
+- Fewer words on screen. Do not put development version labels or internal notes into the product UI.
+- New languages ship only after a native speaker reviews them; Chinese stays the built-in source and fallback.
+- One focused branch and PR per change, based on `main`. No stacked draft PRs, no integration branches.
+- Verification goes in the PR description. Do not commit evidence ledgers, review indexes, acceptance logs or per-task docs to `docs/`.

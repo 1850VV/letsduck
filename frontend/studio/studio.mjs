@@ -14,6 +14,7 @@ import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.mjs';
 import { api } from '../shared/api.mjs';
 import { loadSite } from '../shared/edition.mjs';
+import { stillURL } from '../shared/still.mjs';
 applyBrand();
 
 const $ = (s) => document.querySelector(s),$$ = (s) => [...document.querySelectorAll(s)];
@@ -89,7 +90,19 @@ if (!['auto', 'soft', 'sand', 'sage', 'night', 'custom'].includes(bgPref)) bgPre
 let renamingId = null,compareId = 'original',splitOn = false,sideOn = false,focused = false,focusKey = '',menuOpen = false,pendingOpen = null;
 const undo = [],redo = [];
 
-const view = createDuckView(duck);view.mount($('#stage'));view.setColors(design.colors);$('#loading').remove();
+const view = createDuckView(duck);view.mount($('#stage'));view.setColors(design.colors, true);$('#loading').remove();performance.mark('duck-ready');
+// Opening the studio shows no loading: index.html puts last visit's still of the stage in place, the live duck draws
+// beneath it and the still fades. Leaving saves the still for the next visit, as a fresh visit will first draw it.
+const STILL = 'letsduck-still-paint';let firstView = null;
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  firstView = { vw: innerWidth, vh: innerHeight, w: view.canvas.width, h: view.canvas.height, css: view.canvas.clientWidth };
+  const still = $('#stage > .still');if (still) {still.classList.add('done');still.addEventListener('transitionend', () => still.remove(), { once: true });}
+}));
+addEventListener('pagehide', () => {
+  if (!firstView) return;
+  try {if (innerWidth !== firstView.vw || innerHeight !== firstView.vh) return localStorage.removeItem(STILL);
+    localStorage.setItem(STILL, JSON.stringify({ vw: firstView.vw, vh: firstView.vh, image: stillURL(view.still(firstView.w, firstView.h), firstView.css) }));} catch {}
+});
 const poster = createPosterDialog({ view, parts, products });
 const actions = createActionPlayer(view);
 // The playing action's button fills like a progress bar for exactly the action's length.
