@@ -31,11 +31,15 @@ on:
         description: 'Run Windows installed A-to-B acceptance instead of building: baseline version'
         type: string
         required: false
+      verify_candidate:
+        description: 'Recheck an existing Windows candidate Release without rebuilding'
+        type: string
+        required: false
 permissions:
   contents: read
 jobs:
   candidate:
-    if: inputs.upgrade_from == ''
+    if: inputs.upgrade_from == '' && inputs.verify_candidate == ''
     permissions:
       contents: write
     strategy:
@@ -141,6 +145,41 @@ jobs:
             if [ -d output/desktop-smoke ]; then folders+=(output/desktop-smoke); fi
             python -m zipfile -c "$file" "${folders[@]}"
             gh release upload "desktop-candidate-$GITHUB_RUN_ID-$PLATFORM-$ARCH" "$file"
+          fi
+  verify-windows:
+    if: inputs.verify_candidate != ''
+    runs-on: windows-2025
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      DUCK_RELEASE_VERSION: ${{ inputs.release_version }}
+      DUCK_BUILD_ARCH: x64
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Download the exact existing private installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE: ${{ inputs.verify_candidate }}
+        run: gh release download "$CANDIDATE" --pattern "letsduck-$DUCK_RELEASE_VERSION-win-x64.exe" --dir desktop/release/win32-x64
+      - run: node desktop/scripts/installed-smoke.mjs
+      - name: Store isolated recheck evidence
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -d output/desktop-installed-smoke ]; then
+            folders=(output/desktop-installed-smoke)
+            if [ -d output/desktop-smoke ]; then folders+=(output/desktop-smoke); fi
+            python -m zipfile -c output/installed-recheck.zip "${folders[@]}"
+            gh release create "desktop-install-evidence-$GITHUB_RUN_ID" output/installed-recheck.zip --prerelease --latest=false --target "$GITHUB_SHA" --title "Private installed Windows recheck $DUCK_RELEASE_VERSION" --notes "Existing installer rechecked without rebuilding; see the attached results."
           fi
   installed-upgrade:
     if: inputs.upgrade_from != ''

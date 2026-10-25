@@ -25,6 +25,7 @@ const downloadFile = async (page, selector) => {
 };
 try {
   application = await launch(); const page = await application.firstWindow();
+  await application.context().tracing.start({ screenshots: true, snapshots: true });
   const identity = await application.evaluate(({ app }) => ({ version: app.getVersion(), packaged: app.isPackaged, arch: process.arch }));
   if (process.env.DUCK_EXPECTED_VERSION) assert.equal(identity.version, process.env.DUCK_EXPECTED_VERSION);
   if (process.env.DUCK_BUILD_ARCH) assert.equal(identity.arch, process.env.DUCK_BUILD_ARCH);
@@ -67,7 +68,9 @@ try {
   await page.evaluate(() => localStorage.setItem('desktop-smoke', 'retained'));
   await page.screenshot({ path: join(output, 'paint.png') });
   const versions = await application.evaluate(() => process.versions);
+  await application.context().tracing.stop({ path: join(output, 'first-session.zip') });
   await application.close(); application = await launch(); const reopened = await application.firstWindow(); await reopened.waitForURL('duck://app/');
+  await application.context().tracing.start({ screenshots: true, snapshots: true });
   assert.equal(await reopened.evaluate(() => localStorage.getItem('desktop-smoke')), 'retained');
   await reopened.goto('duck://app/assemble/'); await reopened.waitForFunction(() => document.querySelector('canvas'), null, { timeout: 60000 });
   await reopened.screenshot({ path: join(output, 'assemble.png') });
@@ -85,7 +88,7 @@ try {
   if (application) { const page = (await application.windows())[0]; if (page) { await page.screenshot({ path: join(output, 'failure.png') }); console.error(await page.evaluate(() => ({ url: location.href, width: innerWidth, height: innerHeight, importButton: document.querySelector('#import-code')?.outerHTML, display: document.querySelector('#import-code') && getComputedStyle(document.querySelector('#import-code')).display, state: window.studioProto?.state?.step }))); } }
   throw error;
 } finally {
-  if (application) await application.close();
+  if (application) { await application.context().tracing.stop({ path: join(output, 'last-session.zip') }).catch(() => {}); await application.close(); }
   for (const process of processes) assert.ok(process.exitCode !== null || process.signalCode !== null, 'Owned Electron process must exit');
   await rm(temp, { recursive: true, force: true });
 }
