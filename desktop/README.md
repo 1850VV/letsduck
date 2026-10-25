@@ -19,6 +19,7 @@ npm start
 - `DUCK_REAL_ASSETS=../assets npm test`：增加真实模型的 Python/Node 逐文件导出比较。
 - `npm run smoke`：用临时数据目录打开实际 Electron，检查方案保存、失败保存、配色码、复制权限、3MF/BOM 与海报下载、重启后偏好、教程视频播放和定位。根目录需先安装 Playwright 依赖。`DUCK_APP_EXECUTABLE` 可指定打包后的可执行文件，此时直接检查包内素材。
 - `node scripts/update-smoke.mjs`：在实际客户端检查 Logo 右侧的更新按钮、真实当前版本号、下载进度、失败重试、重启和等待导出；覆盖首页、涂装台、教程及窄窗口，保存截图与录像。更新事件为模拟，不执行安装，不能代替真实版本升级。
+- `node scripts/installed-upgrade.mjs`：只在一次性的 Windows GitHub Actions runner 中运行。匿名下载安装版本 A，操作实际更新按钮，制造一次网络下载失败后重试，由真实 NSIS 更新器安装并自动启动 B，再核对安装版本、SQLite 方案、草稿、偏好和教程进度。它不替换更新事件或安装函数；结果与截图保存在 `output/desktop-installed-upgrade/`。
 - `node scripts/benchmark.mjs`：同机交替比较原 Python 与 Node 的保存和真实模型导出。设 `DUCK_BROWSER_BENCH=1` 增加相同 Chromium 的首帧与三轮 30 秒帧间隔比较。结果写入忽略的 `output/desktop-benchmark/`。这不代替打包应用的整进程资源和三平台验收。
 - `npm run host`：仅运行 Node 本地服务，默认使用动态端口并输出地址；`DUCK_PORT` 可指定端口。
 
@@ -71,6 +72,14 @@ Windows 使用每用户安装，不要求先装 Python/Node；卸载默认保留
 没有配置更新源的开发包不启动联网更新检查。客户端不得放入 GitHub token。源码仓库是私有仓库时，不能直接把私有 Release 链接当作匿名更新源。可另设公开发行仓库，或使用支持 HTTPS 的对象存储。
 
 免费 GitHub Releases 可用独立通道标签：例如 `beta-darwin-arm64`、`beta-darwin-x64`、`beta-win32-x64`。构建时用 `DUCK_UPDATE_URL` 指定该平台的完整 `https://github.com/<所有者>/<公开发行仓库>/releases/download/<通道标签>/` 地址，它优先于基址规则。把对应安装文件和元数据上传到同一 Release，文件名带版本号，最后替换通道的元数据。不要把三个架构的同名元数据覆盖到一个 Release。此做法不要求将源码仓库改为公开。
+
+也可设置 `DUCK_UPDATE_REPOSITORY=<所有者>/<公开发行仓库>`，构建自动生成上述通道地址。优先级为 `DUCK_UPDATE_URL`、`DUCK_UPDATE_REPOSITORY`、`DUCK_UPDATE_BASE`。`DUCK_RELEASE_VERSION` 可为两版本升级验收覆盖包内版本，只接受 `X.Y.Z` 或 `X.Y.Z-beta.N`；安装后的版本号、文件名和更新通道以这个版本为准。默认版本仍来自 `package.json`。
+
+免费测试阶段，Windows 使用未签名的每用户 NSIS 包，首次下载运行可能显示未知发布者或 SmartScreen 提示。这不等于通过 Windows 发布者认证。Mac 在没有 Developer ID 时只构建无更新源的临时签名包，手动安装测试；构建器拒绝给临时签名 Mac 包嵌入自动更新源。获得分发证书后，再完成公证和真实两版本升级验收。
+
+`Desktop candidate` 工作流支持完整素材 Release、发行仓库、版本号和目标平台输入。素材包放在源码私有仓库的草稿 Release 中，仅供构建读取；客户端中不含读取私有仓库的凭证。Windows 的真实升级验收通过同一工作流的 `upgrade_from` 输入启动，`release_version` 是目标版本；运行前两个版本的安装包和目标版本的 `beta.yml` 必须已在公开发行通道可匿名读取。构建和测试工作流均不自动发布公开文件。
+
+GitHub Releases 的下载托管不需要另租服务器；每个文件须小于 2 GiB。GitHub Actions 的私有仓库构建使用账号的免费分钟与存储额度，超出额度的费用与下载托管分开计算。只启用标准 runner，不启用额外付费服务。见 [GitHub Releases 限额](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)。
 
 发布步骤：
 

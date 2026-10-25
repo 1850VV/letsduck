@@ -14,10 +14,28 @@ on:
         description: 'Optional public HTTPS update base (platform directories are added)'
         type: string
         required: false
+      update_repository:
+        description: 'Public binary-only repository, e.g. owner/letsduck-releases'
+        type: string
+        required: false
+      release_version:
+        description: 'Optional installed version X.Y.Z-beta.N (otherwise package.json)'
+        type: string
+        required: false
+      target_platform:
+        description: 'Build platform'
+        type: choice
+        options: [all, win32, darwin]
+        default: all
+      upgrade_from:
+        description: 'Run Windows installed A-to-B acceptance instead of building: baseline version'
+        type: string
+        required: false
 permissions:
   contents: read
 jobs:
   candidate:
+    if: inputs.upgrade_from == ''
     strategy:
       fail-fast: false
       matrix:
@@ -42,24 +60,38 @@ jobs:
       PYTHON: python
       DUCK_BUILD_ARCH: ${{ matrix.arch }}
       DUCK_UPDATE_BASE: ${{ inputs.update_base }}
+      DUCK_UPDATE_REPOSITORY: ${{ inputs.update_repository }}
+      DUCK_RELEASE_VERSION: ${{ inputs.release_version }}
       DUCK_PACKAGE_WITHOUT_ASSETS: ${{ inputs.asset_release == '' && '1' || '0' }}
       DUCK_DISTRIBUTABLE_ASSETS: ${{ github.workspace }}/assets
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
+      - name: Select requested platform
+        id: selected
+        env:
+          REQUESTED: ${{ inputs.target_platform }}
+          PLATFORM: ${{ matrix.platform }}
+        run: echo "build=$([[ -z "$REQUESTED" || "$REQUESTED" == all || "$REQUESTED" == "$PLATFORM" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: steps.selected.outputs.build == 'true'
       - uses: actions/setup-node@v4
+        if: steps.selected.outputs.build == 'true'
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - uses: actions/setup-python@v5
+        if: steps.selected.outputs.build == 'true'
         with:
           python-version: '3.12'
       - run: npm ci --prefix desktop
+        if: steps.selected.outputs.build == 'true'
       - run: npm run setup:electron --prefix desktop
+        if: steps.selected.outputs.build == 'true'
       - run: npm test --prefix desktop
+        if: steps.selected.outputs.build == 'true'
       - name: Download the authorized asset pack
-        if: inputs.asset_release != ''
+        if: steps.selected.outputs.build == 'true' && inputs.asset_release != ''
         env:
           GH_TOKEN: ${{ github.token }}
           ASSET_RELEASE: ${{ inputs.asset_release }}
@@ -68,14 +100,15 @@ jobs:
           python -m zipfile -e "$RUNNER_TEMP/duck-assets/letsduck-assets.zip" assets
           npm run prepare:assets --prefix desktop
       - name: Real model export compatibility
-        if: inputs.asset_release != ''
+        if: steps.selected.outputs.build == 'true' && inputs.asset_release != ''
         env:
           DUCK_REAL_ASSETS: ${{ github.workspace }}/assets
         run: npm test --prefix desktop
       - name: Build unsigned development candidate
+        if: steps.selected.outputs.build == 'true'
         run: npm run package --prefix desktop -- ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
-        if: github.event_name == 'workflow_dispatch'
+        if: steps.selected.outputs.build == 'true' && github.event_name == 'workflow_dispatch'
         with:
           name: letsduck-unsigned-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
@@ -86,3 +119,26 @@ jobs:
             desktop/release/**/beta*.yml
             desktop/release/**/latest*.yml
           if-no-files-found: error
+  installed-upgrade:
+    if: inputs.upgrade_from != ''
+    runs-on: windows-2025
+    timeout-minutes: 20
+    env:
+      DUCK_UPDATE_REPOSITORY: ${{ inputs.update_repository }}
+      DUCK_UPGRADE_FROM: ${{ inputs.upgrade_from }}
+      DUCK_UPGRADE_TO: ${{ inputs.release_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm ci --prefix desktop
+      - name: Install A, download B anonymously, restart and verify retained data
+        run: node desktop/scripts/installed-upgrade.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: letsduck-windows-installed-upgrade
+          path: output/desktop-installed-upgrade/
+          if-no-files-found: warn
