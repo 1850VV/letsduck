@@ -8,13 +8,13 @@ const $=id=>document.getElementById(id);
 
 export function createLessonSound(){
   const music=$('piano-audio'),cue=$('completion-audio'),details=$('sound-controls'),panel=$('sound-panel');
-  let enabled=true,effects=true,volume=.24,track='satie',needsGesture=false,error='',request=0,fadeFrame=0,fadeTimer=0,lastCueAt=-Infinity,cueCount=0;
+  let enabled=true,effects=true,volume=.24,track='satie',referenceAudio=false,needsGesture=false,error='',request=0,fadeFrame=0,fadeTimer=0,lastCueAt=-Infinity,cueCount=0;
   music.src=new URL('./assets/'+tracks[track].file,import.meta.url).href;
   cue.src=new URL('./assets/assembly-complete.mp3',import.meta.url).href;
   music.volume=0;cue.volume=volume*.35;
 
   function status(){
-    const audible=volume>0&&(enabled||effects),text=error||(!audible?'已静音':enabled?(needsGesture?'点一下页面开始音乐':music.paused?'正在准备钢琴曲…':'正在播放 · '+tracks[track].label):effects?'仅播放完成提示音':'声音已关闭');
+    const audible=volume>0&&(enabled||effects),text=error||(!audible?'已静音':referenceAudio?'原片打开中 · 背景音乐暂停':enabled?(needsGesture?'点一下页面开始音乐':music.paused?'正在准备钢琴曲…':'正在播放 · '+tracks[track].label):effects?'仅播放完成提示音':'声音已关闭');
     $('sound-status').textContent=text;$('sound-volume-label').textContent=Math.round(volume*100)+'%';
     details.dataset.active=String(audible);details.dataset.pending=String(enabled&&needsGesture);
     details.querySelector('summary').title=text;
@@ -29,12 +29,12 @@ export function createLessonSound(){
     fadeTimer=setTimeout(finish,duration+25);
   }
   async function startMusic(){
-    if(!enabled||volume===0)return;
+    if(referenceAudio||!enabled||volume===0)return;
     const token=++request;error='';cancelFade();
     try{
       music.playbackRate=1;await music.play();
       if(token!==request)return;
-      if(!enabled||volume===0){music.pause();return;}
+      if(referenceAudio||!enabled||volume===0){music.pause();return;}
       needsGesture=false;fadeTo(volume,800);status();
     }catch(e){
       if(token!==request)return;
@@ -71,7 +71,7 @@ export function createLessonSound(){
   });
   $('sound-volume').addEventListener('ryugi-change',ev=>{
     volume=Math.max(0,Math.min(1,Number(ev.detail.value)/100));cue.volume=volume*.35;
-    if(volume===0){cue.pause();stopMusic();}else if(enabled){music.paused?startMusic():fadeTo(volume,100);}
+    if(volume===0){cue.pause();stopMusic();}else if(enabled&&!referenceAudio){music.paused?startMusic():fadeTo(volume,100);}
     status();
   });
   music.addEventListener('playing',status);music.addEventListener('pause',status);
@@ -79,6 +79,13 @@ export function createLessonSound(){
   window.addEventListener('pagehide',()=>{++request;cancelFade();music.pause();cue.pause();});
   status();startMusic();
   return{
+    setReferenceAudio(active){
+      if(referenceAudio===active)return;
+      referenceAudio=active;
+      if(active){++request;cancelFade();needsGesture=false;music.pause();cue.pause();}
+      else if(enabled&&volume>0)startMusic();
+      status();
+    },
     syncControls(){
       enabled=$('music-enabled').checked;effects=$('effects-enabled').checked;
       volume=Math.max(0,Math.min(1,Number($('sound-volume').value)/100));cue.volume=volume*.35;
@@ -87,11 +94,11 @@ export function createLessonSound(){
       enabled?startMusic():stopMusic();status();
     },
     observe(before,after,now){
-      if(!shouldPlayCompletion(before,after,now,lastCueAt,effects,volume))return;
+      if(referenceAudio||!shouldPlayCompletion(before,after,now,lastCueAt,effects,volume))return;
       // Reserve the interval even when autoplay is blocked, so cues never queue up.
       lastCueAt=now;cue.currentTime=0;cue.playbackRate=1;cue.volume=volume*.35;
       cue.play().then(()=>{cueCount++;}).catch(()=>{});
     },
-    get state(){return{enabled,effects,volume,track,needsGesture,error,paused:music.paused,currentTime:music.currentTime,playbackRate:music.playbackRate,actualVolume:music.volume,cueCount,cuePaused:cue.paused};}
+    get state(){return{enabled,effects,volume,track,referenceAudio,needsGesture,error,paused:music.paused,currentTime:music.currentTime,playbackRate:music.playbackRate,actualVolume:music.volume,cueCount,cuePaused:cue.paused};}
   };
 }
