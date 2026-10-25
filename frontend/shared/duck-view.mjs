@@ -43,6 +43,8 @@ export function createDuckView(data) {
   const controls = new OrbitControls(camera, renderer.domElement);controls.enableDamping = true;if (coarse) {controls.dampingFactor = .2;controls.rotateSpeed = .6;}controls.enablePan = false;controls.minDistance = 60;controls.maxDistance = 1600;controls.target.copy(TARGET);
   const pmrem = new THREE.PMREMGenerator(renderer),room = new RoomEnvironment(),env = pmrem.fromScene(room, .04);scene.environment = env.texture;scene.environmentIntensity = LOOK.environment;room.dispose();pmrem.dispose();
   addLights(scene);
+  // Other studio scenes (the step-1 lineup) live in their own layer of this scene and draw from frame hooks.
+  const layer = new THREE.Group(),frameHooks = new Set();scene.add(layer);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(105, 48), new THREE.MeshBasicMaterial({ color: 0x1b2440, transparent: true, opacity: .05, depthWrite: false }));shadow.rotation.x = -Math.PI / 2;shadow.position.set(0, -2, 15);scene.add(shadow);
   function geometry(p) {const m=prepared?.get((p.id?'part:':'hardware:')+(p.id||p.name));if(m){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(m.positions,3));g.setAttribute('normal',new THREE.BufferAttribute(m.normals,3));g.setIndex(new THREE.BufferAttribute(m.indices,1));g.computeBoundingBox();return g;}const g = new THREE.BufferGeometry();g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(binary, p.geometry.positionOffset, p.geometry.vertexCount * 3).slice(), 3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary, p.geometry.indexOffset, p.geometry.indexCount).slice(), 1));const s = toCreasedNormals(g, Math.PI / 5);g.dispose();s.computeBoundingBox();return s;}
   const center = new THREE.Vector3(0, 120, 15),hardware = [];
@@ -171,7 +173,9 @@ export function createDuckView(data) {
   }
 
   // ---- loop ----
-  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();}
+  // Resizing clears the canvas after this frame was drawn, so draw again at once: a stage that grows or shrinks
+  // with the panel stays visible instead of flashing blank.
+  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();if (split) renderSplit();else draw(depthAllowed(), finishState);}
   function mount(el, { view: name = 'hero', preserveView=false } = {}) {host = el;observer?.disconnect();el.prepend(renderer.domElement);observer = new ResizeObserver(resize);observer.observe(el);resize();if(!preserveView)placeCamera(name);}
   const ray = new THREE.Raycaster(),pointer = new THREE.Vector2();
   function pick(clientX, clientY) {
@@ -194,9 +198,10 @@ export function createDuckView(data) {
     if(!renderer.domElement.isConnected)return false;
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
+    let hooked = false;for (const hook of frameHooks) hooked = hook(performance.now()) || hooked;
     if (turntable && !tween) root.rotation.y += .006;
     if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else draw(depthAllowed(),finishState);}
-    return !!(tween||moving||tweening||turntable);
+    return !!(tween||moving||tweening||turntable||hooked);
   }
 
 
@@ -204,8 +209,8 @@ export function createDuckView(data) {
   // stage: the stage exactly as a fresh visit first draws it (hero view, at rest), for the next visit to show at once.
   function snapshot(w, h, { colors, angle, stage = false } = {}) {
     const saved = { size: renderer.getSize(new THREE.Vector2()), ratio: renderer.getPixelRatio(), aspect: camera.aspect, pos: camera.position.clone(), target: controls.target.clone(), colors: colors && Object.fromEntries([...meshes].map(([id, m]) => [id, '#' + (targets.get(id) || m.material.color).getHexString(THREE.SRGBColorSpace)])), hl: [selected, hovered], spin: root.rotation.y,
-      objs: objects.map((o) => [o, o.position.clone(), o.scale.x, o.visible]), shadow: shadow.visible, side: side.group.visible, pose: { ...pose } };
-    side.group.visible = false;camera.clearViewOffset();
+      objs: objects.map((o) => [o, o.position.clone(), o.scale.x, o.visible]), shadow: shadow.visible, side: side.group.visible, pose: { ...pose }, root: root.visible, layer: layer.visible };
+    side.group.visible = false;layer.visible = false;root.visible = true;camera.clearViewOffset();
     // A spinning turntable or a non-assembled layout would not read as the finished duck.
     root.rotation.y = 0;objects.forEach((o) => {o.position.copy(o.userData.rest);o.scale.setScalar(1);o.visible = true;});shadow.visible = true;setHighlight([], []);flushColors();if (colors) setColors(colors, true);
     renderer.setPixelRatio(1);renderer.setSize(w, h, false);camera.aspect = w / h;camera.updateProjectionMatrix();
@@ -216,7 +221,7 @@ export function createDuckView(data) {
     renderer.render(scene, camera);}
     const out = document.createElement('canvas');out.width = w;out.height = h;out.getContext('2d').drawImage(renderer.domElement, 0, 0, w, h);
     renderer.setPixelRatio(saved.ratio);renderer.setSize(saved.size.x, saved.size.y, false);camera.aspect = saved.aspect;camera.updateProjectionMatrix();camera.position.copy(saved.pos);controls.target.copy(saved.target);camera.lookAt(saved.target);controls.update();
-    saved.objs.forEach(([o, p, s, v]) => {o.position.copy(p);o.scale.setScalar(s);o.visible = v;});shadow.visible = saved.shadow;side.group.visible = saved.side;
+    saved.objs.forEach(([o, p, s, v]) => {o.position.copy(p);o.scale.setScalar(s);o.visible = v;});shadow.visible = saved.shadow;side.group.visible = saved.side;root.visible = saved.root;layer.visible = saved.layer;
     root.rotation.y = saved.spin;if (stage) setPose(saved.pose);if (saved.colors) setColors(saved.colors, true);selected = saved.hl[0];hovered = saved.hl[1];paintHighlight();invalidate();return out;
   }
   const still = (w, h) => snapshot(w, h, { stage: true });
@@ -247,6 +252,7 @@ export function createDuckView(data) {
   }
   return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, still, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
+    stage: { layer, camera, controls, root, shadow, meshes, hardware, onFrame: (hook) => {frameHooks.add(hook);invalidate();} },
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
     setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},
     setExplode: (on) => setLayout(on ? 'explode' : 'assembly'), get turntable() {return turntable;} };

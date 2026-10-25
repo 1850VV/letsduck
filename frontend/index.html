@@ -38,6 +38,15 @@
   <section class="stage" id="stage" data-bg="soft">
     <div class="loading" id="loading"><span></span><span data-i18n="label.loading">正在载入机器鸭…</span></div>
     <script>/* The duck as the last visit left it holds the stage until the live model draws (studio.mjs fades it). */try{const s=JSON.parse(localStorage.getItem('letsduck-still-paint'));if(s&&!location.hash&&s.vw===innerWidth&&s.vh===innerHeight){const i=new Image();i.className='handoff still';i.alt='';i.decoding='sync';i.src=s.image;document.currentScript.before(i);}}catch{}</script>
+    <div class="lineup" id="lineup" hidden>
+      <div class="lineup-tags" id="lineup-tags"></div>
+      <div class="lineup-tabs" id="lineup-tabs" role="tablist"></div>
+      <button class="lineup-blank" data-start="blank" title="纯白一只，全部自己涂" data-i18n-title="text.0135"><i></i><span data-i18n="text.0124">白胚</span></button>
+      <p class="lineup-empty" id="lineup-empty" hidden data-i18n="text.0131">保存过的方案会出现在这里；骰子出的配色点 ☆ 也能存进来</p>
+      <button class="lineup-page prev" id="lineup-prev" hidden aria-label="上一套" data-i18n-aria-label="text.0439">‹</button>
+      <button class="lineup-page next" id="lineup-next" hidden aria-label="下一套" data-i18n-aria-label="text.0440">›</button>
+      <div class="lineup-go"><button class="lineup-dice" id="lineup-dice" hidden><span class="die">🎲</span><span data-i18n="text.0139">再掷</span><kbd>R</kbd></button><button class="lineup-start" data-go="2" id="start-go"></button></div>
+    </div>
     <div class="tools" id="tools" role="group" aria-label="涂装工具" data-i18n-aria-label="text.0620">
       <button data-tool="select" class="on" title="选择 V" data-i18n-title="text.0621"><b>↖</b><span data-i18n="label.select">选择</span><kbd>V</kbd></button>
       <button data-tool="brush" title="刷子 B" data-i18n-title="text.0622"><b>●</b><span data-i18n="label.brush">刷子</span><kbd>B</kbd></button>
