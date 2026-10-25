@@ -260,7 +260,6 @@ $('instruction-toggle').addEventListener('click',()=>$('instruction-dialog').sho
 $('instruction-close').addEventListener('click',()=>$('instruction-dialog').close());
 $('reference-toggle').addEventListener('click',()=>{$('reference-panel').hidden?openReference():closeReference();});
 $('reference-close').addEventListener('click',closeReference);$('source-step').addEventListener('click',openReference);
-$('reference-video').addEventListener('timeupdate',()=>{const v=$('reference-video');if(v.currentTime>=STEPS[step].sourceEnd-chapterFor(step).videoStart-.04)v.pause();});
 $('start').addEventListener('click',()=>goStep(1));$('next').addEventListener('click',()=>goStep(step+1));$('back').addEventListener('click',()=>goStep(step-1,{animate:false,back:true}));
 $('replay').addEventListener('click',()=>goStep(step===OVERVIEW_STEP?STEPS.findIndex(s=>s.id==='final-power'):step));$('restart').addEventListener('click',()=>goStep(0));$('overview').addEventListener('click',()=>goStep(OVERVIEW_STEP,{animate:false}));
 $('pause').addEventListener('click',()=>{playing?lessonPlayer.pause():lessonPlayer.resume();playing=lessonPlayer.state.playing;backTransition=null;setAttributes();});
