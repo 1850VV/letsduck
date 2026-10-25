@@ -88,7 +88,8 @@ export function createDeskMode({getStep,isReady,openReference,canvas,openChapter
   canvas.addEventListener('wheel',()=>{if(isReady())$('desk-recenter').hidden=false;},{passive:true});
 
   addEventListener('keydown',e=>{
-    if(!isReady()||e.metaKey||e.ctrlKey||e.altKey||e.isComposing)return;
+    if(!isReady()||e.defaultPrevented||e.metaKey||e.ctrlKey||e.altKey||e.isComposing)return;
+    if(e.key===' '&&e.target.closest?.('button,ryugi-button,ryugi-switch,[role="switch"]'))return;
     if(e.target.closest?.('input,textarea,select,video,ryugi-select,ryugi-slider,summary')||document.querySelector('dialog[open]'))return;
     const k=e.key;
     if(k===' '||k==='ArrowRight'||k==='PageDown'){e.preventDefault();next();}

@@ -257,7 +257,9 @@ renderer.domElement.addEventListener('pointerup',e=>{
   const hit=ray.intersectObjects(selectables.filter(o=>o.visible),true).find(h=>h.object.visible);
   if(hit)selectActor(hit.object.userData.actorId,hit.point);else clearPartInfo();
 });
-const materials=createChapterMaterials({scene,camera,controls,renderer,host,entities,getHardware:()=>hardwareModels,getState:()=>({step,progress,ready}),pause(){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;setAttributes();},stopCamera(){cameraTween=null;},applyState,fit,invalidate:()=>{renderQuality.invalidate();invalidate();},resetFocus:()=>assemblyFocus.reset(),clearSelection:clearPartInfo,hideArrow(){guideArrow.visible=false;},onStart:()=>goStep(step===0?1:step)});
+const materials=createChapterMaterials({scene,camera,controls,renderer,host,entities,getHardware:()=>hardwareModels,getState:()=>({step,progress,ready}),pause(){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;setAttributes();},stopCamera(){cameraTween=null;},applyState,fit,invalidate:()=>{renderQuality.invalidate();invalidate();},resetFocus:()=>assemblyFocus.reset(),clearSelection:clearPartInfo,hideArrow(){guideArrow.visible=false;},onStart(){
+  const n=step===0?1:step;lessonPlayer.seek(n,0,{play:true,auto:lessonPlayer.state.autoplay});goStep(n,{playerDriven:true});
+}});
 const deskMode=createDeskMode({getStep:()=>step,isReady:()=>ready,openReference:()=>openReference(),canvas:renderer.domElement,openChapter:c=>materials.open(c,{start:true}),closeChapter:()=>materials.close()});
 function openReference(){materials.close();$('instruction-dialog').close();const p=$('reference-panel');p.hidden=false;$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.muted=true;v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
 function closeReference(){$('reference-panel').hidden=true;$('reference-toggle').setAttribute('aria-expanded','false');$('reference-video').pause();lessonSound.setReferenceAudio(false);}
@@ -284,6 +286,7 @@ function resumeSaved(){if($('full-saved-step').value!=='0')return;try{const save
 function resumeCamera(){if(resumeView?.camera&&resumeView.step===step){cameraTween=null;camera.position.fromArray(resumeView.camera);controls.target.fromArray(resumeView.target);controls.update();}resumeView=null;}
 const STILL='letsduck-still-assemble';
 addEventListener('pagehide',()=>{if(!ready)return;try{
+  materials.close();
   localStorage.setItem(SAVED_STEP,JSON.stringify({step,total:STEPS.length,camera:camera.position.toArray(),target:controls.target.toArray()}));
   // The main view only: the magnifier's picture belongs inside its frame, which appears with the live page.
   renderQuality.render(scene,camera);localStorage.setItem(STILL,JSON.stringify({vw:innerWidth,vh:innerHeight,image:stillURL(renderer.domElement,host.clientWidth)}));
