@@ -25,7 +25,15 @@ const downloadFile = async (page, selector) => {
 };
 try {
   application = await launch(); const page = await application.firstWindow();
+  const identity = await application.evaluate(({ app }) => ({ version: app.getVersion(), packaged: app.isPackaged, arch: process.arch }));
+  if (process.env.DUCK_EXPECTED_VERSION) assert.equal(identity.version, process.env.DUCK_EXPECTED_VERSION);
+  if (process.env.DUCK_BUILD_ARCH) assert.equal(identity.arch, process.env.DUCK_BUILD_ARCH);
   page.on('pageerror', e => errors.push(String(e))); await page.waitForURL('duck://app/');
+  if (process.env.DUCK_EXPECT_OFFLINE === '1') {
+    await page.locator('#letsduck-update button').waitFor();
+    assert.deepEqual(await page.evaluate(() => window.letsduckDesktop.state()), { phase: 'idle', currentVersion: identity.version });
+    assert.equal((await page.locator('#letsduck-update button').textContent()).trim(), `v${identity.version}`);
+  }
   await page.goto('duck://app/paint'); await page.waitForFunction(() => window.studioProto?.state, null, { timeout: 60000 });
   assert.equal(await page.evaluate(() => typeof process), 'undefined'); assert.equal(await page.evaluate(() => typeof require), 'undefined');
   const clipboard = await page.evaluate(async () => ({ write: (await navigator.permissions.query({ name: 'clipboard-write' })).state, read: (await navigator.permissions.query({ name: 'clipboard-read' })).state }));
@@ -71,7 +79,7 @@ try {
   await reopened.screenshot({ path: join(output, 'video.png') });
   await reopened.locator('#reference-close').click();
   assert.deepEqual(errors, []);
-  await writeFile(join(output, 'result.json'), JSON.stringify({ personal, versions, packaged: Boolean(process.env.DUCK_APP_EXECUTABLE), exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard, video, stableOriginPersistence: true, errors }, null, 2));
+  await writeFile(join(output, 'result.json'), JSON.stringify({ identity, personal, versions, packaged: Boolean(process.env.DUCK_APP_EXECUTABLE), exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard, video, stableOriginPersistence: true, errors }, null, 2));
   console.log(JSON.stringify({ personal, exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard, video, stableOriginPersistence: true, errors }));
 } catch (error) {
   if (application) { const page = (await application.windows())[0]; if (page) { await page.screenshot({ path: join(output, 'failure.png') }); console.error(await page.evaluate(() => ({ url: location.href, width: innerWidth, height: innerHeight, importButton: document.querySelector('#import-code')?.outerHTML, display: document.querySelector('#import-code') && getComputedStyle(document.querySelector('#import-code')).display, state: window.studioProto?.state?.step }))); } }

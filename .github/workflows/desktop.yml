@@ -122,6 +122,26 @@ jobs:
           test "${#files[@]}" -gt 0
           tag="desktop-candidate-$GITHUB_RUN_ID-$PLATFORM-$ARCH"
           gh release create "$tag" "${files[@]}" --prerelease --latest=false --target "$GITHUB_SHA" --title "Desktop candidate $DUCK_RELEASE_VERSION ($PLATFORM $ARCH)" --notes "Private CI candidate. Contains only top-level distributable files, not unpacked executables. Not a public update channel."
+      - name: Install the complete offline package and exercise its real UI
+        id: installed
+        if: steps.selected.outputs.build == 'true' && inputs.asset_release != '' && inputs.update_base == '' && inputs.update_repository == ''
+        run: |
+          npm ci
+          node desktop/scripts/installed-smoke.mjs
+      - name: Save private installation evidence
+        if: always() && steps.installed.outcome != 'skipped' && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          if [ -d output/desktop-installed-smoke ]; then
+            file="output/letsduck-$DUCK_RELEASE_VERSION-$PLATFORM-$ARCH-install-check.zip"
+            folders=(output/desktop-installed-smoke)
+            if [ -d output/desktop-smoke ]; then folders+=(output/desktop-smoke); fi
+            python -m zipfile -c "$file" "${folders[@]}"
+            gh release upload "desktop-candidate-$GITHUB_RUN_ID-$PLATFORM-$ARCH" "$file"
+          fi
   installed-upgrade:
     if: inputs.upgrade_from != ''
     runs-on: windows-2025
