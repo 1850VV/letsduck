@@ -95,9 +95,6 @@ body.phone .panel-head .eyebrow{display:none}
 body.phone .panel-head h2{font-size:17px}
 body.phone .panel .panel-foot:not(.finish){display:none}
 body.phone .panel .panel-foot.finish{position:sticky;bottom:0;padding:10px 14px!important}
-body.phone .panel .one-screen{padding-bottom:16px}
-body.phone .studio[data-step="1"] .panel-head{display:none}
-body.phone .studio[data-step="1"] .panel .panel-body{padding-top:2px}
 body.phone .panel .scope{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 body.phone .panel .scope::-webkit-scrollbar{display:none}
 body.phone .panel .scope button,body.phone .panel .dock-tabs button,body.phone .panel [data-ptab]{min-height:36px}
@@ -110,6 +107,15 @@ body.phone .act b{display:block;max-width:100%;white-space:nowrap;overflow:hidde
 body.phone .toast{top:calc(var(--ph-top) + 8px)}
 /* A sheet pulled down to a sliver shows just its first row; the duck takes the rest. */
 body.phone[data-sheet="mini"] .panel{overflow:hidden}
+
+/* Step 1: no sheet; the lineup fills the stage down to the tab bar, its buttons along the bottom. */
+body.phone:has(.studio[data-step="1"]) .stage{bottom:var(--ph-tab)}
+body.phone:has(.studio[data-step="1"]) .ph-grip{display:none}
+body.phone .lineup-tabs{top:10px}body.phone .lineup-tabs button{padding:8px 11px;font-size:13px}body.phone .lineup-tabs small{display:none}
+body.phone .lineup-blank{top:auto;bottom:80px;right:50%;transform:translateX(50%)}
+body.phone .lineup-page{top:auto;bottom:78px;transform:none;width:40px;height:40px}
+body.phone .lineup-go{left:12px;right:12px;bottom:14px;transform:none}body.phone .lineup-go button{flex:1;padding:13px 10px;font-size:14px}
+body.phone .lineup-tag>button{font-size:12px;padding:2px 8px}body.phone .lineup-tag .ctl button{width:32px;height:32px}
 
 /* Step 2: the colour grid comes first, so the default sheet height shows swatches, not settings. */
 body.phone .studio[data-step="2"] .panel-head:not(.brush-head) .sel-line{display:none}
