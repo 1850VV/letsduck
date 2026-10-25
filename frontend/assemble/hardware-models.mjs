@@ -69,6 +69,7 @@ export function createHardwareModelFactory(templates){
   screw(actor){const spec=SCREWS[actor.fastener];if(!spec)return null;const root=actorRoot();root.add(adapter(prepared[spec.asset],spec.asset,{translationMm:[0,spec.translationY,0]}));return made(root);},
   plug(end=0){end=end===1?1:0;const root=actorRoot(),canonical=new THREE.Group();canonical.name='plug-canonical-adapter';canonical.rotation.x=-Math.PI/2;root.userData.matingOffsetMm=2.25;root.userData.nativeWireExitMm=[0,0,end===0?2:-2];root.userData.canonicalWireExitMm=[0,end===0?2:-2,0];root.userData.cableEnd=end;canonical.add(adapter(prepared['plug'+end],'servo-cable',{translationMm:[0,0,end===0?67:-67]}));root.add(canonical);return made(root);},
   wireMaterial(){return approvedWireMaterial;},
+  cableModel(){const root=actorRoot();root.add(adapter(sources['servo-cable'],'servo-cable'));return made(root);},
   syncDiscs(entities,state){for(const [,entity] of entities){if(bindings.has(entity))syncOne(entity,state);else entity.traverse(root=>{if(bindings.has(root))syncOne(root,state);});}},
   get state(){return freeze({...stats,instancesCreated});},
  };
