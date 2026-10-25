@@ -18,7 +18,7 @@ npm start
 - `npm test`：协议、SQLite 兼容、导出对照、HTTP/视频 Range、更新控制器检查。Python 对照测试使用 `PYTHON` 指定的解释器，默认 `python3`。
 - `DUCK_REAL_ASSETS=../assets npm test`：增加真实模型的 Python/Node 逐文件导出比较。
 - `npm run smoke`：用临时数据目录打开实际 Electron，检查方案保存、失败保存、配色码、复制权限、3MF/BOM 与海报下载、重启后偏好、教程视频播放和定位。根目录需先安装 Playwright 依赖。`DUCK_APP_EXECUTABLE` 可指定打包后的可执行文件，此时直接检查包内素材。
-- `node scripts/update-smoke.mjs`：在实际客户端模拟已确认的更新状态，检查提示、收起、重试和等待；只模拟状态，不执行安装，也不能代替真实版本升级。
+- `node scripts/update-smoke.mjs`：在实际客户端检查 Logo 右侧的更新按钮、真实当前版本号、下载进度、失败重试、重启和等待导出；覆盖首页、涂装台、教程及窄窗口，保存截图与录像。更新事件为模拟，不执行安装，不能代替真实版本升级。
 - `node scripts/benchmark.mjs`：同机交替比较原 Python 与 Node 的保存和真实模型导出。设 `DUCK_BROWSER_BENCH=1` 增加相同 Chromium 的首帧与三轮 30 秒帧间隔比较。结果写入忽略的 `output/desktop-benchmark/`。这不代替打包应用的整进程资源和三平台验收。
 - `npm run host`：仅运行 Node 本地服务，默认使用动态端口并输出地址；`DUCK_PORT` 可指定端口。
 
@@ -65,6 +65,8 @@ Windows 使用每用户安装，不要求先装 Python/Node；卸载默认保留
 ```
 
 版本包含 `-beta.` 时使用 beta 通道；正式版使用 stable 通道。每个目录放该平台的安装文件、blockmap 和 builder 生成的更新元数据；保留文件名。默认不开启自动下载或退出自动安装，不允许降级。启动后和运行期间每 10 分钟检查一次；应用关闭或离线时无法实时发现更新。
+
+更新入口是左上角 Logo 右侧的小按钮，无更新弹窗卡片。平时显示实际安装版本；发现新版显示“有新版本待更新”，点击后在同一按钮显示下载百分比、失败重试或“重启更新”。有导出、保存或文件下载尚未完成时等待完成再重启。安装完成后重新启动，按钮读取新安装版本号。下载完成不会提前把目标版本当作当前版本。
 
 没有配置更新源的开发包不启动联网更新检查。客户端不得放入 GitHub token。源码仓库是私有仓库时，不能直接把私有 Release 链接当作匿名更新源。可另设公开发行仓库，或使用支持 HTTPS 的对象存储。
 

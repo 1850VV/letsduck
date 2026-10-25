@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 
-export type UpdateState = { phase: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'waiting' | 'error'; version?: string; percent?: number; retry?: 'check' | 'download' };
+export type UpdateState = { phase: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'waiting' | 'installing' | 'error'; version?: string; percent?: number; retry?: 'check' | 'download' };
+export type DesktopUpdateState = UpdateState & { currentVersion: string };
 export interface Updater extends EventEmitter {
   autoDownload: boolean; autoInstallOnAppQuit: boolean; allowDowngrade: boolean;
   checkForUpdates(): Promise<unknown>; downloadUpdate(): Promise<unknown>; quitAndInstall(silent?: boolean, runAfter?: boolean): void;
@@ -51,6 +52,7 @@ export class UpdateController extends EventEmitter {
     return this.installing = (async () => {
       while (!this.disposed && !await this.canRestart()) await this.wait();
       if (this.disposed) return;
+      this.set({ ...this.state, phase: 'installing' });
       await this.prepare(); this.updater.quitAndInstall(false, true);
     })().catch(() => this.set({ phase: 'ready', version: this.state.version })).finally(() => { this.installing = undefined; });
   }

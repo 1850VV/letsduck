@@ -61,9 +61,9 @@ async function boot() {
     if (!window || window.isDestroyed()) return true;
     return window.webContents.executeJavaScript(`new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(!document.querySelector('#dl-3mf:disabled')))))`);
   }, async () => { session.defaultSession.flushStorageData(); });
-  updates.on('state', state => { if (window && !window.isDestroyed()) window.webContents.send('desktop:update-state', state); });
+  updates.on('state', state => { if (window && !window.isDestroyed()) window.webContents.send('desktop:update-state', { ...state, currentVersion: app.getVersion() }); });
   const trusted = (event: IpcMainInvokeEvent) => { if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || !localURL(event.senderFrame.url)) throw new Error('Unknown application frame'); };
-  ipcMain.handle('desktop:update-state', event => { trusted(event); return updates.state; });
+  ipcMain.handle('desktop:update-state', event => { trusted(event); return { ...updates.state, currentVersion: app.getVersion() }; });
   ipcMain.handle('desktop:update-action', (event, action) => { trusted(event); if (action === 'check') return updates.check(); if (action === 'download') return updates.download(); if (action === 'install') return updates.install(); throw new Error('Unknown update action'); });
   const openWindow = () => {
     window = new BrowserWindow({ width: 1280, height: 860, minWidth: 800, minHeight: 600, backgroundColor: '#f5f6fb', title: '来做鸭', webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, preload: join(import.meta.dirname, 'preload.cjs') } });
