@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { FINISHES, FINISH_KEYS, withLayers } from '../shared/duck-look.mjs';
 
-const SX = 215,SY = 330,BASE_YAW = -.5;
+const SX = 215,SY = 330,BASE_YAW = -.5,FILL = { wide: { w: .7, h: .6 }, narrow: { w: .84, h: .9 } };
 const ringGeo = new THREE.RingGeometry(82, 88, 72),discGeo = new THREE.CircleGeometry(92, 48);
 const spring = (v) => ({ v, vel: 0, goal: v });
 const settle = (s, dt, k = 170, c = 17) => {s.vel += (k * (s.goal - s.v) - c * s.vel) * dt;s.v += s.vel * dt;if (Math.abs(s.goal - s.v) < .002 && Math.abs(s.vel) < .002) {s.v = s.goal;s.vel = 0;}return s.v !== s.goal;};
@@ -18,7 +18,7 @@ export function createLineup(view, { tags, onPick, onStart }) {
   const box = new THREE.Box3();for (const m of meshes.values()) box.union(m.geometry.boundingBox);
   const mid = box.getCenter(new THREE.Vector3()),HEIGHT = box.max.y,v = new THREE.Vector3();
   const cam = { pos: new THREE.Vector3(), target: new THREE.Vector3() },yaw = spring(0);
-  let ducks = null,count = 4,shown = false,snap = false,active = false,leaving = null,narrow = false,hover = -1,selected = -1,drag = null,last = 0,timers = [],maxDistance = controls.maxDistance;
+  let ducks = null,count = 4,shown = false,snap = false,size = '',flying = false,active = false,leaving = null,narrow = false,hover = -1,selected = -1,drag = null,last = 0,timers = [],maxDistance = controls.maxDistance;
 
   function build() {
     ducks = [0, 1, 2, 3].map(() => {
@@ -49,8 +49,10 @@ export function createLineup(view, { tags, onPick, onStart }) {
   function framing(goalPos, goalTarget) {
     const w = host.clientWidth,h = host.clientHeight,aspect = w / h,tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const cw = (narrow ? 2 : 4) * SX,ch = narrow ? SY + HEIGHT : HEIGHT,top = narrow ? 70 : 80,bottom = narrow ? 200 : 140;
-    // Leave room in pixels for the tabs above and the names and buttons below.
-    const dist = Math.max(ch / 2 / tan / ((h - top - bottom) / h), cw / 2 / (tan * aspect) / .93) * 1.02,cy = ch / 2 + (top - bottom) * dist * tan / h;
+    // Leave room in pixels for the tabs above and the names and buttons below, and some air around the squad:
+    // the row spans at most FILL.w of the width and FILL.h of the height left between them.
+    const fill = narrow ? FILL.narrow : FILL.wide,band = (h - top - bottom) / h;
+    const dist = Math.max(ch / 2 / tan / (band * fill.h), cw / 2 / (tan * aspect) / fill.w),cy = ch / 2 + (top - bottom) * dist * tan / h;
     goalTarget.set(0, cy, 0);goalPos.set(0, cy + dist * .1, dist);
   }
   function place() {
@@ -68,7 +70,9 @@ export function createLineup(view, { tags, onPick, onStart }) {
     let busy = settle(yaw, dt, 90, 19);
     if (active && !leaving) {
       const goalPos = new THREE.Vector3(),goalTarget = new THREE.Vector3();framing(goalPos, goalTarget);
-      const k = snap ? 1 : 1 - Math.exp(-dt * 6);snap = false;cam.pos.lerp(goalPos, k);cam.target.lerp(goalTarget, k);busy = busy || cam.pos.distanceToSquared(goalPos) > .25;
+      // A resized stage (the window, the phone layout settling) re-frames at once; only a real move glides.
+      const dims = host.clientWidth + 'x' + host.clientHeight;if (dims !== size) {if (size && !flying) snap = true;size = dims;}
+      const k = snap ? 1 : 1 - Math.exp(-dt * 6);snap = false;cam.pos.lerp(goalPos, k);cam.target.lerp(goalTarget, k);flying = cam.pos.distanceToSquared(goalPos) > .25;busy = busy || flying;
       camera.position.copy(cam.pos);controls.target.copy(cam.target);
     }
     ducks.forEach((d, i) => {
