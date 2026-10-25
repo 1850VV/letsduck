@@ -1,6 +1,8 @@
 const { app, BrowserWindow } = require('electron');
 const { readFileSync, writeFileSync, mkdirSync } = require('node:fs');
 const { join } = require('node:path');
+// This build-time SVG renderer must also work on CI hosts without a GPU.
+app.disableHardwareAcceleration();
 app.whenReady().then(async () => {
   const window = new BrowserWindow({ show: false, width: 1024, height: 1024, transparent: true, webPreferences: { offscreen: true, sandbox: true, nodeIntegration: false } });
   try {
