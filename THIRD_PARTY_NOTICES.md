@@ -2,26 +2,28 @@
 
 ## Included source
 
-`frontend/vendor/` contains Three.js revision 180: `three.core.js`, `three.module.js`, `OrbitControls.js`, `BufferGeometryUtils.js`, `RoomEnvironment.js`, and `GLTFLoader.js`. Copyright remains with the Three.js authors. These files retain the accompanying [MIT license](assets/vendor/THREE-LICENSE.txt). Source: [mrdoob/three.js, r180](https://github.com/mrdoob/three.js/tree/r180).
+`frontend/vendor/` contains Three.js revision 180: `three.core.js`, `three.module.js`, `OrbitControls.js`, `BufferGeometryUtils.js`, `RoomEnvironment.js`, and `GLTFLoader.js`. Copyright remains with the Three.js authors. These files retain the accompanying [MIT license](frontend/vendor/THREE-LICENSE.txt). Source: [mrdoob/three.js, r180](https://github.com/mrdoob/three.js/tree/r180).
 
 `frontend/shared/duck-voice.mjs` is a JavaScript port of MicroDuck's voice synthesizer (`sounds/src/rng.rs`, `synth.rs`, `personality.rs`, `voices.rs`), Copyright Pollen Robotics, under the [Apache License 2.0](frontend/shared/MICRODUCK-LICENSE.txt). Source: [pollen-robotics/microduck at 942e58e](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567/sounds). Changes: translated from Rust to JavaScript, with u64 arithmetic and f32 rounding emulated; WAV output, the hardware seed and the chorale/stream modules are not ported. The earlier Python original (`apirrone/microduck_sounds`) carries no license and is not used. No MicroDuck scores or recordings are included.
 
 letsduck's (formerly DoodleDuck / DuckPalette) original software and documentation are MIT licensed. Imported libraries retain their own notices. Historical research documents quote and link external sources; those sources and trademarks do not become letsduck's intellectual property.
 
-## Not distributed
+## Assets in desktop installers
 
-- **XGO Duck V2 3MF and derived meshes/manifests:** the reviewed input metadata identifies `MakerWorld Exclusive License`. The [XGO hardware licensing statement](https://github.com/LuwuDynamics/xgoduck_hardware/blob/cd3358d96945c6ff2b713c7c2f3084321b9537ca/LICENSING.md) says that final file-level terms remain pending. This release does not establish permission for public redistribution; it excludes both original and converted model assets, previews, manufacturing exports, and archives.
-- **Bambu catalog and export schema:** the local catalog was derived from [Bambu Studio color codes at a pinned revision](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/profiles/BBL/filament/filaments_color_codes.json). Bambu Studio uses [AGPL-3.0](https://github.com/bambulab/BambuStudio/blob/master/LICENSE). No separate permissive data grant was established during this release review, so the catalog and derived schema are not redistributed under MIT here. The archived generation scripts are original project tooling, not the upstream data or source tables.
+On 2026-10-25, the project owner confirmed that permission has been obtained for all assets needed by the application, including the 3MF and tutorial videos, and authorized bundling them in desktop installers. The following asset descriptions retain source attribution. They are separate from the MIT license on letsduck's original code. Large assets remain outside the Git source tree and are included by the desktop packaging step.
+
+- **XGO Duck V2 3MF and derived meshes/manifests:** input metadata identifies `MakerWorld Exclusive License`. See the upstream [hardware licensing statement](https://github.com/LuwuDynamics/xgoduck_hardware/blob/cd3358d96945c6ff2b713c7c2f3084321b9537ca/LICENSING.md) for the earlier published status. Desktop distribution relies on the separate authorization confirmed by the project owner; these files are not relicensed as MIT.
+- **Bambu catalog and export schema:** the local catalog was derived from [Bambu Studio color codes at a pinned revision](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/profiles/BBL/filament/filaments_color_codes.json). Bambu Studio uses [AGPL-3.0](https://github.com/bambulab/BambuStudio/blob/master/LICENSE). The snapshot and derived schema retain their separate terms; they are not offered under letsduck's MIT license. The archived generation scripts are original project tooling, not the upstream data or source tables.
 - **Assembly guide assets** (`assets/assembly/`, imported by `scripts/import_assembly_assets.py`): the tutorial videos are clips of the owner's own recordings; the Arduino UNO Q board model is converted from Arduino's official STEP under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the other hardware models are hand-built approximations; the piano pieces are Kevin MacLeod's *Gymnopedie No. 1* ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)) and a public-domain rendering of Mozart K.545. Credits are shown in the guide at `frontend/assemble/audio-credits.html`. None of these files are in this repository.
-- **Other robot repositories:** software licenses do not automatically cover their design assets. The local project used XGO assembly references and identified MicroDuck ancestry; neither robot's meshes are included in this public distribution.
+- **Other robot repositories:** software licenses do not automatically cover their design assets. The project uses XGO assembly references; the desktop bundle's XGO-derived assets rely on the owner's separate authorization above. No MicroDuck source meshes are bundled.
 
-Asset filenames in code, hashes, citations and historical verification records describe the adapter's inputs. They do not grant rights in those inputs. Obtain assets and any necessary permission from their respective owners. Personal/local possession also does not automatically authorize a public hosted model viewer or download service.
+Asset filenames, hashes and historical research identify inputs; the owner's later authorization is the basis for bundling the application assets. Source licenses and third-party credits remain in place.
 
 ## Credits
 
 XGO-Duck by Luwu Dynamics builds on the MicroDuck ecosystem by Pollen Robotics. The workspace references Bambu Lab product color identifiers. The blue-white-black design uses a DeepSeek brand-blue reference. These names identify compatibility and inspiration, not endorsement, affiliation, or trademark permission.
 
-Review date: 2026-10-22. See [licensing research](docs/history/outputs/MicroDuck-XGODuck-授权核查-2026-10-22.md) for the recorded evidence and remaining uncertainty. This is an engineering release boundary, not legal advice.
+Historical review: 2026-10-22; desktop asset authorization confirmed by the owner: 2026-10-25. The [earlier licensing research](docs/history/outputs/MicroDuck-XGODuck-授权核查-2026-10-22.md) records the earlier state and does not override the later authorization.
 
 ## QR Code generator
 

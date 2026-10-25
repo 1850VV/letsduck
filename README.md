@@ -9,7 +9,7 @@
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="点一张卡片，机器鸭马上换装"></p>
 
-**这是源码发行版。仓库不附带模型、3MF、衍生网格或耗材数据包。** 它们有独立的第三方授权；MIT 不覆盖这些资产。运行需要自行合法持有完整本地资产包，单独一份 3MF 还不足以复现装配预览。详见 [本地资产说明](docs/local-assets.md)。
+**项目已获得应用所需素材的使用与客户端分发授权。** 桌面安装包包含原始 3MF、模型与网格数据、耗材数据、组装模型、教程视频和音频，用户无需另行准备资产包。素材保留各自的授权与来源声明，不因随应用打包而改为 MIT 许可。Git 源码与大型素材分开管理；从源码开发或部署时仍需准备完整资产目录，见 [本地资产说明](docs/local-assets.md)。
 
 ## 三步涂装
 
@@ -75,8 +75,15 @@
 frontend/   静态前端：index.html（涂装台）、home.html + home/（个人版首页）、assemble/（组装教程）、gallery/（配色广场，仅服务器版）、shared/、lib/、locales/、vendor/
 personal/   个人版服务：app.py（静态文件 + 方案/导出接口）、schemes.py（本机 SQLite）
 backend/    服务器版 API：server.py（FastAPI 路由）、store.py / database.py（MySQL）、rules.py、exporter.py
-assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器版只读挂载）
+desktop/    桌面个人版：Electron + TypeScript/Node.js + Cordis，Windows / macOS 构建与更新
+assets/     已授权的应用素材（Git 单独管理；桌面构建打进安装包，服务器版只读挂载）
 ```
+
+## 桌面客户端（开发候选）
+
+桌面版沿用个人版的涂装、组装教程、方案保存、海报、配色码、3MF 和 BOM 导出。采用 Electron + TypeScript/Node.js；Cordis 只负责素材、方案、导出和 HTTP 四个内部模块。安装包自带运行环境和完整素材，不需要用户安装 Python 或 Node.js。
+
+目标平台为 Windows x64、Apple 芯片 Mac 和 Intel Mac。客户端发现新版本后提示更新，由用户点击下载和重启安装；正在进行的导出完成后才安装。当前分支是开发候选，正式发布需完成平台、签名和真实两版本升级验证；构建通过不等于已发布。开发、打包和发布步骤见 [桌面版说明](desktop/README.md)。
 
 ## 个人使用版：双击启动
 

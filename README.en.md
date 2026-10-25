@@ -9,7 +9,7 @@ A painting studio for the XGO Duck V2 robot duck: pick colours in three steps, m
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Click a card and the duck changes its colours"></p>
 
-**This is a source release. The model, 3MF, derived meshes and filament data are not included.** They are separately licensed; MIT does not cover them. Running letsduck requires a complete local asset pack that you are entitled to use; a single 3MF is not enough to reproduce the assembled preview. See [local assets](docs/local-assets.md) (Chinese).
+**The project has obtained permission to use and distribute the required assets with the desktop client.** Desktop installers include the source 3MF, model and mesh data, filament data, assembly models, tutorial videos and audio. Users do not need to obtain a separate asset pack. Assets retain their own terms and credits; bundling them does not put them under MIT. Source code and large assets are managed separately in Git, so source development and server deployments still require the complete asset directory. See [local assets](docs/local-assets.md) (Chinese).
 
 ## Three steps
 
@@ -75,8 +75,15 @@ Both editions share the frontend in `frontend/`; it reads `/api/site` to learn t
 frontend/   static frontend: index.html (studio), home.html + home/ (personal edition home), assemble/ (assembly guide), gallery/ (server edition only), shared/, lib/, locales/, vendor/
 personal/   personal edition: app.py (static files + design/export API), schemes.py (local SQLite)
 backend/    server edition API: server.py (FastAPI), store.py / database.py (MySQL), rules.py, exporter.py
-assets/     local asset pack (git-ignored; read directly by the personal edition, mounted read-only on servers)
+desktop/    Electron + TypeScript/Node.js + Cordis desktop personal edition, packaging and updates
+assets/     authorized assets (managed separately from Git; bundled in desktop installers, mounted read-only on servers)
 ```
+
+## Desktop client (development candidate)
+
+The desktop edition reuses the personal studio, assembly guide, local schemes, posters, colour codes, 3MF and BOM exports. It uses Electron and TypeScript/Node.js, with Cordis managing four internal modules. Installers include the runtime and all required assets; users do not need Python or Node.js.
+
+Targets are Windows x64, Apple silicon Mac and Intel Mac. Available updates are shown in the client; the user chooses when to download and restart, and active exports finish before installation. This branch is a development candidate. Platform, signing and installed-version upgrade checks are required before a release. See [desktop development and release instructions](desktop/README.md) (Chinese).
 
 ## Personal edition: double-click to start
 

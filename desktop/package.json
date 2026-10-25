@@ -1,0 +1,38 @@
+{
+  "name": "letsduck-desktop",
+  "version": "0.1.0-beta.1",
+  "private": true,
+  "description": "来做鸭个人版桌面客户端",
+  "author": "letsduck contributors",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/main.js",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && tsx --test test/*.test.ts",
+    "start": "npm run build && electron .",
+    "host": "npm run build && node dist/host.js",
+    "setup:electron": "node node_modules/electron/install.js",
+    "icon": "electron scripts/icon.cjs",
+    "prepare:assets": "node scripts/prepare-assets.mjs",
+    "package": "npm run build && npm run prepare:assets && npm run icon && electron-builder --publish never",
+    "smoke": "npm run build && node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
+    "@xmldom/xmldom": "0.9.12",
+    "electron-updater": "6.8.11",
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

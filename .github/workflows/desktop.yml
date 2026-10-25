@@ -1,0 +1,88 @@
+name: Desktop candidate
+on:
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/desktop.yml'
+  workflow_dispatch:
+    inputs:
+      asset_release:
+        description: 'Optional release tag containing letsduck-assets.zip; empty builds a source-only shell'
+        type: string
+        required: false
+      update_base:
+        description: 'Optional public HTTPS update base (platform directories are added)'
+        type: string
+        required: false
+permissions:
+  contents: read
+jobs:
+  candidate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            platform: win32
+            arch: x64
+            target: '--win --x64'
+          - os: macos-15
+            platform: darwin
+            arch: arm64
+            target: '--mac --arm64'
+          - os: macos-15-intel
+            platform: darwin
+            arch: x64
+            target: '--mac --x64'
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHON: python
+      DUCK_BUILD_ARCH: ${{ matrix.arch }}
+      DUCK_UPDATE_BASE: ${{ inputs.update_base }}
+      DUCK_PACKAGE_WITHOUT_ASSETS: ${{ inputs.asset_release == '' && '1' || '0' }}
+      DUCK_DISTRIBUTABLE_ASSETS: ${{ github.workspace }}/assets
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --prefix desktop
+      - run: npm run setup:electron --prefix desktop
+      - run: npm test --prefix desktop
+      - name: Download the authorized asset pack
+        if: inputs.asset_release != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_RELEASE: ${{ inputs.asset_release }}
+        run: |
+          gh release download "$ASSET_RELEASE" --pattern letsduck-assets.zip --dir "$RUNNER_TEMP/duck-assets"
+          python -m zipfile -e "$RUNNER_TEMP/duck-assets/letsduck-assets.zip" assets
+          npm run prepare:assets --prefix desktop
+      - name: Real model export compatibility
+        if: inputs.asset_release != ''
+        env:
+          DUCK_REAL_ASSETS: ${{ github.workspace }}/assets
+        run: npm test --prefix desktop
+      - name: Build unsigned development candidate
+        run: npm run package --prefix desktop -- ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: letsduck-unsigned-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            desktop/release/**/*.exe
+            desktop/release/**/*.dmg
+            desktop/release/**/*.zip
+            desktop/release/**/*.blockmap
+            desktop/release/**/beta*.yml
+            desktop/release/**/latest*.yml
+          if-no-files-found: error
