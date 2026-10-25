@@ -9,7 +9,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #a9b8
 .top{height:66px;flex:none;display:flex;align-items:center;gap:18px;padding:0 18px;background:#fff;border-bottom:1px solid var(--line)}
 .brand{font-weight:750;letter-spacing:1px;font-size:14px;display:flex;align-items:center;gap:8px;white-space:nowrap}.brand b{font-weight:400;color:#7a88a5}.brand i{font-style:normal;background:var(--blue);color:#fff;border-radius:9px;padding:4px 7px;font-size:16px}
 /* scheme menu: named saves, private, max 30 */
-.scheme{position:relative}
+/* A fixed slot for the design name: renaming, saving or picking a start must not nudge the steps beside it. */
+.scheme{position:relative;width:230px;flex:none}.scheme .scheme-btn{max-width:100%}
+@media (max-width:1250px){.scheme{width:190px}}
 .scheme-btn{display:flex;align-items:center;gap:8px;border:1px solid transparent;background:transparent;border-radius:10px;padding:6px 10px;max-width:260px}.scheme-btn:hover,.scheme-btn[aria-expanded="true"]{border-color:var(--line);background:#f8f9fc}
 .scheme-name{font-weight:650;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scheme-btn small{font-size:10px;color:#b0841a;background:#fff6dc;border-radius:99px;padding:2px 7px;white-space:nowrap}.scheme-btn small.ok{color:#2f9a5b;background:#e6f6ec}.scheme-btn b{font-size:10px;color:#9aa5b9}
 .scheme-menu{position:absolute;top:calc(100% + 8px);left:0;width:340px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 50px #1d29502a;z-index:40;overflow:hidden}
@@ -186,6 +188,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #a9b8
 
 @media (max-width:900px){
   .scheme-btn{max-width:150px}.scheme-btn small{display:none}.scheme-menu{width:min(340px,calc(100vw - 32px))}.publish-grid{grid-template-columns:1fr}.studio[data-step="2"] .split-labels{top:110px}
+  .scheme{width:auto}
   .top{height:auto;flex-wrap:wrap;padding:6px 12px;gap:6px}.steps{order:3;width:100%;justify-content:space-between;margin:0}.steps small,.step-line{display:none}.design-name{width:120px}.top-actions .ghost{display:none}
   .studio,.studio[data-step="2"],.studio[data-step="3"]{display:flex;flex-direction:column}
   .stage{flex:0 0 clamp(230px,42dvh,420px);margin:6px 12px}.studio[data-step="1"] .stage{flex:1}
