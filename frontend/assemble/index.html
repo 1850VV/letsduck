@@ -30,7 +30,7 @@
           <p class="kit-eyebrow">开始前，先把零件摆到桌上</p>
           <h2 id="kit-title"></h2>
           <ul id="kit-parts" class="kit-parts"></ul>
-          <div id="kit-screws-block"><p class="kit-label">螺丝按 1:1 画，拿实物放上去比</p><ul id="kit-screws" class="kit-screws"></ul></div>
+          <div id="kit-screws-block"><p class="kit-label">螺丝放大 3 倍画，看长短区分</p><ul id="kit-screws" class="kit-screws"></ul></div>
           <button id="kit-go" class="kit-go" type="button">摆好了，开始 <kbd>空格</kbd></button>
         </section>
         <script>/* Arriving from the studio, its picture of this duck holds the stage until the model loads; otherwise the stage as the last visit left it (page.mjs fades either). */try{const h=JSON.parse(sessionStorage.getItem('dd-handoff'));sessionStorage.removeItem('dd-handoff');let src=h&&Date.now()-h.at<15000&&h.image,kind='handoff';if(src)document.documentElement.classList.add('arriving');else{const s=JSON.parse(localStorage.getItem('letsduck-still-assemble'));if(s&&s.vw===innerWidth&&s.vh===innerHeight){src=s.image;kind='handoff still';}}if(src){const i=new Image();i.className=kind;i.alt='';i.decoding='sync';i.src=src;document.currentScript.before(i);}}catch{}</script>

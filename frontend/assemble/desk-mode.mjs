@@ -35,7 +35,7 @@ const ART={
 const guardFor=id=>/horn/.test(id)?ART.horn:/-plug$/.test(id)?ART.plug:/tighten/.test(id)?ART.screw:null;
 
 function screwSVG({d,len}){
-  const mm=96/25.4,head=d*2,w=(len+1.2)*mm+4,h=head*mm+4,y=2+(head-d)/2*mm;
+  const mm=3*96/25.4,head=d*2,w=(len+1.2)*mm+4,h=head*mm+4,y=2+(head-d)/2*mm;
   let threads='';for(let x=0;x+.8<=len;x+=.8)threads+=`<line x1="${(2+(1.2+x+.2)*mm).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(2+(1.2+x+.6)*mm).toFixed(1)}" y2="${(y+d*mm).toFixed(1)}"/>`;
   return `<svg width="${w.toFixed(1)}" height="${h.toFixed(1)}" viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true"><rect x="2" y="2" width="${(1.2*mm).toFixed(1)}" height="${(head*mm).toFixed(1)}" rx="1.5" fill="#a9b1bd"/><rect x="${(2+1.2*mm).toFixed(1)}" y="${y.toFixed(1)}" width="${(len*mm).toFixed(1)}" height="${(d*mm).toFixed(1)}" fill="#8d97a6"/><g stroke="#6d7684" stroke-width="1">${threads}</g></svg>`;
 }

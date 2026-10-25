@@ -147,8 +147,8 @@ function updateCable(id,points){
 const guideArrow=new THREE.ArrowHelper(new THREE.Vector3(-1,0,0),new THREE.Vector3(),20,0x4d6bfe,4,2);scene.add(guideArrow);
 const selection=new THREE.Box3Helper(new THREE.Box3(),0x4d6bfe);scene.add(selection);selection.visible=false;
 const assemblyFocus=createAssemblyFocus(scene,entities,cableRecords);
-// Parts already in place before this step fade toward grey so the new ones stand out.
-const dimBase=new WeakMap(),DIM=new THREE.Color(0xd5dbe6);let settled=new Set();
+// Parts already in place before this step turn see-through, so the new ones stand out in their real colours.
+const GHOST=.28;let settled=new Set();
 function settledParts(){
   const s=STEPS[step];if(!step||s.complete||s.overview)return new Set();
   const before=snapshot(step-1,1),after=snapshot(step,1),out=new Set();
@@ -163,7 +163,7 @@ function applyState(state){
     obj.position.set(...pose.position);
     if(ACTORS[id].kind==='cable'&&obj.visible)updateCable(id,pose.points);
     obj.quaternion.copy(actorQuaternion(ACTORS[id],pose));
-    obj.traverse(child=>{if(child.isMesh){const mats=Array.isArray(child.material)?child.material:[child.material];for(const mat of mats){mat.opacity=pose.opacity*(mat.userData.baseOpacity??1);mat.transparent=pose.opacity<.999||!!mat.userData.baseTransparent;if(mat.color){if(!dimBase.has(mat))dimBase.set(mat,mat.color.clone());mat.color.copy(dimBase.get(mat));if(settled.has(id))mat.color.lerp(DIM,.55);}}}});
+    obj.traverse(child=>{if(child.isMesh){const mats=Array.isArray(child.material)?child.material:[child.material];for(const mat of mats){const ghost=settled.has(id);mat.opacity=pose.opacity*(mat.userData.baseOpacity??1)*(ghost?GHOST:1);mat.transparent=ghost||pose.opacity<.999||!!mat.userData.baseTransparent;}}});
   }
   hardwareModels?.syncDiscs(entities,state);
   selection.visible=false;
