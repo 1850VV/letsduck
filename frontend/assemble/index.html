@@ -4,13 +4,13 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>来做鸭 / letsduck · 3D 组装教程</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css"><link rel="stylesheet" href="../shared/handoff.css">
+  <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css"><link rel="stylesheet" href="desk-mode.css"><link rel="stylesheet" href="../shared/handoff.css">
   <script type="importmap">{"imports":{"three":"../vendor/three.module.js"}}</script>
 </head>
 <body>
   <header class="top">
     <a class="brand" href="../" data-brand-slot title="来做鸭 / letsduck"></a>
-    <span class="header-divider"></span><span class="header-name">3D 组装教程</span>
+    <span class="header-divider"></span><span class="header-name">3D 组装教程</span><button id="desk-toggle" class="desk-toggle" type="button" aria-pressed="true" title="F">远看模式</button>
     <ryugi-button id="overview" variant="outlined" size="small" style="height:26px;padding:0 8px;font-size:11px;background:#eef1ff;color:#4d6bfe;border-color:#d5dfff">整机预览</ryugi-button>
     <ryugi-button id="reference-toggle" variant="outlined" size="small" icon="play">对照原片</ryugi-button>
   </header>
@@ -21,6 +21,18 @@
         <div id="loading" role="status">正在加载现有模型…</div>
         <div class="stage-top"><span class="step-label" id="stage-step">准备零件</span><span class="real-model">真实零件网格</span></div>
         <div id="canvas-host" aria-label="可旋转的整机三维模型"></div>
+        <div id="journey" class="journey" aria-hidden="true"></div>
+        <button id="stuck" class="stage-pill stuck-pill" type="button">我卡住了 <kbd>H</kbd></button>
+        <button id="desk-recenter" class="stage-pill recenter-pill" type="button" hidden>回到最佳视角 <kbd>V</kbd></button>
+        <aside id="guard-card" class="guard-card" aria-label="容易装错的地方" hidden></aside>
+        <div class="desk-caption" aria-live="polite"><span id="desk-count"></span><h2 id="desk-title"></h2><div id="desk-specs"></div></div>
+        <section id="kit" class="kit" aria-labelledby="kit-title" hidden>
+          <p class="kit-eyebrow">开始前，先把零件摆到桌上</p>
+          <h2 id="kit-title"></h2>
+          <ul id="kit-parts" class="kit-parts"></ul>
+          <div id="kit-screws-block"><p class="kit-label">螺丝按 1:1 画，拿实物放上去比</p><ul id="kit-screws" class="kit-screws"></ul></div>
+          <button id="kit-go" class="kit-go" type="button">摆好了，开始 <kbd>空格</kbd></button>
+        </section>
         <script>/* Arriving from the studio, its picture of this duck holds the stage until the model loads; otherwise the stage as the last visit left it (page.mjs fades either). */try{const h=JSON.parse(sessionStorage.getItem('dd-handoff'));sessionStorage.removeItem('dd-handoff');let src=h&&Date.now()-h.at<15000&&h.image,kind='handoff';if(src)document.documentElement.classList.add('arriving');else{const s=JSON.parse(localStorage.getItem('letsduck-still-assemble'));if(s&&s.vw===innerWidth&&s.vh===innerHeight){src=s.image;kind='handoff still';}}if(src){const i=new Image();i.className=kind;i.alt='';i.decoding='sync';i.src=src;document.currentScript.before(i);}}catch{}</script>
         <svg id="focus-zoom-leader" class="focus-zoom-leader" aria-hidden="true" hidden><line id="focus-zoom-line" stroke="#4d6bfe" stroke-width="1"/><circle id="focus-zoom-dot" r="2" fill="#4d6bfe"/></svg>
         <section id="focus-zoom" class="focus-zoom" aria-label="接头局部放大窗" hidden>
@@ -68,6 +80,7 @@
       <div id="reference-panel" class="reference-panel" role="dialog" aria-label="原片对照" hidden>
         <div class="reference-heading"><b>原片对照</b><ryugi-action-icon id="reference-close" icon="x" title="收起原片" aria-label="收起原片"></ryugi-action-icon></div>
         <video id="reference-video" controls playsinline muted preload="metadata" src="assets/full-calibration.mp4"></video>
+        <p id="reference-check" class="reference-check"></p>
         <p id="reference-caption">截取自你提供的视频 · 20:58—23:10</p>
       </div>
     </aside>

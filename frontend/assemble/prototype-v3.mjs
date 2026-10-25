@@ -16,6 +16,7 @@ import {buildCableCurve} from './cable-path.mjs';
 import {loadHardwareModels} from './hardware-models.mjs';
 import {LOOK} from '../shared/duck-look.mjs';
 import { STEPS,CHAPTERS,ACTORS,snapshot,chapterFor,OVERVIEW_STEP,PLUG_PAIRS } from './hardware-state.mjs';
+import {createDeskMode} from './desk-mode.mjs';
 
 import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlugQuaternion,interpolatePose,socketQuaternion} from './render-pose.mjs';
 
@@ -146,6 +147,14 @@ function updateCable(id,points){
 const guideArrow=new THREE.ArrowHelper(new THREE.Vector3(-1,0,0),new THREE.Vector3(),20,0x4d6bfe,4,2);scene.add(guideArrow);
 const selection=new THREE.Box3Helper(new THREE.Box3(),0x4d6bfe);scene.add(selection);selection.visible=false;
 const assemblyFocus=createAssemblyFocus(scene,entities,cableRecords);
+// Parts already in place before this step fade toward grey so the new ones stand out.
+const dimBase=new WeakMap(),DIM=new THREE.Color(0xd5dbe6);let settled=new Set();
+function settledParts(){
+  const s=STEPS[step];if(!step||s.complete||s.overview)return new Set();
+  const before=snapshot(step-1,1),after=snapshot(step,1),out=new Set();
+  for(const [id,p] of Object.entries(before))if(p.visible&&after[id]?.visible&&!s.parts.includes(id)&&Math.hypot(...p.position.map((x,i)=>x-after[id].position[i]))<.01)out.add(id);
+  return out;
+}
 const assemblyMagnifier=createAssemblyMagnifier({renderer,scene,camera,stage,host,renderView:(world,view)=>renderQuality.render(world,view,'detail')});
 let selected=null,selectedAnchor=null;
 function applyState(state){
@@ -154,7 +163,7 @@ function applyState(state){
     obj.position.set(...pose.position);
     if(ACTORS[id].kind==='cable'&&obj.visible)updateCable(id,pose.points);
     obj.quaternion.copy(actorQuaternion(ACTORS[id],pose));
-    obj.traverse(child=>{if(child.isMesh){const mats=Array.isArray(child.material)?child.material:[child.material];for(const mat of mats){mat.opacity=pose.opacity*(mat.userData.baseOpacity??1);mat.transparent=pose.opacity<.999||!!mat.userData.baseTransparent;}}});
+    obj.traverse(child=>{if(child.isMesh){const mats=Array.isArray(child.material)?child.material:[child.material];for(const mat of mats){mat.opacity=pose.opacity*(mat.userData.baseOpacity??1);mat.transparent=pose.opacity<.999||!!mat.userData.baseTransparent;if(mat.color){if(!dimBase.has(mat))dimBase.set(mat,mat.color.clone());mat.color.copy(dimBase.get(mat));if(settled.has(id))mat.color.lerp(DIM,.55);}}}});
   }
   hardwareModels?.syncDiscs(entities,state);
   selection.visible=false;
@@ -212,7 +221,7 @@ function syncInfo(){
     const b=document.createElement('button');b.type='button';b.id=`part-chip-${id}`;b.className='part-chip';b.style.setProperty('--c',a.color||'#9ba7b9');
     const dot=document.createElement('i'),label=document.createElement('span');label.textContent=a.chip||a.label.split(' · ')[0];b.append(dot,label);b.addEventListener('click',()=>{$('instruction-dialog').close();selectActor(id);});$('needed-parts').append(b);}
   for(const b of $('step-list').children){const n=Number(b.dataset.step);b.toggleAttribute('aria-current',n===step);if(n===step)b.setAttribute('aria-current','step');b.classList.toggle('done',n<step);b.querySelector('.number').textContent=n<step?'✓':STEPS[n].complete?'✓':String(n-c.start+1);}
-  clearPartInfo();syncReference();setAttributes();updateProgress();
+  clearPartInfo();syncReference();setAttributes();updateProgress();settled=settledParts();deskMode.sync(step);
 }
 function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   if(!ready)return;const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
@@ -244,6 +253,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
   const hit=ray.intersectObjects(selectables.filter(o=>o.visible),true).find(h=>h.object.visible);
   if(hit)selectActor(hit.object.userData.actorId,hit.point);else clearPartInfo();
 });
+const deskMode=createDeskMode({getStep:()=>step,isReady:()=>ready,openReference:()=>openReference(),canvas:renderer.domElement});
 function openReference(){$('instruction-dialog').close();const p=$('reference-panel');p.hidden=false;$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
 function closeReference(){$('reference-panel').hidden=true;$('reference-toggle').setAttribute('aria-expanded','false');$('reference-video').pause();}
 $('instruction-toggle').addEventListener('click',()=>$('instruction-dialog').showModal());
