@@ -36,6 +36,8 @@ permissions:
 jobs:
   candidate:
     if: inputs.upgrade_from == ''
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -107,22 +109,25 @@ jobs:
       - name: Build unsigned development candidate
         if: steps.selected.outputs.build == 'true'
         run: npm run package --prefix desktop -- ${{ matrix.target }}
-      - uses: actions/upload-artifact@v4
+      - name: Store complete candidates in a private Release
         if: steps.selected.outputs.build == 'true' && github.event_name == 'workflow_dispatch'
-        with:
-          name: letsduck-unsigned-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            desktop/release/**/*.exe
-            desktop/release/**/*.dmg
-            desktop/release/**/*.zip
-            desktop/release/**/*.blockmap
-            desktop/release/**/beta*.yml
-            desktop/release/**/latest*.yml
-          if-no-files-found: error
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          shopt -s nullglob
+          directory="desktop/release/$PLATFORM-$ARCH"
+          files=("$directory"/*.exe "$directory"/*.dmg "$directory"/*.zip "$directory"/*.blockmap "$directory"/beta*.yml "$directory"/latest*.yml)
+          test "${#files[@]}" -gt 0
+          tag="desktop-candidate-$GITHUB_RUN_ID-$PLATFORM-$ARCH"
+          gh release create "$tag" "${files[@]}" --prerelease --latest=false --target "$GITHUB_SHA" --title "Desktop candidate $DUCK_RELEASE_VERSION ($PLATFORM $ARCH)" --notes "Private CI candidate. Contains only top-level distributable files, not unpacked executables. Not a public update channel."
   installed-upgrade:
     if: inputs.upgrade_from != ''
     runs-on: windows-2025
     timeout-minutes: 20
+    permissions:
+      contents: write
     env:
       DUCK_UPDATE_REPOSITORY: ${{ inputs.update_repository }}
       DUCK_UPGRADE_FROM: ${{ inputs.upgrade_from }}
@@ -136,9 +141,13 @@ jobs:
       - run: npm ci --prefix desktop
       - name: Install A, download B anonymously, restart and verify retained data
         run: node desktop/scripts/installed-upgrade.mjs
-      - uses: actions/upload-artifact@v4
+      - name: Save upgrade evidence without Actions artifact storage
         if: always()
-        with:
-          name: letsduck-windows-installed-upgrade
-          path: output/desktop-installed-upgrade/
-          if-no-files-found: warn
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if [ -d output/desktop-installed-upgrade ]; then
+            python -m zipfile -c output/installed-upgrade-evidence.zip output/desktop-installed-upgrade
+            gh release create "desktop-upgrade-evidence-$GITHUB_RUN_ID" output/installed-upgrade-evidence.zip --prerelease --latest=false --target "$GITHUB_SHA" --title "Installed upgrade evidence $GITHUB_RUN_ID" --notes "Private automated acceptance evidence; see result.json or failure.json in the archive."
+          fi

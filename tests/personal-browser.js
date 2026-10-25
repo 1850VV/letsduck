@@ -19,6 +19,9 @@ async (page) => {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await page.waitForFunction(n => window.studioProto?.state.name === n, name);
+  // Clearing browser storage also clears the language choice. Restore it for
+  // the Chinese error-message assertion below on English Windows/macOS hosts.
+  await page.evaluate(async () => (await import('/shared/i18n.mjs')).setLocale('zh-Hans'));
   // A new browser storage state must still load the named SQLite scheme.
   await page.locator('#scheme-btn').click();
   await page.locator('#sm-name').fill(name + '-未写入');
