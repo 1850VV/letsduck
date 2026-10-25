@@ -17,6 +17,8 @@ import {loadHardwareModels} from './hardware-models.mjs';
 import {LOOK} from '../shared/duck-look.mjs';
 import { STEPS,CHAPTERS,ACTORS,snapshot,chapterFor,OVERVIEW_STEP,PLUG_PAIRS } from './hardware-state.mjs';
 import {createDeskMode} from './desk-mode.mjs';
+import {createChapterMaterials} from './chapter-materials.mjs';
+import {stepMaterials} from './material-catalog.mjs';
 
 import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlugQuaternion,interpolatePose,socketQuaternion} from './render-pose.mjs';
 
@@ -216,21 +218,22 @@ function syncInfo(){
   $('step-count').textContent=`${c.name} · ${local} / ${c.end-c.start+1}`;
   $('stage-step').textContent=s.complete?`${c.name} · 完成`:`${String(local).padStart(2,'0')}  ${s.short}`;
   $('source-time').textContent=`${fmt(s.sourceStart)}—${fmt(s.sourceEnd)}`;
-  $('needed-parts').replaceChildren();const groups=new Set();
-  for(const id of s.parts){const a=ACTORS[id];if(a.listGroup&&groups.has(a.listGroup))continue;if(a.listGroup)groups.add(a.listGroup);
-    const b=document.createElement('button');b.type='button';b.id=`part-chip-${id}`;b.className='part-chip';b.style.setProperty('--c',a.color||'#9ba7b9');
-    const dot=document.createElement('i'),label=document.createElement('span');label.textContent=a.chip||a.label.split(' · ')[0];b.append(dot,label);b.addEventListener('click',()=>{$('instruction-dialog').close();selectActor(id);});$('needed-parts').append(b);}
+  $('needed-parts').replaceChildren();
+  for(const material of stepMaterials(step)){
+    const b=document.createElement('button');b.type='button';b.id=`part-chip-${material.id}`;b.className='part-chip';b.style.setProperty('--c',material.color);b.title=material.spec;
+    const dot=document.createElement('i'),label=document.createElement('span');label.textContent=`${material.short} ${material.quantity}`;b.append(dot,label);b.addEventListener('click',()=>{$('instruction-dialog').close();materials.inspect(material);});$('needed-parts').append(b);}
   for(const b of $('step-list').children){const n=Number(b.dataset.step);b.toggleAttribute('aria-current',n===step);if(n===step)b.setAttribute('aria-current','step');b.classList.toggle('done',n<step);b.querySelector('.number').textContent=n<step?'✓':STEPS[n].complete?'✓':String(n-c.start+1);}
   clearPartInfo();syncReference();setAttributes();updateProgress();settled=settledParts();deskMode.sync(step);
 }
 function goStep(index,{animate=true,back=false,playerDriven=false}={}){
-  if(!ready)return;const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
+  if(!ready)return;materials.close();const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
   if(!playerDriven)lessonPlayer.seek(n,animate&&n>0?0:1,{play:animate&&n>0});
   const playback=lessonPlayer.state;step=playback.step;progress=playback.progress;playing=playback.playing;
   assemblyFocus.reset();
   backTransition=back?{from:structuredClone(old),start:performance.now(),duration:650}:null;
   if(backTransition){progress=1;playing=false;}
-  syncInfo();cameraTo(STEPS[step].camera,STEPS[step].target,650/lessonPlayer.state.rate);
+  syncInfo();if(materials.active){cameraTween=null;materials.resize();return;}
+  cameraTo(STEPS[step].camera,STEPS[step].target,650/lessonPlayer.state.rate);
   if(!backTransition)applyState(snapshot(step,progress));
 }
 function clearPartInfo(){
@@ -248,13 +251,15 @@ renderer.domElement.addEventListener('pointerdown',e=>{pointerDown=[e.clientX,e.
 renderer.domElement.addEventListener('pointermove',e=>{if(pointerDown&&e.buttons&&Math.hypot(e.clientX-pointerDown[0],e.clientY-pointerDown[1])>5)cameraTween=null;});
 renderer.domElement.addEventListener('wheel',()=>{cameraTween=null;},{passive:true});
 renderer.domElement.addEventListener('pointerup',e=>{
+  if(materials.active)return;
   if(!pointerDown||Math.hypot(e.clientX-pointerDown[0],e.clientY-pointerDown[1])>5)return;
   const rect=renderer.domElement.getBoundingClientRect(),pointer=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),ray=new THREE.Raycaster();ray.setFromCamera(pointer,camera);
   const hit=ray.intersectObjects(selectables.filter(o=>o.visible),true).find(h=>h.object.visible);
   if(hit)selectActor(hit.object.userData.actorId,hit.point);else clearPartInfo();
 });
-const deskMode=createDeskMode({getStep:()=>step,isReady:()=>ready,openReference:()=>openReference(),canvas:renderer.domElement});
-function openReference(){$('instruction-dialog').close();const p=$('reference-panel');p.hidden=false;$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
+const materials=createChapterMaterials({scene,camera,controls,renderer,host,entities,getHardware:()=>hardwareModels,getState:()=>({step,progress,ready}),pause(){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;setAttributes();},stopCamera(){cameraTween=null;},applyState,fit,invalidate:()=>{renderQuality.invalidate();invalidate();},resetFocus:()=>assemblyFocus.reset(),clearSelection:clearPartInfo,hideArrow(){guideArrow.visible=false;},onStart:()=>goStep(step===0?1:step)});
+const deskMode=createDeskMode({getStep:()=>step,isReady:()=>ready,openReference:()=>openReference(),canvas:renderer.domElement,openChapter:c=>materials.open(c,{start:true}),closeChapter:()=>materials.close()});
+function openReference(){materials.close();$('instruction-dialog').close();const p=$('reference-panel');p.hidden=false;$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
 function closeReference(){$('reference-panel').hidden=true;$('reference-toggle').setAttribute('aria-expanded','false');$('reference-video').pause();}
 $('instruction-toggle').addEventListener('click',()=>$('instruction-dialog').showModal());
 $('instruction-close').addEventListener('click',()=>$('instruction-dialog').close());
@@ -262,10 +267,10 @@ $('reference-toggle').addEventListener('click',()=>{$('reference-panel').hidden?
 $('reference-close').addEventListener('click',closeReference);$('source-step').addEventListener('click',openReference);
 $('start').addEventListener('click',()=>goStep(1));$('next').addEventListener('click',()=>goStep(step+1));$('back').addEventListener('click',()=>goStep(step-1,{animate:false,back:true}));
 $('replay').addEventListener('click',()=>goStep(step===OVERVIEW_STEP?STEPS.findIndex(s=>s.id==='final-power'):step));$('restart').addEventListener('click',()=>goStep(0));$('overview').addEventListener('click',()=>goStep(OVERVIEW_STEP,{animate:false}));
-$('pause').addEventListener('click',()=>{playing?lessonPlayer.pause():lessonPlayer.resume();playing=lessonPlayer.state.playing;backTransition=null;setAttributes();});
+$('pause').addEventListener('click',()=>{if(materials.active){$('kit-go').click();return;}playing?lessonPlayer.pause():lessonPlayer.resume();playing=lessonPlayer.state.playing;backTransition=null;setAttributes();});
 $('autoplay').addEventListener('click',()=>{if(!ready)return;if(lessonPlayer.state.autoplay){lessonPlayer.stopAuto();playing=false;setAttributes();}else{lessonPlayer.startAuto();goStep(0,{playerDriven:true});}});
 $('playback-rate').addEventListener('ryugi-change',ev=>{lessonPlayer.setRate(Number(ev.detail.value));setAttributes();});
-$('reset-view').addEventListener('click',()=>cameraTo(STEPS[step].camera,STEPS[step].target));
+$('reset-view').addEventListener('click',()=>materials.active?materials.resize():cameraTo(STEPS[step].camera,STEPS[step].target));
 function sideView(direction){const view=cameraPreset(direction,STEPS[step]);cameraTo(view.position,view.target);}
 $('front-view').addEventListener('click',()=>sideView(1));
 $('back-view').addEventListener('click',()=>sideView(-1));
@@ -287,7 +292,7 @@ $('full-saved-step').addEventListener('change',restore);$('full-saved-step').add
 function initUI(){if(uiReady)return;uiReady=true;document.documentElement.setAttribute('data-theme','light');lessonSound.syncControls();renderQuality.sync();lessonPlayer.setRate(Number($('playback-rate').value));const control=$('motion-progress');control.addEventListener('ryugi-change',ev=>{if(!ready)return;playing=false;backTransition=null;progress=Number(ev.detail.value)/100;lessonPlayer.seek(step,progress);applyState(snapshot(step,progress));updateProgress();setAttributes();});setAttributes();}
 document.addEventListener('ryugi-ui:ready',initUI,{once:true});if(customElements.get('ryugi-button'))initUI();
 
-function fit(){const {width,height}=host.getBoundingClientRect();if(width<1||height<1)return;renderer.setSize(width,height,false);camera.aspect=width/height;const scale=Math.max(1,1.07/camera.aspect);controls.minDistance=66*scale;controls.maxDistance=1100*scale;if(Math.abs(scale-aspectScale)>.001){camera.position.sub(controls.target).multiplyScalar(scale/aspectScale).add(controls.target);aspectScale=scale;cameraTween=null;}camera.updateProjectionMatrix();invalidate();}
+function fit(){const {width,height}=host.getBoundingClientRect();if(width<1||height<1)return;renderer.setSize(width,height,false);camera.aspect=width/height;if(materials.active){materials.resize();invalidate();return;}const scale=Math.max(1,1.07/camera.aspect);controls.minDistance=66*scale;controls.maxDistance=1100*scale;if(Math.abs(scale-aspectScale)>.001){camera.position.sub(controls.target).multiplyScalar(scale/aspectScale).add(controls.target);aspectScale=scale;cameraTween=null;}camera.updateProjectionMatrix();invalidate();}
 new ResizeObserver(fit).observe(host);
 function updateActionLabel(){
   const caption=STEPS[step].caption,active=ready&&!!caption,label=$('action-indicator');label.hidden=!active;$('motion-label').hidden=active;
@@ -324,13 +329,13 @@ function render(now){
     for(const [id,b] of Object.entries(target)){const a=backTransition.from[id]||b;state[id]=interpolatePose(ACTORS[id],a,b,ease);}
     applyState(state);if(t>=1){backTransition=null;applyState(target);}}
   if(cameraTween){const t=Math.min(1,(now-cameraTween.start)/cameraTween.duration),ease=t*t*(3-2*t);camera.position.lerpVectors(cameraTween.from,cameraTween.to,ease);controls.target.lerpVectors(cameraTween.fromTarget,cameraTween.toTarget,ease);if(t>=1)cameraTween=null;}
-  const cameraMoving=controls.update();updateAssemblyCameraDepth(camera,controls.target);updateActionLabel();
-  const focus=ready?assemblyFocus.update(STEPS[step].id,progress,currentState,guidanceEndState,now,!!backTransition,camera,host.clientHeight):{phase:'none'};
+  const cameraMoving=controls.update();if(!materials.active)updateAssemblyCameraDepth(camera,controls.target);updateActionLabel();
+  const focus=ready&&!materials.active?assemblyFocus.update(STEPS[step].id,progress,currentState,guidanceEndState,now,!!backTransition,camera,host.clientHeight):{phase:'none'};
   if(focus.phase!=='none')guideArrow.visible=false;
   const hint=document.querySelector('.real-model'),message=focus.message||(focus.phase==='aligning'?'红框 · 对准这两处':focus.phase==='completed'?'绿框 · 本次已装好':'真实零件网格');
   if(hint.textContent!==message)hint.textContent=message;
   hint.dataset.focus=focus.phase;
-  renderQuality.render(scene,camera);assemblyMagnifier.render(focus,now,ready?STEPS[step].id:null);updatePartLeader();
+  materials.update();renderQuality.render(scene,camera);assemblyMagnifier.render(focus,now,ready&&!materials.active?STEPS[step].id:null);updatePartLeader();
   return playing||!!backTransition||!!cameraTween||cameraMoving||focus.animating||assemblyMagnifier.state.animating;
 }
 invalidate();

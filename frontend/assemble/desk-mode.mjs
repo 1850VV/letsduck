@@ -35,13 +35,7 @@ const ART={
 const plugSteps=new Set(['r-wire-a','l-wire-a','t-wire','t-motor-r','t-motor-l','head-yaw-wire','head-neck-wire','final-power','final-buses']);
 const guardFor=id=>/horn/.test(id)?ART.horn:/-plug$/.test(id)||plugSteps.has(id)?ART.plug:/tighten/.test(id)?ART.screw:null;
 
-function screwSVG({d,len}){
-  const mm=3*96/25.4,head=d*2,w=(len+1.2)*mm+4,h=head*mm+4,y=2+(head-d)/2*mm;
-  let threads='';for(let x=0;x+.8<=len;x+=.8)threads+=`<line x1="${(2+(1.2+x+.2)*mm).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(2+(1.2+x+.6)*mm).toFixed(1)}" y2="${(y+d*mm).toFixed(1)}"/>`;
-  return `<svg width="${w.toFixed(1)}" height="${h.toFixed(1)}" viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true"><rect x="2" y="2" width="${(1.2*mm).toFixed(1)}" height="${(head*mm).toFixed(1)}" rx="1.5" fill="#a9b1bd"/><rect x="${(2+1.2*mm).toFixed(1)}" y="${y.toFixed(1)}" width="${(len*mm).toFixed(1)}" height="${(d*mm).toFixed(1)}" fill="#8d97a6"/><g stroke="#6d7684" stroke-width="1">${threads}</g></svg>`;
-}
-
-export function createDeskMode({getStep,isReady,openReference,canvas}){
+export function createDeskMode({getStep,isReady,openReference,canvas,openChapter,closeChapter}){
   let desk=true,kitShownFor=null,last=-1;
   try{desk=localStorage.getItem(DESK)!=='off';}catch{}
 
@@ -56,16 +50,9 @@ export function createDeskMode({getStep,isReady,openReference,canvas}){
   }
 
   function showKit(c){
-    const kit=kitFor(c);
-    if(!kit.parts.length&&!kit.screws.length)return;
-    kitShownFor=c.id;
-    $('kit-title').textContent=`${c.name}要用这些`;
-    $('kit-parts').replaceChildren(...kit.parts.map(p=>{const li=document.createElement('li');li.innerHTML=`<i></i><span></span><b>×${p.count}</b>`;li.querySelector('i').style.background=p.color;li.querySelector('span').textContent=p.name;return li;}));
-    $('kit-screws').innerHTML=kit.screws.map(s=>`<li>${screwSVG(s)}<span>${s.label}<small>长 ${s.len} mm</small></span><b>×${s.count}</b></li>`).join('');
-    $('kit-screws-block').hidden=!kit.screws.length;
-    $('kit').hidden=false;
+    kitShownFor=c.id;openChapter(c);
   }
-  const closeKit=()=>{$('kit').hidden=true;};
+  const closeKit=()=>closeChapter();
 
   function sync(step){
     const s=STEPS[step],c=chapterFor(step),local=step-c.start+1,ci=CHAPTERS.indexOf(c);
@@ -84,7 +71,7 @@ export function createDeskMode({getStep,isReady,openReference,canvas}){
   }
 
   function next(){
-    if(!$('kit').hidden)return closeKit();
+    if(!$('kit').hidden)return $('kit-go').click();
     const b=getStep()===0?$('start'):$('next');
     if(!b.hidden)b.click();
   }
@@ -95,7 +82,6 @@ export function createDeskMode({getStep,isReady,openReference,canvas}){
   }
 
   $('desk-toggle').addEventListener('click',()=>setDesk(!desk));
-  $('kit-go').addEventListener('click',closeKit);
   $('stuck').addEventListener('click',stuck);
   $('desk-recenter').addEventListener('click',()=>{$('reset-view').click();$('desk-recenter').hidden=true;});
   canvas.addEventListener('pointerdown',()=>{if(isReady())$('desk-recenter').hidden=false;});
