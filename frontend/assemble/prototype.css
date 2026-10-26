@@ -161,3 +161,10 @@ html,body{height:100%;overflow:hidden}
 @media(max-width:420px){.quality-control{position:absolute;right:85px;top:0}.quality-control>ryugi-select{font-size:10px}}
 @media(max-width:600px){:root{--view-font:10px;--view-pad:3px}h1{white-space:nowrap}}
 @media(max-width:500px){.view-tools{gap:2px}.section-heading .view-dock{padding:2px}.quality-control>ryugi-select{width:64px!important}}
+
+/* Direct horn selection keeps the existing part card and leader. */
+#part-tooltip[data-horn]{top:60px;z-index:12;padding:10px 12px;border-color:var(--horn-color);color:var(--horn-color);font-size:14px;min-width:104px}
+#part-tooltip[data-horn] #part-name{font-size:14px}
+#part-tooltip[data-horn] #part-name:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--horn-color);margin-right:7px}
+body.preparing #part-tooltip[data-horn]:not([hidden]){display:grid!important}
+@media(max-width:600px){body.preparing #part-tooltip[data-horn]{top:calc(48% + 10px)}}

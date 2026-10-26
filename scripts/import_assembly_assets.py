@@ -26,23 +26,30 @@ def read_git(ref):
 
 def import_assets(read,target):
     target=Path(target)
+    files=dict(MANIFEST['files']);optional={}
+    for name,meta in MANIFEST.get('optionalFiles',{}).items():
+        try:data=read(name)
+        except ValueError:continue
+        if len(data)!=meta['bytes'] or hashlib.sha256(data).hexdigest()!=meta['sha256']:
+            raise ValueError('Assembly reference does not match the manifest: '+name)
+        files[name]=meta;optional[name]=data
     # Check every file before writing any; never replace a different file already in place.
-    for name,meta in MANIFEST['files'].items():
+    for name,meta in files.items():
         dest=target/name
         if dest.exists() and (dest.is_symlink() or hashlib.sha256(dest.read_bytes()).hexdigest()!=meta['sha256']):
             raise FileExistsError('Different assembly asset already exists: '+name)
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(dir=target) as tmp:
-        for name,meta in MANIFEST['files'].items():
+        for name,meta in files.items():
             if (target/name).exists():continue
-            data=read(name)
+            data=optional[name] if name in optional else read(name)
             if len(data)!=meta['bytes'] or hashlib.sha256(data).hexdigest()!=meta['sha256']:
                 raise ValueError('Assembly asset does not match the manifest: '+name)
             staged=Path(tmp)/name;staged.parent.mkdir(parents=True,exist_ok=True);staged.write_bytes(data)
         for staged in sorted(Path(tmp).rglob('*')):
             if staged.is_file():
                 dest=target/staged.relative_to(tmp);dest.parent.mkdir(parents=True,exist_ok=True);staged.replace(dest)
-    return sum(meta['bytes'] for meta in MANIFEST['files'].values())
+    return sum(meta['bytes'] for meta in files.values())
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -53,7 +60,7 @@ def main():
     args=parser.parse_args()
     try:size=import_assets(read_git(args.git) if args.git else read_folder(args.source),args.target)
     except (ValueError,OSError) as error:parser.exit(1,str(error)+'\n')
-    print('Imported %d assembly assets (%.1f MB) into %s.'%(len(MANIFEST['files']),size/1e6,args.target))
+    print('Imported assembly assets (%.1f MB) into %s.'%(size/1e6,args.target))
     print('These assets retain their own terms; do not add them to Git.')
 
 if __name__=='__main__':main()

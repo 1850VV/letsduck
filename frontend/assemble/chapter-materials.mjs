@@ -5,10 +5,11 @@ import {LOOK} from '../shared/duck-look.mjs';
 import {ACTORS,STEPS,CHAPTERS,snapshot,chapterFor} from './hardware-state.mjs';
 import {chapterMaterials} from './material-catalog.mjs';
 import {specimenLayout,arrangeGroups} from './material-layout.mjs';
+import {firstVisibleIntersection,hornPart} from './horn-selection.mjs';
 const $=id=>document.getElementById(id);
 
 /** Chapter inventory owns display clones; assembly entities and their buffers stay intact. */
-export function createChapterMaterials({scene,camera,controls,renderer,host,entities,getHardware,getState,pause,stopCamera,applyState,fit,invalidate,resetFocus,clearSelection,hideArrow,onStart}){
+export function createChapterMaterials({scene,camera,controls,renderer,host,entities,onHornPick,getHardware,getState,pause,stopCamera,applyState,fit,invalidate,resetFocus,clearSelection,hideArrow,onStart}){
 const stage=$('stage');
 let materialTrayActive=false,materialSelection=null,trayReturn=null,trayRows=[],trayGroups=[],trayUnits=[],trayLabels=[],trayUnitLabels=[],trayBox=null;
 const trayRoot=new THREE.Group();trayRoot.name='chapter-materials';scene.add(trayRoot);
@@ -66,16 +67,18 @@ function fitTray(){
  let distance=controls.minDistance;for(let k=0;k<8;k++){const v=new THREE.Vector3(k&1?box.max.x:box.min.x,k&2?box.max.y:box.min.y,k&4?box.max.z:box.min.z).sub(center);distance=Math.max(distance,v.dot(direction)+Math.max(Math.abs(v.dot(right))/(tanH*.86),Math.abs(v.dot(up))/(tanV*.78)));}
  controls.maxDistance=Math.max(1600,distance*1.5);camera.far=Math.max(trayReturn.far,controls.maxDistance+radius*2);camera.updateProjectionMatrix();controls.target.copy(center);camera.position.copy(center).addScaledVector(direction,distance);stopCamera();controls.update();invalidate();
 }
-function selectTray(index,unitIndex=0){
- if(!materialTrayActive||!trayUnits[index]?.[unitIndex])return;materialSelection={index,unitIndex};
+function paintTraySelection(index=null,unitIndex=0){
  trayUnits.forEach((units,i)=>units.forEach((unit,j)=>unit.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material]){
-  const active=i===index&&j===unitIndex;m.opacity=m.userData.trayBaseOpacity*(active?1:.78);const transparent=!active||m.userData.trayBaseTransparent;if(m.transparent!==transparent){m.transparent=transparent;m.needsUpdate=true;}
+  const active=i===index&&j===unitIndex,dim=index!==null&&!active;m.opacity=m.userData.trayBaseOpacity*(dim?.78:1);const transparent=dim||m.userData.trayBaseTransparent;if(m.transparent!==transparent){m.transparent=transparent;m.needsUpdate=true;}
   if(m.color)m.color.setHex(active?0x5578ff:m.userData.trayColor);
   if(m.emissive){m.emissive.setHex(active?0x2858ff:m.userData.trayEmissive);m.emissiveIntensity=active?.45:m.userData.trayIntensity;}
  }})));
  [...$('kit-parts').querySelectorAll('button')].forEach((b,i)=>{b.setAttribute('aria-pressed',String(i===index));b.querySelector('.note').hidden=i!==index||!trayRows[i].note;});
  trayLabels.forEach((l,i)=>l.classList.toggle('selected',i===index));
  trayUnitLabels.forEach((labels,i)=>labels.forEach((l,j)=>l.classList.toggle('selected',i===index&&j===unitIndex)));
+}
+function selectTray(index,unitIndex=0){
+ if(!materialTrayActive||!trayUnits[index]?.[unitIndex])return;clearSelection();materialSelection={index,unitIndex};paintTraySelection(index,unitIndex);
  if(!trayBox){trayBox=new THREE.Box3Helper(new THREE.Box3(),0x4d6bfe);trayBox.material.depthTest=false;trayBox.material.depthWrite=false;trayBox.renderOrder=40;scene.add(trayBox);}
  trayBox.visible=true;$('kit-parts').querySelectorAll('button')[index]?.scrollIntoView({block:'nearest'});invalidate();
  if(inspectionEnabled)openInspection(index,unitIndex);else closeInspection();
@@ -129,7 +132,11 @@ $('kit-parts').addEventListener('keydown',ev=>{
 });
 let pointerDown=null;renderer.domElement.addEventListener('pointerdown',e=>{pointerDown=[e.clientX,e.clientY];});
 renderer.domElement.addEventListener('pointerup',ev=>{if(!materialTrayActive||!pointerDown||Math.hypot(ev.clientX-pointerDown[0],ev.clientY-pointerDown[1])>5)return;
- const r=renderer.domElement.getBoundingClientRect(),p=new THREE.Vector2((ev.clientX-r.left)/r.width*2-1,-(ev.clientY-r.top)/r.height*2+1),ray=new THREE.Raycaster();ray.setFromCamera(p,camera);const hit=ray.intersectObjects(trayGroups,true).find(h=>{for(let o=h.object;o;o=o.parent)if(!o.visible)return false;return true;});if(hit)selectTray(hit.object.userData.trayIndex,hit.object.userData.trayUnitIndex);
+ const r=renderer.domElement.getBoundingClientRect(),p=new THREE.Vector2((ev.clientX-r.left)/r.width*2-1,-(ev.clientY-r.top)/r.height*2+1),ray=new THREE.Raycaster();ray.setFromCamera(p,camera);const hit=firstVisibleIntersection(ray,trayGroups);
+ if(hit){
+  if(onHornPick&&hornPart(hit.object)){clearSelection();materialSelection=null;paintTraySelection();if(trayBox)trayBox.visible=false;if(onHornPick(hit)){invalidate();return;}}
+  selectTray(hit.object.userData.trayIndex,hit.object.userData.trayUnitIndex);
+ }else{clearSelection();invalidate();}
 });
 
 
@@ -153,12 +160,19 @@ const inspectionPMREM=new THREE.PMREMGenerator(inspectionRenderer);const room=ne
 inspectionCamera=new THREE.PerspectiveCamera(34,1,.01,10000);
 inspectionControls=new OrbitControls(inspectionCamera,inspectionRenderer.domElement);inspectionControls.enablePan=true;inspectionControls.enableDamping=true;inspectionControls.dampingFactor=.1;inspectionControls.minPolarAngle=.01;inspectionControls.maxPolarAngle=Math.PI-.01;
 inspectionControls.addEventListener('change',()=>{inspectionDirty=true;});
+let down=null;
+inspectionRenderer.domElement.addEventListener('pointerdown',event=>{down=[event.clientX,event.clientY];});
+inspectionRenderer.domElement.addEventListener('pointerup',event=>{
+ if(!inspectionRoot||!down||Math.hypot(event.clientX-down[0],event.clientY-down[1])>5)return;
+ const rect=inspectionRenderer.domElement.getBoundingClientRect(),point=new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1),ray=new THREE.Raycaster();ray.setFromCamera(point,inspectionCamera);
+ const hit=firstVisibleIntersection(ray,[inspectionRoot]);if(!hit||!onHornPick?.(hit))clearSelection();inspectionDirty=true;invalidate();
+});
 }
 function sizeInspection(){if(!inspectionRenderer)return;const edge=Math.floor(Math.min(host.clientWidth*.88,host.clientHeight*.72,650));inspectionSurface.style.width=edge+'px';inspectionSurface.style.height=edge+'px';inspectionRenderer.setSize(edge,edge,false);inspectionDirty=true;}
 window.addEventListener('resize',sizeInspection);
 function drawInspection(){if(!inspectionVisible||document.hidden)return;inspectionControls.update();if(inspectionDirty){inspectionRenderer.render(inspectionScene,inspectionCamera);inspectionDirty=false;}inspectionFrame=requestAnimationFrame(drawInspection);}
 function disposeInspection(){if(!inspectionRoot)return;const disposed=new Set();inspectionRoot.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material])if(!disposed.has(m)){disposed.add(m);m.dispose();}});inspectionScene.remove(inspectionRoot);inspectionRoot=null;}
-function closeInspection(){if(inspectionVisible)controls.enabled=true;inspectionVisible=false;inspectionFlight?.cancel();inspectionFlight=null;cancelAnimationFrame(inspectionFrame);inspectionScreen.hidden=true;disposeInspection();trayUnits.flat().forEach(g=>g.visible=true);if(trayBox)trayBox.visible=!!materialSelection;invalidate();}
+function closeInspection(){clearSelection();if(inspectionVisible)controls.enabled=true;inspectionVisible=false;inspectionFlight?.cancel();inspectionFlight=null;cancelAnimationFrame(inspectionFrame);inspectionScreen.hidden=true;disposeInspection();trayUnits.flat().forEach(g=>g.visible=true);if(trayBox)trayBox.visible=!!materialSelection;invalidate();}
 function openInspection(index,unitIndex=0){
  if(!materialTrayActive||!trayUnits[index]?.[unitIndex])return;initInspection();controls.enabled=false;
  inspectionFlight?.cancel();cancelAnimationFrame(inspectionFrame);disposeInspection();trayUnits.flat().forEach(g=>g.visible=true);

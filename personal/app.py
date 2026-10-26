@@ -40,6 +40,7 @@ NOT_FOUND = {'error': '未知接口', 'code': 'request.not_found', 'params': {}}
 PAGES = {'/': '/home.html', '/paint': '/index.html'}
 # The assembly guide's models, videos and music: local-only, imported by scripts/import_assembly_assets.py.
 ASSEMBLY = json.loads((REPO / 'scripts' / 'assembly-assets.json').read_text())['files']
+ASSEMBLY_REFERENCES = json.loads((REPO / 'scripts' / 'assembly-assets.json').read_text()).get('optionalFiles', {})
 CHUNK = 4 << 20  # an open-ended Range gets at most this much; players ask for the rest as they need it
 log = logging.getLogger('doodleduck')
 
@@ -190,7 +191,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_file(target)
         if path.startswith('/assemble/assets/'):
             name = path[len('/assemble/assets/'):]
-            if name not in ASSEMBLY or not (ASSETS / 'assembly' / name).is_file():
+            if (name not in ASSEMBLY and name not in ASSEMBLY_REFERENCES) or not (ASSETS / 'assembly' / name).is_file():
                 return self.send_body(404, {'error': '资产不存在', 'code': 'request.asset_missing', 'params': {}})
             return self.send_range(ASSETS / 'assembly' / name)
         super().do_GET()

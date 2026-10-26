@@ -36,6 +36,7 @@ jobs:
       - name: Test local asset importer and the account store with synthetic fixtures
         run: |
           python3 -m unittest discover -s tests -p test_local_assets.py -v
+          python3 -m unittest discover -s tests -p test_assembly_import.py -v
           python3 -m unittest discover -s tests -p test_store.py -v
           python3 -m unittest discover -s tests -p test_api.py -v
           python3 -m unittest discover -s tests -p test_store_scaling.py -v

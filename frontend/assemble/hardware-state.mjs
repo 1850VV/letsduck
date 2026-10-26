@@ -2,9 +2,10 @@ import * as THREE from '../vendor/three.module.js';
 import * as Base from './full-state.mjs';
 import {actorQuaternion,socketQuaternion,cablePlugQuaternion} from './render-pose.mjs';
 import {BOARD_AUDIT,SERVO_AUDIT} from './hardware-adapters.mjs';
+import {LEG_SECONDARY_REMOVALS,SERVO_IDS} from './servo-horns.mjs';
 
-// The original choreography stays authoritative. This layer changes geometry
-// anchors only; it never edits source snapshots, model vertices or step timing.
+// Adapt source anchors without editing model vertices. ID13/23 secondary
+// removal is added to the existing pair steps before their support insertion.
 const clone=value=>structuredClone(value);
 const v=a=>new THREE.Vector3(...a);
 const clamp=n=>Math.max(0,Math.min(1,n));
@@ -15,6 +16,11 @@ export const CHAPTERS=clone(Base.CHAPTERS);
 export const OVERVIEW_STEP=Base.OVERVIEW_STEP;
 export const STEPS=clone(Base.STEPS);
 export const chapterFor=index=>CHAPTERS.find(c=>index>=c.start&&index<=c.end)||CHAPTERS[0];
+for(const r of LEG_SECONDARY_REMOVALS){
+ STEPS.find(s=>s.id===r.stepId).parts.push(r.horn,r.screw);
+ const normal=v(SERVO_AUDIT.actors[r.motor].nativePorts[0].normal).applyQuaternion(actorQuaternion(ACTORS[r.motor],{})).toArray();
+ for(const [id,kind]of [[r.horn,'horn'],[r.screw,'screw']])ACTORS[id]={kind,module:1,carriedBy:r.motor,label:`ID${SERVO_IDS[r.motor]} 副舵盘${kind==='screw'?'固定螺丝':''}`,source:'插座开口同侧 · 保留输出轴；原装螺丝规格待核',end:[...r.tray],start:[...r.tray],fastener:null,orientationZ:0,spinAxis:normal};
+}
 
 for(const [id,a]of Object.entries(SERVO_AUDIT.actors)){
  ACTORS[id].servoPorts=a.replaceOldPortSlotsWithNativeIndex.map((nativeIndex,index)=>({...clone(a.nativePorts[nativeIndex]),id:Base.ACTORS[id].servoPorts[index].id||`bus-${index}`,nativeId:a.nativePorts[nativeIndex].id,dockOffset:2.25,evidence:'approved-v2-appearance; geometric-slot-assignment; physical-fit-and-pinout-unverified'}));
@@ -42,7 +48,7 @@ for(let i=0;i<4;i++){
 // and all existing uncertainty about electrical and physical installation.
 for(const [id,a]of Object.entries(ACTORS)){
  if(SERVO_AUDIT.actors[id])a.source='已确认 v2 舵机外观 · HD-1910-C001 / HD1910M；转轴按建模坐标适配，配合与针脚未实物验证';
- if(a.kind==='horn')a.source='已确认 v2 独立舵盘外观 · 按步骤拆卸；实体配合仍待核';
+ if(a.kind==='horn')a.source='已确认本批舵盘外观 · 主盘保留，副盘按 ID 处理；实体配合仍待核';
  if(a.kind==='cable'&&!['power','usb-c'].includes(a.cableType)||a.kind==='plug'&&(a.pins||3)===3)a.source='已确认 v2 三芯插头外观与三根黑线；线长、走线和针脚仍为未核验教学示意';
  if(a.kind==='screw'&&['M2x6','M3x16','M2.3x8'].includes(a.fastener)&&!a.hardwareStatus)a.source='已确认 v2 指定规格螺丝外观 · 孔位用途、扭矩与实体配合未实物验证';
 }
@@ -188,5 +194,16 @@ export function snapshot(index,progress=1){
   else state[id].position=v(state[id].position).add(v(ACTORS[id].end).sub(v(sourceActors[id].end))).toArray();
  }
  adaptHorns(n,state);
+ for(const r of LEG_SECONDARY_REMOVALS){
+  const at=STEPS.findIndex(s=>s.id===r.stepId),spec=SERVO_AUDIT.actors[r.motor].frontHornParent;
+  const motorQ=actorQuaternion(sourceActors[r.motor],state[r.motor]),hornQ=motorQ.clone().multiply(new THREE.Quaternion(...spec.quaternionXYZW));
+  const normal=v([0,0,1]).applyQuaternion(hornQ),seat=v(spec.translationMm).applyQuaternion(motorQ).add(v(state[r.motor].position));
+  for(const [id,isScrew]of [[r.horn,false],[r.screw,true]]){
+   const t=n<at?0:n>at?1:smooth(isScrew?(p-.2)/.35:(p-.6)/.4);
+   const start=seat.clone().addScaledVector(normal,isScrew?1.35:0),tray=v(r.tray).add(v(isScrew?[12,0,0]:[0,0,0]));
+   const q=isScrew?new THREE.Quaternion().setFromUnitVectors(v([0,1,0]),normal):hornQ;
+   state[id]={position:start.lerp(tray,t).toArray(),rotation:qEuler(q),turn:isScrew?-t*6:0,visible:n>=at&&!STEPS[n].overview&&STEPS[n].module<5,opacity:1,status:n<at?'waiting':t>=.999?'removed':t>0?'moving':'installed'};
+  }
+ }
  return state;
 }

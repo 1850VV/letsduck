@@ -42,7 +42,7 @@ export function materialFor(id){
   note='三根黑线、两端白色插头。线径、具体端子及板端适配仍需核对；模型中的线弯不代表实物线长。';source=BOM;
  }else if(a.kind==='plug'){
   spec=/power/i.test(id)?'电池电源线自带接头，不另算一条线。':'三芯舵机线自带插头，不另算一条线。';note='接头键位与实际针脚需按匹配硬件资料核对。';
- }else if(a.kind==='horn'){spec='舵机自带舵盘；拆下后保留，按后续步骤处理。';}
+ }else if(a.kind==='horn'){spec=a.label.includes('主舵盘')?'主舵盘始终保留，不拆。':'插座开口同侧为副舵盘；仅按本只 ID 的步骤拆除，拆后保留。';}
  else if(/bearing/i.test(id)){
   const small=['bearing','l_bearing'].includes(id);const size=small?'10×15×3':'16×22×4';
   spec=`轴承 ${size} mm，依次为内径 × 外径 × 宽。`;short=`${small?'小':'大'}轴承 ${size}`;
