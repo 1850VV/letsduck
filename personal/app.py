@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 import argparse
 import errno
+import ipaddress
 import json
 import logging
 import os
@@ -28,6 +29,7 @@ FRONTEND = REPO / 'frontend'
 from errors import payload  # noqa: E402
 from rules import Invalid  # noqa: E402
 from schemes import PersonalStore  # noqa: E402
+from servo_setup import ServoSetup  # noqa: E402
 
 from export_transport import parse_multipart, ExportBodyError
 
@@ -135,7 +137,23 @@ class Handler(SimpleHTTPRequestHandler):
         if method == 'GET' and path == '/api/health':
             return {'version': VERSION, 'export': bool(exporter), 'source_sha256': exporter.MODEL['source_sha256'] if exporter else None}
         if method == 'GET' and path == '/api/site':
-            return {'publicUrl': '', 'edition': 'personal', 'assembly': assembly_ready()}
+            return {'publicUrl': '', 'edition': 'personal', 'assembly': assembly_ready(),
+                    'servoSetup': ipaddress.ip_address(self.client_address[0]).is_loopback}
+        if path == '/api/servo-setup' or path.startswith('/api/servo-setup/'):
+            if not ipaddress.ip_address(self.client_address[0]).is_loopback:
+                raise Reply(403, {'error': '请在连接 UNO Q 的这台电脑上打开组装台。'})
+            if method == 'GET' and path == '/api/servo-setup':
+                return self.server.servo.inspect()
+            actions = {'/api/servo-setup/start': self.server.servo.start,
+                       '/api/servo-setup/pause': self.server.servo.pause,
+                       '/api/servo-setup/halt': self.server.servo.halt}
+            if method == 'POST' and path in actions:
+                origin = self.headers.get('Origin')
+                if origin and origin != 'http://' + self.headers.get('Host', ''):
+                    raise Reply(403, {'error': '请从本机组装台执行此操作。'})
+                self.read_json()
+                return actions[path]()
+            raise Reply(404, NOT_FOUND)
         if method == 'GET' and path == '/api/catalog':
             return self.need_exporter('耗材色表未加载', 'validation.29').CATALOG
         if method == 'GET' and path == '/api/schemes':
@@ -265,12 +283,17 @@ class Server(ThreadingHTTPServer):
     # On Windows SO_REUSEADDR would let a second copy bind a port that is already in use.
     allow_reuse_address = os.name != 'nt'
 
+    def server_close(self):
+        if getattr(self, 'servo', None):
+            self.servo.close()
+        super().server_close()
+
     def handle_error(self, request, client_address):
         if not isinstance(sys.exc_info()[1], ConnectionError):  # browsers routinely drop downloads they no longer need
             super().handle_error(request, client_address)
 
 
-def create_server(host='127.0.0.1', port=8876, db=None, legacy=None, search=20):
+def create_server(host='127.0.0.1', port=8876, db=None, legacy=None, search=20, servo_runtime=None):
     """Binds the first free port from `port` (up to `search` tries); port 0 picks any free port."""
     store = PersonalStore(db, part_ids=[p['id'] for p in exporter.MODEL['parts']] if exporter else (), legacy=legacy)
     handler = type('PersonalHandler', (Handler,), {'store': store})
@@ -284,6 +307,7 @@ def create_server(host='127.0.0.1', port=8876, db=None, legacy=None, search=20):
             store.close()
             raise
         server.store = store
+        server.servo = ServoSetup(store, servo_runtime)
         return server
 
 

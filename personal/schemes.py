@@ -40,6 +40,8 @@ class PersonalStore:
         self.db.row_factory = sqlite3.Row
         self.db.execute('PRAGMA journal_mode=WAL')
         self.db.execute(SCHEMA)
+        self.db.execute('CREATE TABLE IF NOT EXISTS servo_setup(board TEXT NOT NULL, id INTEGER NOT NULL, record TEXT NOT NULL, '
+                        'updated INTEGER NOT NULL, PRIMARY KEY(board,id))')
         self.lock = threading.Lock()
         self.part_ids = set(part_ids or ())
         self.imported = self._import_legacy(Path(legacy)) if fresh and legacy and Path(legacy).is_file() else 0
@@ -85,6 +87,19 @@ class PersonalStore:
     def delete_scheme(self, sid):
         with self.lock:
             self.db.execute('DELETE FROM schemes WHERE id=?', (sid,))
+
+    def servo_records(self, board=None):
+        with self.lock:
+            if board is None:
+                last = self.db.execute('SELECT board FROM servo_setup ORDER BY updated DESC LIMIT 1').fetchone()
+                board = last['board'] if last else ''
+            rows = self.db.execute('SELECT record FROM servo_setup WHERE board=? ORDER BY id', (board,)).fetchall()
+        return [json.loads(r['record']) for r in rows]
+
+    def save_servo_record(self, board, record):
+        with self.lock:
+            self.db.execute('INSERT OR REPLACE INTO servo_setup VALUES(?,?,?,?)',
+                            (board, record['id'], json.dumps(record, ensure_ascii=False), self._now()))
 
     def _import_legacy(self, legacy):
         """One-time copy of schemes saved by the earlier personal mode (read-only on the old file)."""
