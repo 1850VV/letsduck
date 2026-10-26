@@ -78,7 +78,7 @@ test('旋转模块、嘴和颈部不会提前显示，已装零件保持存在',
   for (const id of ['h_motor30','h_motor31','h_neckA','h_neckB','h_shell','h_eyes','h_upperAdhesive','h_lowerPad']) assert.equal(mouth[id].visible, false, id);
 });
 
-test('拆卸时先动中央螺丝后动舵盘，嘴部舵机保留编号歧义', () => {
+test('拆卸时先动中央螺丝后动舵盘，嘴部舵机按PDF统一为34', () => {
   for (const [action, prefix] of [['head-core-horn-wire','h_core'],['head-mouth-horn-wire','h_mouth']]) {
     const n = step(action), early = head.snapshot(n, .2), done = head.snapshot(n, 1);
     assert.notDeepEqual(early[`${prefix}HornScrew`].position, head.snapshot(n, 0)[`${prefix}HornScrew`].position);
@@ -87,9 +87,9 @@ test('拆卸时先动中央螺丝后动舵盘，嘴部舵机保留编号歧义',
     assert.equal(done[`${prefix}HornScrew`].status, 'removed');
     assert.equal(head.ACTORS[`${prefix}HornScrew`].fastener, null);
   }
-  assert.match(head.ACTORS.h_mouthMotor.label, /33/);
+  assert.doesNotMatch(head.ACTORS.h_mouthMotor.label, /33/);
   assert.match(head.ACTORS.h_mouthMotor.label, /34/);
-  assert.match(head.STEPS[step('head-mouth-prepare')].text, /待核/);
+  assert.match(head.STEPS[step('head-mouth-prepare')].text, /ID34/);
 });
 
 test('原装螺丝先沿真实输出轴向外退出，舵盘和螺丝不穿过舵机实体', () => {
@@ -287,7 +287,7 @@ test('越界索引和进度会收敛到有效边界，所有步骤都返回完�
       pose.position.forEach(value => assert.ok(Number.isFinite(value), id));
       assert.ok(Number.isFinite(pose.turn));
       assert.ok(pose.opacity >= 0 && pose.opacity <= 1);
-      if (!pose.visible) assert.equal(pose.status, 'waiting', id);
+      if (!pose.visible) assert.equal(pose.status, head.ACTORS[id].hardwareStatus&&n>=head.ACTORS[id].step?'pending':'waiting', id);
     }
   }
 });
