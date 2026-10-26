@@ -27,7 +27,8 @@ export function createServoScene({host,labelsHost,hardware,entities,actors,poses
  const ids=new Map(map.bindings.map(b=>[b.actorId,b.id]));
  for(const [id,entity] of entities){
   const pose=poses[id];if(!pose?.visible||actors[id]?.kind==='cable')continue;
-  const object=entity.clone(true);object.position.fromArray(pose.position);object.quaternion.copy(actorQuaternion(actors[id],pose));
+  // Connection steps hide tutorial actors; the overview has its own visible pose.
+  const object=entity.clone(true);object.visible=true;object.position.fromArray(pose.position);object.quaternion.copy(actorQuaternion(actors[id],pose));
   ownMaterials(object,ids.has(id)?.4:.22);robot.add(object);
   if(ids.has(id)){object.userData.servoId=ids.get(id);motors.set(ids.get(id),object);const box=new THREE.Box3().setFromObject(object),p=box.getCenter(new THREE.Vector3());p.y=box.max.y+3;marker(object,object.worldToLocal(p));}
  }
