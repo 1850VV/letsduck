@@ -65,7 +65,7 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
    if(data.shutdownAt&&!data.online){const left=Math.max(0,Math.ceil((data.shutdownAt+15000-Date.now())/1000));html+=`<p>${left?'至少再等 '+left+' 秒，':''}确认停止后断开 USB 和电池，再换接。仅拔 USB 不能证明电池已断电。</p>${!data.running?button('继续本轮，等待重新连接','resume',false,requesting):'<p class="sv-small">重新上电后会先读取状态，再自动继续。</p>'}`;}
    else if(state.canHalt)html+=button('安全停机，换下一只','halt',false,requesting);
    else if(busy)html+=button('暂停配置','pause',true,requesting);
-   else if(!state.complete)html+=button('恢复默认顺序','sequential',true,requesting);
+   if(!busy&&!state.complete)html+=button('恢复默认顺序','sequential',true,requesting);
   }
   if(html!==panelHTML){const focused=document.activeElement?.closest('#sv-panel [data-action]')?.dataset.action;panelHTML=html;$('panel').innerHTML=html;if(focused)$('panel').querySelector(`[data-action="${focused}"]`)?.focus();}
   const key=JSON.stringify([choice.selected,choice.labelTarget,choice.view,[...state.items].map(([id,item])=>[id,item.status,item.online])]);
