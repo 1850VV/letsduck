@@ -40,6 +40,19 @@ test('an explicit target is in progress during discovery before a source ID is f
  const d=data([proof(10)],[1]);d.phase='working';d.activeTarget=14;d.currentId=null;
  const state=deriveServoStatus(d,map,now);assert.equal(state.items.get(14).status,'working');
 });
+test('a stopped interrupted operation can resume and an idle connection can shut down',()=>{
+ const d=data([proof(14,'pending')],[1]);let state=deriveServoStatus(d,map,now);
+ assert.equal(state.items.get(14).canResume,true);assert.equal(state.canHalt,true);
+ d.running=true;state=deriveServoStatus(d,map,now);assert.equal(state.items.get(14).canResume,false);
+ d.phase='working';d.activeTarget=14;state=deriveServoStatus(d,map,now);assert.equal(state.canHalt,false);
+ d.running=false;d.phase='blocked';state=deriveServoStatus(d,map,now);assert.equal(state.canHalt,true);
+ d.online=false;state=deriveServoStatus(d,map,now);assert.equal(state.canHalt,false);
+});
+test('an accepted next target takes precedence over the default recommendation',()=>{
+ const d=data();d.targetId=11;d.queuedTarget=20;
+ assert.equal(deriveServoStatus(d,map,now).nextTarget,20);
+ d.queuedTarget=null;assert.equal(deriveServoStatus(d,map,now).nextTarget,11);
+});
 test('display changes preserve selection; observations cannot replace a manually inspected servo',()=>{
  const choice=new ServoSelection(ids);choice.apply({targetId:11});assert.equal(choice.selected,11);assert.equal(choice.labelTarget,null);
  choice.choose(14);choice.toggle();assert.equal(choice.selected,14);assert.equal(choice.labelTarget,14);assert.equal(choice.view,'tray');

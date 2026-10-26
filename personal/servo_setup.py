@@ -498,17 +498,19 @@ class ServoSetup:
                 self.running = True
                 self.worker_kind = 'configure'
                 self.requested_target = target
+                self.current, self.phase = None, 'working'
                 self.worker = threading.Thread(target=self._run, daemon=True, name='duck-servo-setup')
                 self.worker.start()
         return self.snapshot()
 
     def queue(self, target):
         self.valid_id(target)
-        if self.phase != 'working':
+        if self.phase != 'working' and not self.running:
             raise SetupError('请直接为下一只开始配置。')
         if any(r['id'] == target for r in self.store.servo_records(self.board)):
             raise SetupError('这个编号已有记录，请接回对应舵机核查。')
-        self.queued_target = target
+        with self.store.lock:
+            self.queued_target = target
         return self.snapshot()
 
     def _run(self):
@@ -526,8 +528,13 @@ class ServoSetup:
                     self.stop.wait(1)
                     continue
                 try:
-                    self.configure_once(self.queued_target if self.queued_target is not None else self.requested_target)
-                    self.requested_target = self.queued_target = None
+                    pending = any(r['state'] == 'pending' for r in self.store.servo_records(self.board))
+                    with self.store.lock:
+                        if self.requested_target is None and not pending:
+                            self.requested_target, self.queued_target = self.queued_target, None
+                        target = self.requested_target
+                    self.configure_once(target)
+                    self.requested_target = None
                     if self.selected is not None:
                         self.observe_once()
                     disconnected = False

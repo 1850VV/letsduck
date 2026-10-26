@@ -10,9 +10,9 @@ export function deriveServoStatus(data,map,now=Date.now()){
    (record.sourceId===id||record.oldIdAbsent===true);
   const status=data.phase==='working'&&(data.activeTarget??data.currentId)===id?'working':proof?'verified':record?'review':'pending';
   if(status==='verified')verified.add(id);else if(status==='review')review.add(id);else if(status==='pending')pending.add(id);
-  items.set(id,{id,status,record,online:online.has(id)});
+  items.set(id,{id,status,record,online:online.has(id),canResume:record?.state==='pending'&&data.phase!=='working'&&!data.running});
  }
- return {items,verified,review,pending,online,known,complete:verified.size===map.bindings.length&&review.size===0&&data.phase!=='working',
+ return {items,verified,review,pending,online,known,nextTarget:data.queuedTarget??data.targetId,canHalt:!!data.online&&data.phase!=='working',complete:verified.size===map.bindings.length&&review.size===0&&data.phase!=='working',
   liveFor(id){
    if(!online.has(id))return null;
    const inspected=data.inspection;

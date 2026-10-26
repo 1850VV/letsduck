@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import threading
 import json
+import time
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -335,6 +336,67 @@ class TelemetryTests(unittest.TestCase):
         self.setup.phase = 'working'
         self.setup.requested_target = 14
         self.assertEqual(self.setup.snapshot().get('activeTarget'), 14)
+
+    def test_start_reports_working_before_the_worker_begins_discovery(self):
+        entered, release = threading.Event(), threading.Event()
+        configure = self.setup.configure_once
+        def delayed(target):
+            entered.set()
+            release.wait(2)
+            return configure(target)
+        with patch.object(self.setup, 'configure_once', side_effect=delayed):
+            try:
+                result = self.setup.start(14)
+                self.assertTrue(entered.wait(1))
+                self.assertEqual(result['phase'], 'working')
+                self.assertEqual(result['activeTarget'], 14)
+            finally:
+                release.set()
+                self.setup.pause()
+
+    def queued_sequence(self, when, interrupted=False):
+        self.record(10, 'reported')
+        request = self.runtime.request
+        def boundary(method, path, body=None):
+            if when == 'working' and body and body.get('action') == 'set_gains' and self.setup.current == 14:
+                self.setup.queue(20)
+            return request(method, path, body)
+        self.runtime.request = boundary
+        if interrupted:
+            self.runtime.lose_after = 'set_gains'
+        def wait_for(predicate):
+            deadline = time.monotonic() + 6
+            while not predicate() and time.monotonic() < deadline:
+                time.sleep(.01)
+            self.assertTrue(predicate(), self.setup.snapshot())
+        self.setup.start(14)
+        if interrupted:
+            wait_for(lambda:self.setup.phase == 'offline')
+            self.runtime.online = True
+        wait_for(lambda:self.setup.phase == 'success' and self.setup.current == 14)
+        if when == 'waiting':
+            self.setup.queue(20)
+        self.assertEqual(self.setup.snapshot()['queuedTarget'], 20)
+        self.runtime.online = False
+        wait_for(lambda:self.setup.phase == 'offline' or not self.setup.online)
+        self.runtime.servos = {1: dict(raw_pos=392, center_pos=2047, kp=32, kd=40)}
+        self.runtime.online = True
+        wait_for(lambda:self.setup.phase == 'success' and self.setup.current == 20)
+        self.setup.pause()
+        self.assertEqual([r['id'] for r in self.store.servo_records(self.runtime.serial) if r['state']=='verified'], [14,20])
+        self.runtime.servos = {1: dict(raw_pos=392, center_pos=2047, kp=32, kd=40)}
+        self.setup.stop.clear()
+        self.setup.configure_once()
+        self.assertEqual(set(self.runtime.servos), {11})
+
+    def test_queued_next_survives_the_current_operation_then_returns_to_default_order(self):
+        self.queued_sequence('working')
+
+    def test_next_target_can_be_selected_while_waiting_to_swap_servos(self):
+        self.queued_sequence('waiting')
+
+    def test_queued_next_survives_read_first_recovery_of_an_interrupted_current_servo(self):
+        self.queued_sequence('working', interrupted=True)
 
     def test_selecting_another_model_never_renumbers_an_assigned_servo(self):
         self.record(10)

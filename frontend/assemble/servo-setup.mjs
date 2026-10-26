@@ -36,7 +36,7 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   for(const el of $('slots').children){const n=Number(el.dataset.id),it=state.items.get(n);el.className='sv-slot '+it.status+(n===id?' active':'');el.dataset.status=it.status;el.dataset.online=String(it.online);el.innerHTML=`<span class="sv-mark">${marks[it.status]}</span><b>${n}</b>${it.online?'<i class="sv-online-dot"></i>':''}`;el.setAttribute('aria-label',`ID ${n}，${names[it.status]}，${it.online?'当前在线':state.known?'当前不在线':'在线状态未知'}`);el.setAttribute('aria-pressed',String(n===id));}
   $('online').textContent=state.known?state.online.size?'当前在线：'+[...state.online].map(n=>map.byId.has(n)?'ID'+n:'未编号 ID'+n).join('、'):'当前未检测到在线舵机':data.scan?.active?`正在检测 ${data.scan.checked} / ${data.scan.total}`:'在线状态未知';
   $('refresh').disabled=requesting||busy||data.scan?.active||!!data.shutdownAt&&!data.online;
-  $('next').textContent=state.complete?'成功记录已保留。可继续检查，也可安全停机后进入组装。':busy?`正在配置 ID ${data.activeTarget||data.currentId||data.targetId||'…'}；读回复核通过后才计入成功。`:`${state.review.size?'需复核：'+[...state.review].join('、')+'。':''}${data.targetId?'下一只按顺序配置 ID '+data.targetId+'。':''}换接后保留已完成进度。`;
+  $('next').textContent=state.complete?'成功记录已保留。可继续检查，也可安全停机后进入组装。':busy?`正在配置 ID ${data.activeTarget||data.currentId||data.targetId||'…'}；读回复核通过后才计入成功。`:`${state.review.size?'需复核：'+[...state.review].join('、')+'。':''}${data.queuedTarget?'下一只已指定 ID '+state.nextTarget+'，之后恢复默认顺序。':state.nextTarget?'下一只按顺序配置 ID '+state.nextTarget+'。':''}换接后保留已完成进度。`;
   let html='';
   if(state.complete&&completionOpen)html=completePanel();
   else{
@@ -51,18 +51,19 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
     else if(data.inspection?.id===id&&data.inspection.status==='reading')html+='<div class="sv-status">正在读取当前参数…</div>';
     else html+=`<div class="sv-status ${item.status==='verified'?'':'alert'}">${state.known?'所选 ID 当前不在线。':'当前连接无法确认在线状态。'}${item.status==='verified'?'此前成功记录仍保留。':''}</div><div class="sv-facts">${fact('上次记录',r?.readback?.kp!==undefined?'KP '+r.readback.kp+' / KD '+r.readback.kd:'尚未完成读回验证')}${fact('数据来源','历史记录 · 当前未读到')}</div>`;
     html+=button('重新读取并核查','audit',true,requesting||busy);
+    if(item.canResume)html+=button('继续本只配置','recover',false,requesting||!state.known||state.online.size!==1||!profile||![r.id,r.sourceId].some(n=>state.online.has(n)));
     if(r?.midEvidence==='unconfirmed')html+='<p class="sv-small">中位指令结果未确认，装配后仍需机械校准。</p>';
    }else{
     const connected=[...state.online],wrong=connected.some(n=>map.byId.has(n));
     html+=`<div class="sv-facts">${fact('本次目标','ID '+id+(choice.manual?' · 你点选的':' · 顺序推荐'))}${fact('当前单只',!state.known?'尚未检测':connected.length===1?'ID '+connected[0]:connected.length>1?connected.length+' 只在线':'尚未连接')}${profile?fact('匹配参数','KP '+profile.kp+' / KD '+profile.kd):fact('配置档','等待读取运行端')}</div>`;
     if(wrong)html+='<div class="sv-status alert">当前接着已编号舵机。先停机断电，再换接未编号舵机。</div>';
     if(connected.length>1)html+='<div class="sv-status alert">配置时只连接一只未编号舵机。</div>';
-    html+='<div class="sv-grow"></div>'+(busy?button('下一只配置 ID '+id,'queue',false,requesting||id===data.currentId):button('配置 ID '+id,'configure',false,requesting||!state.known||connected.length!==1||wrong||!profile));
+    html+='<div class="sv-grow"></div>'+(busy||data.running?button((data.queuedTarget===id?'下一只已指定 ID ':'下一只配置 ID ')+id,'queue',false,requesting||id===(data.activeTarget??data.currentId)||data.queuedTarget===id):button('配置 ID '+id,'configure',false,requesting||!state.known||connected.length!==1||wrong||!profile));
     if(!data.online)html+=`<div class="sv-guide-links"><a href="https://www.arduino.cc/en/software/#app-lab-section" target="_blank" rel="noopener">安装 Arduino App Lab</a><a href="https://www.xgorobot.com/duck.html#software" target="_blank" rel="noopener">Duck OS 烧录与配网</a><button type="button" data-action="guide">三维接线说明</button></div>`;
    }
    html+='<div class="sv-grow"></div>';
    if(data.shutdownAt&&!data.online){const left=Math.max(0,Math.ceil((data.shutdownAt+15000-Date.now())/1000));html+=`<p>${left?'至少再等 '+left+' 秒，':''}确认停止后断开 USB 和电池，再换接。仅拔 USB 不能证明电池已断电。</p>${!data.running?button('继续本轮，等待重新连接','resume',false,requesting):'<p class="sv-small">重新上电后会先读取状态，再自动继续。</p>'}`;}
-   else if(data.phase==='success')html+=button('安全停机，换下一只','halt',false,requesting);
+   else if(state.canHalt)html+=button('安全停机，换下一只','halt',false,requesting);
    else if(busy)html+=button('暂停配置','pause',true,requesting);
    else if(!state.complete)html+=button('恢复默认顺序','sequential',true,requesting);
   }
@@ -88,7 +89,7 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   if(action==='guide'){close();onGuide();}
   else if(action==='completion'){completionOpen=true;render();}
   else if(action==='inspect'){completionOpen=false;render();call('audit',{id:choice.selected});}
-  else if(action==='configure'){choice.begin();await call('start',{targetId:choice.selected});}
+  else if(action==='configure'||action==='recover'){choice.begin();await call('start',{targetId:choice.selected});}
   else if(action==='resume'){choice.begin();await call('start');}
   else if(action==='sequential'){choice.sequential(data);render();}
   else if(action==='audit'||action==='repair'||action==='queue')await call(action,{id:choice.selected});
