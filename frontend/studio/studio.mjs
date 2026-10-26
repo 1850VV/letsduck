@@ -9,6 +9,7 @@ import { SLOTS, RECIPES, THEMES, quickDesign, rollSlots, themeSlots, designNotes
 import { sideParts, paintTargets } from '../lib/color-workflows.mjs';
 import { createEvolution } from '../lib/evolution.mjs';
 import { createLineup } from './lineup.mjs';
+import { bindCompareHold } from './compare-hold.mjs';
 import { createActionPlayer, ACTIONS, VOICES, describeVoice, seedFromText } from '../shared/duck-actions.mjs';
 import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
 import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
@@ -221,8 +222,11 @@ function renderCompare() {
 }
 $('#cmp-pick').onclick = (e) => {e.stopPropagation();const m = $('#cmp-menu');m.hidden = !m.hidden;};
 $('#cmp-menu').onclick = (e) => {const b = e.target.closest('[data-cmp]');if (b) {compareId = b.dataset.cmp;} else if (e.target.closest('[data-cmp-split]')) {splitOn = !splitOn;if (splitOn && sideOn) toggleSide(false);}renderCompare();$('#cmp-menu').hidden = true;};
-const holdOn = () => {if (step === 1) return;view.setColors(compareColors());$('#hold').classList.add('on');},holdOff = () => {view.setColors(design.colors);$('#hold').classList.remove('on');};
-$('#hold').addEventListener('pointerdown', holdOn);$('#hold').addEventListener('pointerup', holdOff);$('#hold').addEventListener('pointerleave', holdOff);
+const comparison=bindCompareHold({button:$('#hold'),stage:$('#stage'),line:$('#compare-wipe'),canStart:()=>step!==1,
+  begin:()=>{hover.cancel();$('#part-tag').hidden=true;view.setColors(design.colors,true);view.setWipe(compareColors());view.stage.controls.enabled=false;$('#split-labels').hidden=true;$('#compare-before').textContent=compareName();},
+  move:at=>view.setWipe(compareColors(),at),
+  end:()=>{view.setWipe(null);view.stage.controls.enabled=true;$('#split-labels').hidden=!splitOn;}
+});
 
 // ---------- selection ----------
 function targetIds() {
@@ -502,6 +506,7 @@ async function updateVoice() {
 }
 function renderAll(lite = false) {renderHeader();renderSteps();renderRail();if (lite && step === 2 && $('#cdock')) updateStep2();else if (lite && step === 1) renderStarts();else renderPanel();renderStage();renderCompare();renderMenu();$('#undo').disabled = !undo.length;$('#redo').disabled = !redo.length;updateVoice();}
 function goStep(n) {
+  comparison.stop();
   if (step === 3 && n !== 3) {actions.stop();applyPose();}
   if (focused && n !== 2) {focused = false;focusKey = '';view.view('hero');}
   if (step === 1 && n !== 1) lineup.hide(squad().findIndex(([id]) => id === startId));
@@ -814,7 +819,7 @@ addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && k === 'z') {e.preventDefault();(e.shiftKey ? $('#redo') : $('#undo')).click();return;}
   if ((e.metaKey || e.ctrlKey) && k === 's') {e.preventDefault();saveScheme(false);return;}
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.code === 'Space' && !e.repeat) {e.preventDefault();holdOn();return;}
+  if (e.code === 'Space' && !e.repeat) {e.preventDefault();comparison.start();return;}
   if (step === 1) {
     const list = squad(),tabs = ['classic', 'dice', 'mine'];
     if (k === 'r') rerollAll();else if (/^[1-4]$/.test(k) && list[+k - 1]) applyStart(list[+k - 1][0]);
@@ -828,7 +833,7 @@ addEventListener('keydown', (e) => {
   if (k === 'p') return toggleSide();
   if (k === 'escape' || k === 'v') setTool('select');else if (k === 'b') setTool(tool === 'brush' ? 'select' : 'brush');else if (k === 'i') setTool('pick');
 });
-addEventListener('keyup', (e) => {if (e.code === 'Space') holdOff();});
+addEventListener('keyup', (e) => {if (e.code === 'Space') comparison.stop();});
 
 // ---------- misc ----------
 let toastTimer,lastToast;
