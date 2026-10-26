@@ -15,8 +15,9 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
-IDS = (10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34)
-MAP_VERSION = 'tutorial-reference-1'
+BINDINGS = json.loads((Path(__file__).resolve().parents[1] / 'frontend/assemble/servo-map.json').read_text())
+IDS = tuple(b['id'] for b in BINDINGS['bindings'])
+MAP_VERSION = BINDINGS['version']
 
 
 class SetupError(ValueError):

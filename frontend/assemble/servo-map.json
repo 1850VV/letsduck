@@ -1,0 +1,20 @@
+{
+  "version": "tutorial-reference-1",
+  "bindings": [
+    {"id":10,"actorId":"t_motor10","role":"髋部旋转","status":"reference"},
+    {"id":11,"actorId":"t_motor11","role":"髋部侧摆","status":"reference"},
+    {"id":12,"actorId":"r_upperMotor","role":"腿上端","status":"reference"},
+    {"id":13,"actorId":"r_lowerMotor","role":"腿中部","status":"reference"},
+    {"id":14,"actorId":"motor","role":"脚踝","status":"reference"},
+    {"id":20,"actorId":"t_motor20","role":"另一侧髋部旋转","status":"reference"},
+    {"id":21,"actorId":"t_motor21","role":"另一侧髋部侧摆","status":"reference"},
+    {"id":22,"actorId":"l_upperMotor","role":"另一侧腿上端","status":"reference"},
+    {"id":23,"actorId":"l_lowerMotor","role":"另一侧腿中部","status":"reference"},
+    {"id":24,"actorId":"l_motor","role":"另一侧脚踝","status":"reference"},
+    {"id":30,"actorId":"h_motor30","role":"脖子下端","status":"candidate"},
+    {"id":31,"actorId":"h_motor31","role":"脖子上端","status":"candidate"},
+    {"id":32,"actorId":"h_motor32","role":"头部旋转","status":"candidate"},
+    {"id":33,"actorId":"h_motor33","role":"头部第二关节","status":"candidate"},
+    {"id":34,"actorId":"h_mouthMotor","role":"嘴部","status":"reference"}
+  ]
+}
