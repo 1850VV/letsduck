@@ -38,10 +38,10 @@ step('head-platform','放入头部平台','把旋转子组件整体放入头部�
   '把已经连接的头部旋转子组件整体放入 P2-02 头部平台。让已接的线从开口引出。',"按本关节主副盘与插座朝向整体放入；已装轴承、螺丝和线束随组件移动，勿夹线。",'子组件整体放入 · 线从开口引出',undefined,3.1);
 step('head-mouth-prepare','核对嘴部舵机','取下一只嘴部舵机并核对编号',874,878,
   ['h_mouthMotor','h_mouthHorn','h_mouthHornScrew'],
-  '原片这一只舵机的字幕写“编号33”，官方软件把嘴部定义为 ID34；本原型保留 33 / 34 的歧义，实物编号待核验。',
-  '不要据此把另一只 ID33 改号。几何只作为独立的嘴部舵机候选。','视频33 / 官方34 · 待核验',[18,225,62],1.8);
+  '按装配指南第1、19页，取嘴部舵机 ID34。核对实物标签后安装，头部另一只舵机仍为 ID33。',
+  '嘴部使用 ID34；主舵盘和输出轴保留。安装孔与实体配合仍待核。','嘴部 · ID34',[18,225,62],1.8);
 step('head-mouth-horn-wire',"嘴部卸副盘线","拆下嘴部副舵盘并接线",878,890,
-  ['h_mouthHornScrew','h_mouthHorn','h_plugMouth','h_wireMouth'],"认准嘴部舵机插座开口同侧，先卸中央固定螺丝，再取下副舵盘并保留，然后插接线束。","主舵盘和输出轴保留。沿用上一阶段的 33 / 34 编号核对，不据此改写 ID；键位与针脚仍待核。","只拆副舵盘 · 再接线",[18,225,62],2.8);
+  ['h_mouthHornScrew','h_mouthHorn','h_plugMouth','h_wireMouth'],"认准嘴部舵机插座开口同侧，先卸中央固定螺丝，再取下副舵盘并保留，然后插接线束。","主舵盘和输出轴保留。嘴部编号为 ID34；键位与针脚仍待核。","只拆副舵盘 · 再接线",[18,225,62],2.8);
 step('head-mouth-jaw','装舵机与下巴','放入嘴部舵机，再套上下巴',890,918,
   ['h_mouthMotor','h_jaw','h_wireMouth'],
   '先把嘴部舵机放入平台，再把 P2-01 下巴两侧对准驱动轴与支撑位套入。让线束从开口留出。',"套入下巴前核对主副盘与插座方向。两侧轴孔、间隙及配合精度仍待实物核验。",'先放舵机 · 再套入下巴',[0,218,72],3.5);
@@ -58,7 +58,7 @@ step('head-mouth-check','检查嘴部开合','检查下巴开合与线束状态'
   '这里只是开合示意，结束时回到闭合位；实物是否顺畅、间隙与舵机角度均待核验。','模拟张开 → 闭合 · 实物待核验',[0,219,76],3.1);
 step('head-neck-pair','连接双舵机','排列 ID31 与 ID30，装第一块连接板',942,962,
   ['h_motor31','h_motor30','h_neckA','h_neckAScrew0','h_neckAScrew2'],
-  '原片桌面视角左为 ID31、右为 ID30。先把第一连接板固定到一只舵机，再对接另一只，完成连接板其余孔位。',"ID30、ID31 主副舵盘全部保留。核对插座方向；两次字幕的累计螺丝数量仍待核，动画只用源件四孔。",'先固定一端 · 再连另一只舵机',[38,167,52],3.7);
+  '原片桌面视角左为 ID31、右为 ID30。先把第一连接板固定到一只舵机，再对接另一只，完成连接板其余孔位。',"ID30、ID31 主副舵盘全部保留。核对插座方向；按指南第22页，两侧连接板及头颈固定合计16颗M2×6，孔位与配合另核。",'先固定一端 · 再连另一只舵机',[38,167,52],3.7);
 step('head-neck-plate','装第二连接板','安装另一块颈部连接板',962,972,
   ['h_neckB','h_neckBScrew0','h_motor30','h_motor31'],
   '在另一侧装 P3-03 连接板候选，按视频固定四颗 M2×6，形成双舵机脖子子组件。',"核对两只舵机主副盘和插座朝向，保持 ID30 / 31 副盘；先完成连接板，再接头部。",'另一侧连接板 · M2×6 ×4',[38,167,52],2.8);
@@ -67,7 +67,7 @@ step('head-neck-join','连接头与脖子','把双舵机脖子接到头部',972,
   '把已经连接好的脖子整体装到头部的俯仰连接处。原片要求出线口位于操作者左手边。',"核对主副盘和插座开口朝向。原片操作者左手边不能写成机器人左侧，具体配合仍待核验。",'按操作者左手边核对出线口',[0,184,48],3.1);
 step('head-neck-fix','固定头颈连接','固定头颈连接的两处孔组',984,1002,
   ['h_pitchSupport','h_neckFixScrew0','h_neckFixScrew4'],
-  '按视频依次固定两处头颈连接部位，每处字幕标四颗 M2×6。',"两组固定前核对主副盘侧与插座开口。孔位、轴向和合计用量仍需实物逐孔复核。",'两处固定 · 各 M2×6 ×4',[0,190,44],3.2);
+  '按视频依次固定两处头颈连接部位，每处字幕标四颗 M2×6。',"两组固定前核对主副盘侧与插座开口。指南合计16颗；具体孔位、轴向与配合仍需实物逐孔复核。",'两处固定 · 各 M2×6 ×4',[0,190,44],3.2);
 step('head-neck-wire','接线并留余量','插接头颈总线并整理线环',1002,1034,
   ['h_neckWire','h_headLead','h_plugNeck','h_wire32','h_wire33','h_wireMouth'],
   '按可见动作插接头颈线束，再整理线环，为俯仰和转动留出余量。将后续总装使用的线端留在外侧。',"以插座开口识别副盘侧，保留 ID30 / 31 副盘。预留活动线环；线弯不代表接口身份或针脚。",'先整理线束 · 再合外壳',[0,185,51],3.2);
@@ -77,8 +77,8 @@ step('head-shell','套装头盖','套入白色头盖',1034,1047,
   '沿用现有真实网格。外壳版本、卡合位置及间隙待核验。','套上头盖 · 避开线束',[0,236,58],2.8);
 step('head-shell-fix','内侧固定头盖','从内侧固定头盖',1047,1052,
   ['h_shellScrew0','h_shell'],
-  '按约 17:31 的字幕，从内侧固定两颗 M2×6。',
-  '螺丝位置为教学示意，确认线束没有被夹在头盖与平台之间。','内侧固定 · M2×6 ×2',[0,225,59]);
+  '按装配指南第20页，从内侧用三颗 M2×6 固定头盖。',
+  '共需3颗；第3处模型孔位尚待核定，暂不演示该孔插入。确认线束没有夹在头盖与平台之间。','内侧固定 · M2×6 ×3',[0,225,59]);
 step('head-eyes','安装眼圈眼睛','安装眼圈和眼睛小件',1052,1064,
   ['h_eyeShell','h_eyes','h_shell'],
   '对齐头盖前孔，安装 P2-06 眼圈与 P3-01 眼睛组件候选。',
@@ -157,7 +157,7 @@ actor('h_motor33','head_roll_2',3,{label:'头部第二舵机 · ID33 候选',ass
 screws('h_rollScrew',3,[[-.02051,229.76542,29.10],[-6.02244,223.76735,29.10],[5.97755,223.76349,29.10],[-.02438,217.76543,29.10]],{axis:'z',assembly:'core',from:.45});
 screws('h_coreScrew',4,[[-22.51611,237.45,33.00330],[7.48389,237.45,32.99510],[-22.51173,237.45,49.00329],[7.48826,237.45,48.99509]],{axis:'y',assembly:'core',from:.6});
 actor('h_platform','P2-02',6,{label:'头部平台 · P2-02',approach:[0,-18,18],to:.6});
-actor('h_mouthMotor','head_roll_0',7,{label:'嘴部舵机 · 视频33 / 官方34，待核验',assembly:'mouth',approach:[15,10,0],to:.65});
+actor('h_mouthMotor','head_roll_0',7,{label:'嘴部舵机 · ID34',assembly:'mouth',approach:[15,10,0],to:.65});
 actor('h_jaw','P2-01',9,{label:'下巴 · P2-01',approach:[0,0,40],from:.42,to:1});
 actor('h_servoSupport','P4-02',10,{label:'头部舵机固定件 · P4-02',approach:[0,32,0],to:.45});
 screws('h_supportScrew',10,[[25.0366,221.40,20.9304],[-32.9995,221.40,58.8751],[-.0073,221.40,67.0065],[-32.9633,221.40,20.8752]],{axis:'y',from:.5});
@@ -184,6 +184,8 @@ for(let i=0;i<8;i++) {
 }
 actor('h_shell','P4-01',18,{label:'头盖 · P4-01',approach:[0,40,-8]});
 screws('h_shellScrew',19,[[39.4715,219.20,89.3823],[-39.5284,219.30,89.3072]],{axis:'y',direction:1,from:.05,to:.6});
+// A required fastener is counted without inventing its third mounting hole.
+actor('h_shellScrew2',null,19,{kind:'screw',fastener:'M2x6',label:'头盖第3颗 M2×6 · 孔位待核',source:'Assembly_Guide 第20页确认共3颗；第3孔未定位',hardwareStatus:'pending-hole-alignment',listGroup:'h_shellScrew',end:[0,0,0],approach:[0,0,0]});
 actor('h_eyeShell','P2-06',20,{label:'眼圈 · P2-06 候选',approach:[0,0,28],from:.25,to:1});
 actor('h_eyes','P3-01',20,{label:'眼睛小件 · P3-01 候选',approach:[0,0,26],to:.6});
 actor('h_upperPad','P1-02',23,{label:'上嘴软垫 · P1-02 候选',approach:[0,18,28],installStep:24,to:.6});
@@ -212,7 +214,7 @@ wire('h_wire32',1,[dock32,add(dock32,[0,0,8]),[43,234,62],[46,214,28],[28,200,34
 wire('h_wire33',5,[dock33,add(dock33,[0,8,0]),[-37,238,10],[-43,218,35],[-30,200,45]],'core',
   {label:'ID33 预留线 · 端点示意',routeAfter:17,finalPoints:[dock33,add(dock33,[0,8,0]),[-43,221,10],[-44,192,27],[-25,181,42]],from:.55,attachedPlug:'h_plug33',plugEnd:0,endpointPlugs:[false,true]});
 wire('h_wireMouth',8,[dockMouth,add(dockMouth,[0,8,0]),[54,229,38],[51,212,24],[31,200,31]],'mouth',
-  {label:'嘴部舵机线 · 33/34 待核验',routeAfter:17,finalPoints:[dockMouth,add(dockMouth,[0,8,0]),[58,218,39],[52,191,31],[28,174,43]],from:.55,attachedPlug:'h_plugMouth',plugEnd:0,endpointPlugs:[false,true]});
+  {label:'嘴部舵机 ID34 线 · 线长待核',routeAfter:17,finalPoints:[dockMouth,add(dockMouth,[0,8,0]),[58,218,39],[52,191,31],[28,174,43]],from:.55,attachedPlug:'h_plugMouth',plugEnd:0,endpointPlugs:[false,true]});
 wire('h_neckWire',17,[dockNeck31,add(dockNeck31,[0,0,8]),[48,174,63],add(dockNeck30,[0,0,8]),dockNeck30],null,
   {label:'脖子线环 · 端点及串接次序示意',attachedPlug:'h_plugNeck',plugEnd:4,endpointPlugs:[true,false],sourceMotor:'h_motor31',sourcePort:1,sourceEntry:[0,.5]});
 wire('h_headLead',17,[dockHeadLead,add(dockHeadLead,[0,0,-8]),[-52,141,57],[-45,120,60],[-22,117,55]],null,
@@ -350,6 +352,7 @@ export function snapshot(localIndex,progress=1) {
       pose.position=rotateJawPoint(pose.position,angle);
       pose.rotation=[angle,0,0];
     }
+    if(a.hardwareStatus==='pending-hole-alignment')Object.assign(pose,{visible:false,opacity:0,status:index>=a.step?'pending':'waiting'});
     result[id]=pose;
   }
   for(const [id,a] of Object.entries(ACTORS)) if(a.portMotor) {
