@@ -1,6 +1,7 @@
 .servo-open>.workspace{display:none!important}
 .servo-open>.top :is(#overview,#reference-toggle,#desk-toggle,#servo-open){display:none!important}
 #servo-open,.sv-back{border:1px solid #d5dfff;border-radius:7px;padding:6px 10px;background:#eef1ff;color:#4d6bfe;font:inherit;font-size:11px;cursor:pointer}
+.stage>.part-tooltip.servo-info{top:58px;max-width:min(225px,calc(100% - 36px))}
 .servo-workbench{max-width:1400px;margin:0 auto;padding:24px 34px;color:#17243c;font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
 .servo-workbench [hidden]{display:none!important}
 .servo-workbench button{cursor:pointer;font-family:inherit}

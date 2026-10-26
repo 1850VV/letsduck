@@ -250,6 +250,7 @@ function selectActor(id,point=null){
   obj.updateWorldMatrix(true,true);const at=point?.clone()||new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());selectedAnchor=obj.worldToLocal(at);
   $('part-name').textContent=ACTORS[id].label;$('part-source').textContent=ACTORS[id].source;
   const binding=servoMapping?.bindings.find(b=>b.actorId===id);
+  $('part-tooltip').classList.toggle('servo-info',!!binding);
   if(binding){const record=servoWorkbench?.recordFor(binding.id);$('part-name').textContent=`ID${binding.id} · ${binding.role}`;$('part-source').textContent=(!servoWorkbench?.historyLoaded?'配置记录尚未读取。':record?.state==='verified'?`历史读回已验证：KP ${record.readback.kp} / KD ${record.readback.kd}。`:record?.state==='reported'?'已编号，待本应用读回复核。':'尚无编号与参数验证记录。')+(binding.status==='candidate'?' 安装位置为候选，需对照原片。':' 位置参照教程，实际安装需核对原片。');}
   $('part-tooltip').hidden=false;stage.classList.add('has-part-info');
 }
