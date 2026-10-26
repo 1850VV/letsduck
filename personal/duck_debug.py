@@ -405,6 +405,8 @@ class DuckDebug:
                         if self.ping(sid)['ok']:
                             self.read(sid,verify=False);self.scan['found'].append(sid)
                         self.scan['checked']=sid+1
+                    # Let waiting status/unload handlers use the existing bus lock between probes.
+                    time.sleep(.001)
             except DebugError as exc:
                 self.scan['error']=str(exc)
             finally:

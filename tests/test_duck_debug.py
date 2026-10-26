@@ -210,6 +210,18 @@ class DebugTests(unittest.TestCase):
         for t in threads:t.start()
         for t in threads:t.join()
         self.assertEqual(1,peak)
+    def test_status_and_stop_remain_available_during_full_scan(self):
+        request=self.rt.request
+        def slow(method,path,body=None):
+            if body and body.get('action')=='ping':time.sleep(.003)
+            return request(method,path,body)
+        self.rt.request=slow;self.action('scan')
+        until=time.monotonic()+2
+        while self.debug.scan['checked']<5 and time.monotonic()<until:time.sleep(.001)
+        started=time.monotonic();status=self.debug.status()
+        self.action('scan-stop');self.debug.scan_worker.join(2)
+        self.assertTrue(status['scan']['active'],'status was starved until the entire scan finished')
+        self.assertLess(time.monotonic()-started,.5)
     def test_close_of_unowned_session_is_read_only(self):
         self.debug.status();self.debug.close();self.assertTrue(all(c[0]=='GET' for c in self.rt.calls))
 
