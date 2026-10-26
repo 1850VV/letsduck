@@ -1684,7 +1684,7 @@ export const SERVO_AUDIT = {
       "portSlotAssignmentGeometricallyAmbiguous": false,
       "portSlotAssignmentMeaning": "nearest geometric assignment only; no verified bus identity or electrical pin mapping",
       "existingHorn": null,
-      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "fixedDiscPolicySourceMatched": "photographed batch: both discs; main rear always retained, secondary front follows ID policy",
       "frontSideEvidence": "one-sided-source; setup preview may show both approved discs"
     },
     "motor": {
@@ -1936,7 +1936,7 @@ export const SERVO_AUDIT = {
           12.25
         ]
       },
-      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "fixedDiscPolicySourceMatched": "photographed batch: both discs; main rear always retained, secondary front follows ID policy",
       "frontSideEvidence": "front disc side fixed by old single disc and removal action"
     },
     "l_motor": {
@@ -2188,7 +2188,7 @@ export const SERVO_AUDIT = {
           12.25
         ]
       },
-      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "fixedDiscPolicySourceMatched": "photographed batch: both discs; main rear always retained, secondary front follows ID policy",
       "frontSideEvidence": "front disc side fixed by old single disc and removal action"
     },
     "r_upperMotor": {
@@ -5027,7 +5027,7 @@ export const SERVO_AUDIT = {
           -1
         ]
       },
-      "fixedDiscPolicySourceMatched": "none: source has opposite hub only; do not silently add rear plate for mechanical scenes",
+      "fixedDiscPolicySourceMatched": "photographed batch: both discs; main rear always retained, secondary front follows ID policy",
       "frontSideEvidence": "front disc side fixed by old single disc and removal action"
     },
     "h_motor30": {
@@ -5502,7 +5502,7 @@ export const SERVO_AUDIT = {
     ],
     "screwActorRecenterMeaning": "Subtract [0,0,0.00205] metres from retaining-screw mesh in native coordinates; bind outer head face to screw actor position. Actor local +Z is outward after adapter. Retaining head only; no shaft or pointed supplied screw is invented.",
     "noDuplicateRule": "Existing Horn actor owns its disc side and existing HornScrew actor owns retaining-screw. Exclude those nodes from fixed body group; never combine complete hd1910-servo.glb with separate discs.",
-    "sourceMatchedRearFor482": "Mechanical actors motor/l_motor/h_mouthMotor had opposite small hub only. Keep rear eight-hole-disc and retaining-screw absent unless source/package decision explicitly adds them. Optional shaft-hub alone is geometrical surrogate, radius differs and fit unverified. Preparation p_motor may show both approved discs."
+    "sourceMatchedRearFor482": "Original motor/l_motor/h_mouthMotor sources contained only an opposite small hub. The confirmed photographed-batch rule adds the main rear disc in the runtime factory. Both shaft-hub nodes stay on the servo; detached actors contain only the secondary disc. Physical fit remains unverified."
   },
   "sockets": {
     "nativePorts": [
