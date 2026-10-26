@@ -23,6 +23,13 @@ test('foot and head wires connect before mounting the relevant servo or bracket'
   assert.equal(s.h_motor32.visible,true);assert.equal(s.h_motor32.status,'prepared');
   for(const id of ['h_pitchSupport','h_bearingCrown','h_yawScrew0'])assert.equal(s[id].visible,false,id);
 });
+test('rewritten prewiring actions keep their prepared servo centred in the camera view',()=>{
+ for(const [step,id]of [['head-yaw-wire','h_motor32'],['head-core-horn-wire','h_motor33']]){
+  const n=at(step),s=flow.STEPS[n],pose=flow.snapshot(n,1)[id],camera=new THREE.PerspectiveCamera(40,1.45,.1,5000);
+  camera.position.fromArray(s.camera);camera.lookAt(new THREE.Vector3(...s.target));camera.updateMatrixWorld();
+  const point=new THREE.Vector3(...pose.position).project(camera);assert.ok(Math.abs(point.x)<.35&&Math.abs(point.y)<.35,step+' prepared servo must be in the central viewing area');
+ }
+});
 
 test('starting the base never brings future head, feet or electronics into the assembly',()=>{
   const s=flow.snapshot(at('t-support'),1);assert.equal(s.t_support.visible,true);
