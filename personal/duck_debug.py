@@ -41,6 +41,7 @@ class DuckDebug:
         self.board = None
         self.readbacks = {}  # only individually addressed reads, with monotonic expiry
         self.held = set()
+        self.pending_readback = set()
         self.owned = False
         self.calibrating = False
         self.scan = dict(active=False, checked=0, total=254, found=[], stopped=False, error='')
@@ -50,7 +51,7 @@ class DuckDebug:
     def connect(self):
         board = self.runtime.connect()
         if self.board and self.board != board:
-            self.readbacks.clear();self.held.clear()
+            self.readbacks.clear();self.held.clear();self.pending_readback.clear()
         self.board = board
         return self.board
 
@@ -115,21 +116,21 @@ class DuckDebug:
             active.update(i for i, r in self.readbacks.items() if now-r['at'] < 2)
         devices = []
         records = {r['id']: r for r in self.store.servo_records(self.board)} if self.board else {}
-        for sid in sorted(set(IDS) | active):
+        for sid in sorted(set(IDS) | active | set(self.readbacks)):
             index = IDS.index(sid) if sid in IDS else None
             recent = self.readbacks.get(sid)
             live = recent and now-recent['at'] < 2 and sid in active
-            read = recent['reply'] if live else {}
+            read = recent['reply'] if recent else {}
             saved = records.get(sid, {}).get('readback', {})
-            pos = read.get('raw_pos')
+            pos = read.get('raw_pos') if live else None
             if sid in active and index is not None and status.get('raw_mask', 0) & (1 << index):
                 raw = status.get('raw_pos') or []
                 pos = raw[index] if index < len(raw) else pos
             devices.append(dict(uid='servo-%s' % sid, id=sid, online=sid in active,
                                 pos=pos if sid in active else None, kp=read.get('kp', saved.get('kp')),
-                                kd=read.get('kd', saved.get('kd')), parametersLive=bool(live),
+                                kd=read.get('kd', saved.get('kd')), parametersLive=bool(recent),
                                 held=sid in self.held if status.get('mode') == 'calibrate' else bool(sid in active and status.get('enabled')),
-                                readbackPending=sid in active and pos is None))
+                                readbackPending=sid in self.pending_readback or sid in active and pos is None))
         downstream = fresh and (bool(active) or status.get('imu_ok') is True)
         return dict(connected=connected, board=self.board, transport='usb', status=status, error=error,
                     onlineIds=sorted(active), devices=devices, numbering=self.numbering(),
@@ -185,6 +186,7 @@ class DuckDebug:
         if reply.get('op') != 6 or any(type(reply.get(k)) is not int or not 0 <= reply[k] <= hi for k, hi in [('raw_pos',4095),('kp',255),('kd',255)]):
             raise DebugError('舵机参数读回不完整', reply=reply)
         self.readbacks[sid] = dict(reply=reply, at=time.monotonic())
+        self.pending_readback.discard(sid)
         if verify:
             previous = next((r for r in self.store.servo_records(self.board) if r['id'] == sid), {})
             self.store.save_servo_record(self.board, dict(previous, id=sid, sourceId=sid, state='verified',
@@ -243,13 +245,13 @@ class DuckDebug:
 
     def validate(self, body):
         a = body.get('action')
-        allowed = {'read','parameters','remap','jog','torque-off','reset-mid','verify','scan','scan-stop',
+        allowed = {'read','inspect','parameters','remap','jog','torque-off','reset-mid','verify','scan','scan-stop',
                    'mode','command','roller','pick','roulade','action-scale','filter','imu-filter',
                    'protection','cal-enter','cal-heartbeat','cal-center','cal-exit','release','leave'}
         if a not in allowed:
             raise DebugError('未知调试操作')
         b = dict(body)
-        if a in {'read','parameters','jog','torque-off','reset-mid','cal-center'}:
+        if a in {'read','inspect','parameters','jog','torque-off','reset-mid','cal-center'}:
             integer(b.get('id'),0,253,'编号')
         if a == 'parameters':
             integer(b.get('new_id'),0,253,'新编号')
@@ -302,12 +304,16 @@ class DuckDebug:
                     status=self.request('GET','/api/status')
                     path='/api/cal/exit' if self.calibrating else '/api/servo/exit' if status.get('mode')=='servo_debug' else '/api/command'
                     result=self.request('POST',path,dict(twist=[0,0,0]) if path=='/api/command' else {})
-                self.calibrating=False;self.held.clear()
+                self.calibrating=False;self.held.clear();self.owned=False
                 # Preserve guard against the legacy auto-observer while control mode is retained.
                 return result
         if self.scan['active']: raise DebugError('请先停止扫描')
-        if a not in ('command','cal-heartbeat'): self.claim()
+        if a not in ('command','cal-heartbeat','inspect'): self.claim()
         with self.setup.io_lock:
+            if a == 'inspect':
+                if not self.owned or self.request('GET','/api/status').get('mode') != 'servo_debug':
+                    raise DebugError('单舵机读取已暂停')
+                return dict(ok=True,readback=self.read(b['id'],verify=False))
             if a in ('command','cal-heartbeat'):
                 if not self.owned: raise DebugError('请先选择控制模式或开始校准')
                 path='/api/command' if a=='command' else '/api/cal/heartbeat'
@@ -372,7 +378,7 @@ class DuckDebug:
                 return dict(ok=True,reply=result,individuallyVerified=False)
             sid=b['id']
             if a == 'reset-mid':
-                result=self.op('reset_mid',sid);self.readbacks.pop(sid,None);self.held.discard(sid)
+                result=self.op('reset_mid',sid);self.readbacks.pop(sid,None);self.held.discard(sid);self.pending_readback.add(sid)
                 return dict(ok=True,reply=result,readbackPending=True)
             if a == 'torque-off':
                 result=self.op('torque_off',sid);self.held.discard(sid);return result

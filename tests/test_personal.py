@@ -172,6 +172,9 @@ class PersonalTests(unittest.TestCase):
         app.ASSETS, app.ASSEMBLY, app.CHUNK = assets, {'clip.mp4': {}}, 4
         self.addCleanup(lambda: setattr(app, 'ASSETS', saved[0]) or setattr(app, 'ASSEMBLY', saved[1]) or setattr(app, 'CHUNK', saved[2]))
         self.start()
+        from servo_setup import IDS, MAP_VERSION
+        for sid in IDS:
+            self.servers[-1].store.save_servo_record('test', dict(id=sid,state='verified',mapVersion=MAP_VERSION,verifiedAt='test',profile=dict(kp=5,kd=20),readback=dict(ok=True,target_id=sid,kp=5,kd=20)))
         with urlopen(self.base + '/assemble/') as response:
             self.assertEqual(response.read(), (app.FRONTEND / 'assemble' / 'index.html').read_bytes())
         self.assertTrue(app.assembly_ready())
