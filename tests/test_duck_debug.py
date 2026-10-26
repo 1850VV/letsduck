@@ -198,6 +198,18 @@ class DebugTests(unittest.TestCase):
         self.record(14);self.rt.fail='set_id'
         with self.assertRaises(DebugError):self.action('remap',plan=[dict(fromId=12,toId=22),dict(fromId=14,toId=14)])
         self.assertIn(14,self.debug.numbering()['verifiedIds'])
+    def test_parallel_status_polls_share_existing_runtime_io_guard(self):
+        request=self.rt.request;active=0;peak=0
+        def slow(method,path,body=None):
+            nonlocal active,peak
+            active+=1;peak=max(peak,active);time.sleep(.02)
+            try:return request(method,path,body)
+            finally:active-=1
+        self.rt.request=slow
+        threads=[threading.Thread(target=self.debug.status) for _ in range(2)]
+        for t in threads:t.start()
+        for t in threads:t.join()
+        self.assertEqual(1,peak)
     def test_close_of_unowned_session_is_read_only(self):
         self.debug.status();self.debug.close();self.assertTrue(all(c[0]=='GET' for c in self.rt.calls))
 

@@ -104,7 +104,8 @@ class DuckDebug:
     def status(self):
         error, status = '', {}
         try:
-            status = self.request('GET', '/api/status')
+            with self.setup.io_lock:
+                status = self.request('GET', '/api/status')
             connected = True
         except DebugError as exc:
             connected, error = False, str(exc)
@@ -144,7 +145,8 @@ class DuckDebug:
         self.setup.write_requested = True
         if getattr(self.setup, 'worker', None) and self.setup.worker.is_alive():
             raise DebugError('舵机准备任务尚未停止，请稍后再试')
-        self.connect()
+        with self.setup.io_lock:
+            self.connect()
         self.owned = True
 
     def enter_debug(self):
