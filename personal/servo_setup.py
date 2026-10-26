@@ -91,7 +91,7 @@ class AdbRuntime:
                     model = self.command('-s', serial, 'shell', 'cat', '/sys/firmware/devicetree/base/model')
                 except Offline:
                     continue
-                if 'Arduino UNO Q' in model:
+                if self.is_unoq(model):
                     boards.append(serial)
         if len(boards) != 1:
             raise Offline('请只连接一块 UNO Q。' if boards else '尚未发现 UNO Q，请连接 USB 并等待板子启动。')
@@ -101,6 +101,10 @@ class AdbRuntime:
             raise Offline('无法建立 UNO Q 的本机连接。')
         self.port = int(port)
         return self.serial
+
+    @staticmethod
+    def is_unoq(model):
+        return model.replace('\x00', '').strip().casefold() in ('arduino unoq', 'arduino uno q')
 
     def request(self, method, path, body=None):
         self.connect()
@@ -121,7 +125,7 @@ class AdbRuntime:
         # Called only after connect() identified the board via its device tree. Never runs on the Mac.
         serial = self.connect()
         model = self.command('-s', serial, 'shell', 'cat', '/sys/firmware/devicetree/base/model')
-        if 'Arduino UNO Q' not in model:
+        if not self.is_unoq(model):
             raise SetupError('无法确认板卡身份，未发送停机命令。')
         self.command('-s', serial, 'shell', 'sudo', '-n', 'halt')
         self.close()
@@ -154,9 +158,9 @@ class ServoSetup:
 
     def snapshot(self):
         records = self.store.servo_records(self.board)
-        done = {r['id'] for r in records if r['state'] == 'verified'}
+        assigned = {r['id'] for r in records if r['state'] in ('verified', 'reported')}
         return copy.deepcopy(dict(phase=self.phase, message=self.message, progress=self.progress,
-                                  currentId=self.current, targetId=next((i for i in IDS if i not in done), None),
+                                  currentId=self.current, targetId=next((i for i in IDS if i not in assigned), None),
                                   board=self.board, online=self.online, profile=self.profile, running=self.running,
                                   records=records, shutdownAt=self.shutdown_at))
 
@@ -207,8 +211,14 @@ class ServoSetup:
 
     def configure_once(self):
         self.phase, self.progress = 'working', 0
+        self.current = None
+        self.online = False
         self.board = self.runtime.connect()
+        if self.stop.is_set():
+            raise Cancelled('已暂停。再次开始时会先读回设备状态。')
         status = self.runtime.request('GET', '/api/status')
+        if self.stop.is_set():
+            raise Cancelled('已暂停。再次开始时会先读回设备状态。')
         self.online = True
         self.profile = profile_for(status, self.runtime.request('GET', '/servo.html'))
         self.unloaded(status)
@@ -239,7 +249,7 @@ class ServoSetup:
             if sid not in (pending['sourceId'], pending['id']):
                 raise SetupError('上一只的写入结果待复核。请先接回 ID%d 或 ID%d 的那只舵机。' % (pending['sourceId'], pending['id']))
             record = pending
-        done = {r['id'] for r in records if r['state'] == 'verified'}
+        done = {r['id'] for r in records if r['state'] in ('verified', 'reported')}
         target = record['id'] if record else sid if sid in IDS else next((i for i in IDS if i not in done), None)
         if target is None:
             raise SetupError('十五个编号都已有记录，请接回对应舵机复核。')
@@ -294,7 +304,10 @@ class ServoSetup:
         disconnected = False
         try:
             while not self.stop.is_set():
-                if self.phase in ('success', 'shutdown') and not disconnected:
+                if self.shutdown_at and time.time() * 1000 < self.shutdown_at + 15_000:
+                    self.stop.wait(1)
+                    continue
+                if self.phase == 'success' and not disconnected:
                     try:
                         self.runtime.request('GET', '/api/status')
                     except Offline:

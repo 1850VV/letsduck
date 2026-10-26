@@ -123,6 +123,16 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(self.setup.snapshot()['targetId'], 11)
         self.assertEqual(self.setup.snapshot()['records'][0]['midEvidence'], 'existing')
 
+    def test_reported_existing_id_is_reserved_without_fabricating_readback(self):
+        self.store.save_servo_record(self.runtime.serial,dict(id=10,sourceId=10,state='reported',
+            mapVersion='tutorial-reference-1',midEvidence='existing',readback={},labelled=None,installed=None))
+        self.setup.configure_once()
+        self.assertEqual(set(self.runtime.servos),{11})
+        records=self.setup.snapshot()['records']
+        self.assertEqual([r['id'] for r in records if r['state']=='verified'],[11])
+        self.assertEqual(records[0]['state'],'reported')
+        self.assertEqual(self.setup.snapshot()['targetId'],12)
+
     def test_id_write_disconnect_is_pending_then_read_back_without_replaying(self):
         self.runtime.lose_after = 'set_id'
         with self.assertRaises(Offline):
@@ -178,8 +188,22 @@ class SetupTests(unittest.TestCase):
             self.setup.configure_once()
         self.assertEqual(self.writes(), [])
 
+    def test_pause_during_discovery_stops_before_opening_runtime_session(self):
+        def stop_connect():
+            self.setup.stop.set()
+            return self.runtime.serial
+        with patch.object(self.runtime,'connect',side_effect=stop_connect), patch.object(self.runtime,'request',wraps=self.runtime.request) as request:
+            with self.assertRaises(SetupError):
+                self.setup.configure_once()
+            self.assertEqual(request.call_count,0)
+
 
 class TransportTests(unittest.TestCase):
+    def test_real_unoq_device_tree_spelling_is_recognized(self):
+        runtime = AdbRuntime()
+        with patch.object(runtime, 'command', side_effect=['List of devices attached\nuno device', 'Arduino UnoQ\x00', '49152']):
+            self.assertEqual(runtime.connect(), 'uno')
+
     def test_an_android_device_is_never_forwarded_or_halted(self):
         runtime = AdbRuntime()
         with patch.object(runtime, 'command', side_effect=['List of devices attached\nphone device', 'Google Pixel']) as command:

@@ -5,12 +5,14 @@
   <title>来做鸭 / letsduck · 3D 组装教程</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css"><link rel="stylesheet" href="desk-mode.css"><link rel="stylesheet" href="materials.css"><link rel="stylesheet" href="../shared/handoff.css">
+  <link rel="stylesheet" href="servo-setup.css">
   <script type="importmap">{"imports":{"three":"../vendor/three.module.js"}}</script>
 </head>
 <body>
   <header class="top">
     <a class="brand" href="../" data-brand-slot title="来做鸭 / letsduck"></a>
     <span class="header-divider"></span><span class="header-name">3D 组装教程</span><button id="desk-toggle" class="desk-toggle" type="button" aria-pressed="true" title="F">远看模式</button>
+    <button id="servo-open" type="button" hidden>舵机准备</button>
     <ryugi-button id="overview" variant="outlined" size="small" style="height:26px;padding:0 8px;font-size:11px;background:#eef1ff;color:#4d6bfe;border-color:#d5dfff">整机预览</ryugi-button>
     <ryugi-button id="reference-toggle" variant="outlined" size="small" icon="play">对照原片</ryugi-button>
   </header>
@@ -70,7 +72,7 @@
       <div class="instruction-card">
         <button id="instruction-close" class="instruction-close" type="button" aria-label="收起本步说明">×</button>
         <div class="instruction-top"><span id="step-count">准备</span><span id="source-time">02:06</span></div>
-        <h2 id="step-title">先认清这几件</h2><p id="step-description"></p><div id="software-guide" class="software-guide" hidden><p>教学说明 · 不连接或控制真实设备</p><div id="servo-id-list"></div></div>
+        <h2 id="step-title">先认清这几件</h2><p id="step-description"></p><div id="software-guide" class="software-guide" hidden><p id="software-guide-note">装配后的零位校准仍需在运行端进行。</p><button id="servo-guide-open" type="button" hidden>打开舵机准备</button><div id="servo-id-list"></div></div>
         <div class="parts-needed"><span>本步用到</span><div id="needed-parts"></div></div>
         <div class="checkpoint"><span class="check-icon">✓</span><p id="step-check"></p></div>
         <ryugi-button id="source-step" variant="borderless" size="small" icon="play">看这一步的原片</ryugi-button>
@@ -85,6 +87,7 @@
       </div>
     </aside>
   </main>
+  <section id="servo-workbench" class="servo-workbench" aria-label="舵机准备与编号" hidden></section>
   <input type="hidden" id="full-saved-step" value="0"><input type="hidden" id="full-saved-progress" value="1">
   <input type="hidden" id="focus-zoom-saved" value="1"><input type="hidden" id="focus-zoom-step" value=""><input type="hidden" id="focus-zoom-position" value="">
   <audio id="piano-audio" loop preload="none" playsinline crossorigin="anonymous"></audio>
