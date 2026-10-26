@@ -1,0 +1,58 @@
+{
+  "reportedRequirement": {
+    "source": "setup-notes",
+    "servosRequiringLongLead": 3,
+    "regionHint": "head-neck",
+    "regionConfirmed": false,
+    "ids": null,
+    "lengthMm": null,
+    "connectionEndpoints": null
+  },
+  "requirements": {
+    "10": {
+      "connections": null
+    },
+    "11": {
+      "connections": null
+    },
+    "12": {
+      "connections": null
+    },
+    "13": {
+      "connections": null
+    },
+    "14": {
+      "connections": null
+    },
+    "20": {
+      "connections": null
+    },
+    "21": {
+      "connections": null
+    },
+    "22": {
+      "connections": null
+    },
+    "23": {
+      "connections": null
+    },
+    "24": {
+      "connections": null
+    },
+    "30": {
+      "connections": null
+    },
+    "31": {
+      "connections": null
+    },
+    "32": {
+      "connections": null
+    },
+    "33": {
+      "connections": null
+    },
+    "34": {
+      "connections": null
+    }
+  }
+}

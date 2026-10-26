@@ -40,6 +40,10 @@ class PersonalStore:
         self.db.row_factory = sqlite3.Row
         self.db.execute('PRAGMA journal_mode=WAL')
         self.db.execute(SCHEMA)
+        self.db.execute('CREATE TABLE IF NOT EXISTS servo_setup(board TEXT NOT NULL, id INTEGER NOT NULL, record TEXT NOT NULL, '
+                        'updated INTEGER NOT NULL, PRIMARY KEY(board,id))')
+        self.db.execute('CREATE TABLE IF NOT EXISTS servo_preparation(id INTEGER PRIMARY KEY, state TEXT NOT NULL, '
+                        'prepared_leads TEXT NOT NULL, updated INTEGER NOT NULL)')
         self.lock = threading.Lock()
         self.part_ids = set(part_ids or ())
         self.imported = self._import_legacy(Path(legacy)) if fresh and legacy and Path(legacy).is_file() else 0
@@ -85,6 +89,43 @@ class PersonalStore:
     def delete_scheme(self, sid):
         with self.lock:
             self.db.execute('DELETE FROM schemes WHERE id=?', (sid,))
+
+    def servo_records(self, board=None):
+        with self.lock:
+            if board is None:
+                last = self.db.execute('SELECT board FROM servo_setup ORDER BY updated DESC LIMIT 1').fetchone()
+                board = last['board'] if last else ''
+            rows = self.db.execute('SELECT record FROM servo_setup WHERE board=? ORDER BY id', (board,)).fetchall()
+        return [json.loads(r['record']) for r in rows]
+
+    def save_servo_record(self, board, record):
+        with self.lock:
+            self.db.execute('INSERT OR REPLACE INTO servo_setup VALUES(?,?,?,?)',
+                            (board, record['id'], json.dumps(record, ensure_ascii=False), self._now()))
+
+    @staticmethod
+    def preparation_json(row):
+        return dict(id=row['id'], state=row['state'], preparedLeads=json.loads(row['prepared_leads']), updatedAt=row['updated'])
+
+    def servo_preparation_records(self):
+        with self.lock:
+            return [self.preparation_json(row) for row in self.db.execute('SELECT * FROM servo_preparation ORDER BY id')]
+
+    def save_servo_preparation(self, updates):
+        with self.lock:
+            self.db.execute('BEGIN IMMEDIATE')
+            try:
+                for update in updates:
+                    old = self.db.execute('SELECT * FROM servo_preparation WHERE id=?', (update['id'],)).fetchone()
+                    state = update.get('state', old['state'] if old else 'available')
+                    leads = json.dumps(update['preparedLeads']) if 'preparedLeads' in update else old['prepared_leads'] if old else '[]'
+                    self.db.execute('INSERT OR REPLACE INTO servo_preparation VALUES(?,?,?,?)',
+                                    (update['id'], state, leads, self._now()))
+                self.db.execute('COMMIT')
+            except BaseException:
+                self.db.execute('ROLLBACK')
+                raise
+            return [self.preparation_json(row) for row in self.db.execute('SELECT * FROM servo_preparation ORDER BY id')]
 
     def _import_legacy(self, legacy):
         """One-time copy of schemes saved by the earlier personal mode (read-only on the old file)."""
