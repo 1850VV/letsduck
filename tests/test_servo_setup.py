@@ -208,6 +208,151 @@ class SetupTests(unittest.TestCase):
         self.assertFalse(self.runtime.online)
 
 
+class TelemetryTests(unittest.TestCase):
+    setUp = SetupTests.setUp
+    tearDown = SetupTests.tearDown
+    writes = SetupTests.writes
+
+    def record(self, sid, state='verified', source=None):
+        record = dict(id=sid, sourceId=sid if source is None else source, state=state,
+                      mapVersion='tutorial-reference-1', midEvidence='existing',
+                      readback=dict(kp=5, kd=10), profile=dict(kp=5, kd=10), oldIdAbsent=True)
+        self.store.save_servo_record(self.runtime.serial, record)
+        return record
+
+    def test_observed_online_ids_are_independent_of_historical_success(self):
+        self.record(10)
+        self.runtime.servos[20] = self.runtime.servos.pop(1)
+        self.assertIn('telemetry', self.setup.snapshot())
+        self.setup.observe_once(full=True)
+        snapshot = self.setup.snapshot()
+        self.assertTrue(snapshot['telemetry']['known'])
+        self.assertEqual(snapshot['telemetry']['ids'], [20])
+        self.assertTrue(snapshot['telemetry']['observedAt'])
+        self.assertEqual(next(r for r in snapshot['records'] if r['id'] == 10)['state'], 'verified')
+        self.assertEqual(self.writes(), [])
+
+    def test_an_unchanged_read_preserves_the_historical_verification(self):
+        record = self.record(10)
+        record['verifiedAt'] = 123
+        self.store.save_servo_record(self.runtime.serial, record)
+        self.runtime.servos[10] = self.runtime.servos.pop(1)
+        self.setup.observe_once(full=True)
+        self.assertEqual(self.store.servo_records(self.runtime.serial), [record])
+
+    def test_expired_telemetry_cannot_leave_an_inspection_claiming_live_data(self):
+        self.record(10)
+        self.runtime.servos[10] = self.runtime.servos.pop(1)
+        self.setup.selected = 10
+        self.setup.observe_once(full=True)
+        self.setup.telemetry['observedAt'] = 1
+        snapshot = self.setup.snapshot()
+        self.assertFalse(snapshot['telemetry']['known'])
+        self.assertEqual(snapshot['inspection']['status'], 'unknown')
+        self.assertIsNone(snapshot['inspection']['readback'])
+
+    def test_finished_batch_can_be_inspected_after_shutdown_and_reconnection(self):
+        self.setup.configure_once()
+        self.setup.halt()
+        self.setup.shutdown_at = 1
+        self.runtime.online = True
+        self.setup.inspect()
+        self.assertIsNotNone(self.setup.worker)
+        self.setup.worker.join(timeout=2)
+        self.assertTrue(self.setup.snapshot()['telemetry']['known'])
+
+    def test_read_only_scan_handles_multiple_servos_and_reports_real_values(self):
+        self.runtime.servos = {sid: dict(raw_pos=sid, center_pos=2047, kp=5, kd=10) for sid in (10, 20)}
+        self.setup.observe_once(full=True)
+        self.setup.selected = 20
+        self.setup.observe_once()
+        state = self.setup.snapshot()
+        self.assertEqual(state['telemetry']['ids'], [10, 20])
+        self.assertEqual(state['inspection']['id'], 20)
+        self.assertEqual(state['inspection']['status'], 'online')
+        self.assertEqual(state['inspection']['readback']['raw_pos'], 20)
+        self.assertEqual(self.writes(), [])
+
+    def test_disconnect_clears_live_claims_but_preserves_verified_record(self):
+        record = self.record(10)
+        self.runtime.servos[10] = self.runtime.servos.pop(1)
+        self.setup.observe_once(full=True)
+        before = self.store.servo_records(self.runtime.serial)
+        self.runtime.online = False
+        with self.assertRaises(Offline):
+            self.setup.observe_once()
+        snapshot = self.setup.snapshot()
+        self.assertFalse(snapshot['telemetry']['known'])
+        self.assertEqual(snapshot['telemetry']['ids'], [])
+        self.assertEqual(self.store.servo_records(self.runtime.serial), before)
+        self.assertEqual(before[0]['state'], record['state'])
+
+    def test_reported_id_is_verified_by_read_only_audit_and_bad_gains_revoke_success(self):
+        self.record(10, 'reported')
+        self.runtime.servos[10] = self.runtime.servos.pop(1)
+        self.setup.selected = 10
+        self.setup.observe_once(full=True)
+        self.assertEqual(self.store.servo_records(self.runtime.serial)[0]['state'], 'verified')
+        self.runtime.servos[10]['kd'] = 40
+        self.setup.observe_once()
+        self.assertEqual(self.store.servo_records(self.runtime.serial)[0]['state'], 'review')
+        self.assertEqual(self.writes(), [])
+        self.setup.repair(10)
+        self.assertEqual(self.writes(), ['set_gains'])
+        self.assertEqual(self.store.servo_records(self.runtime.serial)[0]['state'], 'verified')
+        self.assertEqual(set(self.runtime.servos), {10})
+
+    def test_pending_record_needs_old_id_absence_before_read_only_promotion(self):
+        self.record(10, 'pending', source=1)
+        self.runtime.servos[10] = dict(self.runtime.servos[1])
+        self.setup.observe_once(full=True)
+        self.assertNotEqual(self.store.servo_records(self.runtime.serial)[0]['state'], 'verified')
+        del self.runtime.servos[1]
+        self.setup.observe_once()
+        self.assertEqual(self.store.servo_records(self.runtime.serial)[0]['state'], 'verified')
+        self.assertEqual(self.writes(), [])
+
+    def test_explicit_target_then_default_order_preserves_reported_id10(self):
+        self.record(10, 'reported')
+        self.setup.configure_once(target=14)
+        self.assertEqual(set(self.runtime.servos), {14})
+        self.runtime.servos = {1: dict(raw_pos=392, center_pos=2047, kp=32, kd=40)}
+        self.setup.configure_once()
+        self.assertEqual(set(self.runtime.servos), {11})
+        self.assertEqual([r['id'] for r in self.store.servo_records(self.runtime.serial) if r['state']=='verified'], [11,14])
+        self.assertEqual(self.store.servo_records(self.runtime.serial)[0]['state'], 'reported')
+
+    def test_selecting_another_model_never_renumbers_an_assigned_servo(self):
+        self.record(10)
+        self.runtime.servos[10] = self.runtime.servos.pop(1)
+        with self.assertRaisesRegex(SetupError, '已编号'):
+            self.setup.configure_once(target=14)
+        self.assertEqual(set(self.runtime.servos), {10})
+        self.assertEqual(self.writes(), [])
+
+    def test_target_with_history_is_not_reused_for_a_fresh_servo(self):
+        self.record(14)
+        with self.assertRaisesRegex(SetupError, '记录'):
+            self.setup.configure_once(target=14)
+        self.assertEqual(self.writes(), [])
+
+    def test_live_audit_during_a_write_is_deferred_without_retargeting(self):
+        release = threading.Event()
+        self.setup.worker = threading.Thread(target=lambda:release.wait(2))
+        self.setup.worker_kind = 'configure'
+        self.setup.phase = 'working'
+        self.setup.current = 14
+        self.setup.worker.start()
+        try:
+            state = self.setup.audit(10)
+            self.assertEqual(state['currentId'], 14)
+            self.assertEqual(state['inspection']['status'], 'deferred')
+            self.assertEqual(self.runtime.actions, [])
+        finally:
+            release.set()
+            self.setup.worker.join()
+
+
 class TransportTests(unittest.TestCase):
     def test_real_unoq_device_tree_spelling_is_recognized(self):
         runtime = AdbRuntime()
@@ -253,13 +398,18 @@ class ApiTests(unittest.TestCase):
                     with urlopen(base+'/api/servo-setup/records') as response:
                         self.assertEqual(json.load(response),{'records':[]})
                 with urlopen(base + '/api/servo-setup') as response:
+                    result = json.load(response)
+                    self.assertIn(result['phase'], ('idle', 'ready'))
+                    self.assertIn('telemetry', result)
+                server.servo.worker.join(timeout=2)
+                with urlopen(base + '/api/servo-setup') as response:
                     self.assertEqual(json.load(response)['phase'], 'ready')
                 req = Request(base + '/api/servo-setup/start', b'{}', headers={
                     'Content-Type': 'application/json', 'Origin': 'http://another-page.example'})
                 with self.assertRaises(HTTPError) as caught:
                     urlopen(req)
                 self.assertEqual(caught.exception.code, 403)
-                self.assertEqual(runtime.actions, [])
+                self.assertEqual([a for a, _, _ in runtime.actions if a not in ('ping', 'read')], [])
             finally:
                 server.shutdown()
                 server.server_close()

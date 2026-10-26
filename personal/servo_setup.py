@@ -155,33 +155,202 @@ class ServoSetup:
         self.stop = threading.Event()
         self.last_heartbeat = 0
         self.shutdown_at = None
+        self.worker_kind = None
+        self.io_lock = threading.RLock()  # The HTTP poller and writer share one physical bus.
+        self.write_requested = False
+        self.selected = None
+        self.requested_target = None
+        self.queued_target = None
+        self.last_observed = 0
+        self.last_full_scan = None
+        self.telemetry = dict(known=False, ids=[], readings={}, observedAt=None)
+        self.scan = dict(active=False, checked=0, total=254)
+        self.inspection = None
 
     def snapshot(self):
         records = self.store.servo_records(self.board)
-        assigned = {r['id'] for r in records if r['state'] in ('verified', 'reported')}
+        assigned = {r['id'] for r in records}
+        telemetry = copy.deepcopy(self.telemetry)
+        if not self.online or not telemetry['observedAt'] or time.time() * 1000 - telemetry['observedAt'] > 5000:
+            telemetry.update(known=False, ids=[], readings={})
+        inspection = copy.deepcopy(self.inspection)
+        if inspection and inspection['status'] == 'online' and not telemetry['known']:
+            inspection.update(status='unknown', readback=None)
         return copy.deepcopy(dict(phase=self.phase, message=self.message, progress=self.progress,
                                   currentId=self.current, targetId=next((i for i in IDS if i not in assigned), None),
                                   board=self.board, online=self.online, profile=self.profile, running=self.running,
-                                  records=records, shutdownAt=self.shutdown_at))
+                                  records=records, shutdownAt=self.shutdown_at, telemetry=telemetry,
+                                  inspection=inspection, scan=self.scan, queuedTarget=self.queued_target))
 
     def inspect(self):
         if self.worker and self.worker.is_alive():
             return self.snapshot()
+        if self.phase == 'shutdown' and self.shutdown_at and time.time() * 1000 >= self.shutdown_at + 15000:
+            self.phase = 'offline'
+            self.last_observed = 0
+        if not self.write_requested and self.phase != 'shutdown' and (not self.last_observed or time.monotonic() - self.last_observed >= 2):
+            self._observe_async(full=self.last_full_scan is None)
+        return self.snapshot()
+
+    @staticmethod
+    def valid_id(sid):
+        if type(sid) is not int or sid not in IDS:
+            raise SetupError('请选择清单里的舵机编号。')
+        return sid
+
+    def _stop_observer(self):
+        if self.worker_kind == 'observe' and self.worker and self.worker.is_alive():
+            self.stop.set()
+            self.worker.join(timeout=10)
+            if self.worker.is_alive():
+                raise SetupError('正在结束只读检测，请稍后再试。')
+            self.stop.clear()
+
+    def _observe_async(self, full=False):
+        with self.store.lock:
+            if self.write_requested or (self.worker and self.worker.is_alive()):
+                return
+            self.stop.clear()
+            self.worker_kind = 'observe'
+            self.scan.update(active=True, checked=0)
+            self.worker = threading.Thread(target=self._observe_worker, args=(full,), daemon=True, name='duck-servo-read')
+            self.worker.start()
+
+    def _observe_worker(self, full):
         try:
-            self.board = self.runtime.connect()
-            status = self.runtime.request('GET', '/api/status')
-            self.online = True
-            self.profile = profile_for(status, self.runtime.request('GET', '/servo.html'))
-            self.unloaded(status)
-            if self.phase in ('idle', 'offline'):
-                self.phase, self.message = 'ready', '已发现 UNO Q。保持只连接当前一只舵机。'
-        except Offline as exc:
-            self.online = False
-            if self.phase not in ('shutdown',):
-                self.phase, self.message = 'offline', str(exc)
+            self.observe_once(full)
+        except Cancelled:
+            pass
+        except SetupError as exc:
+            if self.phase != 'shutdown':
+                self.phase, self.message = ('offline' if isinstance(exc, Offline) else 'blocked'), str(exc)
+        finally:
+            self.scan['active'] = False
+            self.last_observed = time.monotonic()
+
+    def _inspection(self):
+        if self.selected is None:
+            return
+        live = self.telemetry['readings'].get(str(self.selected))
+        self.inspection = dict(id=self.selected, status='online' if live else 'offline',
+                               readback=live, observedAt=self.telemetry['observedAt'])
+
+    def _audit_record(self, sid, reply, found):
+        if sid not in IDS or not self.profile:
+            return
+        record = next((r for r in self.store.servo_records(self.board) if r['id'] == sid), None)
+        if record and record.get('mapVersion') != MAP_VERSION:
+            return
+        record = copy.deepcopy(record) if record else dict(id=sid, sourceId=sid, mapVersion=MAP_VERSION,
+                                                          midEvidence='existing', labelled=None, installed=None)
+        source = record.get('sourceId', sid)
+        old_absent = source == sid or source not in found
+        match = old_absent and all(reply.get(k) == self.profile[k] for k in ('kp', 'kd'))
+        if (record.get('state') == ('verified' if match else 'review') and
+                record.get('oldIdAbsent') == old_absent and
+                all(record.get('profile', {}).get(k) == self.profile[k] and
+                    record.get('readback', {}).get(k) == reply.get(k) for k in ('kp', 'kd'))):
+            return  # Live position/time belong to telemetry; keep the prior verification evidence.
+        record.update(state='verified' if match else 'review', profile=self.profile, readback=reply, oldIdAbsent=old_absent)
+        if match:
+            record['verifiedAt'] = int(time.time() * 1000)
+            record.pop('reviewReason', None)
+        else:
+            record['reviewReason'] = '参数与配置档不一致' if old_absent else '原编号仍有响应，需复核当前连接'
+        self.store.save_servo_record(self.board, record)
+
+    def observe_once(self, full=False):
+        """Read-only discovery/audit; no gain, ID or midpoint writes, even for reported records."""
+        with self.io_lock:
+            try:
+                previous_board = self.board
+                self.board = self.runtime.connect()
+                if previous_board and previous_board != self.board:
+                    full = True
+                status = self.runtime.request('GET', '/api/status')
+                self.online = True
+                self.profile = profile_for(status, self.runtime.request('GET', '/servo.html'))
+                self.unloaded(status)
+                self.enter_debug()
+                records = self.store.servo_records(self.board)
+                probes = range(254) if full else sorted({1, *IDS, *self.telemetry['ids'],
+                                                       *(r.get('sourceId', r['id']) for r in records)})
+                self.scan.update(active=True, checked=0, total=len(probes))
+                found, readings = [], {}
+                for i, sid in enumerate(probes):
+                    if self.op('ping', sid).get('ok') is True or self.op('ping', sid).get('ok') is True:
+                        found.append(sid)
+                        readings[str(sid)] = self.op('read', sid)
+                    self.scan['checked'] = i + 1
+                self.telemetry = dict(known=True, ids=found, readings=readings, observedAt=int(time.time() * 1000))
+                for sid in found:
+                    self._audit_record(sid, readings[str(sid)], found)
+                self._inspection()
+                if full:
+                    self.last_full_scan = time.monotonic()
+                if self.phase in ('idle', 'offline'):
+                    self.phase, self.message = 'ready', '已读取当前在线舵机，配置时只连接一只。'
+                return self.snapshot()
+            except Offline:
+                self.online = False
+                self.last_full_scan = None
+                self.telemetry.update(known=False, ids=[], readings={})
+                if self.selected is not None:
+                    self.inspection = dict(id=self.selected, status='unknown', readback=None)
+                raise
+            except SetupError:
+                self.telemetry.update(known=False, ids=[], readings={})
+                raise
+            finally:
+                self.scan['active'] = False
+                self.last_observed = time.monotonic()
+                try:
+                    if self.online:
+                        self.runtime.request('POST', '/api/servo/exit', {})
+                except SetupError:
+                    pass
+
+    def audit(self, sid):
+        self.selected = self.valid_id(sid)
+        self.inspection = dict(id=sid, status='deferred' if self.phase == 'working' else 'reading', readback=None)
+        self._observe_async()
+        return self.snapshot()
+
+    def refresh(self):
+        self._observe_async(full=True)
+        return self.snapshot()
+
+    def repair(self, sid):
+        self.valid_id(sid)
+        self.write_requested = True
+        try:
+            self._stop_observer()
+            if self.worker and self.worker.is_alive():
+                if self.phase == 'working':
+                    raise SetupError('请等当前配置结束后再修正参数。')
+                self.pause()
+            with self.io_lock:
+                self.stop.clear()
+                self.selected = sid
+                self.current, self.phase = sid, 'working'
+                self.observe_once(full=True)
+                if self.telemetry['ids'] != [sid]:
+                    raise SetupError('修正参数时请只连接所选的这一只舵机。')
+                reply = self.telemetry['readings'][str(sid)]
+                if any(reply.get(k) != self.profile[k] for k in ('kp', 'kd')):
+                    record = next(r for r in self.store.servo_records(self.board) if r['id'] == sid)
+                    record['state'] = 'pending'
+                    self.store.save_servo_record(self.board, record)
+                    self.enter_debug()
+                    self.op('set_gains', sid, kp=self.profile['kp'], kd=self.profile['kd'])
+                self.observe_once()
+                self.phase, self.progress = 'success', 5
+                return self.snapshot()
         except SetupError as exc:
             self.phase, self.message = 'blocked', str(exc)
-        return self.snapshot()
+            raise
+        finally:
+            self.write_requested = False
 
     @staticmethod
     def unloaded(status):
@@ -209,7 +378,27 @@ class ServoSetup:
             raise SetupError('舵机回复未通过校验，请保持单只连接后重新检测。')
         return reply
 
-    def configure_once(self):
+    def enter_debug(self):
+        self.heartbeat(force=True)
+        deadline = time.monotonic() + 1.5
+        while True:
+            status = self.runtime.request('GET', '/api/status')
+            self.unloaded(status)
+            if status.get('mcu_servo_debug') is True:
+                return
+            if time.monotonic() >= deadline:
+                raise SetupError('MCU 未确认舵机调试模式，请检查反馈后再试。')
+            self.stop.wait(.05)
+            if self.stop.is_set():
+                raise Cancelled('已暂停。')
+
+    def configure_once(self, target=None):
+        if target is not None:
+            self.valid_id(target)
+        with self.io_lock:
+            return self._configure_once(target)
+
+    def _configure_once(self, target=None):
         self.phase, self.progress = 'working', 0
         self.current = None
         self.online = False
@@ -222,16 +411,7 @@ class ServoSetup:
         self.online = True
         self.profile = profile_for(status, self.runtime.request('GET', '/servo.html'))
         self.unloaded(status)
-        self.heartbeat(force=True)
-        deadline = time.monotonic() + 1.5
-        while True:
-            status = self.runtime.request('GET', '/api/status')
-            self.unloaded(status)
-            if status.get('mcu_servo_debug') is True:
-                break
-            if time.monotonic() >= deadline:
-                raise SetupError('MCU 未确认舵机调试模式，请检查反馈后再试。')
-            time.sleep(.05)
+        self.enter_debug()
         found = []
         for sid in range(254):
             self.message = '扫描编号 %d / 253' % sid
@@ -249,8 +429,12 @@ class ServoSetup:
             if sid not in (pending['sourceId'], pending['id']):
                 raise SetupError('上一只的写入结果待复核。请先接回 ID%d 或 ID%d 的那只舵机。' % (pending['sourceId'], pending['id']))
             record = pending
-        done = {r['id'] for r in records if r['state'] in ('verified', 'reported')}
-        target = record['id'] if record else sid if sid in IDS else next((i for i in IDS if i not in done), None)
+        elif sid in IDS and target is not None and target != sid:
+            raise SetupError('当前接着已编号 ID%d，请接回所选舵机或换一只未编号舵机。' % sid)
+        elif target is not None and sid not in IDS and any(r['id'] == target for r in records):
+            raise SetupError('这个目标已有配置记录，请先接回对应舵机只读复核。')
+        done = {r['id'] for r in records}
+        target = record['id'] if record else sid if sid in IDS else target if target is not None else next((i for i in IDS if i not in done), None)
         if target is None:
             raise SetupError('十五个编号都已有记录，请接回对应舵机复核。')
         self.current = target
@@ -287,17 +471,41 @@ class ServoSetup:
         record.update(state='verified', readback=verified, oldIdAbsent=old_absent,
                       verifiedAt=int(time.time() * 1000))
         self.store.save_servo_record(self.board, record)
+        self.telemetry = dict(known=True, ids=[target], readings={str(target): verified}, observedAt=int(time.time() * 1000))
+        self.last_full_scan = time.monotonic()
+        self._inspection()
         self.progress, self.phase, self.message = 5, 'success', 'ID%d 的编号与参数已读回验证。请给实物贴上编号。' % target
         return record
 
-    def start(self):
+    def start(self, target=None):
+        if target is not None:
+            self.valid_id(target)
+        self.write_requested = True
+        try:
+            self._stop_observer()
+            return self._start(target)
+        finally:
+            self.write_requested = False
+
+    def _start(self, target):
         # Reuse the store's existing short critical section for simultaneous HTTP starts.
         with self.store.lock:
             if not self.worker or not self.worker.is_alive():
                 self.stop.clear()
                 self.running = True
+                self.worker_kind = 'configure'
+                self.requested_target = target
                 self.worker = threading.Thread(target=self._run, daemon=True, name='duck-servo-setup')
                 self.worker.start()
+        return self.snapshot()
+
+    def queue(self, target):
+        self.valid_id(target)
+        if self.phase != 'working':
+            raise SetupError('请直接为下一只开始配置。')
+        if any(r['id'] == target for r in self.store.servo_records(self.board)):
+            raise SetupError('这个编号已有记录，请接回对应舵机核查。')
+        self.queued_target = target
         return self.snapshot()
 
     def _run(self):
@@ -309,19 +517,23 @@ class ServoSetup:
                     continue
                 if self.phase == 'success' and not disconnected:
                     try:
-                        self.runtime.request('GET', '/api/status')
+                        self.observe_once()
                     except Offline:
                         self.online, disconnected = False, True
                     self.stop.wait(1)
                     continue
                 try:
-                    self.configure_once()
+                    self.configure_once(self.queued_target if self.queued_target is not None else self.requested_target)
+                    self.requested_target = self.queued_target = None
+                    if self.selected is not None:
+                        self.observe_once()
                     disconnected = False
                     records = self.store.servo_records(self.board)
                     if set(IDS).issubset(r['id'] for r in records if r['state'] == 'verified'):
                         break
                 except Offline as exc:
                     self.online, self.phase, self.message = False, 'offline', str(exc)
+                    self.telemetry.update(known=False, ids=[], readings={})
                     self.stop.wait(2)
                 except SetupError as exc:
                     self.phase, self.message = 'blocked', str(exc)
@@ -345,12 +557,19 @@ class ServoSetup:
         return self.snapshot()
 
     def halt(self):
-        if self.phase != 'success':
+        if self.phase == 'working' or not self.online:
             raise SetupError('请等本只配置结束后再请求停机。')
+        self.write_requested = True
+        try:
+            self._stop_observer()
+            with self.io_lock:
+                self.runtime.halt()
+        finally:
+            self.write_requested = False
         # The worker is only polling in success, never issuing servo writes here.
-        self.runtime.halt()
         self.shutdown_at = int(time.time() * 1000)
         self.online, self.phase = False, 'shutdown'
+        self.telemetry.update(known=False, ids=[], readings={})
         self.message = '停机命令已发送。等待至少 15 秒并确认停止，再断开 USB 和电池后换接舵机。'
         return self.snapshot()
 

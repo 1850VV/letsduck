@@ -148,13 +148,22 @@ class Handler(SimpleHTTPRequestHandler):
                 return {'records': self.store.servo_records()}
             actions = {'/api/servo-setup/start': self.server.servo.start,
                        '/api/servo-setup/pause': self.server.servo.pause,
-                       '/api/servo-setup/halt': self.server.servo.halt}
+                       '/api/servo-setup/halt': self.server.servo.halt,
+                       '/api/servo-setup/refresh': self.server.servo.refresh,
+                       '/api/servo-setup/audit': self.server.servo.audit,
+                       '/api/servo-setup/repair': self.server.servo.repair,
+                       '/api/servo-setup/queue': self.server.servo.queue}
             if method == 'POST' and path in actions:
                 origin = self.headers.get('Origin')
                 if origin and origin != 'http://' + self.headers.get('Host', ''):
                     raise Reply(403, {'error': '请从本机组装台执行此操作。'})
-                self.read_json()
-                return actions[path]()
+                body = self.read_json()
+                action = actions[path]
+                if path == '/api/servo-setup/start':
+                    return action(body.get('targetId'))
+                if path.rsplit('/', 1)[-1] in ('audit', 'repair', 'queue'):
+                    return action(body.get('id'))
+                return action()
             raise Reply(404, NOT_FOUND)
         if method == 'GET' and path == '/api/catalog':
             return self.need_exporter('耗材色表未加载', 'validation.29').CATALOG
