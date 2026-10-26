@@ -18,7 +18,7 @@ import {LOOK} from '../shared/duck-look.mjs';
 import { STEPS,CHAPTERS,ACTORS,snapshot,chapterFor,OVERVIEW_STEP,PLUG_PAIRS } from './hardware-state.mjs';
 import {createDeskMode} from './desk-mode.mjs';
 import {createChapterMaterials} from './chapter-materials.mjs';
-import {createHornIdentify} from './horn-identify.mjs';
+import {createHornSelection,firstVisibleIntersection} from './horn-selection.mjs';
 import {stepMaterials} from './material-catalog.mjs';
 
 import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlugQuaternion,interpolatePose,socketQuaternion} from './render-pose.mjs';
@@ -160,6 +160,7 @@ function settledParts(){
 }
 const assemblyMagnifier=createAssemblyMagnifier({renderer,scene,camera,stage,host,renderView:(world,view)=>renderQuality.render(world,view,'detail')});
 let selected=null,selectedAnchor=null;
+const hornSelection=createHornSelection();
 function applyState(state){
   currentState=state;renderQuality.invalidate();invalidate();
   for(const [id,obj] of entities){const pose=state[id];if(!pose)continue;obj.visible=pose.visible&&pose.opacity>.001;
@@ -224,7 +225,7 @@ function syncInfo(){
     const b=document.createElement('button');b.type='button';b.id=`part-chip-${material.id}`;b.className='part-chip';b.style.setProperty('--c',material.color);b.title=material.spec;
     const dot=document.createElement('i'),label=document.createElement('span');label.textContent=`${material.short} ${material.quantity}`;b.append(dot,label);b.addEventListener('click',()=>{$('instruction-dialog').close();materials.inspect(material);});$('needed-parts').append(b);}
   for(const b of $('step-list').children){const n=Number(b.dataset.step);b.toggleAttribute('aria-current',n===step);if(n===step)b.setAttribute('aria-current','step');b.classList.toggle('done',n<step);b.querySelector('.number').textContent=n<step?'✓':STEPS[n].complete?'✓':String(n-c.start+1);}
-  clearPartInfo();syncReference();setAttributes();updateProgress();settled=settledParts();deskMode.sync(step);hornIdentify.sync(s);
+  clearPartInfo();syncReference();setAttributes();updateProgress();settled=settledParts();deskMode.sync(step);
 }
 function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   if(!ready)return;materials.close();const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
@@ -238,12 +239,29 @@ function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   if(!backTransition)applyState(snapshot(step,progress));
 }
 function clearPartInfo(){
+  resetHornSelection();
   $('part-tooltip').hidden=true;$('part-leader').toggleAttribute('hidden',true);stage.classList.remove('has-part-info');selected=null;selectedAnchor=null;selection.visible=false;
 }
-function selectActor(id,point=null){
+function resetHornSelection(){
+  hornSelection.clear();delete $('part-tooltip').dataset.horn;$('part-source').hidden=false;
+  $('part-leader-line').setAttribute('stroke','#4d6bfe');$('part-leader-dot').setAttribute('fill','#4d6bfe');
+}
+function showHornInfo(info){
+  $('part-name').textContent=info.label;$('part-source').hidden=true;$('part-tooltip').dataset.horn=info.role;$('part-tooltip').style.setProperty('--horn-color',info.color);
+  $('part-leader-line').setAttribute('stroke',info.color);$('part-leader-dot').setAttribute('fill',info.color);
+  $('part-tooltip').hidden=false;stage.classList.add('has-part-info');renderQuality.invalidate();invalidate();
+}
+function selectTrayHorn(hit){
+  resetHornSelection();const info=hornSelection.select(hit.object);if(!info)return false;
+  selected=null;selectedAnchor=null;$('part-leader').hidden=true;showHornInfo(info);return true;
+}
+function selectActor(id,point=null,hitMesh=null){
+  resetHornSelection();
   const obj=entities.get(id);if(!obj?.visible)return;selected=id;
   obj.updateWorldMatrix(true,true);const at=point?.clone()||new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());selectedAnchor=obj.worldToLocal(at);
   $('part-name').textContent=ACTORS[id].label;$('part-source').textContent=ACTORS[id].source;
+  const info=hornSelection.select(hitMesh);
+  if(info){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;setAttributes();showHornInfo(info);}
   $('part-tooltip').hidden=false;stage.classList.add('has-part-info');
 }
 $('part-close').addEventListener('click',()=>{clearPartInfo();$('instruction-toggle').focus();});
@@ -255,14 +273,13 @@ renderer.domElement.addEventListener('pointerup',e=>{
   if(materials.active)return;
   if(!pointerDown||Math.hypot(e.clientX-pointerDown[0],e.clientY-pointerDown[1])>5)return;
   const rect=renderer.domElement.getBoundingClientRect(),pointer=new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),ray=new THREE.Raycaster();ray.setFromCamera(pointer,camera);
-  const hit=ray.intersectObjects(selectables.filter(o=>o.visible),true).find(h=>h.object.visible);
-  if(hit)selectActor(hit.object.userData.actorId,hit.point);else clearPartInfo();
+  const hit=firstVisibleIntersection(ray,selectables);
+  if(hit)selectActor(hit.object.userData.actorId,hit.point,hit.object);else clearPartInfo();
 });
-const materials=createChapterMaterials({scene,camera,controls,renderer,host,entities,getHardware:()=>hardwareModels,getState:()=>({step,progress,ready}),pause(){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;setAttributes();},stopCamera(){cameraTween=null;},applyState,fit,invalidate:()=>{renderQuality.invalidate();invalidate();},resetFocus:()=>assemblyFocus.reset(),clearSelection:clearPartInfo,hideArrow(){guideArrow.visible=false;},onStart(){
+const materials=createChapterMaterials({scene,camera,controls,renderer,host,entities,onHornPick:selectTrayHorn,getHardware:()=>hardwareModels,getState:()=>({step,progress,ready}),pause(){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;setAttributes();},stopCamera(){cameraTween=null;},applyState,fit,invalidate:()=>{renderQuality.invalidate();invalidate();},resetFocus:()=>assemblyFocus.reset(),clearSelection:clearPartInfo,hideArrow(){guideArrow.visible=false;},onStart(){
   const n=step===0?1:step;lessonPlayer.seek(n,0,{play:true,auto:lessonPlayer.state.autoplay});goStep(n,{playerDriven:true});
 }});
 const deskMode=createDeskMode({getStep:()=>step,isReady:()=>ready,openReference:()=>openReference(),canvas:renderer.domElement,openChapter:c=>materials.open(c,{start:true}),closeChapter:()=>materials.close()});
-const hornIdentify=createHornIdentify({pause(){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;materials.close();assemblyFocus.reset();setAttributes();}});
 function openReference(){materials.close();$('instruction-dialog').close();const p=$('reference-panel');p.hidden=false;$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.muted=true;v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
 function closeReference(){$('reference-panel').hidden=true;$('reference-toggle').setAttribute('aria-expanded','false');$('reference-video').pause();lessonSound.setReferenceAudio(false);}
 $('reference-video').addEventListener('volumechange',()=>{const v=$('reference-video');if(!$('reference-panel').hidden&&!v.muted&&v.volume>0)lessonSound.setReferenceAudio(true);});
@@ -341,7 +358,7 @@ function render(now){
   const hint=document.querySelector('.real-model'),message=focus.message||(focus.phase==='aligning'?'红框 · 对准这两处':focus.phase==='completed'?'绿框 · 本次已装好':'真实零件网格');
   if(hint.textContent!==message)hint.textContent=message;
   hint.dataset.focus=focus.phase;
-  materials.update();renderQuality.render(scene,camera);assemblyMagnifier.render(focus,now,ready&&!materials.active?STEPS[step].id:null);updatePartLeader();
+  materials.update();renderQuality.render(scene,camera);assemblyMagnifier.render(focus,now,ready&&!materials.active&&!$('part-tooltip').dataset.horn?STEPS[step].id:null);updatePartLeader();
   return playing||!!backTransition||!!cameraTween||cameraMoving||focus.animating||assemblyMagnifier.state.animating;
 }
 invalidate();

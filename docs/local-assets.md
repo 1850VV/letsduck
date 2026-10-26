@@ -32,7 +32,7 @@ python3 scripts/import_assembly_assets.py /path/to/assembly/assets              
 
 没有导入时，首页的「想做鸭」显示「即将开放」，其余功能不受影响。来源与许可见 [第三方说明](../THIRD_PARTY_NOTICES.md)。
 
-主、副舵盘图解还可读取 `horn-reference/main.jpg` 与 `horn-reference/secondary.jpg` 两张本批实物照片。它们是清单中的可选本地文件，导入时会核对大小与哈希；旧资产包缺少它们仍可使用组装台和 3D 识别。照片不随源码分发，不能据此获得再分发许可。
+主、副舵盘可在组装模型上直接点选识别。本地资产包还可保留 `horn-reference/main.jpg` 与 `horn-reference/secondary.jpg` 两张本批实物照片，供安装时对照。它们是清单中的可选本地文件，导入时会核对大小与哈希；缺少照片不影响 3D 点选。照片不随源码分发，不能据此获得再分发许可。
 
 ## 验证含义
 
