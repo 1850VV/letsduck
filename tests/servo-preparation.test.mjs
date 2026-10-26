@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as module from '../frontend/assemble/servo-map.mjs';
-import {STEPS,ACTORS} from '../frontend/assemble/hardware-state.mjs';
+import {STEPS,ACTORS} from '../frontend/assemble/pdf-state.mjs';
 const raw=JSON.parse(readFileSync(new URL('../frontend/assemble/servo-map.json',import.meta.url)));
 const map=module.resolveServoMap(raw,{actors:ACTORS,steps:STEPS});
 const unknown={requirements:Object.fromEntries(raw.bindings.map(b=>[b.id,{connections:null}]))};
@@ -39,6 +39,6 @@ test('only explicit installation milestones identify motors for normal next',()=
  const at=id=>STEPS.findIndex(s=>s.id===id);
  assert.deepEqual(module.installationServosForStep(map,at('r-prepare')).map(b=>b.id),[]);
  assert.deepEqual(module.installationServosForStep(map,at('r-tighten')).map(b=>b.id),[14]);
- assert.deepEqual(module.installationServosForStep(map,at('r-leg-done')).map(b=>b.id),[12,13]);
+ assert.deepEqual(module.installationServosForStep(map,at('r-support')).map(b=>b.id),[12,13]);
  assert.deepEqual(module.installationServosForStep(map,at('head-neck-plate')).map(b=>b.id),[30,31]);
 });

@@ -1,7 +1,7 @@
 // Desk mode: the guide is read from about a metre away while both hands hold parts.
 // Big caption, keyboard steps, a parts kit at each chapter start, right/wrong cards on
 // steps that are hard to undo, and one "I'm stuck" button that opens the source clip.
-import {STEPS,CHAPTERS,ACTORS,snapshot,chapterFor} from './hardware-state.mjs';
+import {STEPS,CHAPTERS,ACTORS,snapshot,chapterFor} from './pdf-state.mjs';
 
 const $=id=>document.getElementById(id);
 const DESK='letsduck-assemble-desk';

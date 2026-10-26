@@ -1,4 +1,4 @@
-import {ACTORS,STEPS,CHAPTERS,snapshot} from './hardware-state.mjs';
+import {ACTORS,STEPS,CHAPTERS,snapshot} from './pdf-state.mjs';
 
 const BOM='https://github.com/LuwuDynamics/xgoduck_hardware/blob/master/docs/BOM.md';
 const GUIDE='https://github.com/LuwuDynamics/xgoduck_hardware/blob/master/Assembly_Guide.pdf';
@@ -21,7 +21,7 @@ export function materialFor(id){
  }else if(a.fastenerRole==='pending'){
   name='侧板固定件';short=name;spec='M2.3×4 自攻螺丝＋副舵盘原配螺丝。';note='指南第14页标注2颗，逐侧数量和两处固定点的规格分配待核；原配件拆下保留复用。';
  }else if(fasteners[a.fastener]){[name,spec]=fasteners[a.fastener];short=name.split(' ')[0];source=BOM;
-  if(a.fastener==='M2.3x4'){note='原片为 M2.3×4，官方 BOM 列 M2.3×8；两者长度不同，不能混用，需核对实际外壳与配套螺丝。';const at=STEPS.findIndex(s=>s.parts.includes(id)),c=CHAPTERS.find(c=>at>=c.start&&at<=c.end);source=new URL(c.video,import.meta.url).href+'#t='+Math.max(0,STEPS[at].sourceStart-c.videoStart);}
+  if(a.fastener==='M2.3x4'){note='原片为 M2.3×4，官方 BOM 列 M2.3×8；两者长度不同，不能混用，需核对实际外壳与配套螺丝。';const s=STEPS.find(s=>s.parts.includes(id));source=new URL(s.video,import.meta.url).href+'#t='+Math.max(0,s.sourceStart-s.videoStart);}
  }
  else if(a.kind==='screw'){name=clean(a.label);short='原装中央螺丝';spec='随舵机的原装螺丝，拆下后保留。';note='原件的具体规格尚未核对，不按普通 M2×6 补配。';}
  else if(a.kind==='board'){

@@ -1,5 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
-import {ACTORS,STEPS,snapshot} from './hardware-state.mjs';
+import {ACTORS,STEPS,snapshot} from './pdf-state.mjs';
 import {actorQuaternion} from './render-pose.mjs';
 const v=a=>new THREE.Vector3(...a);
 const tidyRefs=new Map();
@@ -10,7 +10,8 @@ function tidyAmount(id,world){
   for(let n=1;n<a[id].points.length-1;n++){const d=toWorld(a[id],a[id].points[n]).distanceTo(toWorld(b[id],b[id].points[n]));if(d>maximum){maximum=d;selected=n;}}
   const start=toWorld(a[id],a[id].points[selected]),delta=toWorld(b[id],b[id].points[selected]).sub(start);tidyRefs.set(id,{selected,start,delta});
  }
- const ref=tidyRefs.get(id);return THREE.MathUtils.clamp(world[ref.selected].clone().sub(ref.start).dot(ref.delta)/ref.delta.lengthSq(),0,1);
+ const ref=tidyRefs.get(id);if(ref.delta.lengthSq()<1e-8)return 0;
+ return THREE.MathUtils.clamp(world[ref.selected].clone().sub(ref.start).dot(ref.delta)/ref.delta.lengthSq(),0,1);
 }
 function routedPoints(id,points,state){
  const pose=state[id],q=actorQuaternion(ACTORS[id],pose),world=points.map(p=>v(p).applyQuaternion(q).add(v(pose.position)));

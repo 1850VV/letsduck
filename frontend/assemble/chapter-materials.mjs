@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from '../vendor/OrbitControls.js';
 import {RoomEnvironment} from '../vendor/RoomEnvironment.js';
 import {LOOK} from '../shared/duck-look.mjs';
-import {ACTORS,STEPS,CHAPTERS,snapshot,chapterFor} from './hardware-state.mjs';
+import {ACTORS,STEPS,CHAPTERS,snapshot,chapterFor} from './pdf-state.mjs';
 import {chapterMaterials} from './material-catalog.mjs';
 import {specimenLayout,arrangeGroups} from './material-layout.mjs';
 import {firstVisibleIntersection,hornPart} from './horn-selection.mjs';

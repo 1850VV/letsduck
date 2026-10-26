@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as head from '../../frontend/assemble/full/head.mjs';
 import * as final from '../../frontend/assemble/full/final.mjs';
 import {materialFor,stepMaterials} from '../../frontend/assemble/material-catalog.mjs';
-import {STEPS} from '../../frontend/assemble/hardware-state.mjs';
+import {STEPS} from '../../frontend/assemble/pdf-state.mjs';
 
 test('PDF pages 1 and 19 identify the mouth as ID34 throughout its instructions',()=>{
   const text=[head.ACTORS.h_mouthMotor.label,head.ACTORS.h_wireMouth.label,...head.STEPS.filter(s=>s.id.startsWith('head-mouth-')).flatMap(s=>[s.text,s.check,s.caption]),materialFor('h_mouthMotor').note].join(' ');

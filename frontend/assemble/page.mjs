@@ -4,7 +4,7 @@
 import { applyBrand } from '../shared/brand.mjs';
 import { readDraft } from '../shared/draft.mjs';
 import { printedMaterial } from '../shared/duck-look.mjs';
-import { ACTORS } from './hardware-state.mjs';
+import { ACTORS } from './pdf-state.mjs';
 
 const WHITE = '#F7F8FB';
 const draft = readDraft();

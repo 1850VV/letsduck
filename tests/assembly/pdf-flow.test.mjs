@@ -42,6 +42,14 @@ test('the already mounted white leg linkage stays fixed while ID14 is attached',
   assert.notDeepEqual(before.motor.position,after.motor.position,'move servo14 to the linkage');
 });
 
+test('both mirrored feet, bearings and shafts animate in their own action rather than the opposite side',()=>{
+ for(const side of ['r','l'])for(const [suffix,actor]of [['foot','foot'],['small-bearing','bearing'],['axle','axle']]){
+  const id=side==='l'?'l_'+actor:actor,n=at(side+'-'+suffix),a=flow.snapshot(n,0),b=flow.snapshot(n,1);
+  assert.ok(Math.hypot(...a[id].position.map((v,i)=>v-b[id].position[i]))>1,side+'-'+suffix+' must move '+id);
+ }
+ const beforeHead=flow.snapshot(at('final-thigh-second'),1);for(const id of ['f_uno','f_extension','h_motor30','h_headLead'])assert.equal(beforeHead[id].visible,false,id);
+});
+
 test('the preconnected 13-14 cable stays on both real model sockets while ID14 moves',()=>{
   const n=at('r-shank');
   for(const p of [0,.25,.6,1]){

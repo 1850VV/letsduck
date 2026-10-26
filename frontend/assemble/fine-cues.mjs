@@ -1,4 +1,4 @@
-import {ACTORS,STEPS,snapshot} from './hardware-state.mjs';
+import {ACTORS,STEPS,snapshot} from './pdf-state.mjs';
 
 import {fitsForCue} from './model-fit.mjs';
 const cache=new Map();
@@ -11,11 +11,11 @@ const connections={
  'r-plug':[plug('plug')], 'l-plug':[plug('l_plug')],
  'r-wire-a':[wire('wire',1,0,.55),wire('r_legWireA',1,.35,1)],
  'l-wire-a':[wire('l_wire',1,0,.55),wire('l_legWireA',1,.35,1)],
- 'r-wire-b':[wire('r_legWireB',1,0,1,'route')],
- 'l-wire-b':[wire('l_legWireB',1,0,1,'route')],
+ 'r-wire-b':[wire('r_legWireB',1,0,1)],
+ 'l-wire-b':[wire('l_legWireB',1,0,1)],
  't-wire':[wire('t_baseWire',0,0,.18),wire('t_rollWireR',0,.22,.4),wire('t_baseWireL',0,.44,.62),wire('t_rollWireL',0,.66,.84)],
- 't-motor-r':[wire('t_rollWireR',1,0,.2),wire('r_legWireB',1,.22,.48)],
- 't-motor-l':[wire('t_rollWireL',1,0,.2),wire('l_legWireB',1,.22,.48)],
+ 't-motor-r':[wire('t_rollWireR',1,0,.2)],
+ 't-motor-l':[wire('t_rollWireL',1,0,.2)],
  'head-yaw-wire':[plug('h_plug32',.55,1)],
  'head-core-horn-wire':[plug('h_plug33',.55,1)],
  'head-mouth-horn-wire':[plug('h_plugMouth',.55,1)],
@@ -57,16 +57,11 @@ export function buildFineCues(index){
    all.push({id,actorId:id,type:'part',operation:'remove',from:crossing(p=>distance(snapshot(index,p)[id].position,start)>.001,true),to:crossing(p=>distance(snapshot(index,p)[id].position,end)<.001,true),label:'副舵盘'});
   }
  }
- for(const c of connections[step.id]||[])all.push({...c,label:c.operation==='route'?'线端余量':'插头'});
+ for(const c of connections[step.id]||[])if(samples.some(s=>s[c.actorId].visible))all.push({...c,label:c.operation==='route'?'线端余量':'插头'});
  for(const [actorId,targetActor]of precisionParts[step.id]||[]){
   const relative=p=>p[actorId].position.map((n,i)=>n-p[targetActor].position[i]),start=relative(first),end=relative(last);
   if(distance(start,end)<.01)continue;
   all.push({id:actorId,actorId,targetActor,type:'part',operation:'seat',label:/axle/i.test(actorId)?'踝轴':'轴承',from:crossing(p=>distance(relative(snapshot(index,p)),start)>.001,true),to:crossing(p=>distance(relative(snapshot(index,p)),end)<.001,true)});
- }
- if(step.id==='final-route')for(const actorId of ['f_bus0','f_bus1','f_bus2']){
-  const before=first[actorId].points,after=last[actorId].points;
-  let point=1;for(let i=2;i<after.length-1;i++)if(distance(before[i],after[i])>distance(before[point],after[point]))point=i;
-  all.push({...wire(actorId,1,0,1,'route'),id:actorId+':route',point,guide:'routing-loop',label:'线束整理'});
  }
  all.sort((a,b)=>a.from-b.from||a.to-b.to);
  all.forEach((c,i)=>{c.ordinal=i+1;c.total=all.length;c.fitPending=fitsForCue(c).length>0;});cache.set(index,all);return all;
