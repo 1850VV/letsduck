@@ -18,6 +18,7 @@ import {LOOK} from '../shared/duck-look.mjs';
 import { STEPS,CHAPTERS,ACTORS,snapshot,chapterFor,OVERVIEW_STEP,PLUG_PAIRS } from './hardware-state.mjs';
 import {createDeskMode} from './desk-mode.mjs';
 import {createChapterMaterials} from './chapter-materials.mjs';
+import {createHornIdentify} from './horn-identify.mjs';
 import {stepMaterials} from './material-catalog.mjs';
 
 import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlugQuaternion,interpolatePose,socketQuaternion} from './render-pose.mjs';
@@ -223,7 +224,7 @@ function syncInfo(){
     const b=document.createElement('button');b.type='button';b.id=`part-chip-${material.id}`;b.className='part-chip';b.style.setProperty('--c',material.color);b.title=material.spec;
     const dot=document.createElement('i'),label=document.createElement('span');label.textContent=`${material.short} ${material.quantity}`;b.append(dot,label);b.addEventListener('click',()=>{$('instruction-dialog').close();materials.inspect(material);});$('needed-parts').append(b);}
   for(const b of $('step-list').children){const n=Number(b.dataset.step);b.toggleAttribute('aria-current',n===step);if(n===step)b.setAttribute('aria-current','step');b.classList.toggle('done',n<step);b.querySelector('.number').textContent=n<step?'✓':STEPS[n].complete?'✓':String(n-c.start+1);}
-  clearPartInfo();syncReference();setAttributes();updateProgress();settled=settledParts();deskMode.sync(step);
+  clearPartInfo();syncReference();setAttributes();updateProgress();settled=settledParts();deskMode.sync(step);hornIdentify.sync(s);
 }
 function goStep(index,{animate=true,back=false,playerDriven=false}={}){
   if(!ready)return;materials.close();const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
@@ -261,6 +262,7 @@ const materials=createChapterMaterials({scene,camera,controls,renderer,host,enti
   const n=step===0?1:step;lessonPlayer.seek(n,0,{play:true,auto:lessonPlayer.state.autoplay});goStep(n,{playerDriven:true});
 }});
 const deskMode=createDeskMode({getStep:()=>step,isReady:()=>ready,openReference:()=>openReference(),canvas:renderer.domElement,openChapter:c=>materials.open(c,{start:true}),closeChapter:()=>materials.close()});
+const hornIdentify=createHornIdentify({pause(){lessonPlayer.pause();playing=false;backTransition=null;cameraTween=null;materials.close();assemblyFocus.reset();setAttributes();}});
 function openReference(){materials.close();$('instruction-dialog').close();const p=$('reference-panel');p.hidden=false;$('reference-toggle').setAttribute('aria-expanded','true');const v=$('reference-video');v.muted=true;v.currentTime=Math.max(0,STEPS[step].sourceStart-chapterFor(step).videoStart);v.play().catch(()=>{});}
 function closeReference(){$('reference-panel').hidden=true;$('reference-toggle').setAttribute('aria-expanded','false');$('reference-video').pause();lessonSound.setReferenceAudio(false);}
 $('reference-video').addEventListener('volumechange',()=>{const v=$('reference-video');if(!$('reference-panel').hidden&&!v.muted&&v.volume>0)lessonSound.setReferenceAudio(true);});

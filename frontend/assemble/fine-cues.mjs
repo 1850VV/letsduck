@@ -54,7 +54,7 @@ export function buildFineCues(index){
    all.push({id,actorId:id,type:'screw',from,to,operation:last[id].status==='removed'?'remove':last[id].status==='moving'?'partial':'fasten',label:a.fastener?.replace('x','×')||'原装螺丝'});
   }else if(a.kind==='horn'&&last[id].status==='removed'&&first[id].status!=='removed'){
    const start=first[id].position,end=last[id].position;if(distance(start,end)<.1)continue;
-   all.push({id,actorId:id,type:'part',operation:'remove',from:crossing(p=>distance(snapshot(index,p)[id].position,start)>.001,true),to:crossing(p=>distance(snapshot(index,p)[id].position,end)<.001,true),label:'原装舵盘'});
+   all.push({id,actorId:id,type:'part',operation:'remove',from:crossing(p=>distance(snapshot(index,p)[id].position,start)>.001,true),to:crossing(p=>distance(snapshot(index,p)[id].position,end)<.001,true),label:'副舵盘'});
   }
  }
  for(const c of connections[step.id]||[])all.push({...c,label:c.operation==='route'?'线端余量':'插头'});
