@@ -30,6 +30,7 @@ from errors import payload  # noqa: E402
 from rules import Invalid  # noqa: E402
 from schemes import PersonalStore  # noqa: E402
 from servo_setup import ServoSetup  # noqa: E402
+from duck_debug import DuckDebug, DebugError  # noqa: E402
 from servo_preparation import validated_updates  # noqa: E402
 
 from export_transport import parse_multipart, ExportBodyError
@@ -142,6 +143,22 @@ class Handler(SimpleHTTPRequestHandler):
             return {'publicUrl': '', 'edition': 'personal', 'assembly': assembly_ready(),
                     'servoSetup': ipaddress.ip_address(self.client_address[0]).is_loopback,
                     'servoPreparation': ipaddress.ip_address(self.client_address[0]).is_loopback}
+        if path.startswith('/api/duck-debug/'):
+            if not ipaddress.ip_address(self.client_address[0]).is_loopback:
+                raise Reply(403, {'error': '请在连接 UNO Q 的这台电脑上打开调试鸭。'})
+            if method == 'GET' and path == '/api/duck-debug/status':
+                return self.server.debug.status()
+            if method == 'GET' and path == '/api/duck-debug/numbering':
+                return self.server.debug.numbering()
+            if method == 'POST' and path == '/api/duck-debug/action':
+                origin = self.headers.get('Origin')
+                if origin and origin != 'http://' + self.headers.get('Host', ''):
+                    raise Reply(403, {'error': '请从本机调试鸭执行操作。'})
+                try:
+                    return self.server.debug.action(self.read_json())
+                except DebugError as error:
+                    raise Reply(422, {'error': str(error), **error.details})
+            raise Reply(404, NOT_FOUND)
         if path == '/api/servo-preparation':
             if not ipaddress.ip_address(self.client_address[0]).is_loopback:
                 raise Reply(403, {'error': '请在本机组装台记录取件。'})
@@ -308,6 +325,8 @@ class Server(ThreadingHTTPServer):
     allow_reuse_address = os.name != 'nt'
 
     def server_close(self):
+        if getattr(self, 'debug', None):
+            self.debug.close()
         if getattr(self, 'servo', None):
             self.servo.close()
         super().server_close()
@@ -332,6 +351,7 @@ def create_server(host='127.0.0.1', port=8876, db=None, legacy=None, search=20, 
             raise
         server.store = store
         server.servo = ServoSetup(store, servo_runtime)
+        server.debug = DuckDebug(store, server.servo)
         return server
 
 
