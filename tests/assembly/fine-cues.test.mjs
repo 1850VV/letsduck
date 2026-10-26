@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {STEPS} from '../../frontend/assemble/full-state.mjs';
+import {STEPS} from '../../frontend/assemble/pdf-state.mjs';
 import {buildFineCues,selectFineCue} from '../../frontend/assemble/fine-cues.mjs';
 const cues=id=>buildFineCues(STEPS.findIndex(s=>s.id===id));
 
@@ -14,10 +14,10 @@ test('原装螺丝拆卸和踝轴预拧不会被标成最终紧固',()=>{
  assert.equal(cues('r-tighten').find(c=>c.actorId==='axisScrew')?.operation,'fasten');
 });
 test('准备、左右腿、身体和头颈的线端都有具体提示',()=>{
- for(const [step,id]of [['prepare-usb','p_usb:0'],['r-plug','plug'],['l-wire-a','l_legWireA:1'],['t-wire','t_baseWire:0'],['t-motor-r','r_legWireB:1'],['head-yaw-wire','h_plug32'],['head-neck-wire','h_neckWire:0']])assert.ok(cues(step).some(c=>c.id===id),step+' missing '+id);
+ for(const [step,id]of [['prepare-usb','p_usb:0'],['r-plug','plug'],['l-wire-a','l_legWireA:1'],['t-wire','t_baseWire:0'],['r-wire-b','r_legWireB:1'],['head-yaw-wire','h_plug32'],['head-neck-wire','h_neckWire:0']])assert.ok(cues(step).some(c=>c.id===id),step+' missing '+id);
 });
-test('预留自由端和整理线束不会被误标成插入接口',()=>{
- assert.equal(cues('r-wire-b').find(c=>c.id==='r_legWireB:1')?.operation,'route');
+test('PDF13页实际接线有连接提示，整理步骤不引用尚未出现的电控总线',()=>{
+ assert.equal(cues('r-wire-b').find(c=>c.id==='r_legWireB:1')?.operation,'connect');
  assert.ok(cues('final-route').every(c=>c.operation==='route'));
  assert.ok(!cues('head-neck-wire').some(c=>c.id==='h_headLead:1'));
 });

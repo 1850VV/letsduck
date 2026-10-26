@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {STEPS,CHAPTERS} from '../../frontend/assemble/hardware-state.mjs';
+import {STEPS,CHAPTERS} from '../../frontend/assemble/pdf-state.mjs';
 const catalog=await import('../../frontend/assemble/material-catalog.mjs').catch(()=>null);
 const layout=await import('../../frontend/assemble/material-layout.mjs').catch(()=>null);
 function api(){assert.ok(catalog?.chapterMaterials&&layout?.specimenLayout,'chapter material catalog and quantity layout are available');return catalog;}
@@ -10,8 +10,8 @@ test('chapter preparation includes all 15 servos, while configuration steps take
  assert.equal(c.stepMaterials(STEPS.findIndex(s=>s.parts.includes('p_motor'))).find(m=>m.id==='p_motor').count,1);
 });
 test('grouped screws represent every required fastener rather than only the animated representative',()=>{
- const rows=api().chapterMaterials(CHAPTERS[1]);assert.equal(rows.find(m=>m.fastener==='M2x6').count,6);
- assert.equal(rows.find(m=>m.fastener==='M2.3x8').count,1);
+ const rows=api().chapterMaterials(CHAPTERS.find(c=>c.pdfPage===3));assert.equal(rows.find(m=>m.fastener==='M2x6').count,6);
+ assert.equal(api().chapterMaterials(CHAPTERS.find(c=>c.pdfPage===11)).find(m=>m.fastener==='M2.3x8').count,2);
 });
 test('all 111 steps provide material identification and specifications without HTML entities',()=>{
  const c=api();assert.equal(STEPS.length,111);
@@ -30,5 +30,5 @@ test('the servo queue has 15 distinct positions in one straight row',()=>{
  assert.equal(new Set(s.positions.map(p=>p[0])).size,15);assert.ok(s.positions.every(p=>p[2]===0));
 });
 test('calibration reuses one complete robot without inventing new component requirements',()=>{
- const rows=api().chapterMaterials(CHAPTERS[13]);assert.equal(rows.length,1);assert.equal(rows[0].kind,'assembly');assert.equal(rows[0].count,1);
+ const rows=api().chapterMaterials(CHAPTERS.at(-1));assert.equal(rows.length,1);assert.equal(rows[0].kind,'assembly');assert.equal(rows[0].count,1);
 });

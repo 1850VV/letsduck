@@ -2,7 +2,7 @@ import * as THREE from '../vendor/three.module.js';
 import * as Legacy from './hardware-state.mjs';
 import {HORN_BINDINGS,LEG_SECONDARY_REMOVALS} from './servo-horns.mjs';
 import {actorQuaternion} from './render-pose.mjs';
-export {STEPS,CHAPTERS,chapterFor,OVERVIEW_STEP,FLOW_VERSION} from './pdf-flow.mjs';
+export {STEPS,CHAPTERS,chapterFor,OVERVIEW_STEP,FIRST_ASSEMBLY_STEP,FLOW_VERSION} from './pdf-flow.mjs';
 import {STEPS} from './pdf-flow.mjs';
 
 const clone=v=>structuredClone(v),v=a=>new THREE.Vector3(...a),clamp=x=>Math.max(0,Math.min(1,x));
@@ -87,6 +87,8 @@ export const PLUG_PAIRS=Legacy.PLUG_PAIRS;
 const metadata=new Map();
 for(const[id,a]of Object.entries(Legacy.ACTORS)){
  let native=Number.isInteger(a.step)?a.step+offsets[a.module]:oldIndex.get(LEG_SECONDARY_REMOVALS.find(r=>[r.horn,r.screw].includes(id))?.stepId);
+ // The source ankle module clones left actors with right-local step numbers.
+ if(a.module===1&&a.side==='l')native+=9;
  if(!Number.isInteger(native))throw Error('Missing actor source '+id);
  const owner=Legacy.STEPS[native].id,o=overrides[id]||{},mount=o.mount||owner;
  const actions=updates[id]||[mount];
@@ -141,7 +143,7 @@ export function snapshot(value,progress=1){
    pose.status=rp===1?'removed':'moving';
   }else{
    pose=move(pose,groupDelta(id,n,p,frames));
-   pose.status=n<meta.installAt?'prepared':t===1?'installed':'moving';
+   pose.status=n<meta.installAt?'prepared':t===1&&sample.pose.status!=='moving'?'installed':'moving';
   }
   if(!visible){pose.visible=false;pose.opacity=0;pose.status=a.hardwareStatus?.startsWith('pending-')&&n>=meta.intro?'pending':'waiting';}
   else{pose.visible=true;pose.opacity=pose.opacity??1;if(!active)pose.opacity=1;}
