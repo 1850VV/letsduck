@@ -317,6 +317,9 @@ class ServoSetup:
                 try:
                     self.configure_once()
                     disconnected = False
+                    records = self.store.servo_records(self.board)
+                    if set(IDS).issubset(r['id'] for r in records if r['state'] == 'verified'):
+                        break
                 except Offline as exc:
                     self.online, self.phase, self.message = False, 'offline', str(exc)
                     self.stop.wait(2)

@@ -12,6 +12,17 @@ const rows=[
  ['all-ids','逐只完成15个ID','逐一完成十五只舵机的编号',115,126,['p_motor'],'依次完成 10–14、20–24、30–34。完成一只就贴好编号；停机并断开 USB 与电池后再换下一只，上电后自动继续。','后续安装步骤按 ID 取件。编号、安装和机械零位校准是不同进度。','15 个 ID · 逐只处理'],
 ];
 export const STEPS=rows.map(([id,short,title,sourceStart,sourceEnd,parts,text,check,caption])=>({id:`prepare-${id}`,chapter:'prepare',short,title,sourceStart,sourceEnd,parts,text,check,caption,duration:2.6,camera:[160,160,190],target:[0,18,5],software:sourceStart>=49,servoIds:id==='all-ids'?SERVO_IDS:undefined,overview:id==='intro'}));
+const manual={
+ 'prepare-intro':{check:'这里提供组装教学。自动编号需要连接 UNO Q 的本机个人版。'},
+ 'prepare-app':{text:'按厂商指引完成 Arduino App Lab、Duck OS 与 Wi-Fi 设置，在自己的 UNO Q 上启动机器鸭运行应用。',check:'此环境仅提供教学。自动配置需要本机个人版，也可在设备运行端手动设置。'},
+ 'prepare-scan':{short:'手动扫描单只',title:'在设备运行端扫描当前舵机',text:'打开自己的 Duck Runtime，进入 Servo setup。Scan all IDs，找到单只后停止扫描，读取参数，再按当前运行端指引执行 Reset Mid，保持卸载。',check:'此页面不发送硬件命令。始终只接一只；参数按匹配固件确认。'},
+ 'prepare-id':{title:'在设备运行端写入并读回复核',text:'在 Servo setup 填写匹配固件的 KP、KD，执行 Set KpKd；填写目标 ID，执行 Change ID，再读取新编号和参数，确认旧编号不再响应。',check:'不照抄旧视频的参数值。中位指令确认与装配后的零位校准不同。'},
+ 'prepare-all-ids':{text:'在设备运行端依次完成 10–14、20–24、30–34，并给每只实物贴标签。每次先停机，断开 USB 和电池后再换接。',check:'本环境的编号清单是教学参照，不代表已经写入或完成机械零位校准。'},
+};
+export function preparationCopy(step,automatic){
+ const original=STEPS.find(s=>s.id===step.id);
+ return original?{...original,...(!automatic?manual[step.id]:{})}:step;
+}
 const ports=[{label:'三芯舵机口',position:[25,4,15],kind:'servo'},{label:'电池接口',position:[-26,4,15],kind:'power'},{label:'扩展板排针A',position:[-24,-3,0],kind:'male-header'},{label:'扩展板排针B',position:[24,-3,0],kind:'male-header'}];
 export const ACTORS={
  p_uno:{kind:'board',boardType:'uno-q',label:'Arduino UNO Q · 教学简模',source:'独立板卡简模 · 接口未实物核验',size:[68,2,53],end:[-35,10,-5],start:[-35,10,-5],step:1,ports:[{label:'USB-C',position:[-34,3,0],kind:'usb-c',direction:[-1,0,0]},{label:'UNO排母A',position:[-24,3,0],kind:'female-header'},{label:'UNO排母B',position:[24,3,0],kind:'female-header'}]},

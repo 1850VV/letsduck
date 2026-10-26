@@ -21,6 +21,7 @@ import {createChapterMaterials} from './chapter-materials.mjs';
 import {stepMaterials} from './material-catalog.mjs';
 import {resolveServoMap} from './servo-map.mjs';
 import {createServoWorkbench} from './servo-setup.mjs';
+import {preparationCopy} from './full/prepare.mjs';
 
 import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlugQuaternion,interpolatePose,socketQuaternion} from './render-pose.mjs';
 
@@ -217,7 +218,7 @@ function syncReference(){
 function syncInfo(){
   const s=STEPS[step],c=chapterFor(step),local=step-c.start+1;guidanceEndState=snapshot(step,1);renderSteps(c);$('software-guide').hidden=!s.software;$('servo-id-list').replaceChildren();for(const id of s.servoIds||[]){const tag=document.createElement('span');tag.textContent=`ID ${id}`;$('servo-id-list').append(tag);}
   $('servo-guide-open').hidden=$('servo-open').hidden||c.id!=='prepare';
-  $('software-guide-note').textContent=c.id==='prepare'?'舵机准备会自动扫描、写入并读回复核。':'装配后的零位校准仍需在运行端进行。';
+  $('software-guide-note').textContent=c.id==='prepare'?(servoWorkbench?.supported?'舵机准备会自动扫描、写入并读回复核。':'这里提供教学说明，请在自己的设备运行端操作。'):'装配后的零位校准仍需在运行端进行。';
   $('phase-select').setAttribute('value',String(CHAPTERS.indexOf(c)));
   $('full-saved-step').value=String(step);if(ready)try{localStorage.setItem(SAVED_STEP,JSON.stringify({step,total:STEPS.length}));}catch{}$('step-title').textContent=s.title;$('instruction-summary-title').textContent=s.title;$('step-description').textContent=s.text;$('step-check').textContent=s.check+(fitsForParts(s.parts).length||s.id==='robot-complete'||s.overview?' 新模型配合待核：相关插头与原3MF支架或外壳有几何重叠；保持原尺寸，红框不表示已接合。':'');
   $('step-count').textContent=`${c.name} · ${local} / ${c.end-c.start+1}`;
@@ -249,7 +250,7 @@ function selectActor(id,point=null){
   obj.updateWorldMatrix(true,true);const at=point?.clone()||new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());selectedAnchor=obj.worldToLocal(at);
   $('part-name').textContent=ACTORS[id].label;$('part-source').textContent=ACTORS[id].source;
   const binding=servoMapping?.bindings.find(b=>b.actorId===id);
-  if(binding){const record=servoWorkbench?.recordFor(binding.id);$('part-name').textContent=`ID${binding.id} · ${binding.role}`;$('part-source').textContent=(record?.state==='verified'?`历史读回已验证：KP ${record.readback.kp} / KD ${record.readback.kd}。`:'尚无编号与参数验证记录。')+(binding.status==='candidate'?' 安装位置为候选，需对照原片。':' 位置参照教程，实际安装需核对原片。');}
+  if(binding){const record=servoWorkbench?.recordFor(binding.id);$('part-name').textContent=`ID${binding.id} · ${binding.role}`;$('part-source').textContent=(!servoWorkbench?.historyLoaded?'配置记录尚未读取。':record?.state==='verified'?`历史读回已验证：KP ${record.readback.kp} / KD ${record.readback.kd}。`:record?.state==='reported'?'已编号，待本应用读回复核。':'尚无编号与参数验证记录。')+(binding.status==='candidate'?' 安装位置为候选，需对照原片。':' 位置参照教程，实际安装需核对原片。');}
   $('part-tooltip').hidden=false;stage.classList.add('has-part-info');
 }
 $('part-close').addEventListener('click',()=>{clearPartInfo();$('instruction-toggle').focus();});
@@ -369,6 +370,7 @@ async function load(){
     onVisibility(open){if(open){lessonPlayer.pause();playing=false;materials.close();$('instruction-dialog').close();closeReference();$('piano-audio').pause();$('completion-audio').pause();}scheduler.setActive(!open&&!document.hidden);if(!open){fit();invalidate();}},
     onInstall(binding){goStep(binding.stepIndex,{animate:false});materials.close();cameraTo(STEPS[binding.stepIndex].camera,STEPS[binding.stepIndex].target);selectActor(binding.actorId);},onGuide(){goStep(1,{animate:false});}});
   $('servo-guide-open').onclick=()=>{$('instruction-dialog').close();servoWorkbench.open();};
+  for(const s of STEPS)Object.assign(s,preparationCopy(s,servoWorkbench.supported));
   syncInfo();
 }
 load().catch(e=>{$('loading').textContent=`模型没有加载成功：${e.message}`;console.error(e);});

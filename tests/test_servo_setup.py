@@ -197,6 +197,16 @@ class SetupTests(unittest.TestCase):
                 self.setup.configure_once()
             self.assertEqual(request.call_count,0)
 
+    def test_last_verified_servo_ends_batch_and_retains_shutdown_action(self):
+        for sid in [10,11,12,13,14,20,21,22,23,24,30,31,32,33]:
+            self.store.save_servo_record(self.runtime.serial,dict(id=sid,state='verified',mapVersion='tutorial-reference-1'))
+        self.setup.start()
+        self.setup.worker.join(timeout=2)
+        self.assertFalse(self.setup.running)
+        self.assertEqual(self.setup.snapshot()['phase'],'success')
+        self.setup.halt()
+        self.assertFalse(self.runtime.online)
+
 
 class TransportTests(unittest.TestCase):
     def test_real_unoq_device_tree_spelling_is_recognized(self):
@@ -239,6 +249,9 @@ class ApiTests(unittest.TestCase):
             thread.start()
             base = 'http://127.0.0.1:%d' % server.server_address[1]
             try:
+                with patch.object(runtime,'connect',side_effect=AssertionError('history must not discover hardware')):
+                    with urlopen(base+'/api/servo-setup/records') as response:
+                        self.assertEqual(json.load(response),{'records':[]})
                 with urlopen(base + '/api/servo-setup') as response:
                     self.assertEqual(json.load(response)['phase'], 'ready')
                 req = Request(base + '/api/servo-setup/start', b'{}', headers={

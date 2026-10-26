@@ -144,6 +144,8 @@ class Handler(SimpleHTTPRequestHandler):
                 raise Reply(403, {'error': '请在连接 UNO Q 的这台电脑上打开组装台。'})
             if method == 'GET' and path == '/api/servo-setup':
                 return self.server.servo.inspect()
+            if method == 'GET' and path == '/api/servo-setup/records':
+                return {'records': self.store.servo_records()}
             actions = {'/api/servo-setup/start': self.server.servo.start,
                        '/api/servo-setup/pause': self.server.servo.pause,
                        '/api/servo-setup/halt': self.server.servo.halt}
