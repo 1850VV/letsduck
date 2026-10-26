@@ -17,6 +17,7 @@ export const OVERVIEW_STEP=Base.OVERVIEW_STEP;
 export const STEPS=clone(Base.STEPS);
 export const chapterFor=index=>CHAPTERS.find(c=>index>=c.start&&index<=c.end)||CHAPTERS[0];
 for(const r of LEG_SECONDARY_REMOVALS){
+ STEPS.find(s=>s.id===r.stepId).parts.push(r.horn,r.screw);
  const normal=v(SERVO_AUDIT.actors[r.motor].nativePorts[0].normal).applyQuaternion(actorQuaternion(ACTORS[r.motor],{})).toArray();
  for(const [id,kind]of [[r.horn,'horn'],[r.screw,'screw']])ACTORS[id]={kind,module:1,carriedBy:r.motor,label:`ID${SERVO_IDS[r.motor]} 副舵盘${kind==='screw'?'固定螺丝':''}`,source:'插座开口同侧 · 保留输出轴；原装螺丝规格待核',end:[...r.tray],start:[...r.tray],fastener:null,orientationZ:0,spinAxis:normal};
 }

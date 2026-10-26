@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as THREE from '../frontend/vendor/three.module.js';
-import {ACTORS,STEPS,snapshot} from '../frontend/assemble/hardware-state.mjs';
-import {createHardwareModelFactory} from '../frontend/assemble/hardware-models.mjs';
+import * as THREE from '../../frontend/vendor/three.module.js';
+import {ACTORS,STEPS,snapshot} from '../../frontend/assemble/hardware-state.mjs';
+import {createHardwareModelFactory} from '../../frontend/assemble/hardware-models.mjs';
 
 // These loader-shaped fixtures exercise the real factory and visibility policy.
 // The browser check separately loads the photographed GLBs and their exact geometry.

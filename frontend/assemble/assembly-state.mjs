@@ -32,7 +32,7 @@ function push(id,chapter,short,title,start,end,parts,text,check,caption,duration
 }
 for(const [side,chapter,t] of [['r','right-leg',[248,254,264,272,286,306,320,324]],['l','left-leg',[324,330,342,350,360,378,390,396]]]){
   const name=side==='r'?'右':'左',ids=side==='r'?'ID12 / ID13':'ID23 / ID22';
-  push(`${side}-pair`,chapter,'对齐双舵机',`对齐${name}腿的两只舵机`,t[0],t[1],[`${side}_upperMotor`,`${side}_lowerMotor`,`${side}_lowerHorn`,`${side}_lowerHornScrew`],`核对 ${ids} 的主副盘和插座朝向。装支撑前，卸下 ID${side==='r'?13:23} 副舵盘的固定螺丝，再取下副舵盘。`,`主舵盘和输出轴保留。${name}腿按各自镜像方向安装，不照搬画面左右。`,'先处理副盘 · 再装支撑',3.2);
+  push(`${side}-pair`,chapter,'对齐双舵机',`对齐${name}腿的两只舵机`,t[0],t[1],[`${side}_upperMotor`,`${side}_lowerMotor`],`核对 ${ids} 的主副盘和插座朝向。装支撑前，卸下 ID${side==='r'?13:23} 副舵盘的固定螺丝，再取下副舵盘。`,`主舵盘和输出轴保留。${name}腿按各自镜像方向安装，不照搬画面左右。`,'先处理副盘 · 再装支撑',3.2);
   push(`${side}-support`,chapter,'固定大腿支撑','固定双圆孔大腿支撑',t[1],t[2],[`${side}_support`,`${side}_supportScrew0`],'把白色双圆孔支撑贴合这对舵机，对齐四个固定位置，按视频拧入四颗 M2×6。',`确认 ID${side==='r'?13:23} 副盘已拆、主盘保留；核对本侧主副盘与插座朝向，再逐孔固定。配合仍待实物核验。`,'M2×6 ×4 · 固定支撑',3.3);
   push(`${side}-bearing`,chapter,'压入大轴承','压入连接脚踝的大轴承',t[2],t[3],[`${side}_lowerBearing`,`${side}_support`],'将 16×22×4 mm 大轴承对准支撑圆孔，沿轴向压到位。','轴承应坐正，再连接已经装好的脚踝。','沿轴向压入大轴承');
   push(`${side}-join`,chapter,'连接已装脚踝',`接上${name}脚踝子组件`,t[3],t[4],[side==='r'?'shank':'l_shank',`${side}_joinScrew0`],'把已经完成的脚踝与小腿作为一个整体，移到大腿支撑的轴承位置，再固定四颗 M2×6。',`核对${name}腿主副盘、插座开口与镜像朝向；已有螺丝、踝轴与线缆随组件移动。`,'整体对齐 · M2×6 ×4',3.6);
