@@ -13,6 +13,7 @@ test('PDF pages 1 and 19 identify the mouth as ID34 throughout its instructions'
 test('PDF page 20 requires three head-cover screws, with unknown hole locations explicit',()=>{
   const screws=Object.entries(head.ACTORS).filter(([id])=>/^h_shellScrew\d+$/.test(id));
   assert.equal(screws.length,3);assert.match(head.STEPS.find(s=>s.id==='head-shell-fix').caption,/×3/);
+  assert.match(head.STEPS.find(s=>s.id==='head-shell-fix').check,/(第3|第三).*待核/,'the exact limit is visible in the lesson');
   for(const[id,a]of screws)if(a.hardwareStatus==='pending-hole-alignment')assert.equal(head.snapshot(head.STEPS.length-1,1)[id].visible,false);
 });
 

@@ -183,3 +183,10 @@ export function snapshot(value,progress=1){
  }
  return result;
 }
+
+// These actions changed from moving an assembled linkage to handling a free
+// servo. Preserve the source viewing angle, but centre its actual new carrier.
+for(const[step,anchor]of [['head-yaw-wire','h_motor32'],['head-core-horn-wire','h_motor33'],['r-shank','shank'],['l-shank','l_shank']]){
+ const n=index.get(step),s=STEPS[n],delta=s.camera.map((v,i)=>v-s.target[i]),centre=snapshot(n,1)[anchor].position;
+ s.target=[...centre];s.camera=centre.map((v,i)=>v+delta[i]);
+}

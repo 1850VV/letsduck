@@ -33,3 +33,9 @@ test('physical installation declarations use the PDF mounting milestones without
  for(const id of [12,13])assert.equal(map.byId.get(id).installedAt,'r-support');
  for(const id of [22,23])assert.equal(map.byId.get(id).installedAt,'l-support');
 });
+test('the chapter chooser offers every PDF chapter with the same names and ordering',async()=>{
+ const html=await readFile(new URL('../../frontend/assemble/index.html',import.meta.url),'utf8');
+ const chooser=html.match(/<ryugi-select id="phase-select"[^>]*>([\s\S]*?)<\/ryugi-select>/)[1];
+ const options=[...chooser.matchAll(/<ryugi-option value="(\d+)">([^<]+)<\/ryugi-option>/g)].map(m=>({value:Number(m[1]),label:m[2]}));
+ assert.deepEqual(options,flow.CHAPTERS.map((c,i)=>({value:i,label:`${i+1} · ${c.name}`})));
+});
