@@ -125,7 +125,7 @@ class PersonalTests(unittest.TestCase):
 
     def test_accounts_and_gallery_do_not_exist(self):
         self.start()
-        self.assertEqual(self.call('GET', '/api/site'), (200, {'publicUrl': '', 'edition': 'personal', 'assembly': app.assembly_ready(), 'servoSetup': True}))
+        self.assertEqual(self.call('GET', '/api/site'), (200, {'publicUrl': '', 'edition': 'personal', 'assembly': app.assembly_ready(), 'servoSetup': True, 'servoPreparation': True}))
         for method, path in [('POST', '/api/auth/register'), ('POST', '/api/auth/login'), ('GET', '/api/me'), ('PATCH', '/api/me'),
                              ('GET', '/api/works'), ('POST', '/api/works'), ('GET', '/api/works/w-1'), ('PUT', '/api/works/w-1/rating')]:
             with self.subTest(path=path, method=method):

@@ -8,7 +8,7 @@ import {specimenLayout,arrangeGroups} from './material-layout.mjs';
 const $=id=>document.getElementById(id);
 
 /** Chapter inventory owns display clones; assembly entities and their buffers stay intact. */
-export function createChapterMaterials({scene,camera,controls,renderer,host,entities,getHardware,getState,pause,stopCamera,applyState,fit,invalidate,resetFocus,clearSelection,hideArrow,onStart}){
+export function createChapterMaterials({scene,camera,controls,renderer,host,entities,getHardware,getState,pause,stopCamera,applyState,fit,invalidate,resetFocus,clearSelection,hideArrow,onStart,onInspect}){
 const stage=$('stage');
 let materialTrayActive=false,materialSelection=null,trayReturn=null,trayRows=[],trayGroups=[],trayUnits=[],trayLabels=[],trayUnitLabels=[],trayBox=null;
 const trayRoot=new THREE.Group();trayRoot.name='chapter-materials';scene.add(trayRoot);
@@ -78,7 +78,7 @@ function selectTray(index,unitIndex=0){
  trayUnitLabels.forEach((labels,i)=>labels.forEach((l,j)=>l.classList.toggle('selected',i===index&&j===unitIndex)));
  if(!trayBox){trayBox=new THREE.Box3Helper(new THREE.Box3(),0x4d6bfe);trayBox.material.depthTest=false;trayBox.material.depthWrite=false;trayBox.renderOrder=40;scene.add(trayBox);}
  trayBox.visible=true;$('kit-parts').querySelectorAll('button')[index]?.scrollIntoView({block:'nearest'});invalidate();
- if(inspectionEnabled)openInspection(index,unitIndex);else closeInspection();
+ if(onInspect?.(trayRows[index],unitIndex))closeInspection();else if(inspectionEnabled)openInspection(index,unitIndex);else closeInspection();
 }
 function showPreparation(c,rows=chapterMaterials(c),title=c.name+' · 本章零件',start=false){
  if(!getState().ready)return;endMaterial();pause();const {step,progress}=getState();
