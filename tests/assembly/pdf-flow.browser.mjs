@@ -75,8 +75,9 @@ test('PDF tutorial in the actual browser, with synthetic numbering and no hardwa
    await go('head-core-horn-wire');await seek(1);assert.equal((await state()).actors.h_bearingFront.visible,false);
   });
   await check('head-cover and upper-body screw quantities reach the actual materials buttons',async()=>{
-   await go('head-shell-fix');await seek(1);assert.match(await page.locator('#needed-parts').innerText(),/×3/);await shot('04-head-cover-three');
-   await go('final-body-shells');await seek(1);assert.match(await page.locator('#needed-parts').innerText(),/×4/);await shot('05-body-four');
+   await go('head-shell-fix');await seek(1);assert.match(await page.locator('#needed-parts').innerText(),/×3/);await page.locator('#instruction-toggle').click();await shot('04-head-cover-three');await page.locator('#instruction-close').click();
+   await page.locator('#step-materials').click();assert.match(await page.locator('#kit .kit-eyebrow').innerText(),/第 20 \/ 26 章/);await shot('04a-head-parts');await page.locator('#kit-go').click();
+   await go('final-body-shells');await seek(1);assert.match(await page.locator('#needed-parts').innerText(),/×4/);await page.locator('#instruction-toggle').click();await shot('05-body-four');await page.locator('#instruction-close').click();
   });
   await check('mixed source videos select the right asset within a single PDF chapter',async()=>{
    await go('final-thigh-first');assert.match(await page.locator('#reference-video').getAttribute('src'),/full-final/);

@@ -100,7 +100,7 @@ function showPreparation(c,rows=chapterMaterials(c),title=c.name+' · 本章零�
  const sizes=trayGroups.map(g=>new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3()));
  arrangeGroups(rows,sizes).forEach((p,i)=>trayGroups[i].position.fromArray(p));
  trayGroups.forEach((g,i)=>{const label=document.createElement('span');label.className='tray-label';label.textContent=String(i+1).padStart(2,'0')+' · '+(rows[i].quantity||`×${rows[i].count}`);trayLabelHost.append(label);trayLabels.push(label);});
- $('kit-title').textContent=title;$('kit').querySelector('.kit-eyebrow').textContent=`第 ${CHAPTERS.indexOf(c)+1} / 14 章 · 点零件查看`;
+ $('kit-title').textContent=title;$('kit').querySelector('.kit-eyebrow').textContent=`第 ${CHAPTERS.indexOf(c)+1} / ${CHAPTERS.length} 章 · 点零件查看`;
  $('kit-parts').replaceChildren();$('kit-screws-block').hidden=true;
  rows.forEach((m,i)=>{const li=document.createElement('li'),b=document.createElement('button');b.className='material-row';b.type='button';b.setAttribute('aria-pressed','false');
   const ordinal=document.createElement('span');ordinal.className='ordinal';ordinal.textContent=String(i+1).padStart(2,'0');
