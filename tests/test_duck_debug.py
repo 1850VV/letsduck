@@ -194,6 +194,10 @@ class DebugTests(unittest.TestCase):
         self.assertTrue(next(d for d in self.debug.status()['devices'] if d['id']==12)['readbackPending'])
         self.action('read',id=12)
         self.assertFalse(next(d for d in self.debug.status()['devices'] if d['id']==12)['readbackPending'])
+    def test_unchanged_plan_members_survive_a_partial_write_failure(self):
+        self.record(14);self.rt.fail='set_id'
+        with self.assertRaises(DebugError):self.action('remap',plan=[dict(fromId=12,toId=22),dict(fromId=14,toId=14)])
+        self.assertIn(14,self.debug.numbering()['verifiedIds'])
     def test_close_of_unowned_session_is_read_only(self):
         self.debug.status();self.debug.close();self.assertTrue(all(c[0]=='GET' for c in self.rt.calls))
 

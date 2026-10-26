@@ -97,7 +97,7 @@ class DuckDebug:
                 verified.append(sid)
             else:
                 review.append(sid)
-        return dict(board=self.board, ready=set(verified) == set(IDS), expectedIds=list(IDS),
+        return dict(board=self.board, mapVersion=MAP_VERSION, ready=set(verified) == set(IDS), expectedIds=list(IDS),
                     verifiedIds=sorted(set(verified)), missingIds=[i for i in IDS if i not in verified],
                     reviewIds=sorted(set(review)), records=records)
 
@@ -217,7 +217,7 @@ class DuckDebug:
             if p['toId'] not in sources and self.ping(p['toId'])['ok']:
                 raise DebugError('ID%s 已被其他在线舵机使用' % p['toId'])
         pending = [dict(current=p['fromId'], target=p['toId'], original=p['fromId']) for p in plan if p['fromId'] != p['toId']]
-        all_ids = sources | {p['toId'] for p in plan}
+        all_ids = {i for p in plan if p['fromId'] != p['toId'] for i in (p['fromId'],p['toId'])}
         completed = []
         if pending:
             self.invalidate(all_ids, '改号尚未完成读回复核')
