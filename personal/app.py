@@ -237,6 +237,8 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path.startswith('/api/'):
             return self.handle_api('GET')
+        if path.rstrip('/') in ('/assemble','/assemble/index.html') and not self.server.debug.numbering()['ready']:
+            return self.redirect(303, '/debug/?from=assemble')
         if path.rstrip('/') == '/gallery' or path.startswith('/gallery/'):
             return self.redirect(303, '/')
         if path == '/paint/':
