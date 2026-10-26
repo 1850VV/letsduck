@@ -222,6 +222,20 @@ class DebugTests(unittest.TestCase):
         self.action('scan-stop');self.debug.scan_worker.join(2)
         self.assertTrue(status['scan']['active'],'status was starved until the entire scan finished')
         self.assertLess(time.monotonic()-started,.5)
+    def test_target_uses_fresh_encoder_position_and_preserves_gains(self):
+        self.rt.motors[12]['pos']=2215
+        result=self.action('move',id=12,target=2218)
+        self.assertEqual(2218,result['readback']['raw_pos'])
+        jogs=[c[2] for c in self.rt.calls if c[2] and c[2].get('action')=='jog']
+        self.assertEqual(3,jogs[-1]['delta'])
+        self.assertEqual((5,12),(self.rt.motors[12]['kp'],self.rt.motors[12]['kd']))
+    def test_target_beyond_fresh_ten_count_window_never_jogs(self):
+        with self.assertRaises(DebugError):self.action('move',id=12,target=2230)
+        self.assertFalse(any(c[2] and c[2].get('action')=='jog' for c in self.rt.calls))
+    def test_already_at_target_does_not_send_invalid_zero_jog(self):
+        result=self.action('move',id=12,target=2212)
+        self.assertEqual(2212,result['readback']['raw_pos'])
+        self.assertFalse(any(c[2] and c[2].get('action')=='jog' for c in self.rt.calls))
     def test_close_of_unowned_session_is_read_only(self):
         self.debug.status();self.debug.close();self.assertTrue(all(c[0]=='GET' for c in self.rt.calls))
 
