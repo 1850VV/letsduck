@@ -28,6 +28,7 @@ import {actorQuaternion,cableStyle,plugPins,guidanceDelta,cameraPreset,cablePlug
 
 const $=id=>document.getElementById(id);
 const fmt=t=>`${Math.floor(t/60).toString().padStart(2,'0')}:${Math.floor(t%60).toString().padStart(2,'0')}`;
+let navigationRevision=0;
 let step=0,progress=1,playing=false,cameraTween=null,uiReady=false,ready=false;
 let servoWorkbench=null,servoMapping=null,servoPickup=null;
 const lessonPlayer=createLessonPlayer(STEPS.map((s,i)=>()=>{const focused=isFocusStep(s.id),count=buildFineCues(i).length;return{durationMs:s.duration*1000*(focused?Math.max(1.8,Math.min(4.5,count*.55)):1),holdMs:focused?900:0,settleMs:focused?1500:900};}));
@@ -237,7 +238,7 @@ function syncInfo(){
   clearPartInfo();syncReference();setAttributes();updateProgress();settled=settledParts();deskMode.sync(step);
 }
 function goStep(index,{animate=true,back=false,playerDriven=false}={}){
-  if(!ready)return;servoPickup?.stepChanged();materials.close();const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
+  if(!ready)return;navigationRevision++;servoPickup?.stepChanged();materials.close();const old=currentState,n=Math.max(0,Math.min(STEPS.length-1,index));
   if(!playerDriven)lessonPlayer.seek(n,animate&&n>0?0:1,{play:animate&&n>0});
   const playback=lessonPlayer.state;step=playback.step;progress=playback.progress;playing=playback.playing;
   assemblyFocus.reset();
@@ -287,7 +288,7 @@ $('instruction-toggle').addEventListener('click',()=>$('instruction-dialog').sho
 $('instruction-close').addEventListener('click',()=>$('instruction-dialog').close());
 $('reference-toggle').addEventListener('click',()=>{$('reference-panel').hidden?openReference():closeReference();});
 $('reference-close').addEventListener('click',closeReference);$('source-step').addEventListener('click',openReference);
-$('start').addEventListener('click',()=>goStep(1));$('next').addEventListener('click',async()=>{if(!servoPickup||await servoPickup.completeStep(step))goStep(step+1);});$('back').addEventListener('click',()=>goStep(step-1,{animate:false,back:true}));
+$('start').addEventListener('click',()=>goStep(1));$('next').addEventListener('click',async()=>{const origin=step,revision=navigationRevision,current=()=>revision===navigationRevision;if((!servoPickup||await servoPickup.completeStep(origin,current))&&current())goStep(origin+1);});$('back').addEventListener('click',()=>goStep(step-1,{animate:false,back:true}));
 $('replay').addEventListener('click',()=>goStep(step===OVERVIEW_STEP?STEPS.findIndex(s=>s.id==='final-power'):step));$('restart').addEventListener('click',()=>goStep(0));$('overview').addEventListener('click',()=>goStep(OVERVIEW_STEP,{animate:false}));
 $('pause').addEventListener('click',()=>{if(materials.active){$('kit-go').click();return;}playing?lessonPlayer.pause():lessonPlayer.resume();playing=lessonPlayer.state.playing;backTransition=null;setAttributes();});
 $('autoplay').addEventListener('click',()=>{if(!ready)return;if(lessonPlayer.state.autoplay){lessonPlayer.stopAuto();playing=false;setAttributes();}else{lessonPlayer.startAuto();goStep(0,{playerDriven:true});}});

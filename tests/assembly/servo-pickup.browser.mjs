@@ -13,7 +13,7 @@ import {STEPS} from '../../frontend/assemble/hardware-state.mjs';
 test('physical servo inventory stays fixed and independent of configuration',{
  skip:!process.env.DUCK_PREPARATION_TEST,timeout:120000,
 },async t=>{
- const dir=await mkdtemp(join(tmpdir(),'letsduck-preparation-'));let server,browserServer,browser,context,pid,serverError='';
+ const dir=await mkdtemp(join(tmpdir(),'letsduck-preparation-'));let server,browserServer,browser,context,pid,video,serverError='';
  try{
   server=spawn('python3',['tests/assembly/fixtures/preparation_server.py','--db',join(dir,'personal.db')],{stdio:['ignore','pipe','pipe']});
   server.stderr.on('data',chunk=>{serverError+=chunk;});
@@ -22,7 +22,7 @@ test('physical servo inventory stays fixed and independent of configuration',{
   lines.close();
   browserServer=await chromium.launchServer({headless:false});pid=browserServer.process().pid;browser=await chromium.connect(browserServer.wsEndpoint());
   const videoDir=process.env.ASSEMBLY_EVIDENCE_DIR?join(process.env.ASSEMBLY_EVIDENCE_DIR,'video'):null;if(videoDir)await mkdir(videoDir,{recursive:true});
-  context=await browser.newContext({viewport:{width:1400,height:1040},...(videoDir?{recordVideo:{dir:videoDir,size:{width:1400,height:1040}}}:{})});const page=await context.newPage(),errors=[];
+  context=await browser.newContext({viewport:{width:1400,height:1040},...(videoDir?{recordVideo:{dir:videoDir,size:{width:1400,height:1040}}}:{})});const page=await context.newPage(),errors=[];video=page.video();
   page.on('pageerror',e=>errors.push(e.message));
   const api=async body=>{const r=await fetch(info.url+'/api/servo-preparation',body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});assert.equal(r.status,200);return r.json();};
   const shot=async name=>{if(!process.env.ASSEMBLY_EVIDENCE_DIR)return;await mkdir(process.env.ASSEMBLY_EVIDENCE_DIR,{recursive:true});await page.screenshot({path:join(process.env.ASSEMBLY_EVIDENCE_DIR,name+'.png')});};
@@ -122,11 +122,48 @@ test('physical servo inventory stays fixed and independent of configuration',{
    assert.equal((await records()).get(14),'available','putting an installed unit back restores only its fixed slot');
    assert.equal(await page.locator('.sp-slot[data-id="14"]').getAttribute('data-slot'),'4');
   });
+  await t.test('pending saves respect newer navigation and deliberate part selection',async()=>{
+   await api({ids:[12,13,14],state:'picked'});await page.reload();await page.waitForFunction(()=>window.anklePrototype?.preparation?.loaded);
+   if(await page.locator('body').evaluate(el=>el.classList.contains('desk')))await page.locator('#desk-toggle').click();
+   const go=async id=>{await page.locator('#full-saved-step').evaluate((el,n)=>{el.value=n;document.getElementById('full-saved-progress').value=1;el.dispatchEvent(new Event('change'));},STEPS.findIndex(s=>s.id===id));};
+   const delay=async fail=>{let release,started;const hold=new Promise(r=>release=r),entered=new Promise(r=>started=r);await page.route('**/api/servo-preparation',async route=>{if(route.request().method()!=='POST')return route.continue();started();await hold;return fail?route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:'Delayed fixture failure'})}):route.continue();});return{release,entered};};
+   await go('r-tighten');let request=await delay(false);await page.locator('#next').click();await request.entered;await page.locator('#back').click();request.release();
+   await page.waitForFunction(()=>!window.anklePrototype.preparation.saving);assert.equal(await page.evaluate(()=>window.anklePrototype.state.stepId),'r-axle','saved installation must not advance a later navigation');
+   await page.unroute('**/api/servo-preparation');await api({ids:[14],state:'picked'});await page.reload();await page.waitForFunction(()=>window.anklePrototype?.preparation?.loaded);
+   await go('r-tighten');request=await delay(true);await page.locator('#next').click();await request.entered;await go('t-pair');request.release();
+   await page.waitForFunction(()=>!window.anklePrototype.preparation.saving);assert.equal(await page.evaluate(()=>window.anklePrototype.state.stepId),'t-pair');assert.equal(await page.locator('#servo-pickup').isHidden(),true,'a stale failure must not reopen the old part in a new chapter');
+   await page.unroute('**/api/servo-preparation');await api({ids:[12,13],state:'available'});await page.reload();await page.waitForFunction(()=>window.anklePrototype?.preparation?.loaded);
+   await go('r-pair');if(await page.locator('#kit').isVisible())await page.locator('#kit-go').click();await page.locator('#instruction-toggle').click();await page.locator('[data-servo-ids="12"]').click();
+   request=await delay(false);await page.locator('#sp-take').click();await request.entered;await page.locator('.sp-slot[data-id="20"]').click();request.release();
+   await page.waitForFunction(()=>!window.anklePrototype.preparation.saving);assert.match(await page.locator('#sp-id').innerText(),/20/,'finishing an earlier pickup must preserve the newer explicit selection');
+   await page.unroute('**/api/servo-preparation');
+  });
   assert.deepEqual(errors,[]);
  }finally{
-  await context?.close();await browser?.close();await browserServer?.close();
+  await context?.close();if(video)await video.saveAs(join(process.env.ASSEMBLY_EVIDENCE_DIR,'pickup-flow.webm'));await browser?.close();await browserServer?.close();
   if(pid)assert.throws(()=>process.kill(pid,0),'owned browser process must exit');
   if(server&&server.exitCode===null){server.kill('SIGTERM');await once(server,'exit');}
   await rm(dir,{recursive:true,force:true});
  }
+});
+
+test('historical servo records can finish confirmed multi-lead preparation without firmware writes',{
+ skip:!process.env.DUCK_PREPARATION_TEST,timeout:60000,
+},async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'letsduck-lead-ready-'));let server,browserServer,browser,context,pid;
+ try{
+  server=spawn('python3',['tests/assembly/fixtures/preparation_server.py','--db',join(dir,'personal.db'),'--confirmed-leads'],{stdio:['ignore','pipe','ignore']});
+  const lines=createInterface({input:server.stdout}),[line]=await once(lines,'line'),info=JSON.parse(line);lines.close();
+  browserServer=await chromium.launchServer({headless:false});pid=browserServer.process().pid;browser=await chromium.connect(browserServer.wsEndpoint());context=await browser.newContext({viewport:{width:1400,height:1040}});const page=await context.newPage();
+  await page.route('**/assemble/servo-leads.json',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(info.catalog)}));
+  const history=await fetch(info.url+'/api/servo-setup/records').then(r=>r.json());
+  await page.goto(info.url+'/assemble/');await page.waitForFunction(()=>window.anklePrototype?.servo?.historyLoaded);
+  await page.evaluate(()=>{const banner=document.createElement('div');banner.textContent='隔离测试数据：示例线长不作为实物接线指引';Object.assign(banner.style,{position:'fixed',top:'0',right:'0',zIndex:'9999',background:'#fff0db',padding:'8px',fontSize:'12px'});document.body.append(banner);});
+  await page.locator('#servo-open').click();await page.locator('.sv-slot[data-id="11"]').click();
+  assert.equal(await page.locator('[data-action="prepared-next"]').count(),1,'a verified historical servo needs a preparation-only action');
+  const writes=[];page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/api/servo-setup/'))writes.push(r.url());});
+  await page.locator('[data-action="prepared-next"]').click();await page.waitForFunction(()=>window.anklePrototype.preparation.counts.prepared===1);
+  const stored=await fetch(info.url+'/api/servo-preparation').then(r=>r.json());assert.deepEqual(stored.records.find(r=>r.id===11).preparedLeads,['fixture-a','fixture-b']);
+  assert.deepEqual(await fetch(info.url+'/api/servo-setup/records').then(r=>r.json()),history);assert.deepEqual(writes,[]);
+ }finally{await context?.close();await browser?.close();await browserServer?.close();if(pid)assert.throws(()=>process.kill(pid,0));if(server&&server.exitCode===null){server.kill('SIGTERM');await once(server,'exit');}await rm(dir,{recursive:true,force:true});}
 });

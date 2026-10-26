@@ -8,7 +8,7 @@ const names={pending:'待配置',working:'配置中',verified:'已验证',review
 
 export async function createServoWorkbench({map,hardware,entities,actors,poses,onVisibility,onInstall,onGuide}){
  const root=document.getElementById('servo-workbench'),entry=document.getElementById('servo-open'),choice=new ServoSelection(map.bindings.map(b=>b.id));
- let active=false,scene=null,data={phase:'idle',records:[]},requesting=false,polling=false,timer=null,epoch=0,pendingAudit=null,supported=false,historyLoaded=false,panelHTML='',sceneKey='',completionOpen=false,wasComplete=false,notice='';
+ let active=false,scene=null,data={phase:'idle',records:[]},requesting=false,polling=false,timer=null,epoch=0,pendingAudit=null,supported=false,historyLoaded=false,panelHTML='',sceneKey='',completionOpen=false,wasComplete=false,notice='',selectionRevision=0;
  const preparation=createServoPreparation(map);
  const $=id=>root.querySelector('#sv-'+id),recordFor=id=>(data.records||[]).find(r=>r.id===id),binding=id=>map.byId.get(id);
  root.innerHTML=`<div class="sv-heading"><div><p>先给每只舵机一个位置</p><h1 id="sv-title">舵机准备</h1></div><div class="sv-device"><i id="sv-dot"></i><span id="sv-device">等待检测 UNO Q</span></div><button type="button" id="sv-close" class="sv-back">返回组装教程</button></div>
@@ -30,6 +30,7 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   if(!active)return;
   const physical=preparation.view;
   const state=deriveServoStatus(data,map),id=choice.selected,item=state.items.get(id),r=item.record,live=state.liveFor(id),busy=data.phase==='working',profile=data.profile;
+  const leadItem=physical.byId.get(id),canPrepare=preparation.loaded&&leadItem.leadKnown&&!leadItem.prepared&&item.status==='verified'&&!busy,prepareHalt=canPrepare&&state.canHalt&&data.currentId===id;
   if(state.complete&&!wasComplete){completionOpen=true;choice.view='tray';}if(!state.complete)completionOpen=false;wasComplete=state.complete;
   $('title').textContent=state.complete?'舵机配置完成':'舵机准备';$('device').textContent=data.online?'UNO Q · USB 已连接':'等待 UNO Q 连接';$('dot').classList.toggle('online',!!data.online);
   $('arrange').textContent=choice.view==='tray'?'收回整机':'展开舵机';$('arrange').setAttribute('aria-pressed',String(choice.view==='tray'));
@@ -48,6 +49,7 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   else{
    html=`<p class="sv-kicker">${choice.manual?'点选查看':'当前推荐'} · ID ${id}</p><h2>${item.status==='review'?'复核 ID '+id:r?'配置与实时核查':'配置 ID '+id}</h2><span class="sv-status-pill ${item.status}">${marks[item.status]} ${names[item.status]}${item.online?' · 当前在线':''}</span>${location(id)}${servoLeadMarkup(preparation,id)}`;
    if(busy)html+=`<div class="sv-job"><b>正在配置 ID ${data.activeTarget||data.currentId||data.targetId||'…'}</b><br>${escape(data.message)}${data.queuedTarget?'<br>换接后指定 ID '+data.queuedTarget:''}</div>`;
+   if(preparation.error)html+=`<div class="sv-status alert">${escape(preparation.error)}</div>`;
    if(notice)html+=`<div class="sv-status alert">${escape(notice)}</div>`;
    if(!busy&&data.phase==='blocked')html+=`<div class="sv-status alert">${escape(data.message)}</div>`;
    if(item.status==='review')html+=`<div class="sv-status alert">${escape(r?.mapVersion!==map.version?'这份记录的映射版本需重新核对':r?.state==='reported'?'已编号，等待读回复核':r?.reviewReason||'尚未通过读回复核')}。当前不计入成功数量。</div>`;
@@ -69,9 +71,10 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
    }
    html+='<div class="sv-grow"></div>';
    if(data.shutdownAt&&!data.online){const left=Math.max(0,Math.ceil((data.shutdownAt+15000-Date.now())/1000));html+=`<p>${left?'至少再等 '+left+' 秒，':''}确认停止后断开 USB 和电池，再换接。仅拔 USB 不能证明电池已断电。</p>${!data.running?button('继续本轮，等待重新连接','resume',false,requesting):'<p class="sv-small">重新上电后会先读取状态，再自动继续。</p>'}`;}
-   else if(state.canHalt)html+=button('安全停机，换下一只','halt',false,requesting);
+   else if(state.canHalt)html+=button(prepareHalt?'线已接好，停机换下一只':'安全停机，换下一只',prepareHalt?'prepared-halt':'halt',false,requesting||preparation.saving);
    else if(busy)html+=button('暂停配置','pause',true,requesting);
-   if(!busy&&!state.complete)html+=button('恢复默认顺序','sequential',true,requesting);
+   if(canPrepare&&!prepareHalt)html+=button('线已接好，准备下一只','prepared-next',false,requesting||preparation.saving);
+   else if(!busy&&!state.complete)html+=button('恢复默认顺序','sequential',true,requesting);
   }
   if(html!==panelHTML){const focused=document.activeElement?.closest('#sv-panel [data-action]')?.dataset.action;panelHTML=html;$('panel').innerHTML=html;if(focused)$('panel').querySelector(`[data-action="${focused}"]`)?.focus();}
   const key=JSON.stringify([physical.slots.map(s=>s.state),choice.selected,choice.labelTarget,choice.view,[...state.items].map(([id,item])=>[id,item.status,item.online])]);
@@ -81,13 +84,13 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   if(action&&requesting){if(action==='audit')pendingAudit=body.id;return;}
   if(!action&&polling)return;
   const version=action?++epoch:epoch;if(action)requesting=true;else polling=true;render();
-  try{const response=await fetch('/api/servo-setup'+(action?'/'+action:''),action?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});const answer=await response.json();if(!response.ok)throw Error(answer.error||'连接没有响应');if(version===epoch){data=answer;choice.apply(data);historyLoaded=true;notice='';}}
-  catch(error){if(version===epoch){notice=error.message;if(!action)data={...data,online:false,telemetry:{known:false,ids:[]}};}}
+  try{const response=await fetch('/api/servo-setup'+(action?'/'+action:''),action?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});const answer=await response.json();if(!response.ok)throw Error(answer.error||'连接没有响应');if(version===epoch){data=answer;choice.apply(data);historyLoaded=true;notice='';}return true;}
+  catch(error){if(version===epoch){notice=error.message;if(!action)data={...data,online:false,telemetry:{known:false,ids:[]}};}return false;}
   finally{if(action)requesting=false;else polling=false;render();if(active&&!requesting&&pendingAudit!==null){const id=pendingAudit;pendingAudit=null;queueMicrotask(()=>call('audit',{id}));}}
  }
  async function poll(){clearTimeout(timer);if(!active)return;await call();if(active)timer=setTimeout(poll,1000);}
- function choose(id){choice.choose(id);completionOpen=false;render();call('audit',{id});}
- function close(){active=false;root.hidden=true;document.body.classList.remove('servo-open');scene?.setVisible(false);clearTimeout(timer);onVisibility(false);entry.focus();}
+ function choose(id){selectionRevision++;choice.choose(id);completionOpen=false;render();call('audit',{id});}
+ function close(){selectionRevision++;active=false;root.hidden=true;document.body.classList.remove('servo-open');scene?.setVisible(false);clearTimeout(timer);onVisibility(false);entry.focus();}
  function open(){active=true;root.hidden=false;document.body.classList.add('servo-open');onVisibility(true);if(!scene)scene=createServoScene({host:$('viewport'),labelsHost:$('labels'),hardware,entities,actors,poses,map,onSelect:choose});scene.setVisible(true);sceneKey='';render();poll();$('close').focus();}
  $('close').onclick=close;$('arrange').onclick=()=>{choice.toggle();render();};
  root.addEventListener('click',async event=>{
@@ -97,7 +100,16 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   else if(action==='inspect'){completionOpen=false;render();call('audit',{id:choice.selected});}
   else if(action==='configure'||action==='recover'){choice.begin();await call('start',{targetId:choice.selected});}
   else if(action==='resume'){choice.begin();await call('start');}
-  else if(action==='sequential'){choice.sequential(data);render();}
+  else if(action==='sequential'){selectionRevision++;choice.sequential(data);render();}
+  else if(action==='prepared-next'||action==='prepared-halt'){
+   const id=choice.selected,revision=selectionRevision,item=preparation.view.byId.get(id);
+   if(!item.leadKnown||item.prepared||preparation.saving||requesting||!deriveServoStatus(data,map).verified.has(id))return;
+   if(action==='prepared-halt'&&!await call('halt'))return;
+   try{
+    await preparation.update([id],{preparedLeads:item.leads.map(lead=>lead.key)});
+    if(active&&revision===selectionRevision){const state=deriveServoStatus(data,map),next=preparation.view.slots.find(s=>s.leadKnown&&!s.prepared&&state.verified.has(s.id));if(next)choice.choose(next.id);else choice.sequential(data);render();}
+   }catch{/* Keep the previous preparation state and show the shared save error. */}
+  }
   else if(action==='audit'||action==='repair'||action==='queue')await call(action,{id:choice.selected});
   else if(action==='finish-halt'){completionOpen=true;await call('halt');}
   else if(action==='assembly'){if(deriveServoStatus(data,map).complete&&data.shutdownAt&&Date.now()-data.shutdownAt>=15000){close();onInstall(binding(14));}}
