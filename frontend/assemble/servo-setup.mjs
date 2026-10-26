@@ -1,88 +1,103 @@
 import {createServoScene} from './servo-scene.mjs';
-
+import {deriveServoStatus,ServoSelection} from './servo-status.mjs';
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const button=(text,action,secondary=false)=>`<button type="button" class="sv-${secondary?'secondary':'primary'}" data-action="${action}">${text}</button>`;
-const fact=(name,value)=>`<div class="sv-fact"><span>${name}</span><b>${escape(value)}</b></div>`;
+const button=(text,action,secondary=false,disabled=false)=>`<button type="button" class="sv-${secondary?'secondary':'primary'}" data-action="${action}" ${disabled?'disabled':''}>${text}</button>`;
+const fact=(name,value,bad=false)=>`<div class="sv-fact ${bad?'bad':''}"><span>${name}</span><b>${escape(value)}</b></div>`;
+const names={pending:'待配置',working:'配置中',verified:'已验证',review:'需复核'},marks={pending:'○',working:'◌',verified:'✓',review:'△'};
 
 export async function createServoWorkbench({map,hardware,entities,actors,poses,onVisibility,onInstall,onGuide}){
- const root=document.getElementById('servo-workbench'),entry=document.getElementById('servo-open');
- let active=false,scene=null,data={phase:'idle',records:[]},selected=10,view='tray',requesting=false,timer=null,previousCurrent=null,panelHTML='',sceneKey='',supported=false,historyLoaded=false;
- const $=id=>root.querySelector('#sv-'+id);
- const records=()=>data.records.filter(r=>r.mapVersion===map.version);
- const done=()=>new Set(records().filter(r=>r.state==='verified').map(r=>r.id));
- const selectedBinding=()=>map.byId.get(selected);
- const recordFor=id=>records().find(r=>r.id===id);
- root.innerHTML=`<div class="sv-heading"><div><p>先给每只舵机一个位置</p><h1>准备与编号</h1></div><div class="sv-device"><i id="sv-dot"></i><span id="sv-device">等待检测 UNO Q</span></div><button type="button" id="sv-close" class="sv-back">返回组装教程</button></div>
- <div class="sv-layout"><section class="sv-model"><div class="sv-tabs"><button id="sv-tray" type="button">十五只舵机</button><button id="sv-robot" type="button">安装位置</button><span>选择编号，查看安装位置</span></div>
- <div class="sv-stage"><div id="sv-viewport" aria-label="十五只舵机及整机安装位置的三维模型"></div><div class="sv-stage-top"><span id="sv-tag"></span></div><div id="sv-labels" class="sv-labels"></div><span class="sv-stage-bottom">拖动旋转 · 滚轮缩放 · 点击编号定位</span></div>
- <div class="sv-inventory"><div class="sv-inventory-title"><b>我的十五只舵机</b><span id="sv-count"></span></div><div id="sv-slots" class="sv-slots"></div><p>完成一只、贴好编号，再接下一只。安装步骤会直接引用这里的编号。</p></div>
+ const root=document.getElementById('servo-workbench'),entry=document.getElementById('servo-open'),choice=new ServoSelection(map.bindings.map(b=>b.id));
+ let active=false,scene=null,data={phase:'idle',records:[]},requesting=false,polling=false,timer=null,epoch=0,pendingAudit=null,supported=false,historyLoaded=false,panelHTML='',sceneKey='',completionOpen=false,wasComplete=false,notice='';
+ const $=id=>root.querySelector('#sv-'+id),recordFor=id=>(data.records||[]).find(r=>r.id===id),binding=id=>map.byId.get(id);
+ root.innerHTML=`<div class="sv-heading"><div><p>先给每只舵机一个位置</p><h1 id="sv-title">舵机准备</h1></div><div class="sv-device"><i id="sv-dot"></i><span id="sv-device">等待检测 UNO Q</span></div><button type="button" id="sv-close" class="sv-back">返回组装教程</button></div>
+ <div class="sv-layout"><section class="sv-model"><div class="sv-caption"><b>十五只舵机</b><span>点选一只，配置或核查</span></div>
+ <div class="sv-stage"><div id="sv-viewport" aria-label="舵机工作区三维模型"></div><div class="sv-stage-top"><span id="sv-tag"></span><button id="sv-arrange" type="button" aria-pressed="false">展开舵机</button></div><div id="sv-labels" class="sv-labels"></div><span class="sv-stage-bottom">拖动旋转 · 滚轮缩放 · 点选舵机查看状态与参数</span></div>
+ <div class="sv-inventory"><div class="sv-inventory-title"><b id="sv-count"></b><span id="sv-counts"></span><button type="button" id="sv-completion" data-action="completion" hidden>查看完成信息</button></div><div class="sv-meter"><span id="sv-meter"></span></div><div id="sv-slots" class="sv-slots"></div><div class="sv-inventory-meta"><div class="sv-legend"><span>○ 待配置</span><span class="verified">✓ 已验证</span><span class="review">△ 需复核</span><span><i class="sv-online-dot"></i>当前在线</span></div><div><span id="sv-online"></span><button id="sv-refresh" type="button" data-action="refresh" aria-label="刷新在线状态" title="刷新在线状态">↻</button></div></div><p id="sv-next"></p></div>
  <p class="sv-mapping-note">位置按现有教程示意。左右称呼与官方文档有差异；头颈候选位置仍需对照原片核实。</p></section><aside id="sv-panel" class="sv-panel" aria-live="polite"></aside></div>
  <div class="sv-flow"><b>① 连接准备</b><span>→</span><b>② 十五只舵机编号</b><span>→</span><b>③ 按编号组装</b><span>→</span><b>④ 装好后校准</b></div>`;
- for(const binding of map.bindings){const b=document.createElement('button');b.type='button';b.className='sv-slot';b.dataset.id=binding.id;b.setAttribute('aria-label',`选择 ID${binding.id}`);b.onclick=()=>choose(binding.id);$('slots').append(b);}
- function location(id=selected){const b=map.byId.get(id);return `<div class="sv-position"><strong>ID ${b.id} · ${b.role}${b.status==='candidate'?' · 位置待核':''}</strong><span>取贴着这个编号的实物；位置参照原片核对。</span></div>`;}
+ for(const b of map.bindings){const el=document.createElement('button');el.type='button';el.className='sv-slot';el.dataset.id=b.id;el.onclick=()=>choose(b.id);$('slots').append(el);}
+ const location=id=>`<div class="sv-position"><strong>ID ${id} · ${escape(binding(id).role)}${binding(id).status==='candidate'?' · 位置待核':''}</strong><span>编号对应同一模型与安装步骤。</span></div>`;
+ function completePanel(){
+  let html='<p class="sv-kicker">舵机准备 · 已完成</p><div class="sv-completion-icon">✓</div><h2 class="sv-completion-title">15 只舵机<br>全部配置完成</h2><p>每只编号与匹配参数均已读回验证。<br>成功记录会保留，不要求同时在线。</p><ul class="sv-completion-list"><li>目标编号齐全，15 / 15</li><li>匹配参数验证通过</li><li>没有待配置或待复核项</li></ul>';
+  if(data.shutdownAt&&!data.online){const left=Math.max(0,Math.ceil((data.shutdownAt+15000-Date.now())/1000));html+=`<div class="sv-status">停机命令已发送。</div><p>${left?'至少再等 '+left+' 秒，':''}确认停止后，断开 USB 和电池。实际断电由你确认。</p><div class="sv-grow"></div>${button('已断开 USB 和电池，进入组装','assembly',false,left>0)}${button('继续查看配置记录','inspect',true)}`;}
+  else html+=`<div class="sv-grow"></div>${button('安全停机，进入组装','finish-halt',false,!data.online)}${button('继续检查舵机','inspect',true)}<p class="sv-small">完成的是舵机配置；机械校准在装配后进行。</p>`;
+  return html;
+ }
  function render(){
   if(!active)return;
-  const completed=done(),r=recordFor(selected),phase=data.phase,profile=data.profile;
-  const reported=records().filter(r=>r.state==='reported');
-  $('count').textContent=completed.size+' / 15 已读回验证'+(reported.length?` · ${reported.length} 只已编号待复核`:'');
-  $('device').textContent=data.online?'UNO Q · USB 已连接':'等待 UNO Q 连接';$('dot').classList.toggle('online',!!data.online);
-  $('tray').classList.toggle('active',view==='tray');$('robot').classList.toggle('active',view==='robot');
-  $('tag').textContent=view==='tray'?'十五只舵机 · 逐个配置':`ID ${selected} · ${selectedBinding().role}`;
-  for(const b of $('slots').children){const id=Number(b.dataset.id);b.textContent=(completed.has(id)?'✓ ':'')+id;b.title=recordFor(id)?.state==='reported'?'已编号，待读回复核':`ID${id}`;b.classList.toggle('reported',recordFor(id)?.state==='reported');b.classList.toggle('done',completed.has(id));b.classList.toggle('active',id===selected);b.setAttribute('aria-pressed',String(id===selected));}
+  const state=deriveServoStatus(data,map),id=choice.selected,item=state.items.get(id),r=item.record,live=state.liveFor(id),busy=data.phase==='working',profile=data.profile;
+  if(state.complete&&!wasComplete)completionOpen=true;if(!state.complete)completionOpen=false;wasComplete=state.complete;
+  $('title').textContent=state.complete?'舵机配置完成':'舵机准备';$('device').textContent=data.online?'UNO Q · USB 已连接':'等待 UNO Q 连接';$('dot').classList.toggle('online',!!data.online);
+  $('arrange').textContent=choice.view==='tray'?'收回整机':'展开舵机';$('arrange').setAttribute('aria-pressed',String(choice.view==='tray'));
+  $('tag').textContent=choice.view==='tray'?'逐只摆开 · 点选查看状态':'整机参照 · 点选查看状态';
+  $('count').textContent=state.complete?'✓ 15 / 15 全部配置完成':`${state.verified.size} / 15 已验证`;
+  $('counts').textContent=state.complete?'所有编号与参数均已通过':`待配置 ${state.pending.size}${busy?' · 配置中 1':''}${state.review.size?' · 需复核 '+state.review.size:''}`;
+  $('meter').style.width=state.verified.size/15*100+'%';root.querySelector('.sv-inventory').classList.toggle('complete',state.complete);$('completion').hidden=!state.complete;
+  for(const el of $('slots').children){const n=Number(el.dataset.id),it=state.items.get(n);el.className='sv-slot '+it.status+(n===id?' active':'');el.dataset.status=it.status;el.dataset.online=String(it.online);el.innerHTML=`<span class="sv-mark">${marks[it.status]}</span><b>${n}</b>${it.online?'<i class="sv-online-dot"></i>':''}`;el.setAttribute('aria-label',`ID ${n}，${names[it.status]}，${it.online?'当前在线':state.known?'当前不在线':'在线状态未知'}`);el.setAttribute('aria-pressed',String(n===id));}
+  $('online').textContent=state.known?state.online.size?'当前在线：'+[...state.online].map(n=>map.byId.has(n)?'ID'+n:'未编号 ID'+n).join('、'):'当前未检测到在线舵机':data.scan?.active?`正在检测 ${data.scan.checked} / ${data.scan.total}`:'在线状态未知';
+  $('refresh').disabled=requesting||busy||data.scan?.active||!!data.shutdownAt&&!data.online;
+  $('next').textContent=state.complete?'成功记录已保留。可继续检查，也可安全停机后进入组装。':busy?`正在配置 ID ${data.activeTarget||data.currentId||data.targetId||'…'}；读回复核通过后才计入成功。`:`${state.review.size?'需复核：'+[...state.review].join('、')+'。':''}${data.targetId?'下一只按顺序配置 ID '+data.targetId+'。':''}换接后保留已完成进度。`;
   let html='';
-  const profileFact=profile?fact('运行端配置档',profile.name):'';
-  const currentRecord=recordFor(data.currentId);
-  const facts=`<div class="sv-facts">${profileFact}${fact('下一只目标',data.targetId?'ID '+data.targetId:reported.length?'接回 ID'+reported[0].id+' 复核':'十五只均有验证记录')}</div>`;
-  if(view==='robot'){
-   html=`<p class="sv-kicker">按编号组装</p><h2>找到 ID ${selected}<br>的安装位置</h2>${location()}<div class="sv-status ${r?.state==='verified'?'':'alert'}">${r?.state==='verified'?`编号和参数曾读回验证 · KP ${r.readback.kp} / KD ${r.readback.kd}`:r?'这只仍待复核，尚未计入完成。':'这只尚无配置记录。'}</div><p>历史记录不代表舵机当前在线，也不代表已经安装。装好后仍需逐关节校准。</p><div class="sv-grow"></div>${button('查看这一只的安装步骤','install')}${button('返回编号任务','tray',true)}`;
-  }else if(phase==='working'){
-   const steps=['扫描并读取当前舵机','设置中位，记录指令确认','显式写入 KP / KD','设置目标 ID','读回参数，核对新旧 ID'];
-   html=`<p class="sv-kicker">自动配置中</p><h2>${data.currentId?'正在配置 ID '+data.currentId:'正在扫描舵机'}</h2><p>${escape(data.message)}</p><ol class="sv-checklist">${steps.map((text,i)=>`<li class="${i<data.progress?'done':i===data.progress?'current':''}"><i>${i<data.progress?'✓':i+1}</i>${text}</li>`).join('')}</ol><div class="sv-status">保持只接当前一只，等待读回完成。</div><div class="sv-grow"></div>${button('暂停配置','pause',true)}`;
-  }else if(phase==='success'){
-   const n=data.currentId,old=currentRecord?.sourceId;
-   html=`<p class="sv-kicker">编号与参数已验证</p><h2>ID ${n} 配好了</h2><div class="sv-status">目标 ID 已响应 · KP ${currentRecord?.readback.kp} / KD ${currentRecord?.readback.kd} 已读回${old!==n&&currentRecord?.oldIdAbsent?`<br>旧 ID ${old} 已不再响应`:''}</div><div class="sv-sticker"><small>把这个编号贴在实物上</small>${n}</div>${location(n)}${button('在 3D 中看安装位置','locate',true)}<p class="sv-small">${currentRecord?.midEvidence==='acknowledged'?'中位指令已确认，机械零位仍需装配后校准。':currentRecord?.midEvidence==='unconfirmed'?'中位指令的结果未确认，未重复执行。装配后必须校准。':'沿用已有中位设置，未重复归中；装配后需校准。'}</p><div class="sv-grow"></div>${button(completed.size===15?'安全停机，准备组装':'安全停机，准备换下一只','halt')}`;
-  }else if(data.shutdownAt&&!data.online){
-   const left=Math.max(0,15-Math.floor((Date.now()-data.shutdownAt)/1000));
-   html=`<p class="sv-kicker">${completed.size===15?'准备组装':'更换舵机'}</p><h2>断开供电，<br>${completed.size===15?'再开始组装':'再换下一只'}</h2><p>停机命令已发送。${left?`至少再等 ${left} 秒，`:'确认板子停止后，'}断开 USB 和电池，${completed.size===15?'再开始机械安装。':'再换接下一只未编号舵机并上电。'}</p><div class="sv-status alert">仅拔掉 USB 不能证明电池已断开。必须由你确认实际断电。</div>${facts}<div class="sv-grow"></div>${completed.size===15?button('按编号查看安装步骤','assembly'):`<p>重新连接后会先扫描，再自动继续。接回已完成舵机会保留原编号。</p>${data.running?'':button('继续本轮，等待重新连接','start')}`}`;
-  }else if(phase==='blocked'){
-   html=`<p class="sv-kicker">配置已暂停</p><h2>先处理这一项</h2><div class="sv-status alert">${escape(data.message)}</div>${facts}<p>没有通过读回的舵机不会计入完成。重新开始会先读状态，只补写必要的项目。</p><div class="sv-grow"></div>${button('重新检测并继续','start')}${button('查看接线说明','guide',true)}`;
-  }else{
-   html=`<p class="sv-kicker">${data.running?'等待下一只':'连接准备'}</p><h2>${data.running?'换好后上电，<br>会自动继续':'接好板子，<br>先接一只舵机'}</h2><p>${escape(data.message||'用 USB 连接 UNO Q，接入扩展板、电池和当前一只舵机。')}</p>${facts}<div class="sv-status alert">换接前先停机，断开 USB 与电池。扫描到一个编号也不能证明只有一只实物。</div><div class="sv-guide-links"><a href="https://www.arduino.cc/en/software/#app-lab-section" target="_blank" rel="noopener">安装 Arduino App Lab</a><a href="https://www.xgorobot.com/duck.html#software" target="_blank" rel="noopener">Duck OS 烧录与配网</a><button type="button" data-action="guide">三维接线说明</button></div><div class="sv-grow"></div>${data.running?button('暂停本轮配置','pause',true):button(data.online?'开始本轮自动配置':'连接好后，开始检测','start')}<p class="sv-small">已安装系统直接检测；一次启动本轮，换接后自动继续。程序不会烧录或升级系统。</p>`;
+  if(state.complete&&completionOpen)html=completePanel();
+  else{
+   html=`<p class="sv-kicker">${choice.manual?'点选查看':'当前推荐'} · ID ${id}</p><h2>${item.status==='review'?'复核 ID '+id:r?'配置与实时核查':'配置 ID '+id}</h2><span class="sv-status-pill ${item.status}">${marks[item.status]} ${names[item.status]}${item.online?' · 当前在线':''}</span>${location(id)}`;
+   if(busy)html+=`<div class="sv-job"><b>正在配置 ID ${data.activeTarget||data.currentId||data.targetId||'…'}</b><br>${escape(data.message)}${data.queuedTarget?'<br>换接后指定 ID '+data.queuedTarget:''}</div>`;
+   if(notice)html+=`<div class="sv-status alert">${escape(notice)}</div>`;
+   if(!busy&&data.phase==='blocked')html+=`<div class="sv-status alert">${escape(data.message)}</div>`;
+   if(item.status==='review')html+=`<div class="sv-status alert">${escape(r?.mapVersion!==map.version?'这份记录的映射版本需重新核对':r?.state==='reported'?'已编号，等待读回复核':r?.reviewReason||'尚未通过读回复核')}。当前不计入成功数量。</div>`;
+   if(r||item.online){
+    if(busy)html+='<p>当前任务结束后，再读取所选编号。</p>';
+    else if(live){const v=live.readback,match=profile&&v.kp===profile.kp&&v.kd===profile.kd;html+=`<div class="sv-facts">${fact('实时响应 ID',id+' · 在线')}${fact('KP'+(profile?' · 应为 '+profile.kp:''),v.kp,profile&&v.kp!==profile.kp)}${fact('KD'+(profile?' · 应为 '+profile.kd:''),v.kd,profile&&v.kd!==profile.kd)}${fact('编码器原始位置',v.raw_pos)}${fact('读取时间',new Date(live.observedAt).toLocaleTimeString('zh-CN',{hour12:false}))}</div>`;if(match&&item.status==='verified')html+='<div class="sv-status">已核查 · 编号与参数一致</div>';if(profile&&!match){html+=button('修正不一致参数','repair',false,requesting||state.online.size!==1);if(state.online.size!==1)html+='<p class="sv-small">修正时请只连接这一只舵机。</p>';}}
+    else if(data.inspection?.id===id&&data.inspection.status==='reading')html+='<div class="sv-status">正在读取当前参数…</div>';
+    else html+=`<div class="sv-status ${item.status==='verified'?'':'alert'}">${state.known?'所选 ID 当前不在线。':'当前连接无法确认在线状态。'}${item.status==='verified'?'此前成功记录仍保留。':''}</div><div class="sv-facts">${fact('上次记录',r?.readback?.kp!==undefined?'KP '+r.readback.kp+' / KD '+r.readback.kd:'尚未完成读回验证')}${fact('数据来源','历史记录 · 当前未读到')}</div>`;
+    html+=button('重新读取并核查','audit',true,requesting||busy);
+    if(r?.midEvidence==='unconfirmed')html+='<p class="sv-small">中位指令结果未确认，装配后仍需机械校准。</p>';
+   }else{
+    const connected=[...state.online],wrong=connected.some(n=>map.byId.has(n));
+    html+=`<div class="sv-facts">${fact('本次目标','ID '+id+(choice.manual?' · 你点选的':' · 顺序推荐'))}${fact('当前单只',!state.known?'尚未检测':connected.length===1?'ID '+connected[0]:connected.length>1?connected.length+' 只在线':'尚未连接')}${profile?fact('匹配参数','KP '+profile.kp+' / KD '+profile.kd):fact('配置档','等待读取运行端')}</div>`;
+    if(wrong)html+='<div class="sv-status alert">当前接着已编号舵机。先停机断电，再换接未编号舵机。</div>';
+    if(connected.length>1)html+='<div class="sv-status alert">配置时只连接一只未编号舵机。</div>';
+    html+='<div class="sv-grow"></div>'+(busy?button('下一只配置 ID '+id,'queue',false,requesting||id===data.currentId):button('配置 ID '+id,'configure',false,requesting||!state.known||connected.length!==1||wrong||!profile));
+    if(!data.online)html+=`<div class="sv-guide-links"><a href="https://www.arduino.cc/en/software/#app-lab-section" target="_blank" rel="noopener">安装 Arduino App Lab</a><a href="https://www.xgorobot.com/duck.html#software" target="_blank" rel="noopener">Duck OS 烧录与配网</a><button type="button" data-action="guide">三维接线说明</button></div>`;
+   }
+   html+='<div class="sv-grow"></div>';
+   if(data.shutdownAt&&!data.online){const left=Math.max(0,Math.ceil((data.shutdownAt+15000-Date.now())/1000));html+=`<p>${left?'至少再等 '+left+' 秒，':''}确认停止后断开 USB 和电池，再换接。仅拔 USB 不能证明电池已断电。</p>${!data.running?button('继续本轮，等待重新连接','resume',false,requesting):'<p class="sv-small">重新上电后会先读取状态，再自动继续。</p>'}`;}
+   else if(data.phase==='success')html+=button('安全停机，换下一只','halt',false,requesting);
+   else if(busy)html+=button('暂停配置','pause',true,requesting);
+   else if(!state.complete)html+=button('恢复默认顺序','sequential',true,requesting);
   }
   if(html!==panelHTML){const focused=document.activeElement?.closest('#sv-panel [data-action]')?.dataset.action;panelHTML=html;$('panel').innerHTML=html;if(focused)$('panel').querySelector(`[data-action="${focused}"]`)?.focus();}
-  for(const b of $('panel').querySelectorAll('button[data-action]'))b.disabled=requesting||(b.dataset.action==='assembly'&&Date.now()-data.shutdownAt<15000);
-  const key=JSON.stringify([selected,view,[...completed]]);if(scene&&key!==sceneKey){sceneKey=key;scene.update({selected,view,done:completed});}
+  const key=JSON.stringify([choice.selected,choice.labelTarget,choice.view,[...state.items].map(([id,item])=>[id,item.status,item.online])]);
+  if(scene&&key!==sceneKey){sceneKey=key;scene.update({selected:id,labelTarget:choice.labelTarget,view:choice.view,done:state.verified,statuses:state.items,online:state.online});}
  }
- async function call(action){
-  if(requesting)return;requesting=true;render();
-  try{
-   const response=await fetch('/api/servo-setup'+(action?'/'+action:''),action?{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}:{});
-   const answer=await response.json();if(!response.ok)throw Error(answer.error||'连接没有响应');
-   data=answer;historyLoaded=true;
-   if(data.currentId&&data.currentId!==previousCurrent){selected=data.currentId;previousCurrent=data.currentId;}
-  }catch(error){data={...data,phase:'blocked',message:error.message};}
-  finally{requesting=false;render();}
+ async function call(action='',body={}){
+  if(action&&requesting){if(action==='audit')pendingAudit=body.id;return;}
+  if(!action&&polling)return;
+  const version=action?++epoch:epoch;if(action)requesting=true;else polling=true;render();
+  try{const response=await fetch('/api/servo-setup'+(action?'/'+action:''),action?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});const answer=await response.json();if(!response.ok)throw Error(answer.error||'连接没有响应');if(version===epoch){data=answer;choice.apply(data);historyLoaded=true;notice='';}}
+  catch(error){if(version===epoch){notice=error.message;if(!action)data={...data,online:false,telemetry:{known:false,ids:[]}};}}
+  finally{if(action)requesting=false;else polling=false;render();if(active&&!requesting&&pendingAudit!==null){const id=pendingAudit;pendingAudit=null;queueMicrotask(()=>call('audit',{id}));}}
  }
  async function poll(){clearTimeout(timer);if(!active)return;await call();if(active)timer=setTimeout(poll,1000);}
- function choose(id){selected=id;view='robot';render();}
+ function choose(id){choice.choose(id);completionOpen=false;render();call('audit',{id});}
  function close(){active=false;root.hidden=true;document.body.classList.remove('servo-open');scene?.setVisible(false);clearTimeout(timer);onVisibility(false);entry.focus();}
- function open(){
-  active=true;root.hidden=false;document.body.classList.add('servo-open');onVisibility(true);
-  if(!scene)scene=createServoScene({host:$('viewport'),labelsHost:$('labels'),hardware,entities,actors,poses,map,onSelect:choose});
-  scene.setVisible(true);render();poll();$('close').focus();
- }
- $('close').onclick=close;$('tray').onclick=()=>{view='tray';render();};$('robot').onclick=()=>{view='robot';render();};
+ function open(){active=true;root.hidden=false;document.body.classList.add('servo-open');onVisibility(true);if(!scene)scene=createServoScene({host:$('viewport'),labelsHost:$('labels'),hardware,entities,actors,poses,map,onSelect:choose});scene.setVisible(true);sceneKey='';render();poll();$('close').focus();}
+ $('close').onclick=close;$('arrange').onclick=()=>{choice.toggle();render();};
  root.addEventListener('click',async event=>{
   const action=event.target.closest('[data-action]')?.dataset.action;if(!action)return;
-  if(action==='install'){const binding=selectedBinding();close();onInstall(binding);}
-  else if(action==='guide'){close();onGuide();}
-  else if(action==='locate'){selected=data.currentId||selected;view='robot';render();}
-  else if(action==='assembly'){view='robot';selected=14;render();}
-  else if(action==='tray'){view='tray';render();}
+  if(action==='guide'){close();onGuide();}
+  else if(action==='completion'){completionOpen=true;render();}
+  else if(action==='inspect'){completionOpen=false;render();call('audit',{id:choice.selected});}
+  else if(action==='configure'){choice.begin();await call('start',{targetId:choice.selected});}
+  else if(action==='resume'){choice.begin();await call('start');}
+  else if(action==='sequential'){choice.sequential(data);render();}
+  else if(action==='audit'||action==='repair'||action==='queue')await call(action,{id:choice.selected});
+  else if(action==='finish-halt'){completionOpen=true;await call('halt');}
+  else if(action==='assembly'){if(deriveServoStatus(data,map).complete&&data.shutdownAt&&Date.now()-data.shutdownAt>=15000){close();onInstall(binding(14));}}
   else await call(action);
  });
  root.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='Escape')close();});
- try{const site=await fetch('/api/site').then(r=>r.json());supported=!!site.servoSetup;entry.hidden=!supported;entry.onclick=open;if(supported){const answer=await fetch('/api/servo-setup/records').then(r=>{if(!r.ok)throw Error('记录未加载');return r.json();});data.records=answer.records;historyLoaded=true;const assigned=new Set(answer.records.filter(r=>['reported','verified'].includes(r.state)).map(r=>r.id));data.targetId=map.bindings.find(b=>!assigned.has(b.id))?.id;}}catch{entry.hidden=true;}
- return {get active(){return active;},get supported(){return supported;},get historyLoaded(){return historyLoaded;},get state(){return {active,selected,view,supported,historyLoaded,...data,models:scene?.stats};},open,close,
-  recordFor,refresh:()=>active?poll():Promise.resolve()};
+ try{const site=await fetch('/api/site').then(r=>r.json());supported=!!site.servoSetup;entry.hidden=!supported;entry.onclick=open;if(supported){const response=await fetch('/api/servo-setup/records');if(!response.ok)throw Error('记录未加载');const answer=await response.json();data.records=answer.records;historyLoaded=true;const assigned=new Set(data.records.map(r=>r.id));data.targetId=map.bindings.find(b=>!assigned.has(b.id))?.id;choice.apply(data);}}
+ catch{entry.hidden=true;}
+ return {get active(){return active;},get supported(){return supported;},get historyLoaded(){return historyLoaded;},get state(){const state=deriveServoStatus(data,map);return {active,selected:choice.selected,view:choice.view,labelTarget:choice.labelTarget,supported,historyLoaded,...data,complete:state.complete,verified:[...state.verified],review:[...state.review],onlineIds:[...state.online],models:scene?.stats};},open,close,recordFor,refresh:()=>active?poll():Promise.resolve()};
 }

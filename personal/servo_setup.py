@@ -177,7 +177,8 @@ class ServoSetup:
         if inspection and inspection['status'] == 'online' and not telemetry['known']:
             inspection.update(status='unknown', readback=None)
         return copy.deepcopy(dict(phase=self.phase, message=self.message, progress=self.progress,
-                                  currentId=self.current, targetId=next((i for i in IDS if i not in assigned), None),
+                                  currentId=self.current, activeTarget=self.current if self.current is not None else self.requested_target,
+                                  targetId=next((i for i in IDS if i not in assigned), None),
                                   board=self.board, online=self.online, profile=self.profile, running=self.running,
                                   records=records, shutdownAt=self.shutdown_at, telemetry=telemetry,
                                   inspection=inspection, scan=self.scan, queuedTarget=self.queued_target))
@@ -269,6 +270,7 @@ class ServoSetup:
                     full = True
                 status = self.runtime.request('GET', '/api/status')
                 self.online = True
+                self.profile = None
                 self.profile = profile_for(status, self.runtime.request('GET', '/servo.html'))
                 self.unloaded(status)
                 self.enter_debug()
@@ -409,6 +411,7 @@ class ServoSetup:
         if self.stop.is_set():
             raise Cancelled('已暂停。再次开始时会先读回设备状态。')
         self.online = True
+        self.profile = None
         self.profile = profile_for(status, self.runtime.request('GET', '/servo.html'))
         self.unloaded(status)
         self.enter_debug()

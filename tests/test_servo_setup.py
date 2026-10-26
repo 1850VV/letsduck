@@ -240,6 +240,15 @@ class TelemetryTests(unittest.TestCase):
         self.setup.observe_once(full=True)
         self.assertEqual(self.store.servo_records(self.runtime.serial), [record])
 
+    def test_a_new_unknown_profile_cannot_reuse_the_previous_matched_profile(self):
+        self.setup.observe_once(full=True)
+        self.runtime.html = '<input id="kp" value="7"><input id="kd" value="99">'
+        with self.assertRaises(SetupError):
+            self.setup.observe_once()
+        self.assertIsNone(self.setup.snapshot()['profile'])
+        self.assertFalse(self.setup.snapshot()['telemetry']['known'])
+        self.assertEqual(self.writes(), [])
+
     def test_expired_telemetry_cannot_leave_an_inspection_claiming_live_data(self):
         self.record(10)
         self.runtime.servos[10] = self.runtime.servos.pop(1)
@@ -321,6 +330,11 @@ class TelemetryTests(unittest.TestCase):
         self.assertEqual(set(self.runtime.servos), {11})
         self.assertEqual([r['id'] for r in self.store.servo_records(self.runtime.serial) if r['state']=='verified'], [11,14])
         self.assertEqual(self.store.servo_records(self.runtime.serial)[0]['state'], 'reported')
+
+    def test_requested_target_is_visible_during_discovery_before_a_source_id_is_known(self):
+        self.setup.phase = 'working'
+        self.setup.requested_target = 14
+        self.assertEqual(self.setup.snapshot().get('activeTarget'), 14)
 
     def test_selecting_another_model_never_renumbers_an_assigned_servo(self):
         self.record(10)
