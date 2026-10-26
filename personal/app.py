@@ -30,6 +30,7 @@ from errors import payload  # noqa: E402
 from rules import Invalid  # noqa: E402
 from schemes import PersonalStore  # noqa: E402
 from servo_setup import ServoSetup  # noqa: E402
+from servo_preparation import validated_updates  # noqa: E402
 
 from export_transport import parse_multipart, ExportBodyError
 
@@ -138,7 +139,18 @@ class Handler(SimpleHTTPRequestHandler):
             return {'version': VERSION, 'export': bool(exporter), 'source_sha256': exporter.MODEL['source_sha256'] if exporter else None}
         if method == 'GET' and path == '/api/site':
             return {'publicUrl': '', 'edition': 'personal', 'assembly': assembly_ready(),
-                    'servoSetup': ipaddress.ip_address(self.client_address[0]).is_loopback}
+                    'servoSetup': ipaddress.ip_address(self.client_address[0]).is_loopback,
+                    'servoPreparation': ipaddress.ip_address(self.client_address[0]).is_loopback}
+        if path == '/api/servo-preparation':
+            if not ipaddress.ip_address(self.client_address[0]).is_loopback:
+                raise Reply(403, {'error': '请在本机组装台记录取件。'})
+            if method == 'GET':
+                return {'records': self.store.servo_preparation_records()}
+            if method == 'POST':
+                origin = self.headers.get('Origin')
+                if origin and origin != 'http://' + self.headers.get('Host', ''):
+                    raise Reply(403, {'error': '请从本机组装台记录取件。'})
+                return {'records': self.store.save_servo_preparation(validated_updates(self.read_json()))}
         if path == '/api/servo-setup' or path.startswith('/api/servo-setup/'):
             if not ipaddress.ip_address(self.client_address[0]).is_loopback:
                 raise Reply(403, {'error': '请在连接 UNO Q 的这台电脑上打开组装台。'})
