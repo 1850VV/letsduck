@@ -115,8 +115,8 @@ document.body.addEventListener('click',e=>{
  if(action==='write')write();if(action==='apply-batch')batch();if(action==='back'){state.mode='single';render();}
  if(action==='read'){deviceTools.stopControl();run('read',{id:d.id},`已读回 ID${d.id}`);}
  if(action==='probe-board')poll(true);
- if(action==='hold'&&canEdit(d)){if(d.jogReady){d.jogReady=false;render();return;}deviceTools.stopControl();run('read',{id:d.id},'微调已开启；每次动作后自动卸载',()=>{d.jogReady=true;});}
- if(action==='move'&&canEdit(d)&&d.jogReady){const target=number($('target-position'));if(!Number.isInteger(target)||target<0||target>4095){say('目标位置请输入0–4095的整数',true);return;}jog(target-d.pos);}
+ if(action==='hold'&&canEdit(d)){if(d.jogReady){d.jogReady=false;render();return;}deviceTools.stopControl();run('read',{id:d.id},'微调已开启；每次动作后自动卸载',()=>{const current=state.devices.find(item=>item.id===d.id);if(current)current.jogReady=true;});}
+ if(action==='move'&&canEdit(d)&&d.jogReady){const target=number($('target-position'));if(!Number.isInteger(target)||target<0||target>4095){say('目标位置请输入0–4095的整数',true);return;}deviceTools.stopControl();run('move',{id:d.id,target},'目标微调已结束，已自动卸载；请核对实际读回位置');}
 });
 $('batch-swap').onclick=()=>openBatch('swap');$('batch-custom').onclick=()=>openBatch('custom');
 $('verify-online').onclick=()=>{deviceTools.stopControl();run('verify',{},'在线编号已读回复核，累计进度已保存');};

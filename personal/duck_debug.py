@@ -247,17 +247,18 @@ class DuckDebug:
 
     def validate(self, body):
         a = body.get('action')
-        allowed = {'read','inspect','parameters','remap','jog','torque-off','reset-mid','verify','scan','scan-stop',
+        allowed = {'read','inspect','parameters','remap','jog','move','torque-off','reset-mid','verify','scan','scan-stop',
                    'mode','command','roller','pick','roulade','action-scale','filter','imu-filter',
                    'protection','cal-enter','cal-heartbeat','cal-center','cal-exit','release','leave'}
         if a not in allowed:
             raise DebugError('未知调试操作')
         b = dict(body)
-        if a in {'read','inspect','parameters','jog','torque-off','reset-mid','cal-center'}:
+        if a in {'read','inspect','parameters','jog','move','torque-off','reset-mid','cal-center'}:
             integer(b.get('id'),0,253,'编号')
         if a == 'parameters':
             integer(b.get('new_id'),0,253,'新编号')
             for k in ('kp','kd'): integer(b.get(k),0,255,k)
+        if a == 'move': integer(b.get('target'),0,4095,'目标位置')
         if a == 'jog':
             integer(b.get('delta'),-10,10,'微动步幅')
             if b['delta'] == 0: raise DebugError('微动步幅不能为零')
@@ -384,9 +385,11 @@ class DuckDebug:
                 return dict(ok=True,reply=result,readbackPending=True)
             if a == 'torque-off':
                 result=self.op('torque_off',sid);self.held.discard(sid);return result
-            if a == 'jog':
-                delta=b['delta']
+            if a in ('jog','move'):
                 current=self.read(sid,verify=False)
+                delta=b['delta'] if a=='jog' else b['target']-current['raw_pos']
+                if abs(delta)>10:raise DebugError('单次目标变化不能超过10单位，请根据最新读回位置微调')
+                if delta==0:return dict(ok=True,readback=current)
                 if not 0 <= current['raw_pos']+delta <= 4095: raise DebugError('微动目标超出编码器范围')
                 self.op('jog',sid,delta=delta)
                 result=self.read(sid,verify=False);self.held.discard(sid)
