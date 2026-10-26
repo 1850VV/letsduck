@@ -109,6 +109,12 @@ export function createDuckView(data) {
   function fly(to, target) {invalidate();tween = { from: camera.position.clone(), to, tFrom: controls.target.clone(), tTo: target.clone(), start: performance.now() };}
   function arrangedCamera() {const w = GRID.cols * GRID.cell,h = Math.ceil(model.parts.length / GRID.cols) * GRID.cell,d = Math.max(h / 2 / tanV(), w / 2 / (tanV() * camera.aspect)) * 1.12;return GRID.center.clone().add(new THREE.Vector3(0, 0, d * 1.18));}
   function view(name) {if (layout === 'arrange') return fly(arrangedCamera(), GRID.center);fly(framed(name), TARGET);}
+  function orbitBy(dx,dy) {
+    const sphere=new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target)),height=renderer.domElement.clientHeight;
+    sphere.theta-=dx/height*Math.PI*2*controls.rotateSpeed;sphere.phi-=dy/height*Math.PI*2*controls.rotateSpeed;
+    sphere.phi=THREE.MathUtils.clamp(sphere.phi,controls.minPolarAngle,controls.maxPolarAngle);sphere.makeSafe();
+    camera.position.setFromSpherical(sphere).add(controls.target);controls.update();tween=null;invalidate();
+  }
   function placeCamera(name) {camera.position.copy(framed(name));controls.target.copy(TARGET);controls.update();}
   function boxOf(ids) {const b = new THREE.Box3();root.updateMatrixWorld(true);for (const id of ids) {const m = meshes.get(id);if (m) b.expandByObject(m);}return b;}
   // Flies to the selection from the current direction so the viewer keeps their bearings.
@@ -216,9 +222,9 @@ export function createDuckView(data) {
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
     let hooked = false;for (const hook of frameHooks) hooked = hook(performance.now()) || hooked;
-    if (turntable && !tween && !wipe) root.rotation.y += .006;
-    if (renderer.domElement.isConnected) {if(!wipe)controls.update();placeSide();if(wipe)renderWipe();else if (split) renderSplit();else draw(depthAllowed(),finishState);}
-    return !!(tween||moving||tweening||(turntable&&!wipe)||hooked);
+    if (turntable && !tween) root.rotation.y += .006;
+    if (renderer.domElement.isConnected) {controls.update();placeSide();if(wipe)renderWipe();else if (split) renderSplit();else draw(depthAllowed(),finishState);}
+    return !!(tween||moving||tweening||turntable||hooked);
   }
 
 
@@ -267,7 +273,7 @@ export function createDuckView(data) {
     });
     exportQueue=run.catch(()=>{});return run;
   }
-  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, still, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
+  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, orbitBy, focus, snapshot, still, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
     stage: { layer, camera, controls, root, shadow, meshes, hardware, onFrame: (hook) => {frameHooks.add(hook);invalidate();} },
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},

@@ -216,15 +216,28 @@ const compareColors = () => compareId === 'saved' ? baseline().colors : compareI
 const compareName = () => compareTargets().find(([k]) => k === compareId)?.[1] || _t("text.0069");
 function renderCompare() {
   if (!compareTargets().some(([k]) => k === compareId)) compareId = 'original';
-  $('#hold').textContent = _t("text.0098", { v0: compareName() });
+  $('#hold').textContent = _t("text.0600");
   $('#cmp-menu').innerHTML = compareTargets().map(([k, l]) => `<button data-cmp="${k}" class="${k === compareId ? 'on' : ''}">${esc(l)}</button>`).join('') + `<hr><button data-cmp-split class="${splitOn ? 'on' : ''}">${_t("text.0099", { v1: splitOn ? '✓ ' : '' })}</button>`;
   view.setSplit(splitOn ? compareColors() : null);$('#split-labels').hidden = !splitOn;$('#split-a').textContent = 'A · ' + compareName();
+  requestAnimationFrame(layoutCompareDock);
 }
+function layoutCompareDock() {
+  const dock=$('#dock'),stage=$('#stage');
+  if(innerWidth<=900){delete dock.dataset.flow;dock.style.width='';return;}
+  if(step===1||!stage.clientWidth)return;
+  const left=$('#views').offsetWidth+$('#spin').offsetWidth+8,right=$('#bgs').scrollWidth,hold=$('#hold').offsetWidth,room=stage.clientWidth-28,wing=Math.max(left,right+26);
+  const full=2*wing+hold+30;
+  dock.style.setProperty('--wing',wing+'px');dock.dataset.flow=full<=room?'balanced':left+right+22<=room?'two':'stack';
+  dock.style.width=(full<=room?full:room)+'px';stage.style.setProperty('--dock-height',dock.offsetHeight+'px');
+  const tools=$('#tools');stage.style.setProperty('--compare-top',Math.max(80,tools.offsetTop+tools.offsetHeight+10)+'px');
+}
+new ResizeObserver(()=>requestAnimationFrame(layoutCompareDock)).observe($('#stage'));
 $('#cmp-pick').onclick = (e) => {e.stopPropagation();const m = $('#cmp-menu');m.hidden = !m.hidden;};
 $('#cmp-menu').onclick = (e) => {const b = e.target.closest('[data-cmp]');if (b) {compareId = b.dataset.cmp;} else if (e.target.closest('[data-cmp-split]')) {splitOn = !splitOn;if (splitOn && sideOn) toggleSide(false);}renderCompare();$('#cmp-menu').hidden = true;};
 const comparison=bindCompareHold({button:$('#hold'),stage:$('#stage'),line:$('#compare-wipe'),canStart:()=>step!==1,
   begin:()=>{hover.cancel();$('#part-tag').hidden=true;view.setColors(design.colors,true);view.setWipe(compareColors());view.stage.controls.enabled=false;$('#split-labels').hidden=true;$('#compare-before').textContent=compareName();},
   move:at=>view.setWipe(compareColors(),at),
+  rotate:(dx,dy)=>view.orbitBy(dx,dy),
   end:()=>{view.setWipe(null);view.stage.controls.enabled=true;$('#split-labels').hidden=!splitOn;}
 });
 

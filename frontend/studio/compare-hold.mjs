@@ -1,32 +1,58 @@
-// The button owns its pointer until release, including when it leaves the stage.
-export function bindCompareHold({button,stage,line,canStart,begin,move,end}) {
-  let pointer=null,timer=null,active=false,startX=0,lastX=0,dragged=false;
+// Track the owned pointer across button chords: releasing right must keep left's comparison alive.
+export function bindCompareHold({button,stage,line,canStart,begin,move,rotate,end}) {
+  let pointer=null,timer=null,active=false,startX=0,lastX=0,dragged=false,at=.5,originX=0,originAt=.5;
+  let rotating=false,rotateX=0,rotateY=0,suppressContext=false;
   const fraction=x=>Math.max(0,Math.min(1,(x-stage.getBoundingClientRect().left)/stage.clientWidth));
   function start(x) {
     if(active||!canStart())return;
     active=true;button.classList.add('on');button.setAttribute('aria-pressed','true');
-    line.hidden=x===undefined;if(x!==undefined)line.style.left=fraction(x)*100+'%';
+    line.hidden=x===undefined;if(x!==undefined){at=originAt=fraction(x);line.style.left=at*100+'%';}
     stage.dataset.comparing='original';begin();
   }
+  function setRotating(on){rotating=on;button.classList.toggle('rotating',on);}
   function stop() {
-    clearTimeout(timer);timer=null;const id=pointer;pointer=null;dragged=false;
+    clearTimeout(timer);timer=null;const id=pointer;pointer=null;dragged=false;setRotating(false);
     if(id!==null&&button.hasPointerCapture(id))button.releasePointerCapture(id);
     if(!active)return;
     active=false;button.classList.remove('on');button.setAttribute('aria-pressed','false');line.hidden=true;delete stage.dataset.comparing;end();
   }
+  function showCut(value) {
+    at=Math.max(0,Math.min(1,value));line.hidden=false;line.style.left=at*100+'%';stage.dataset.comparing='split';move(at);
+  }
   function drag(x) {
     if(!active)return;
-    dragged ||= Math.abs(x-startX)>5;if(!dragged)return;
-    const at=fraction(x);line.style.left=at*100+'%';stage.dataset.comparing='split';move(at);
+    dragged ||= Math.abs(x-startX)>5;
+    if(dragged)showCut(originAt+(x-originX)/stage.clientWidth);
+  }
+  function pointerMove(event) {
+    if(event.pointerId!==pointer)return;
+    if(!(event.buttons&1)){stop();return;}
+    lastX=event.clientX;
+    if(event.pointerType==='mouse'&&(event.buttons&2)) {
+      if(!rotating) {
+        clearTimeout(timer);timer=null;
+        if(!active){const b=button.getBoundingClientRect();start(b.left+b.width/2);}
+        setRotating(true);suppressContext=true;rotateX=event.clientX;rotateY=event.clientY;showCut(at);
+      } else {
+        rotate(event.clientX-rotateX,event.clientY-rotateY);rotateX=event.clientX;rotateY=event.clientY;
+      }
+      return;
+    }
+    if(rotating){setRotating(false);originX=event.clientX;originAt=at;dragged=true;return;}
+    drag(lastX);
   }
   button.addEventListener('pointerdown',event=>{
     if(event.button!==0||pointer!==null||!canStart())return;
-    event.preventDefault();stop();pointer=event.pointerId;startX=lastX=event.clientX;button.setPointerCapture(pointer);
+    event.preventDefault();stop();pointer=event.pointerId;startX=lastX=originX=event.clientX;button.setPointerCapture(pointer);
     timer=setTimeout(()=>{const b=button.getBoundingClientRect();start(b.left+b.width/2);drag(lastX);},280);
   });
-  button.addEventListener('pointermove',event=>{if(event.pointerId===pointer){lastX=event.clientX;drag(lastX);}});
-  button.addEventListener('pointerup',event=>{if(event.pointerId===pointer)stop();});
-  button.addEventListener('pointercancel',stop);button.addEventListener('lostpointercapture',()=>{if(pointer!==null)stop();});
+  // Chromium can drop capture when only right is released; window tracking covers that first move.
+  addEventListener('pointermove',pointerMove,true);
+  addEventListener('pointerup',event=>{if(event.pointerId===pointer){if(event.buttons&1)pointerMove(event);else stop();}},true);
+  addEventListener('pointercancel',event=>{if(event.pointerId===pointer)stop();},true);
+  button.addEventListener('lostpointercapture',event=>{if(event.pointerId!==pointer)return;if(event.buttons&1)button.setPointerCapture(pointer);else stop();});
+  addEventListener('pointerdown',()=>{suppressContext=false;},true);
+  addEventListener('contextmenu',event=>{if(pointer!==null||suppressContext){event.preventDefault();suppressContext=false;}});
   button.addEventListener('contextmenu',event=>event.preventDefault());
   // Phone canvas long-press and the space bar keep their existing whole-model preview.
   button.addEventListener('compare-start',()=>start());button.addEventListener('compare-end',stop);
