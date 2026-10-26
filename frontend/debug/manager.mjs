@@ -18,7 +18,7 @@ export async function api(action,values={}){
 }
 async function run(action,values={},message='操作完成',after){
  if(state.busy)return;
- state.busy=true;render();
+ state.busy=true;state.message='正在执行并等待读回…';render();
  try{const data=await api(action,values);after?.(data);await poll(true);say(message);return data;}
  catch(error){await poll(true);say(error.message,true);return null;}
  finally{state.busy=false;state.draft=null;render();}
@@ -84,7 +84,7 @@ async function poll(force=false){
   const response=await fetch('/api/duck-debug/status');if(!response.ok)throw Error('控制器状态读取失败');const data=await response.json();
   const next=JSON.stringify([data.onlineIds,data.boards,data.status.mode,data.scan,data.numbering.verifiedIds,data.devices.map(d=>[d.id,d.held,d.parametersLive,d.readbackPending])]);
   mergeStatus(state,data);updateNumberingReadiness(data.numbering);deviceTools?.ingest(data);
-  if(data.error)say(data.error,true);
+  if(data.error)say(data.error,true);else if(state.message==='正在读取控制器状态…')say('实时状态已读取');
   if(next!==signature&&!document.activeElement?.closest('input,select,textarea')){signature=next;render();}
   else{slots();scene?.update(state);deviceTools?.updateLive();}
   const d=selected(state);if($('current-position'))$('current-position').textContent=d?.online?(d.readbackPending?'待读回':d.pos??'—'):'—';
