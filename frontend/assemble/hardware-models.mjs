@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three.module.js';
 import { BOARD_AUDIT, SERVO_AUDIT } from './hardware-adapters.mjs';
+import {HORN_BINDINGS} from './servo-horns.mjs';
 
 const ASSETS=['uno-q','extension-board','hd1910-servo','servo-body','servo-horn','servo-rear-horn','servo-cable','screw-m2x6','screw-m3x16','screw-m23x8'];
 const SCREWS={M2x6:{asset:'screw-m2x6',translationY:-5.375},M3x16:{asset:'screw-m3x16',translationY:-16.4},'M2.3x8':{asset:'screw-m23x8',translationY:-8}};
@@ -55,17 +56,20 @@ export function createHardwareModelFactory(templates){
  for(const end of [0,1]){const plugSource=select(sources['servo-cable'],[`white-plug-${end}`,`plug-contact-${end}-0`,`plug-contact-${end}-1`,`plug-contact-${end}-2`]),plugBatch=batchStatic(plugSource,'servo-cable');prepared['plug'+end]=plugBatch.root;batches.push({...plugBatch.comparison,part:`plug-${end}`});}
  const wireNode=sources['servo-cable'].getObjectByName('wire-1');const nativeWire=wireNode&&meshes(wireNode)[0];if(!nativeWire)throw Error('Approved cable wire-1 missing');
  const approvedWireMaterial=nativeWire.material;approvedWireMaterial.userData={...approvedWireMaterial.userData,approvedHardware:true};
- const hornBindings=Object.fromEntries(Object.entries(SERVO_AUDIT.actors).filter(([,a])=>a.existingHorn).map(([id,a])=>[a.existingHorn.actorId,{servoId:id,...a.existingHorn}]));
+ const hornBindings=Object.fromEntries(Object.entries(HORN_BINDINGS).map(([id,h])=>[h.actorId,{servoId:id,...h}]));
  const bindings=new WeakMap();let instancesCreated=0;
  const stats=freeze({templatesLoaded:ASSETS.length,templateIds:[...ASSETS],sharedGeometryBytes:resourceBytes([...Object.values(prepared),sources['servo-cable']]),loadedGeometryBytes:resourceBytes(Object.values(sources)),batches});
  function made(root){instancesCreated++;return root;}
- function hornTemplate(side,hubOnly=false){return select(prepared[side==='rear'?'servo-rear-horn':'servo-horn'],hubOnly?['shaft-hub']:['eight-hole-disc','shaft-hub','retaining-screw']);}
+ function hornTemplate(side){return select(prepared[side==='rear'?'servo-rear-horn':'servo-horn'],['eight-hole-disc','retaining-screw']);}
  function syncOne(root,state){const binding=bindings.get(root);if(!binding)return;const h=binding.horn;if(!h)return;const disc=binding[h.discSide],horn=state[h.actorId],screw=state[h.screwActorId];disc.visible=!(horn?.visible||horn?.status==='removed');const retainer=disc.getObjectByName('retaining-screw');if(retainer)retainer.visible=!(screw?.visible||screw?.status==='removed');}
  return {
   board(actor){const asset=actor.boardType==='uno-q'?'uno-q':actor.boardType==='luwu-extension'?'extension-board':null;if(!asset)return null;const spec=BOARD_AUDIT.adapters[actor.boardType];if(!spec)throw Error(`Board adapter missing: ${actor.boardType}`);const root=actorRoot();root.add(adapter(prepared[asset],asset,spec));return made(root);},
   servo(id){const spec=SERVO_AUDIT.actors[id];if(!spec)return null;const root=actorRoot(),body=adapter(prepared['servo-body'],'servo-body',spec.bodyParent);body.userData.hardwareRole='servo-body';root.userData.hardwareServoId=id;root.add(body);
-   const binding={horn:spec.existingHorn};for(const side of ['front','rear']){const hubOnly=side==='rear'&&spec.sourceVertexCount===482&&id!=='p_motor',part=adapter(hornTemplate(side,hubOnly),side==='rear'?'servo-rear-horn':'servo-horn',spec[side+'HornParent']);part.userData.hardwareDiscSide=side;root.add(part);binding[side]=part;}bindings.set(root,binding);return made(root);},
-  horn(id){const h=hornBindings[id];if(!h)return null;const side=h.discSide,root=actorRoot(),asset=side==='rear'?'servo-rear-horn':'servo-horn';root.add(adapter(select(prepared[asset],['eight-hole-disc','shaft-hub']),asset));return made(root);},
+   const binding={horn:HORN_BINDINGS[id]};for(const side of ['front','rear']){const asset=side==='rear'?'servo-rear-horn':'servo-horn',part=adapter(hornTemplate(side),asset,spec[side+'HornParent']);part.userData.hardwareDiscSide=side;part.userData.hornRole=side==='front'?'secondary':'main';root.add(part);binding[side]=part;
+    // The modelled hub stays on the servo when the separate disc leaves it.
+    root.add(adapter(select(prepared[asset],['shaft-hub']),asset,spec[side+'HornParent']));
+   }bindings.set(root,binding);return made(root);},
+  horn(id){const h=hornBindings[id];if(!h)return null;const side=h.discSide,root=actorRoot(),asset=side==='rear'?'servo-rear-horn':'servo-horn';root.userData.hornRole=side==='front'?'secondary':'main';root.add(adapter(select(prepared[asset],['eight-hole-disc']),asset));return made(root);},
   screw(actor){const spec=SCREWS[actor.fastener];if(!spec)return null;const root=actorRoot();root.add(adapter(prepared[spec.asset],spec.asset,{translationMm:[0,spec.translationY,0]}));return made(root);},
   plug(end=0){end=end===1?1:0;const root=actorRoot(),canonical=new THREE.Group();canonical.name='plug-canonical-adapter';canonical.rotation.x=-Math.PI/2;root.userData.matingOffsetMm=2.25;root.userData.nativeWireExitMm=[0,0,end===0?2:-2];root.userData.canonicalWireExitMm=[0,end===0?2:-2,0];root.userData.cableEnd=end;canonical.add(adapter(prepared['plug'+end],'servo-cable',{translationMm:[0,0,end===0?67:-67]}));root.add(canonical);return made(root);},
   wireMaterial(){return approvedWireMaterial;},

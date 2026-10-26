@@ -162,7 +162,7 @@ DUCK_DATABASE_URL='mysql+pymysql://user:pass@127.0.0.1:3306/doodleduck' .venv/bi
 python3 -m unittest discover -s tests -p test_personal.py -v   # 个人版：系统 Python，不装任何包
 .venv/bin/python scripts/publication_audit.py
 .venv/bin/python -m unittest discover -s tests -v              # 全部 Python 测试（需资产包）
-node --test tests/*.mjs
+node --test tests/*.mjs tests/assembly/*.test.mjs
 ```
 
 真实 MySQL 回归：设置 `DUCK_TEST_DATABASE_URL`（库名必须以 `duck_test_` 开头），否则相关测试跳过。CI 同时提供 MySQL。CI 不持有模型资产，不能替代真实模型、导出和浏览器验收。

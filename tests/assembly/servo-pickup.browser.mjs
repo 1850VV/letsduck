@@ -10,6 +10,43 @@ import {chromium} from 'playwright';
 import {PNG} from 'pngjs';
 import {STEPS} from '../../frontend/assemble/hardware-state.mjs';
 
+async function installHornProbe(page){
+ await page.evaluate(async()=>{
+  const THREE=await import('/vendor/three.module.js');
+  window.__directViews=new Map();
+  const original=THREE.Scene.prototype.onBeforeRender;
+  THREE.Scene.prototype.onBeforeRender=function(renderer,scene,camera,...rest){
+   if(renderer.domElement.parentElement.id==='canvas-host'&&camera.position.distanceTo(new THREE.Vector3(...window.anklePrototype.state.camera))>.001)return original?.call(this,renderer,scene,camera,...rest);
+   window.__directViews.set(renderer.domElement,{scene,camera,canvas:renderer.domElement});
+   original?.call(this,renderer,scene,camera,...rest);
+  };
+  window.__discPoints=()=>{
+   const out=[];
+   const visible=o=>{for(let p=o;p;p=p.parent)if(!p.visible)return false;return true;};
+   const part=o=>{for(let p=o;p;p=p.parent)if(p.userData.hornRole)return p;return null;};
+   for(const view of window.__directViews.values()){
+    if(!view.canvas.isConnected||view.canvas.getBoundingClientRect().width<1)continue;
+    const context=view.canvas.closest('#inspection-screen')?'inspection':view.canvas.parentElement.id==='canvas-host'?'main':'other';
+    if(context==='other')continue;
+    view.scene.updateMatrixWorld(true);view.camera.updateMatrixWorld(true);const r=view.canvas.getBoundingClientRect(),meshes=[];
+    view.scene.traverse(m=>{if(m.isMesh&&visible(m))meshes.push(m);});
+    view.scene.traverse(group=>{
+     if(!group.userData.hornRole||!visible(group))return;const disc=group.getObjectByName('eight-hole-disc');
+     disc?.traverse(mesh=>{if(!mesh.isMesh)return;mesh.geometry.computeBoundingBox();const b=mesh.geometry.boundingBox,c=b.getCenter(new THREE.Vector3()),size=b.getSize(new THREE.Vector3());
+      for(const face of [b.max.z,b.min.z])for(const [x,y]of [[.28,.17],[-.28,.17],[.18,-.28],[-.18,-.28]]){
+       const screen=mesh.localToWorld(new THREE.Vector3(c.x+size.x*x,c.y+size.y*y,face)).project(view.camera);
+       if(Math.abs(screen.x)>1||Math.abs(screen.y)>1)continue;
+       const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(screen.x,screen.y),view.camera);
+       const hit=ray.intersectObjects(meshes,false).find(h=>visible(h.object));
+       if(hit&&part(hit.object)===group){out.push({context,role:group.userData.hornRole,actor:mesh.userData.actorId,x:r.left+(screen.x*.5+.5)*r.width,y:r.top+(-screen.y*.5+.5)*r.height});return;}
+      }
+     });
+    });
+   }return out;
+  };
+ });
+}
+
 test('physical servo inventory stays fixed and independent of configuration',{
  skip:!process.env.DUCK_PREPARATION_TEST,timeout:120000,
 },async t=>{
@@ -61,6 +98,16 @@ test('physical servo inventory stays fixed and independent of configuration',{
    await page.locator('#sp-close').click();await page.mouse.click(anchor.x+anchor.width/2,anchor.y+anchor.height/2+20);
    assert.equal(await page.locator('#servo-pickup').isVisible(),true,'clicking the actual 3D servo opens the same map');
    assert.match(await page.locator('#sp-id').innerText(),/14/);
+   await page.locator('#sp-close').click();await installHornProbe(page);
+   await go('r-horn');await page.locator('#full-saved-progress').evaluate(el=>{el.value=0;el.dispatchEvent(new Event('change'));});
+   await page.waitForFunction(()=>!window.anklePrototype.state.cameraTransition&&window.__discPoints().some(p=>p.context==='main'&&p.role==='secondary'));
+   const hornPoint=await page.evaluate(()=>window.__discPoints().find(p=>p.context==='main'&&p.role==='secondary'));
+   await page.mouse.click(hornPoint.x,hornPoint.y);
+   assert.equal(await page.locator('#part-tooltip').getAttribute('data-horn'),'secondary','direct horn identification remains available alongside servo pickup');
+   assert.equal(await page.locator('#part-name').innerText(),'副舵盘');
+   assert.equal(await page.locator('#servo-pickup').isHidden(),true,'a horn click must identify its disc, without opening the servo tray');
+   await shot('tutorial-horn-identification');await page.locator('#part-close').click();
+   await go('r-prepare');await openParts('14');
    await shot('tutorial-locate-14');
    await page.locator('#sp-take').click();await page.waitForFunction(()=>!window.anklePrototype.preparation.saving);
    assert.equal((await records()).get(14),'picked');

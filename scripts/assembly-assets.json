@@ -105,5 +105,15 @@
    "bytes": 2248708,
    "sha256": "fad5729ecf80e3dabe046398f6808dfee37a20d959a74a5aa620c93b8800227b"
   }
+ },
+ "optionalFiles": {
+  "horn-reference/main.jpg": {
+   "bytes": 148216,
+   "sha256": "ffa29950dd2297c8eeebaeca0178a2c7c4465274cdf8598e9cb98f5617f471a0"
+  },
+  "horn-reference/secondary.jpg": {
+   "bytes": 147355,
+   "sha256": "b89488022cdff68820cabbbddd92452803d63d10ef7d4fe5d77e6c37ca2aba0a"
+  }
  }
 }
