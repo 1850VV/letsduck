@@ -90,6 +90,8 @@ assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器
 
 组装台的「舵机准备」可在本机通过 USB 连接 UNO Q。先按[厂商指引](https://www.xgorobot.com/duck.html#software)完成 Arduino App Lab、Duck OS 和配网；程序复用 Arduino 安装的 ADB，不分发第三方刷机工具。非标准 ADB 路径可用 `DUCK_ADB` 指定。
 
+点选任意舵机或编号即可配置、读取和核查；「展开舵机 / 收回整机」只改变展示。清单分别标出待配置、配置中、已验证和需复核，在线圆点来自当前检测，断开连接后保留成功记录。全部 15 只读回验证通过后显示完成面板，再安全停机进入组装。
+
 一次启动本轮后，程序逐只扫描、匹配运行端配置档、写入中位与参数、改 ID 并读回复核。只接一只；换接前请求停机，等待至少 15 秒并确认停止，再断开 USB 和电池。已编号的舵机接回后只复核必要项目。记录保存在原有个人版 SQLite 中；历史记录、当前在线、机械零位校准分开表示。模型位置沿用教程参照，左右称呼冲突与头颈候选仍需对照原片核实。服务器版和远程浏览器保留教学功能，不开放本机设备控制。
 
 - 「我的方案」保存在本机：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，Linux `~/.local/share/doodleduck/personal.db`；`DUCK_PERSONAL_DB` 可指定别的位置。放在应用文件夹之外，换新版本解压覆盖不会丢；最多 30 套。
