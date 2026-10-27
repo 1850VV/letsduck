@@ -96,7 +96,15 @@ try {
   await application.context().tracing.start({ screenshots: true, snapshots: true });
   const identity = await application.evaluate(({ app }) => ({ version: app.getVersion(), packaged: app.isPackaged, arch: process.arch }));
   const renderer = process.env.DUCK_TEST_ANGLE === 'swiftshader' ? 'swiftshader' : 'default';
-  const graphics = await application.evaluate(async ({ app }) => ({ features: app.getGPUFeatureStatus(), info: await app.getGPUInfo('basic') }));
+  const graphics = await application.evaluate(async ({ app }) => {
+    const features = app.getGPUFeatureStatus();
+    try { return { status: 'available', features, info: await app.getGPUInfo('basic') }; }
+    catch (error) {
+      return { status: 'unavailable', features, error: error instanceof Error
+        ? { name: error.name, message: error.message, stack: error.stack }
+        : { name: 'NonError', message: String(error) } };
+    }
+  });
   await writeFile(join(output, 'environment.json'), JSON.stringify({ identity, renderer, graphics }, null, 2));
   if (process.env.DUCK_EXPECTED_VERSION) assert.equal(identity.version, process.env.DUCK_EXPECTED_VERSION);
   if (process.env.DUCK_BUILD_ARCH) assert.equal(identity.arch, process.env.DUCK_BUILD_ARCH);
