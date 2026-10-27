@@ -2,8 +2,8 @@
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>来涂鸭 · 调试鸭 · 组装鸭</title><link rel="stylesheet" href="./home/home.css"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script><link rel="stylesheet" href="./shared/i18n.css"><script type="module" src="./shared/language-menu.mjs"></script></head><body data-title="home.title">
 <header class="home-top"><a class="home-brand" href="/" data-brand-slot></a><span id="profile-slot">个人版</span></header>
 <main class="home"><h1>今天想做点什么？</h1><p class="lead">涂颜色、调舵机，或者跟着动画把鸭子装起来。</p>
-<section class="duck-stage" aria-label="三只鸭子，三角形站位"><div id="home-viewport"></div><div id="duck-labels"></div><div id="home-loading">正在载入三只鸭子…</div></section>
-<p class="home-foot">个人版 · 方案、进度和最近使用保留在这台电脑上</p>
-<p id="remember-status"></p></main>
+<section class="duck-stage" tabindex="0" role="region" aria-roledescription="转盘" aria-label="三只鸭子转盘，左右拖动或使用方向键切换"><div id="home-viewport"></div><div id="duck-labels"></div><div id="home-loading">正在载入三只鸭子…</div></section>
+<div class="carousel-hint"><span aria-hidden="true">↔</span> 左右拖动切换 · 点前面的鸭子进入 <button id="reset-carousel" aria-label="回到默认调试鸭">复位</button></div>
+<p id="remember-status" aria-live="polite"></p></main>
 <section id="module-window" role="dialog" aria-modal="true" aria-labelledby="module-title" hidden><header class="window-top"><button id="close-module" aria-label="关闭功能窗口，返回首页">← 首页</button><h2 id="module-title">调试鸭</h2><span id="window-note"></span><button class="close-x" id="close-x" aria-label="关闭窗口">×</button></header><iframe id="module-frame" title="功能窗口"></iframe></section>
 <script type="module" src="./home/home.mjs"></script></body></html>
