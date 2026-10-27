@@ -103,6 +103,27 @@ For public deployment, follow [deployment instructions](docs/deployment.md) for 
 
 ## Develop and verify
 
+The TypeScript workspace uses Node 24.20+ (24.x), with `packages/` and `tooling/`. Existing Python launchers and frontend remain independently usable. The new tools do not switch services or migrate user data.
+
+```sh
+npm ci
+npm run build
+npm run typecheck
+npm run test:typescript
+npm run probe:runtime
+npm run verify:phase0
+```
+
+`verify:phase0` runs the new workspace checks, existing Node/assembly checks, the README Python checks and publication audit. Python defaults to this checkout's `.venv`; set `PYTHON` to override it. `probe:runtime -- --electron /path/to/electron` also checks SQLite interoperability between Node and Electron. It does not replace real MySQL, installed-app or hardware acceptance.
+
+Capture the existing behavior and performance locally:
+
+```sh
+npm run baseline:capture -- --assets /path/to/authorized/assets --output output/baseline --browser
+```
+
+The tool starts its own legacy personal service with a temporary database, measuring 30 saves and 10 real-model exports by default. `--browser` uses the matching Playwright-managed Chromium and blocks browser hardware requests. It retains an actual exported 3MF, its request, and digests of decoded ZIP entries and original compressed records. Evidence includes local environment and separately licensed asset information; keep it in the ignored local output directory. It accepts no existing service URL and never uses the user's personal database. Without models, it captures only the available behavior and cannot establish export acceptance.
+
 The frontend uses native ES modules and needs no build step for development. Run the personal edition with `python3 run.py`. Server development requires Python 3.11+:
 
 ```sh

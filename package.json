@@ -1,14 +1,42 @@
 {
-  "name": "letsduck-build-tools",
+  "name": "letsduck",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24.20.0 <25"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tooling"
+  ],
   "scripts": {
     "pack:positions": "node scripts/pack_positions.mjs",
-    "test": "node --test tests/*.mjs"
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "npm run build && tsc -p tooling/tsconfig.test.json --noEmit",
+    "test": "npm run test:legacy && npm run test:typescript",
+    "test:legacy": "node --test tests/*.mjs tests/assembly/*.test.mjs",
+    "test:typescript": "npm run build && tsx --test tooling/test/*.test.ts",
+    "test:python": "tsx tooling/src/legacy-check.ts",
+    "audit:publication": "tsx tooling/src/legacy-check.ts --publication",
+    "probe:runtime": "tsx tooling/src/runtime-probe.ts",
+    "baseline:capture": "tsx tooling/src/baseline.ts",
+    "verify:phase0": "npm run typecheck && npm test && npm run test:python && npm run audit:publication"
   },
   "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
+    "@types/node": "24.19.2",
+    "@types/pngjs": "6.0.5",
+    "fastify": "5.12.7",
+    "fflate": "0.8.3",
     "meshoptimizer": "1.0.1",
+    "mysql2": "3.24.6",
     "playwright": "1.58.2",
-    "pngjs": "7.0.0"
+    "pngjs": "7.0.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }

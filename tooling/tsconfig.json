@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "rootDir": "src", "outDir": "dist", "types": ["node"], "lib": ["ES2023", "DOM"] },
+  "references": [{ "path": "../packages/contracts" }],
+  "include": ["src/**/*.ts"]
+}
