@@ -1,4 +1,4 @@
-# Preserve vendored upstream formatting; project files still get whitespace checks.
-frontend/vendor/** -whitespace
+# Preserve vendored bytes on every platform; pinned hashes include line endings.
+frontend/vendor/** -whitespace -text
 *.bat text eol=crlf
 *.command text eol=lf
