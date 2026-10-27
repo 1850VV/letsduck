@@ -1,0 +1,5 @@
+{
+  "name": "@letsduck/devices", "version": "0.0.0", "private": true, "type": "module",
+  "exports": { ".": "./dist/index.js" }, "types": "./dist/index.d.ts",
+  "dependencies": { "@letsduck/contracts": "0.0.0", "@letsduck/domain": "0.0.0", "@letsduck/storage": "0.0.0" }
+}

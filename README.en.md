@@ -103,7 +103,7 @@ For public deployment, follow [deployment instructions](docs/deployment.md) for 
 
 ## Develop and verify
 
-The TypeScript workspace uses Node 24.20+ (24.x), with `packages/` and `tooling/`. Existing Python launchers and frontend remain independently usable. Normal builds and tests do not switch services or migrate real user data.
+The TypeScript workspace uses Node 24.20+ (24.x), with `apps/`, `packages/` and `tooling/`. Existing Python launchers remain usable. Normal builds and tests do not switch services or migrate real user data.
 
 `@letsduck/contracts` supplies JSON Schema, inferred types and device mappings. `@letsduck/domain` supplies design, scheme, filament compatibility and print-profile rules. Both packages work in browsers. Differential cases compare the shared rules with the current Python implementation; later migration batches connect the existing pages.
 
@@ -121,13 +121,24 @@ npm run verify:phase0
 npm run verify:phase1
 npm run verify:phase2
 npm run verify:phase3
+npm run verify:phase4
 ```
 
 `verify:phase0` runs the new workspace checks, existing Node/assembly checks, the README Python checks and publication audit. Python defaults to this checkout's `.venv`; set `PYTHON` to override it. `probe:runtime -- --electron /path/to/electron` also checks SQLite interoperability between Node and Electron. It does not replace real MySQL, installed-app or hardware acceptance.
 
 `@letsduck/storage` provides the personal three-table adapter, server SQLite/MySQL, accounts, sessions and community storage. Tests use temporary SQLite files; with `DUCK_TEST_DATABASE_URL`, the same contracts also run against a disposable `duck_test_*` MySQL database. TypeScript test files run sequentially so suites cannot reset the same test database concurrently.
 
-`npm run migrate:database -- SOURCE.db --backup COPY.db` selects its destination from the existing `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` configuration. It retains a consistent read-only source backup and verifies every original field. It accepts only an empty target or an unchanged repeat snapshot, preserving writes made after migration. Running this command writes to the configured destination; normal tests use neither personal nor production databases. Existing launchers have not switched to the new storage.
+`npm run migrate:database -- SOURCE.db --backup COPY.db` selects its destination from the existing `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` configuration. It retains a consistent read-only source backup and verifies every original field. It accepts only an empty target or an unchanged repeat snapshot, preserving writes made after migration. Running this command writes to the configured destination; normal tests use neither personal nor production databases. The old Python launchers have not switched to the new storage.
+
+`@letsduck/devices` supplies the asynchronous ADB client, preparation and debug controllers sharing one physical-bus scheduler. It connects to the existing board runtime and does not install or replace firmware. Fake-runtime tests and temporary records do not establish real device connectivity, numbering, wiring or calibration.
+
+`@letsduck/host` composes storage, devices, exports and Fastify HTTP through Cordis, keeping the existing frontend and personal API. The export worker supplies validated model/catalog metadata. Shutdown stops admission and background observation, drains accepted HTTP/export work, then closes the owned forward, database and services. After importing authorized assets, run the new Node local entry with:
+
+```sh
+npm run start:local -- --no-open
+```
+
+It retains `--host`, `--port` and `--no-open`, defaults to 127.0.0.1:8876 and tries the next 19 ports when occupied. `--port 0` selects a free port. Existing `DUCK_ASSETS`, `DUCK_PERSONAL_DB` and one-time legacy import via `DUCK_DB` remain supported. This command uses the configured personal database; development previews should specify a temporary database and a different port. Normal startup requires no Python. Server, desktop and frontend-build integration follow in later batches; the new device client still needs real hardware acceptance. Node's native HTTP parser rejects nonstandard Content-Length syntax such as signed values rather than replacing the transport parser.
 
 Capture the existing behavior and performance locally:
 

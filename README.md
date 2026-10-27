@@ -103,7 +103,7 @@ docker compose up -d --build
 
 ## 开发与验证
 
-TypeScript 工作区使用 Node 24.20+（24 系列），由 `packages/` 与 `tooling/` 组成。现有 Python 运行入口和前端继续独立工作；正常构建与测试不切换服务或迁移真实用户数据。
+TypeScript 工作区使用 Node 24.20+（24 系列），由 `apps/`、`packages/` 与 `tooling/` 组成。现有 Python 启动器仍可使用；正常构建与测试不切换服务或迁移真实用户数据。
 
 `@letsduck/contracts` 提供 JSON Schema、由 schema 推导的类型和设备映射；`@letsduck/domain` 提供配色、方案、耗材兼容与打印预设规则。两个包均可用于浏览器。共享规则通过当前 Python 实现的差分用例验证；旧页面的接入按后续迁移批次完成。
 
@@ -121,13 +121,24 @@ npm run verify:phase0
 npm run verify:phase1
 npm run verify:phase2
 npm run verify:phase3
+npm run verify:phase4
 ```
 
 `verify:phase0` 执行新工作区检查、现有 Node/组装检查、README 的 Python 检查和公开发行扫描。Python 默认使用本仓库 `.venv`，也可用 `PYTHON` 指定解释器。`probe:runtime -- --electron /path/to/electron` 额外验证 Node 与 Electron 的 SQLite 互读回写；它不代替真实 MySQL、安装包或设备验收。
 
 `@letsduck/storage` 提供个人三表、服务器 SQLite/MySQL、账号会话与社区存储。测试使用临时 SQLite；设置 `DUCK_TEST_DATABASE_URL` 后，同一套合约也在专用 `duck_test_*` MySQL 库执行。TypeScript 测试文件按序运行，避免两个套件同时清理同一测试库。
 
-迁移命令 `npm run migrate:database -- SOURCE.db --backup COPY.db` 使用现有 `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` 配置选择目标。先保留只读源库的一致性备份，再核对全部原始字段；只接受空目标或未经修改的同一快照，不覆盖迁移后的新写入。直接使用此命令会写入配置的目标数据库，正常测试不使用个人或生产库。现有运行入口尚未切换到新存储。
+迁移命令 `npm run migrate:database -- SOURCE.db --backup COPY.db` 使用现有 `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` 配置选择目标。先保留只读源库的一致性备份，再核对全部原始字段；只接受空目标或未经修改的同一快照，不覆盖迁移后的新写入。直接使用此命令会写入配置的目标数据库，正常测试不使用个人或生产库。旧 Python 启动器尚未切换到新存储。
+
+`@letsduck/devices` 提供异步 ADB 客户端、舵机准备与调试控制器，共用一个设备总线调度器；它连接板卡上已有的运行端，不安装或替换固件。测试使用假运行端和临时记录，不能证明实物在线、编号、接线或校准正确。
+
+`@letsduck/host` 用 Cordis 组合存储、设备、导出与 Fastify HTTP 服务，保留当前前端和个人版 API。导出线程提供已验证的模型/耗材元数据。关闭时停止新请求和后台观察，等待在途 HTTP 与导出，再关闭自有转发、数据库和服务。新 Node 本地入口可在导入授权资产后运行：
+
+```sh
+npm run start:local -- --no-open
+```
+
+保留 `--host`、`--port`、`--no-open`，默认 127.0.0.1:8876，占用时尝试后续 19 个端口；`--port 0` 自动选空闲端口。沿用 `DUCK_ASSETS`、`DUCK_PERSONAL_DB` 和旧版单次迁入的 `DUCK_DB`。此命令使用配置的个人库，开发预览应显式指定临时库和其他端口。正常启动不需要 Python。服务器入口、桌面接入与前端构建按后续批次迁移；新设备客户端尚未通过真实硬件验收。Node 原生 HTTP 会拒绝带符号等非标准 Content-Length，不自定义底层 HTTP 解析器。
 
 迁移前的行为与性能对照可在本地采集：
 
