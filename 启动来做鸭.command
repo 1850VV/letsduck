@@ -1,17 +1,22 @@
 #!/bin/zsh
-# 来做鸭 letsduck 个人版（macOS）：双击启动。只需要 Python 3.9+，macOS 自带的就可以，不用安装其他东西。
-# 第一次双击若提示「无法验证开发者」：在 Finder 里右键这个文件 → 打开。
+# 来做鸭 letsduck 源码启动器（macOS）。先安装 Node.js 24.20+（24.x）并运行 npm ci。
 cd -- "$(dirname -- "$0")" || exit 1
-for py in python3 /opt/homebrew/bin/python3 /usr/local/bin/python3 /usr/bin/python3; do
-  if command -v "$py" >/dev/null 2>&1 && "$py" -c 'import sys; sys.exit(sys.version_info < (3, 9))' >/dev/null 2>&1; then
-    "$py" run.py "$@"
-    status=$?
-    if [ $status -ne 0 ]; then read -k 1 "?来做鸭没有正常启动（见上面的提示）。按任意键关闭…"; fi
-    exit $status
+for duck_candidate in node /opt/homebrew/bin/node /usr/local/bin/node; do
+  if command -v "$duck_candidate" >/dev/null 2>&1 && "$duck_candidate" -e 'const [major,minor]=process.versions.node.split(".").map(Number);process.exit(major!==24||minor<20)' >/dev/null 2>&1; then
+    duck_node_path=$(command -v "$duck_candidate")
+    export PATH="${duck_node_path:h}:$PATH"
+    if [[ ! -d node_modules ]]; then
+      echo '首次运行源码，请先在本目录执行 npm ci，再导入已授权的资产包。'
+      [[ -t 0 ]] && read -k 1 '?按任意键关闭…'
+      exit 2
+    fi
+    npm run start:local -- "$@"
+    duck_exit_code=$?
+    if [[ $duck_exit_code -ne 0 && -t 0 ]]; then read -k 1 '?来做鸭没有正常启动（见上面的提示）。按任意键关闭…'; fi
+    exit $duck_exit_code
   fi
 done
-echo "没有找到 Python 3.9 或更新版本。"
-echo "如果弹出「安装命令行开发者工具」的窗口，点「安装」，装好后再双击本文件。"
-echo "也可以从 https://www.python.org/downloads/macos/ 下载安装 Python。"
-xcode-select --install >/dev/null 2>&1 || open "https://www.python.org/downloads/macos/"
-read -k 1 "?按任意键关闭…"
+echo '本源码启动器需要 Node.js 24.20 或更新的 24.x 版本。'
+echo '请从 https://nodejs.org/en/download 安装，然后在本目录运行 npm ci。'
+[[ -t 0 ]] && read -k 1 '?按任意键关闭…'
+exit 2

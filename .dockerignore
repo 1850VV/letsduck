@@ -1,8 +1,10 @@
-# Backend root build context: only public build inputs may be sent to Docker.
+# Root server/web build context: only public build inputs may be sent to Docker.
 # In particular assets, .env*, *.db, .ryugi, Git history, dist and node_modules stay outside.
 **
 !package.json
 !package-lock.json
+!tsconfig.json
+!tsconfig.config.json
 !tsconfig.base.json
 !tsconfig.build.json
 !LICENSE
@@ -56,6 +58,22 @@
 !tooling/src/
 !tooling/src/**
 !backend/Dockerfile
+!vite.config.ts
+!frontend/
+!frontend/**/
+!frontend/tsconfig.json
+!frontend/**/*.ts
+!frontend/**/*.html
+!frontend/**/*.css
+!frontend/**/*.svg
+!frontend/vendor/*.js
+!frontend/vendor/*.mjs
+!frontend/vendor/*LICENSE*
+!frontend/assemble/servo-map.json
+!frontend/assemble/servo-leads.json
+!frontend/shared/servo-map.json
+!frontend/Dockerfile
+!frontend/nginx.conf
 # A future file under an allowed src/ directory must not bypass private-data exclusions.
 **/.env*
 **/*.db
@@ -72,4 +90,6 @@
 **/.git/**
 **/node_modules/**
 **/dist/**
+# Host incremental state can skip declaration emit when dist is excluded.
+**/*.tsbuildinfo
 **/__pycache__/**

@@ -53,7 +53,9 @@ services:
       - duck-data:/data
       - ./assets:/assets:ro
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     restart: unless-stopped
     depends_on:
       backend:

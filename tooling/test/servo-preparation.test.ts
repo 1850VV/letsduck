@@ -1,3 +1,4 @@
+import {frozenOracle} from './fixtures/frozen-oracle.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 const modules = async () => {
@@ -14,10 +15,8 @@ test('physical pickup validates all selected mapped IDs before producing updates
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { PersonalStore, jsonParse } from '@letsduck/storage';
 import { errorPayload } from '@letsduck/domain';
-const root = resolve(import.meta.dirname, '../..');
 test('pickup, installation and return persist independently from numbering and schemes without a runtime', async t => {
   const path = mkdtempSync(resolve(tmpdir(), 'duck-preparation-')); t.after(() => rmSync(path, { recursive: true, force: true }));
   const store = new PersonalStore({ path: resolve(path, 'personal.db'), partIds: [] }); t.after(() => store.close());
@@ -47,9 +46,7 @@ test('unknown cables cannot be claimed prepared while an empty declaration clear
 test('preparation validation matches the original Python messages and complete update values', async () => {
   const m = await modules();
   const cases = [{ ids: [10], state: 'picked' }, { ids: [12, 13], state: 'installed' }, { ids: [32], preparedLeads: [] }, { ids: [32], preparedLeads: ['x'] }, { ids: [12], state: 'bad' }, { ids: [true], state: 'picked' }, { ids: [12, 12], state: 'picked' }, { ids: [12] }, { ids: [14], preparedLeads: [1] }];
-  const code = "import sys,json\nsys.path.insert(0,sys.argv[1]+'/personal');sys.path.insert(0,sys.argv[1]+'/backend')\nfrom servo_preparation import validated_updates\nfrom errors import payload\nout=[]\nfor value in json.load(sys.stdin):\n try:out.append({'value':validated_updates(value)})\n except Exception as e:out.append({'failure':payload(e)})\nprint(json.dumps(out))";
-  const run = spawnSync(process.env.PYTHON || resolve(root, '.venv/bin/python'), ['-I', '-c', code, root], { input: JSON.stringify(cases), encoding: 'utf8' });
-  assert.equal(run.status, 0, run.stderr);
+  const run=frozenOracle('servo-preparation',JSON.stringify(cases));assert.equal(run.status,0,run.stderr);
   const expected: unknown[] = JSON.parse(run.stdout);
   for (const [index, body] of cases.entries()) {
     let actual: unknown; try { actual = { value: m.validatedUpdates(body) }; } catch (error) { actual = { failure: errorPayload(error) }; }

@@ -5,9 +5,9 @@
 <title>来做鸭 / letsduck</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="./studio/studio.css"><link rel="stylesheet" href="./shared/poster.css"><link rel="stylesheet" href="./shared/profile.css"><link rel="stylesheet" href="./lib/quick-style.css">
-<script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+
 <link rel="stylesheet" href="./shared/i18n.css">
-<script type="module" src="./shared/language-menu.mjs"></script>
+<script type="module" src="./shared/language-menu.ts"></script>
 <link rel="stylesheet" href="./shared/brand.css"><link rel="stylesheet" href="./studio/phone.css"><link rel="stylesheet" href="./shared/handoff.css">
 </head>
 <body data-edition="loading">
@@ -37,7 +37,7 @@
   <aside class="rail" id="rail" aria-label="涂装部位" data-i18n-aria-label="text.0619"></aside>
   <section class="stage" id="stage" data-bg="soft">
     <div class="loading" id="loading"><span></span><span data-i18n="label.loading">正在载入机器鸭…</span></div>
-    <script>/* The duck as the last visit left it holds the stage until the live model draws (studio.mjs fades it). */try{const s=JSON.parse(localStorage.getItem('letsduck-still-paint'));if(s&&!location.hash&&s.vw===innerWidth&&s.vh===innerHeight){const i=new Image();i.className='handoff still';i.alt='';i.decoding='sync';i.src=s.image;document.currentScript.before(i);}}catch{}</script>
+    <script data-duck-prepaint="paint"></script>
     <div class="lineup" id="lineup" hidden>
       <div class="lineup-tags" id="lineup-tags"></div>
       <div class="lineup-tabs" id="lineup-tabs" role="tablist"></div>
@@ -103,7 +103,7 @@
   </div></div>
   <div class="sheet-foot"><button type="button" class="ghost-btn" data-close data-i18n="text.0078">取消</button><button class="primary" type="submit" data-i18n="text.0613">发布</button></div></form></dialog>
 <div class="toast" id="toast" role="status"></div>
-<script type="module" src="./studio/studio.mjs"></script>
-<script type="module" src="./studio/phone.mjs"></script>
+<script type="module" src="./studio/studio.ts"></script>
+<script type="module" src="./studio/phone.ts"></script>
 </body>
 </html>

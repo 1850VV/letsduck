@@ -1,0 +1,11 @@
+{
+  "schema": "letsduck-frozen-oracle/1",
+  "referenceCommit": "d5c38e4fa890a4eca40d8857317ac463163b46c3",
+  "cases": [
+    {
+      "inputSha256": "7d0e5502a0ca2aded4100160c133f68cc07c98fb157f9885e3f360cf1a2cc43d",
+      "output": "[{\"value\": {\"name\": \"1.0\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"1e+16\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"1e+20\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"1e+21\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"1e-05\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"1e-07\", \"voiceSalt\": \"9007199254740993\"}}, {\"failure\": {\"error\": \"\\u65b9\\u6848\\u540d\\u79f0\\u4e0d\\u80fd\\u4e3a\\u7a7a\", \"code\": \"validation.4\", \"params\": {\"v0\": \"\\u65b9\\u6848\\u540d\\u79f0\"}}}, {\"failure\": {\"error\": \"\\u65b9\\u6848\\u540d\\u79f0\\u4e0d\\u80fd\\u4e3a\\u7a7a\", \"code\": \"validation.4\", \"params\": {\"v0\": \"\\u65b9\\u6848\\u540d\\u79f0\"}}}, {\"value\": {\"name\": \"9007199254740993\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"-9007199254740993\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"[1.0, 9007199254740993]\", \"voiceSalt\": \"9007199254740993\"}}, {\"value\": {\"name\": \"{'n': 1e+16}\", \"voiceSalt\": \"9007199254740993\"}}]\n"
+    }
+  ],
+  "capturedExitCode": 0
+}

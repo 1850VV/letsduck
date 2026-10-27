@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import {frozenPythonResult} from './fixtures/legacy-sql-storage.js';
 import { jsonParse, jsonStringify, safeInteger } from '../../packages/storage/src/json.js';
 
 test('stored numeric JSON retains exact large integers and raw float identities', () => {
@@ -12,10 +12,10 @@ test('stored numeric JSON retains exact large integers and raw float identities'
   assert.deepEqual(jsonParse(jsonStringify(value)), value);
 });
 
-test('canonical storage JSON matches Python compact UTF8 object key ordering', () => {
+test('canonical storage JSON matches frozen Python compact UTF8 object key ordering', () => {
   const value = { z: [{ voice: 9007199254740993n, a: '🦆\n' }], a: null };
   const actual = jsonStringify(value, true);
-  const result = spawnSync(process.env.PYTHON || 'python3', ['-I', '-c', 'import json,sys;print(json.dumps(json.load(sys.stdin),ensure_ascii=False,sort_keys=True,separators=(",",":")))'], { input: actual, encoding: 'utf8' });
+  const result = frozenPythonResult('canonical',value);
   assert.equal(result.status, 0, result.stderr); assert.equal(actual, result.stdout.trim());
   assert.throws(() => jsonStringify(undefined), /JSON/);
 });

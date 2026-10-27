@@ -1,0 +1,68 @@
+{
+  "schema": "letsduck-frozen-oracle/1",
+  "referenceCommit": "d5c38e4fa890a4eca40d8857317ac463163b46c3",
+  "sources": {
+    "personal/schemes.py": "3d701ba0a07653d5cc219c3ce55ec9b2227355156e6b07103194d25d33f1efd4",
+    "backend/database.py": "e75224276ec730a7e005df0831fbc752557bc81726255cdfd7cacb195d35cdcc",
+    "backend/store.py": "2399dbce930b863b2c4ed3158a862c8010ff5592e2107852b9026d0d83336087",
+    "backend/rules.py": "e12a093cf6bd492a5a4332a4ac954d160cbde5556cf1ee38d9e82d459f49332b",
+    "backend/errors.py": "37ce6de21a4854403dafffc3622af1116e7f6e805341855d44b2dc16d33548f6"
+  },
+  "pythonVersion": "Python 3.12.13",
+  "scope": "synthetic historical Python data only; no user assets, paths or credentials",
+  "cases": [
+    {
+      "inputSha256": "4573ac8cdc3ccbe906ef0e4b1bafe349f127ab023611cdd6de5ba63c416fdf81",
+      "output": "[{\"failure\": {\"error\": \"昵称不能为空\", \"code\": \"validation.4\", \"params\": {\"v0\": \"昵称\"}}}, {\"failure\": {\"error\": \"密码至少 4 位\", \"code\": \"auth.password_short\", \"params\": {}}}, {\"failure\": {\"error\": \"昵称或密码不对\", \"code\": \"auth.invalid_credentials\", \"params\": {}}}, {\"failure\": {\"error\": \"昵称不能为空\", \"code\": \"validation.4\", \"params\": {\"v0\": \"昵称\"}}}, {\"failure\": {\"error\": \"头像或颜色不在可选范围内\", \"code\": \"validation.8\", \"params\": {}}}, {\"failure\": {\"error\": \"密码至少 4 位\", \"code\": \"auth.password_short\", \"params\": {}}}, {\"failure\": {\"error\": \"'list' object has no attribute 'get'\", \"code\": \"request.invalid\", \"params\": {}}}, {\"failure\": {\"error\": \"'list' object has no attribute 'get'\", \"code\": \"request.invalid\", \"params\": {}}}, {\"failure\": {\"error\": \"作品名称不能为空\", \"code\": \"validation.4\", \"params\": {\"v0\": \"作品名称\"}}}, {\"failure\": {\"error\": \"配色数据格式不对\", \"code\": \"validation.1\", \"params\": {}}}, {\"failure\": {\"error\": \"'list' object has no attribute 'get'\", \"code\": \"request.invalid\", \"params\": {}}}, {\"failure\": {\"error\": \"invalid literal for int() with base 10: '3.5'\", \"code\": \"request.invalid\", \"params\": {}}}]\n"
+    }
+  ],
+  "capturedExitCode": 0,
+  "standalone": {
+    "account": {
+      "token": "Z3ECukbhAwZIra88xnaO5bmtY6Hwmbp9xsnan1hppcE",
+      "user": {
+        "id": "u-c9cd2c97f8f0",
+        "name": "旧鸭🦆",
+        "avatar": "🦆",
+        "color": "#ff7a59",
+        "created": 1793121062033
+      }
+    },
+    "accountOutput": "{\"token\": \"Z3ECukbhAwZIra88xnaO5bmtY6Hwmbp9xsnan1hppcE\", \"user\": {\"id\": \"u-c9cd2c97f8f0\", \"name\": \"旧鸭🦆\", \"avatar\": \"🦆\", \"color\": \"#ff7a59\", \"created\": 1793121062033}}",
+    "user": {
+      "id": "u-c9cd2c97f8f0",
+      "name": "旧鸭🦆",
+      "pw_salt": "743eba430470eef5f053979edf61883a",
+      "pw_hash": "f525f2864bfbd35bf417b7677fb2ab43811dacb4edbb8f4dd5ffbce27a8cd97d",
+      "avatar": "🦆",
+      "color": "#ff7a59",
+      "created": 1793121062033,
+      "name_key": "旧鸭🦆"
+    },
+    "session": {
+      "token": "Z3ECukbhAwZIra88xnaO5bmtY6Hwmbp9xsnan1hppcE",
+      "user_id": "u-c9cd2c97f8f0",
+      "created": 1793121062033
+    },
+    "sqliteSql": "BEGIN TRANSACTION;\nCREATE TABLE migration_runs (\n\tfingerprint VARCHAR(64) NOT NULL, \n\tcounts TEXT NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (fingerprint)\n);\nCREATE TABLE ratings (\n\twork_id VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tstars INTEGER NOT NULL, \n\tPRIMARY KEY (work_id, user_id), \n\tCONSTRAINT rating_stars CHECK (stars BETWEEN 1 AND 5), \n\tFOREIGN KEY(work_id) REFERENCES works (id) ON DELETE CASCADE, \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nCREATE TABLE schemes (\n\tid VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tname TEXT NOT NULL, \n\tdesign TEXT NOT NULL, \n\tprovenance TEXT, \n\tvoice_salt BIGINT DEFAULT '0' NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tupdated BIGINT NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nCREATE TABLE sessions (\n\ttoken VARCHAR(128) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (token), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nINSERT INTO \"sessions\" VALUES('Z3ECukbhAwZIra88xnaO5bmtY6Hwmbp9xsnan1hppcE','u-c9cd2c97f8f0',1793121062033);\nCREATE TABLE users (\n\tid VARCHAR(64) NOT NULL, \n\tname VARCHAR(80) NOT NULL, \n\tpw_salt VARCHAR(32) NOT NULL, \n\tpw_hash VARCHAR(64) NOT NULL, \n\tavatar VARCHAR(32) NOT NULL, \n\tcolor VARCHAR(16) NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tname_key VARCHAR(80) NOT NULL, \n\tPRIMARY KEY (id)\n);\nINSERT INTO \"users\" VALUES('u-c9cd2c97f8f0','旧鸭🦆','743eba430470eef5f053979edf61883a','f525f2864bfbd35bf417b7677fb2ab43811dacb4edbb8f4dd5ffbce27a8cd97d','🦆','#ff7a59',1793121062033,'旧鸭🦆');\nCREATE TABLE works (\n\tid VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\ttitle TEXT NOT NULL, \n\tdescription TEXT NOT NULL, \n\tdesign TEXT NOT NULL, \n\tprovenance TEXT, \n\tparent_id VARCHAR(64), \n\tscheme_id VARCHAR(64), \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nCREATE UNIQUE INDEX users_name_key ON users (name_key);\nCREATE INDEX schemes_user ON schemes (user_id, updated);\nCREATE INDEX works_parent ON works (parent_id);\nCREATE INDEX works_created ON works (created, id);\nCREATE INDEX works_user_created ON works (user_id, created, id);\nCOMMIT;",
+    "mysqlStatements": [
+      "\nCREATE TABLE migration_runs (\n\tfingerprint VARCHAR(64) NOT NULL, \n\tcounts TEXT NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (fingerprint)\n)ENGINE=InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_bin\n\n",
+      "\nCREATE TABLE users (\n\tid VARCHAR(64) NOT NULL, \n\tname VARCHAR(80) NOT NULL, \n\tpw_salt VARCHAR(32) NOT NULL, \n\tpw_hash VARCHAR(64) NOT NULL, \n\tavatar VARCHAR(32) NOT NULL, \n\tcolor VARCHAR(16) NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tname_key VARCHAR(80) NOT NULL, \n\tPRIMARY KEY (id)\n)ENGINE=InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_bin\n\n",
+      "\nCREATE TABLE schemes (\n\tid VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tname TEXT NOT NULL, \n\tdesign LONGTEXT NOT NULL, \n\tprovenance LONGTEXT, \n\tvoice_salt BIGINT NOT NULL DEFAULT '0', \n\tcreated BIGINT NOT NULL, \n\tupdated BIGINT NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n)ENGINE=InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_bin\n\n",
+      "\nCREATE TABLE sessions (\n\ttoken VARCHAR(128) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (token), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n)ENGINE=InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_bin\n\n",
+      "\nCREATE TABLE works (\n\tid VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\ttitle TEXT NOT NULL, \n\tdescription TEXT NOT NULL, \n\tdesign LONGTEXT NOT NULL, \n\tprovenance LONGTEXT, \n\tparent_id VARCHAR(64), \n\tscheme_id VARCHAR(64), \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n)ENGINE=InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_bin\n\n",
+      "\nCREATE TABLE ratings (\n\twork_id VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tstars INTEGER NOT NULL, \n\tPRIMARY KEY (work_id, user_id), \n\tCONSTRAINT rating_stars CHECK (stars BETWEEN 1 AND 5), \n\tFOREIGN KEY(work_id) REFERENCES works (id) ON DELETE CASCADE, \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n)ENGINE=InnoDB CHARSET=utf8mb4 COLLATE utf8mb4_bin\n\n",
+      "CREATE UNIQUE INDEX users_name_key ON users (name_key)",
+      "CREATE INDEX schemes_user ON schemes (user_id, updated)",
+      "CREATE INDEX works_created ON works (created, id)",
+      "CREATE INDEX works_parent ON works (parent_id)",
+      "CREATE INDEX works_user_created ON works (user_id, created, id)"
+    ],
+    "programSha256": "acd5679089e0cf25847639978637d04a3cefa8575a490039c93c4f1b26f60a54"
+  },
+  "historicalReadback": {
+    "status": 0,
+    "output": "python-readback-ok\n",
+    "programSha256": "91ec370cebe7d0b85fe7ea85e2c6eb09df33cda34825235837b2cae2482c2287"
+  }
+}

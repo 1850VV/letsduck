@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -33,7 +32,6 @@ interface OracleScenario {
 }
 interface Oracle { schema: string; runtime: Record<string, string>; scenarios: OracleScenario[] }
 interface Difference { scenario: string; id: string; field: string; expected: unknown; actual: unknown }
-const repository = resolve(import.meta.dirname, '../..');
 const comparableHeaders = ['content-type', 'content-length', 'last-modified', 'etag', 'accept-ranges', 'content-range', 'location', 'allow', 'cache-control', 'x-content-type-options', 'retry-after'];
 const decode = (value: string) => Buffer.from(value, 'base64');
 function boundary(headers: Record<string, unknown>): string | undefined {
@@ -64,11 +62,8 @@ const busyExporter: ServerExporter = {
   async run() { throw new ExportBusy(); },
 };
 
-test('server matches the independent Python ASGI oracle for all replayed protocol cases', async context => {
-  const python = process.env.PYTHON || (existsSync(join(repository, '.venv/bin/python')) ? join(repository, '.venv/bin/python') : 'python3');
-  const run = spawnSync(python, ['-I', join(repository, 'tooling/test/server-http-python-fixture.py')], { cwd: repository, encoding: 'utf8', timeout: 30_000, maxBuffer: 4 << 20 });
-  assert.equal(run.status, 0, run.stderr || run.error?.message);
-  const oracle = JSON.parse(run.stdout) as Oracle; assert.equal(oracle.schema, 'letsduck-server-http-oracle/1');
+test('server matches the frozen independent Python ASGI oracle for all replayed protocol cases', async context => {
+  const oracle = JSON.parse(readFileSync(new URL('./oracles/server-http.json',import.meta.url),'utf8')) as Oracle; assert.equal(oracle.schema, 'letsduck-server-http-oracle/1');
   const differences: Difference[] = []; let cases = 0;
   for (const scenario of oracle.scenarios) {
     const root = await mkdtemp(join(tmpdir(), 'duck-server-differential-'));

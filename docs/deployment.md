@@ -4,15 +4,15 @@
 
 | 版本 | 代码 | 启动 | 数据库 |
 | --- | --- | --- | --- |
-| 个人使用版 | 原启动器使用 `personal/`；可选 Node 入口为 `apps/local/` | 双击 Python 启动器，或 `npm run start:local` | 本机 SQLite 文件 |
+| 个人版 | `apps/local/`、共享 TypeScript packages | Node.js 24.20+（24.x），源码启动器或 `npm run start:local` | 本机 SQLite |
 | 服务器版 | `apps/server/`、共享 TypeScript packages | `docker compose up -d --build` | MySQL 8.4（`mysql-data` 卷） |
 
-两个 Node 入口共用 `frontend/`，以及 `packages/domain`（校验）、`packages/exporter`（3MF 导出）和 `packages/storage`（数据访问）。前端读 `/api/site` 的 `edition` 决定是否显示登录、配色广场和发布。运行都需要自行合法持有完整资产包，见 `local-assets.md`。
+两个 Node 入口共用构建后的 `frontend/dist/`，以及 `packages/domain`（校验）、`packages/exporter`（3MF 导出）和 `packages/storage`（数据访问）。前端读 `/api/site` 的 `edition` 决定是否显示登录、配色广场和发布。运行都需要自行合法持有完整资产包，见 `local-assets.md`。
 
 ## 个人使用版
 
-- 双击 `启动来做鸭.command` / `.bat` 目前仍检查 Python 3.9+ 并运行 `run.py`，只用标准库。双击启动器将在后续批次迁移。
-- 可选 Node 入口使用 Node.js 24.20+、24.x：先 `npm ci && npm run build`，再 `node apps/local/dist/main.js` 或 `npm run start:local`。Node 运行入口不需要 Python；现有 Python 实现和回归测试用于迁移比对和回退验证。
+- 源码启动器 `启动来做鸭.command` / `.bat` 检查 Node.js 24.20+（24.x），执行当前 TypeScript/Vite 构建后启动个人版。首次运行先 `npm ci` 并导入合法资产。
+- 命令行入口使用 Node.js 24.20+、24.x：先 `npm ci && npm run build`，再 `node apps/local/dist/main.js` 或 `npm run start:local`。普通运行和工具不需要 Python；旧引擎验证通过固定 Git 参考和显式历史回放完成。
 - 只监听 `127.0.0.1`，默认端口 8876，被占用时依次尝试后面 20 个端口。`--host`、`--port`、`--no-open` 可调整。
 - 方案文件：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，Linux `~/.local/share/doodleduck/personal.db`，或环境变量 `DUCK_PERSONAL_DB`。它不在应用文件夹里，升级时解压新版本覆盖即可。备份：关闭来做鸭后复制这个文件。
 - 接口：`/api/health`、`/api/site`、`/api/catalog`、`/api/schemes`（无需登录）、`/api/plan`、`/api/export`；账号、作品和评分接口返回 404，`/gallery/` 跳回首页。错误格式和校验码与服务器版相同。
@@ -39,9 +39,9 @@ docker compose up -d --build
 
 MySQL 以 `--innodb-buffer-pool-size=${DUCK_MYSQL_BUFFER_POOL:-128M} --performance-schema=OFF --max-connections=60` 启动；4 GB 内存可在 `.env` 设 `DUCK_MYSQL_BUFFER_POOL=256M`。3MF 在独立的 Node worker threads 中计算，保持 `DUCK_EXPORT_WORKERS=1`。旧 Python 后端的内存测量不能用于估算此 Node 版本；当前版本的整机容量和导出峰值尚未实测。
 
-本批次保留前端的 Python 构建阶段，下一批再迁移；nginx 运行阶段不使用 Python。前端镜像构建时运行 `frontend/stamp.py`（标准库）：每个 `.mjs/.js/.css` 的地址加上内容哈希 `?v=`，页面里写入一个 import map（把模块的原始路径映射到带哈希的地址，模块内部的相对 import 不用改）、整张模块依赖图的 `modulepreload` 和模型文件的 `preload`，浏览器一打开就并行下载全部模块和模型。带 `?v=` 的代码 nginx 发 `Cache-Control: public, max-age=31536000, immutable`，不带的仍是 `no-cache`；HTML 每次核对。个人版和开发模式直接用源码，不经过这一步。
+Vite 用 Node 构建所有前端页面和 Worker，两个版本共用 `frontend/dist/`。代码生成 `/static/name-hash.js` / `.css`，nginx 对这些内容 hash 地址保留一年 immutable 缓存；旧 `?v=` 地址继续兼容，普通代码和 HTML 重新核对。两段预绘制保持同步 classic script，以保留首屏和 `currentScript` 行为。构建只复制公开的舵机映射 JSON；独立授权资产仍从外部目录只读挂载。
 
-模型几何另有一份传输用的 `assets/geometry.pack.bin`（`scripts/pack_geometry.py`，导入资产时自动生成；手动复制资产后可单独运行）：位置按每个零件的包围盒量化为 16 位（约 0.002 mm），索引差分编码可精确还原，打印摆放尽量存为变换矩阵，gzip 后约 1.0 MB（原 `geometry.bin` 约 3.0 MB）。兼容路径仍保留。构建机器可再执行 `npm ci && npm run pack:positions`，生成 `geometry.positions.bin`（完整三角形、16 位位置和打印矩阵），浏览器优先在 Worker 内解码并计算法线；缺失、损坏或 Worker 不可用时回退到 DDG1 / `geometry.bin`。生成文件仍只在本地资产包中分发，不提交 Git，也不增加个人版运行依赖。当前文件约 870 KB；预压缩为 gzip 约 640 KB、Brotli 约 589 KB，nginx 根据 Accept-Encoding 优先投递预压缩 Brotli，其次 gzip；禁用的编码（q=0）不会使用，缺失的文件会回退到可用格式或原文件。响应包含 Content-Encoding、Vary: Accept-Encoding 和对应格式的 ETag；不需要 Brotli 模块。其他资产启用 gzip_static，仍可动态 gzip。本地开发服务不保证发送 Brotli。首次导出复用主视图几何和渲染器，打印法线在 Worker 中按需生成，成功路径不再下载 DDG1；兼容路径仍保留。源 3MF 及其压缩副本都禁止从静态资产路径读取，源 3MF 仍只在服务端使用。
+模型几何另有一份传输用的 `assets/geometry.pack.bin`（`scripts/pack_geometry.ts`，导入资产时自动生成；手动复制资产后可单独运行）：位置按每个零件的包围盒量化为 16 位（约 0.002 mm），索引差分编码可精确还原，打印摆放尽量存为变换矩阵，gzip 后约 1.0 MB（原 `geometry.bin` 约 3.0 MB）。兼容路径仍保留。构建机器可再执行 `npm ci && npm run pack:positions`，生成 `geometry.positions.bin`（完整三角形、16 位位置和打印矩阵），浏览器优先在 Worker 内解码并计算法线；缺失、损坏或 Worker 不可用时回退到 DDG1 / `geometry.bin`。生成文件仍只在本地资产包中分发，不提交 Git，也不增加个人版运行依赖。当前文件约 870 KB；预压缩为 gzip 约 640 KB、Brotli 约 589 KB，nginx 根据 Accept-Encoding 优先投递预压缩 Brotli，其次 gzip；禁用的编码（q=0）不会使用，缺失的文件会回退到可用格式或原文件。响应包含 Content-Encoding、Vary: Accept-Encoding 和对应格式的 ETag；不需要 Brotli 模块。其他资产启用 gzip_static，仍可动态 gzip。本地开发服务不保证发送 Brotli。首次导出复用主视图几何和渲染器，打印法线在 Worker 中按需生成，成功路径不再下载 DDG1；兼容路径仍保留。源 3MF 及其压缩副本都禁止从静态资产路径读取，源 3MF 仍只在服务端使用。
 
 nginx 对 `/assets/`（模型几何、色表）发送 `Cache-Control: public, max-age=604800`，过期后用 ETag / Last-Modified 重新验证。更换资产包后，7 天内访问过的浏览器可能仍用旧文件，需要强制刷新。页面和脚本仍是 `no-cache`，每次都会核对是否有新版本。
 
@@ -126,14 +126,14 @@ MySQL 使用 InnoDB、utf8mb4。不要把含真实凭据的配置提交到 Git�
 源码环境先 `npm ci && npm run build`，再运行：
 
 ```sh
-node apps/server/dist/main.js --host 127.0.0.1 --port 8880 --static frontend --open
+node apps/server/dist/main.js --host 127.0.0.1 --port 8880 --static frontend/dist --open
 ```
 
 `--host`/`--port` 优先于 `HOST`/`PORT`。端口占用会失败，不尝试其他端口。`--static` 可选，Compose 由 nginx 提供前端，后端不需要它。`--open` 在 15 秒内轮询到健康端点返回 `200` 后才打开浏览器。服务器可在模型缺失时提供账号等 API，健康响应中的 `export: false` 表示导出不可用。
 
 CI 运行 `npx tsx tooling/test/server-container.ts`：真正构建镜像，用无敏感值的 canary 检查构建上下文，挂载合成资产，验证 Node 24、非 root、文件权限、无 Python/ADB 可执行文件、健康检查、真实 worker 导出、SQLite 持久化、编译后的迁移命令和 MySQL API。默认启动单独的 MySQL 8.4；也可通过 `DUCK_TEST_DATABASE_URL` 指定仅限 `duck_test_*` 的临时 MySQL，此时不向非空库导入 SQLite。脚本在 `finally` 中清理其容器、卷、网络、测试镜像、canary 和临时资产。`--image TAG` 可检查已有镜像。
 
-本机未运行这项 Docker 验收；CI 结果才是镜像可运行的证据。前端 Python stamp 的构建链仍保留至下一批，不能把本批称作整个项目完全去 Python。
+镜像检查需要可用 Docker daemon；只有实际构建、启动和协议检查成功才构成运行证据。CI 还构建前端 Node/Vite→nginx 镜像，公开源代码 CI 不包含独立授权模型的完整视觉、制造与物理验收。
 
 ## 广场与导出容量
 

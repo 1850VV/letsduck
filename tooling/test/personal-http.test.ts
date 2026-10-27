@@ -1,12 +1,13 @@
+import {personalMimeProfiles,isPersonalMimeProfile,personalMimeInput} from './fixtures/personal-http-mime.js';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {frozenOracle} from './fixtures/frozen-oracle.js';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, symlink, writeFile, readdir, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { createConnection } from 'node:net';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import { fileURLToPath } from 'node:url';
 import { PersonalStore } from '@letsduck/storage';
 import { DebugError, SetupError } from '@letsduck/devices';
 import { ExportBusy } from '@letsduck/exporter';
@@ -21,6 +22,8 @@ async function fixture(options: { exporter?: HostExporter | null; uiOrigin?: str
   await Promise.all([mkdir(join(frontend, 'assemble'), { recursive: true }), mkdir(join(frontend, 'empty'), { recursive: true }), mkdir(join(assets, 'assembly', 'horn-reference'), { recursive: true })]);
   await Promise.all(Object.entries({ 'home.html': 'HOME', 'index.html': 'PAINT', 'module.mjs': 'export{}', 'settings.conf': 'fixture', 'file.py': 'print(1)', 'page.HTM': 'PAGE', 'assemble/index.html': 'ASSEMBLE' }).map(([name, value]) => writeFile(join(frontend, name), value)));
   await Promise.all([writeFile(join(assets, 'model.json'), '{"sample":true}'), writeFile(join(assets, 'source.3mf'), 'PRIVATE'), writeFile(join(assets, 'assembly', 'clip.mp4'), '0123456789'), writeFile(join(assets, 'assembly', 'horn-reference/main.jpg'), 'JPEG')]);
+  async function stableDates(path:string):Promise<void>{for(const entry of await readdir(path,{withFileTypes:true})){const file=join(path,entry.name);if(entry.isDirectory())await stableDates(file);else await utimes(file,1700000000,1700000000);}}
+  await stableDates(frontend);await stableDates(assets);
   const store = new PersonalStore({ path: join(root, 'personal.db') });
   const observed: { action: string; input?: unknown }[] = [];
   let ready = false, debugFailure: Error | undefined, setupFailure: Error | undefined;
@@ -218,13 +221,25 @@ test('wire framing returns personal errors for invalid or excessive declared len
 });
 
 test('frozen Python handler and TypeScript HTTP agree on synthetic routes, errors, caches and byte ranges', async context => {
-  const f = await fixture(); let child: ReturnType<typeof spawn> | undefined, childClosed: Promise<unknown[]> | undefined;
+  const profile=process.env.DUCK_PERSONAL_HTTP_MIME_PROFILE;
+  if(profile===undefined){
+    // MIME tables are host configuration. Each child reads controlled system files
+    // through the unchanged production algorithm; historical Python supplies every expected response.
+    for(const name of Object.keys(personalMimeProfiles))await context.test(name,async()=>{
+      const env:NodeJS.ProcessEnv={...process.env,DUCK_PERSONAL_HTTP_MIME_PROFILE:name};delete env.NODE_TEST_CONTEXT;
+      const child=spawn(process.execPath,['--import','tsx','--import',fileURLToPath(new URL('./fixtures/personal-http-mime.ts',import.meta.url)),'--test','--test-name-pattern','^frozen Python handler',fileURLToPath(import.meta.url)],{env});
+      let stdout='',stderr='';child.stdout.on('data',(bytes:Buffer)=>{stdout+=bytes.toString();});child.stderr.on('data',(bytes:Buffer)=>{stderr+=bytes.toString();});
+      const status=await new Promise<number|null>((done,reject)=>{child.once('error',reject);child.once('exit',done);});
+      assert.equal(status,0,stdout+stderr);assert.match(stdout,new RegExp('Controlled MIME profile: '+name));assert.match(stdout,/Frozen Python HTTP reference: 52 requests replayed against Node/);
+      context.diagnostic('Independent Python MIME profile '+name+': 52 requests; child exited 0');
+    });
+    return;
+  }
+  assert.ok(isPersonalMimeProfile(profile));
+  context.diagnostic('Controlled MIME profile: '+profile);
+  const f = await fixture();
   try {
     await f.app.listen({ host: '127.0.0.1', port: 0 }); const address = f.app.server.address(); assert.ok(address && typeof address === 'object');
-    child = spawn(process.env.PYTHON ?? fileURLToPath(new URL('../../.venv/bin/python', import.meta.url)), ['-I', fileURLToPath(new URL('./personal-http-python-fixture.py', import.meta.url)), f.root], { env: { ...process.env, DUCK_ASSETS: f.assets }, stdio: ['pipe', 'pipe', 'pipe'] });
-    childClosed = once(child, 'close');
-    let stderr = ''; child.stderr!.on('data', chunk => { stderr += String(chunk); });
-    const pythonPort = await new Promise<number>((resolve, reject) => { let output = ''; const timer = setTimeout(() => reject(new Error('Python fixture startup timeout: ' + stderr)), 5000); child!.stdout!.on('data', chunk => { output += String(chunk); if (output.includes('\n')) { clearTimeout(timer); resolve(Number(JSON.parse(output.split('\n')[0]!).port)); } }); child!.once('error', error => { clearTimeout(timer); reject(error); }); child!.once('exit', () => { clearTimeout(timer); reject(new Error('Python fixture exited: ' + stderr)); }); });
     const cases: { method?: string; path: string; body?: string; headers?: string }[] = [
       { path: '/api/health///?query=1' }, { path: '/api/site' }, { path: '/api/catalog' }, { path: '/api/schemes' },
       { method: 'PUT', path: '/api/schemes/a%20b', body: 'bad', headers: 'Content-Type: bad\r\n' },
@@ -242,18 +257,19 @@ test('frozen Python handler and TypeScript HTTP agree on synthetic routes, error
       { method: 'OPTIONS', path: '/api/site' },
       { path: '/assets/%zz' }, { path: '/%zz' }, { method: 'PUT', path: '/api/schemes/%zz', body: 'bad', headers: 'Content-Type: bad\r\n' },
     ];
-    context.diagnostic(`Python HTTP parity: ${cases.length} requests per implementation`);
-    for (const item of cases) {
+    const snapshot=frozenOracle('personal-http',personalMimeInput(cases,profile));assert.equal(snapshot.status,0,snapshot.stderr);
+    const expectedRows:Awaited<ReturnType<typeof rawCall>>[]=JSON.parse(snapshot.stdout);assert.equal(expectedRows.length,cases.length);
+    context.diagnostic(`Frozen Python HTTP reference: ${cases.length} requests replayed against Node`);
+    for (const [index,item] of cases.entries()) {
       const method = item.method ?? 'GET', body = item.body ?? '', request = `${method} ${item.path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n${item.headers ?? ''}${body ? 'Content-Length: ' + Buffer.byteLength(body) + '\r\n' : ''}\r\n${body}`;
-      const [expected, actual]: [Awaited<ReturnType<typeof rawCall>>, Awaited<ReturnType<typeof rawCall>>] = await Promise.all([rawCall(pythonPort, request), rawCall(address.port, request)]);
+      const expected=expectedRows[index]!;const actual=await rawCall(address.port,request);
       assert.equal(actual.status, expected.status, method + ' ' + item.path);
       for (const name of ['content-type', 'cache-control', 'x-content-type-options', 'location', 'content-range', 'accept-ranges', 'last-modified']) assert.equal(actual.headers[name], expected.headers[name], method + ' ' + item.path + ' ' + name);
       if (method !== 'HEAD' && expected.headers['content-type']?.startsWith('application/json')) assert.deepEqual(JSON.parse(actual.body), JSON.parse(expected.body), method + ' ' + item.path);
       else assert.equal(actual.body, expected.body, method + ' ' + item.path);
     }
-    assert.equal(stderr, '');
+    assert.equal(snapshot.stderr, '');
   } finally {
-    if (child) { child.stdin?.end('stop\n'); await childClosed?.catch(() => {}); assert.equal(child.exitCode, 0); }
     await f.close();
   }
 });

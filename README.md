@@ -51,28 +51,29 @@
 | | 个人使用版 | 服务器版 |
 | --- | --- | --- |
 | 用途 | 一人在本机涂装、调试和组装 | 朋友间分享配色、评分和改编 |
-| 启动 | Python 3.9+，只用标准库 | Docker Compose：nginx + Node.js + MySQL 8.4 |
+| 启动 | Node.js 24.20+（24.x） | Docker Compose：nginx + Node.js + MySQL 8.4 |
 | 数据 | 本机 SQLite；草稿与偏好在浏览器 | MySQL；浏览器保存未登录草稿 |
 | 账号与配色广场 | 无 | 昵称账号、私有方案、发布、评分、「做同款」和改编家族 |
 | USB 设备控制 | 本机支持 | 不提供 |
 
-两个版本共用前端、配色校验和 3MF 导出逻辑。Electron 桌面客户端仍在独立开发分支；以下启动方式对应 `main` 的 Python 个人版和 Docker 服务器版。
+两个版本共用 TypeScript 前端、配色校验、存储和 3MF 导出包。以下是源码个人版与 Docker 服务器版的启动方式；Electron 桌面交付仍单独验证。
 
 ## 本机启动
 
 ```sh
 git clone https://github.com/1850VV/letsduck.git
 cd letsduck
-python3 scripts/import_local_assets.py /path/to/authorized/assets
-python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
-python3 run.py
+npm ci
+npm run import:assets -- /path/to/authorized/assets
+npm run import:assembly -- /path/to/authorized/assembly/assets
+npm run start:local
 ```
 
-Windows 可以把 `python3` 换成 `py -3`。组装资产导入可以暂时跳过，组装和首页模型预览需要它们；文件要求见 [本地资产说明](docs/local-assets.md)。
+源码开发需要 Node.js 24.20 或更新的 24.x 版本。组装资产导入可以暂时跳过，组装和首页模型预览需要它们；文件要求见 [本地资产说明](docs/local-assets.md)。
 
-也可以双击 `启动来做鸭.command`（macOS）或 `启动来做鸭.bat`（Windows）。缺少 Python 时按启动器提示安装。macOS 首次打开如被拦截，可在 Finder 中右键文件并选择「打开」。
+也可以双击 `启动来做鸭.command`（macOS）或 `启动来做鸭.bat`（Windows）。先安装上述 Node 版本并运行 `npm ci`。macOS 首次打开如被拦截，可在 Finder 中右键文件并选择「打开」。
 
-浏览器默认打开 `http://127.0.0.1:8876/`，端口被占用时尝试下一个。`python3 run.py --port 8880 --no-open` 可指定端口并关闭自动打开浏览器。关闭启动进程即退出。
+浏览器默认打开 `http://127.0.0.1:8876/`，端口被占用时尝试下一个。`npm run start:local -- --port 8880 --no-open` 可指定端口并关闭自动打开浏览器。关闭启动进程即退出。
 
 个人版只监听本机。命名方案、编号验证和取件进度保存在应用目录外的数据库：
 
@@ -87,7 +88,7 @@ Windows 可以把 `python3` 换成 `py -3`。组装资产导入可以暂时跳�
 先准备有权使用的涂装资产包，再配置数据库密码：
 
 ```sh
-python3 scripts/import_local_assets.py /path/to/authorized/assets
+npm run import:assets -- /path/to/authorized/assets
 cp .env.example .env
 # 编辑 .env，设置两个不同的随机长密码
 docker compose up -d --build
@@ -105,107 +106,63 @@ docker compose up -d --build
 
 ```sh
 npm ci
-npm run start:server -- --host 127.0.0.1 --port 8880 --static frontend
+npm run start:server -- --host 127.0.0.1 --port 8880 --static frontend/dist
 ```
 
 服务器端口被占用时直接报错。`DUCK_DATABASE_URL` 或 `DUCK_DB_ENGINE` 配置数据库；账号、私有方案、广场和评分使用同一个 `ServerStore`。导出预检复用纯 `Planner`，生成 3MF 使用有界 worker 队列。服务器不会创建设备服务。
 
-后端镜像使用 Node 24，不安装 Python。前端镜像的构建脚本和旧个人版启动器仍使用 Python；它们按后续批次迁移。升级、只读源库迁移和回退见 [部署说明](docs/deployment.md)。
+后端与前端构建均使用 Node 24，前端运行镜像使用 nginx。升级、只读源库迁移和回退见 [部署说明](docs/deployment.md)。
 
 ## 开发与验证
 
-TypeScript 工作区使用 Node 24.20+（24 系列），由 `apps/`、`packages/` 与 `tooling/` 组成。现有 Python 启动器仍可使用；正常构建与测试不切换服务或迁移真实用户数据。
+应用源码、前端、工具和常规测试统一使用严格 TypeScript。`frontend/` 经 Vite 构建到 `frontend/dist/`，个人版和服务器都服务构建产物。保留 `/paint`、`/assemble/`、`/debug/`、`/gallery/` 与各自版本的入口规则；服务器的 `/` 是涂装台，个人版的 `/` 是三入口首页。
 
-`@letsduck/contracts` 提供 JSON Schema、由 schema 推导的类型和设备映射；`@letsduck/domain` 提供配色、方案、耗材兼容与打印预设规则。两个包均可用于浏览器。共享规则通过当前 Python 实现的差分用例验证；旧页面的接入按后续迁移批次完成。
-
-请求适配器使用 `parseWireJson` 保留原始数字信息，再把解析对象交给共享规则；大整数保留为 `bigint`。这使 Python 风格的名称转换和 `voiceSalt` 保持兼容，避免普通 JSON 解析先把整数取整。
-
-`@letsduck/exporter` 提供 3MF、BOM 和 multipart 解析。`ExportManager` 默认使用一个执行位、两个等待位；请求取消后仍保留在途任务的容量，`close()` 等待已接收任务完成再退出线程。它使用调用者指定的本地资产目录。
+工作区职责：`packages/contracts` 提供 schema 与类型；`domain` 提供浏览器/Node 共用规则和精确 JSON；`exporter` 提供 3MF、BOM、预检和有界 worker；`storage` 提供个人 SQLite 与服务器 SQLite/MySQL；`devices` 提供共享总线上的异步设备控制；`host` 用 Cordis 组合 Fastify、存储和服务生命周期。`apps/local`、`apps/server` 是各自入口。
 
 ```sh
 npm ci
 npm run build
 npm run typecheck
-npm run test:typescript
+npm test
 npm run probe:runtime
-npm run verify:phase0
-npm run verify:phase1
-npm run verify:phase2
-npm run verify:phase3
-npm run verify:phase5
+npm run audit:typescript
+npm run audit:publication
 ```
 
-`verify:phase0` 执行新工作区检查、现有 Node/组装检查、README 的 Python 检查和公开发行扫描。Python 默认使用本仓库 `.venv`，也可用 `PYTHON` 指定解释器。`probe:runtime -- --electron /path/to/electron` 额外验证 Node 与 Electron 的 SQLite 互读回写；它不代替真实 MySQL、安装包或设备验收。
+`typecheck` 检查前端、全部测试、工具和构建配置，禁止用 JS 绕过严格检查。`audit:typescript` 检查活跃自有代码的语言、类型抑制及固定 vendor 指纹；厂商 JS 与 `tools/history/` 的归档工具有明确保留用途。`audit:publication` 检查跟踪文件中的私有路径、资产、凭据与生成物。扫描是启发式检查，不能代替人工核查。
 
-`@letsduck/storage` 提供个人三表、服务器 SQLite/MySQL、账号会话与社区存储。测试使用临时 SQLite；设置 `DUCK_TEST_DATABASE_URL` 后，同一套合约也在专用 `duck_test_*` MySQL 库执行。TypeScript 测试文件按序运行，避免两个套件同时清理同一测试库。
+`npm test` 使用临时数据库和假设备。缺少独立授权资产时，会逐文件列出未执行的资产测试；几何包测试也会明确跳过。完整迁移验收使用已有合法资产运行 `npm run verify:phase6`，不能把资产缺失的源代码 CI 当作完整产品验收。MySQL 测试需要专用 `duck_test_*` 库的 `DUCK_TEST_DATABASE_URL`，未配置时明确跳过；测试按序运行。
 
-迁移命令 `npm run migrate:database -- SOURCE.db --backup COPY.db` 使用现有 `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` 配置选择目标。先保留只读源库的一致性备份，再核对全部原始字段；只接受空目标或未经修改的同一快照，不覆盖迁移后的新写入。直接使用此命令会写入配置的目标数据库，正常测试不使用个人或生产库。旧 Python 启动器尚未切换到新存储。
+浏览器检查使用 Playwright 托管 Chromium。安装匹配版本后，设置 `DUCK_TEST_BROWSER=1` 可运行浏览器生命周期专项；需 nginx 的协议检查在没有本机 nginx 时明确跳过。原生控件、人工视觉、真实设备与安装包验收分别报告。
 
-`@letsduck/devices` 提供异步 ADB 客户端、舵机准备与调试控制器，共用一个设备总线调度器；它连接板卡上已有的运行端，不安装或替换固件。测试使用假运行端和临时记录，不能证明实物在线、编号、接线或校准正确。
+个人版开发可使用 `npm run start:local -- --port 0 --no-open`，并显式给 `DUCK_PERSONAL_DB` 指定开发库。源码启动器会先构建。服务保留 `--host`、`--port`、`--no-open`，停止后排空自有请求、导出线程和服务，不把开发操作指向已有用户数据库。
 
-`@letsduck/host` 用 Cordis 组合存储、设备、导出与 Fastify HTTP 服务，保留当前前端和个人版 API。导出线程提供已验证的模型/耗材元数据。关闭时停止新请求和后台观察，等待在途 HTTP 与导出，再关闭自有转发、数据库和服务。新 Node 本地入口可在导入授权资产后运行：
+数据库迁移：`npm run migrate:database -- SOURCE.db --backup COPY.db`。它只读源库并建立一致性备份；目标必须为空，或仍是未经修改的同一快照。该命令会写入所配置的目标，使用前核对 `DUCK_DATABASE_URL` / `DUCK_DB_ENGINE` / `DUCK_DB`。普通测试不会迁移个人或生产库。
 
-```sh
-npm run start:local -- --no-open
-```
-
-保留 `--host`、`--port`、`--no-open`，默认 127.0.0.1:8876，占用时尝试后续 19 个端口；`--port 0` 自动选空闲端口。沿用 `DUCK_ASSETS`、`DUCK_PERSONAL_DB` 和旧版单次迁入的 `DUCK_DB`。此命令使用配置的个人库，开发预览应显式指定临时库和其他端口。正常启动不需要 Python。服务器入口、桌面接入与前端构建按后续批次迁移；新设备客户端尚未通过真实硬件验收。Node 原生 HTTP 会拒绝带符号等非标准 Content-Length，不自定义底层 HTTP 解析器。
-
-迁移前的行为与性能对照可在本地采集：
+行为与性能采集默认使用独立 Node 个人服务与临时数据库：
 
 ```sh
 npm run baseline:capture -- --assets /path/to/authorized/assets --output output/baseline --browser
 ```
 
-工具启动独立的旧版个人服务并使用临时数据库，默认采样 30 次保存和 10 次真实导出；`--browser` 使用匹配的 Playwright 托管 Chromium。浏览器设备请求被拦截，不接真实 USB。结果包括实际导出的 3MF、请求参数、ZIP 条目内容与原压缩记录的摘要。结果含本机环境和独立授权资产信息，仅保存在忽略的本地目录。此命令不接受现有服务地址，不使用原个人数据库；没有模型时只采集可用部分，不能作为真实导出验收。
+默认采集 30 次保存和 10 次真实导出，保留环境、引擎、请求/响应和 ZIP 摘要。结果含本机环境和独立授权资产信息，只放在忽略的私有目录。缺少模型的结果不能作为真实导出证据。性能比较必须使用相同输入、机器和环境。
 
-前端为原生 ES 模块，无需构建即可开发。个人版执行 `python3 run.py`。服务器版开发使用 Python 3.11+：
+常规构建、测试与工具不需要 Python。独立旧 Python 结果已冻结为合成 oracle。显式历史回放可用 `npm run test:historical -- --list` 查看范围，再以 `--python /path/to/legacy/python` 选择解释器；它从固定旧 Git 提交提取只读参考，所有数据和服务都在自有临时目录中。`baseline:capture -- --engine historical ...` 单独采集旧引擎，结果明确标注。浅克隆须先取得参考提交，历史模式不作为正常运行依赖。
 
-```sh
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python backend/server.py --static frontend
-```
+组装姿态的跨平台诊断可显式运行 `npx tsx tooling/test/assembly-diagnostic.ts .`。它用 Node 比较固定历史 MJS 与当前 TS 的完整姿态、顺序和数值，并清理临时参考；不需要 Python，也不进入普通测试。
 
-未设置数据库连接时，服务器开发进程使用本地 SQLite；生产部署使用 MySQL。连接、迁移、备份和回退见 [部署说明](docs/deployment.md)。
-
-```sh
-python3 -I -m unittest discover -s tests -p test_personal.py -v
-python3 scripts/publication_audit.py
-.venv/bin/python -m unittest discover -s tests -v
-node --test tests/*.mjs tests/assembly/*.test.mjs
-```
-
-完整测试需要本地资产和开发依赖。真实 MySQL 回归还需设置 `DUCK_TEST_DATABASE_URL`，库名必须以 `duck_test_` 开头；未配置时相关测试跳过。[公开 CI](.github/workflows/check.yml) 使用合成数据和 MySQL，不持有受限模型。它不能代替真实模型导出、浏览器交互或实物验收。
-
-来涂鸭基础交互回归从首页功能窗口进入，使用真实点击和键盘测试系列下拉框与相邻涂装操作；只读运行，不写入个人数据库或设备。需模型资产、Playwright 及匹配的托管 Chromium：
-
-```sh
-node tests/browser/paint-basic-ui.mjs --url http://127.0.0.1:8876 --output output/playwright/paint-basic-ui
-```
-
-无本地 Node 依赖时，可用 `PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs` 指定已有 Playwright。脚本保护点击时控件及部位范围不被破坏；macOS 系统菜单的鼠标选项、键盘确认/取消需补原生操作取证，不用程序化选值替代。浏览器窄屏模拟不代替实机触控验收。
-
-调试鸭和首页浏览器回归使用 `tests/debug_browser_fixture.py` 的假运行端和临时数据库，再执行 `tests/duck_debug_browser.js` 与 `tests/home_carousel_browser.js`。这些检查需要本地组装资产；不要把自动化检查连到真实设备。
-
-首页语言菜单另有独立只读回归，可复用上述 8896 隔离夹具。需要本地 Playwright、匹配的托管 Chromium 和模型资产：
-
-```sh
-PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tests/browser/home-language-menu.mjs --url http://127.0.0.1:8896 --output output/playwright/home-language-menu
-```
-
-若 Node 环境能直接导入 `playwright`，可省略 `PLAYWRIGHT_MODULE`。脚本使用临时浏览器配置并阻止 HTTP 写入，检查入口位置、展开边界、裁切、点击、键盘退出、语言记忆及运行错误；包含桌面、响应断点、窄屏、长标签和现有 RTL 语言。默认使用无界面 Chromium 和软件 WebGL；`--headed` 可查看过程。结果及截图写入指定目录；它不代替其他页面、原生浏览器缩放或人工视觉验收。
+设备测试与模拟界面不能证明实物在线、接线、编号或校准正确。浏览器检查必须使用独立假运行端和临时数据库；完整语言、布局、导出与真实入口验收见相应测试脚本和 [翻译维护](docs/i18n.md)。
 
 ## 源码与文档
 
 ```text
 frontend/   首页、涂装台、调试鸭、组装教程、配色广场与共享模块
-personal/   本机 HTTP 服务、SQLite、UNO Q / ADB 调试与舵机准备
-backend/    旧 Python 兼容实现与 Node 服务器 Dockerfile
+apps/       个人版与服务器启动入口
+packages/   共用类型、规则、存储、设备、导出与 HTTP 服务
 apps/server/ Node 服务器入口（账号、广场、导出）
 deploy/     可选 HTTPS 配置
 scripts/    本地资产导入、显示模型打包与公开发行检查
-tests/      Python、Node 与浏览器检查
+tests/      TypeScript Node 与浏览器检查
 assets/     另行准备的本地资产；不应提交
 ```
 

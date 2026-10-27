@@ -6,29 +6,26 @@
 | --- | --- |
 | `frontend/index.html` · `frontend/studio/` | 涂装台：三步主线、方案、发布、导出 |
 | `frontend/home/` | 个人版首页：三个鸭子入口、拖动切换与编号完成门槛 |
-| `frontend/debug/` · `frontend/shared/servo-map.mjs` | 调试鸭、关节显示与共用编号映射 |
+| `frontend/debug/` · `frontend/shared/servo-map.ts` | 调试鸭、关节显示与共用编号映射 |
 | `frontend/assemble/` | 组装教程：章节材料、主副舵盘、取件与安装状态 |
-| `frontend/studio/phone.mjs` · `phone.css` | 手机竖屏（≤760px）：全屏舞台、底部标签栏、可拖动底部面板、两侧浮动工具、触屏手势；桌面不运行 |
+| `frontend/studio/phone.ts` · `phone.css` | 手机竖屏（≤760px）：全屏舞台、底部标签栏、可拖动底部面板、两侧浮动工具、触屏手势；桌面不运行 |
 | `frontend/gallery/` | 配色广场：作品列表、详情、评分、改编家族、我的方案 |
-| `frontend/shared/duck-view.mjs` | Three.js 模型视图：选择、姿势骨架、材质、布局、截图与导出缩略图 |
-| `frontend/shared/duck-actions.mjs` · `duck-voice.mjs` | MicroDuck 经典动作与叫声合成器（JS 移植） |
-| `frontend/shared/api.mjs` · `profile.mjs` | API 客户端、登录注册与账号资料 |
-| `frontend/shared/edition.mjs` | 读取服务端版本配置，个人版屏蔽账号与广场入口 |
-| `frontend/shared/poster.mjs` | 分享海报与配色码 |
+| `frontend/shared/duck-view.ts` | Three.js 模型视图：选择、姿势骨架、材质、布局、截图与导出缩略图 |
+| `frontend/shared/duck-actions.ts` · `duck-voice.ts` | MicroDuck 经典动作与叫声合成器（TypeScript） |
+| `frontend/shared/api.ts` · `profile.ts` | API 客户端、登录注册与账号资料 |
+| `frontend/shared/edition.ts` | 读取服务端版本配置，个人版屏蔽账号与广场入口 |
+| `frontend/shared/poster.ts` | 分享海报与配色码 |
 | `frontend/lib/` | 配色规则：分区、套色与配色码、色彩工具、超进化动画 |
-| `run.py` · `启动来做鸭.command` · `启动来做鸭.bat` | 个人版启动：检查 Python 3.9+ 与资产包，打开浏览器 |
-| `personal/app.py` · `schemes.py` | 个人版服务（标准库）：静态文件、资产、方案与导出接口，本机 SQLite |
-| `personal/duck_debug.py` · `servo_setup.py` · `servo_preparation.py` | 个人版本机设备操作、ADB 连接、编号验证与准备记录 |
-| `backend/server.py` | 服务器版 API 路由（FastAPI）；开发时也提供静态文件 |
-| `backend/store.py` · `database.py` | 服务器版存储：MySQL（测试与迁移也用 SQLite）——账号、私有方案、作品、评分与批量广场统计 |
-| `backend/rules.py` · `errors.py` | 两个版本共用的配色校验与错误码（标准库） |
-| `backend/export_jobs.py` | 有界导出进程池，限制执行和等待任务数量 |
-| `backend/migrate_database.py` | SQLite 一致性备份、事务导入和全字段核对 |
-| `backend/exporter.py` | 固定源 3MF 的材料分配与保留校验（标准库，两个版本共用） |
-| `docker-compose.yml` · `.env.example` | 服务器版：nginx + FastAPI/Uvicorn + MySQL 8.4 |
+| `apps/local/` · `启动来做鸭.command` · `.bat` | Node 个人版启动、资产检查与自有服务生命周期 |
+| `apps/server/` · `packages/host/` | Node/Fastify 路由、版本组合与静态服务 |
+| `packages/contracts/` · `packages/domain/` | 两版及浏览器共用的类型、精确 JSON 与规则 |
+| `packages/storage/` | SQLite/MySQL、账号、方案、作品、评分与只读源库迁移 |
+| `packages/devices/` | 异步 ADB、共享总线、编号、调试与准备记录 |
+| `packages/exporter/` | 固定 3MF 的材料分配、制造校验与有界 worker |
+| `docker-compose.yml` · `.env.example` | 服务器版：nginx + Node/Fastify + MySQL 8.4 |
 | `docker-compose.https.yml` · `deploy/Caddyfile` | 可选 HTTPS：Caddy 自动证书 |
-| `frontend/stamp.py` | 构建前端镜像时给代码地址加内容哈希、写入 import map 与预加载 |
-| `tests/` | 规则、导出、存储、资产导入 |
+| `vite.config.ts` · `frontend/tsconfig.json` | 严格 TS、多页面/Worker 构建、同步预绘制与内容 hash |
+| `tests/` · `tooling/test/` | Node 合约、冻结独立 oracle、资产与真实浏览器回归 |
 | `docs/history/` · `tools/history/` | 脱敏研究记录与早期处理脚本 |
 
 ## 数据放在哪里

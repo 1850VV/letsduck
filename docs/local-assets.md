@@ -13,20 +13,22 @@
 现有工作台的完整 `assets` 文件夹可以作为输入。导入器不联网、不下载模型、不修改源文件，也不覆盖不同的目标资产：
 
 ```sh
-python3 scripts/import_local_assets.py /path/to/existing-workbench/assets
-python3 run.py --no-open
+npm run import:assets -- /path/to/existing-workbench/assets
+npm run start:local -- --no-open
 ```
 
 **仅下载一份 3MF 不足以运行当前版本。** 还需要与它匹配的装配清单、二进制网格、目录和导出描述。本仓库暂未提供从任意 3MF 自动生成完整配准结果的生产级流程。`tools/history/` 保存了早期处理脚本，依赖当时的中间文件、第三方模型、NumPy/Trimesh/SciPy 等工具和特定版本，不是经过清洁环境验证的一键安装器。
 
 模型持有者应自行确认所需用途的权利。软件 MIT 授权不覆盖上述资产。不要使用 `git add -f` 上传它们，也不要把完整本地运行目录打成公开 Release 附件。
 
+导入工具要求源包中的输入是普通文件，并保留拒绝符号链接的既有约束。已有包使用链接时，可把逐文件解析后的同一授权内容复制到自有临时目录，再导入该目录；不要向已有用户资产目录覆盖写入。
+
 ## 组装教程资产
 
 「想做鸭」的 3D 组装教程另需 26 个本地文件（约 126 MB）：整机组装模型、10 个硬件模型、10 段教程视频和 3 段音频。它们同样不进 Git，放在 `assets/assembly/`。`scripts/assembly-assets.json` 记录每个文件的大小和 SHA-256，导入器逐个核对，不覆盖不同的文件：
 
 ```sh
-python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
+npm run import:assembly -- /path/to/authorized/assembly/assets
 ```
 
 仅在有权使用对应资产且本机已有匹配 Git 引用时，才可使用导入器的 `--git <ref>` 选项。分支是否公开不代表其资产已获再分发许可。
@@ -41,7 +43,7 @@ python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
 
 ## Optional smaller display model
 
-After importing the local assets, run `npm ci && npm run pack:positions` on a build machine with Node.js. This generates local-only `geometry.positions.bin` and precompressed variants. Package them alongside the existing assets; do not commit them. The installed application still needs only Python. If the pack or Worker is unavailable, the browser uses the original DDG1 path.
+After importing the local assets, run `npm ci && npm run pack:positions` on a build machine with Node.js. This generates local-only `geometry.positions.bin` and precompressed variants. Package them alongside the existing assets; do not commit them. The current source application and build tools use Node.js 24.20+ (24.x). If the pack or Worker is unavailable, the browser uses the original DDG1 path.
 
 The display pack retains DDG1's 16-bit coordinates, all triangles, and 64-bit print matrices. It does not remove the original source's existing quantization error. Normals are generated in a Worker. The accepted shared export uses the same downloaded pack, computes print normals lazily in a Worker, and reuses the view renderer and geometry. The legacy pack remains packaged as a compatibility fallback; a successful shared export does not fetch it. The source 3MF still remains on the server.
 
@@ -53,4 +55,4 @@ The display pack retains DDG1's 16-bit coordinates, all triangles, and 64-bit pr
 
 扩展色库和打印预设属于本地资产，不随公开源码发布。它们不代表机型、喷嘴或实际打印已经验证；导出的项目仍需在切片软件中核对并重新切片。
 
-隔离界面验证：先运行 `python3 tests/debug_browser_fixture.py`，另一个终端运行 `npm ci` 和 `node tests/filament_browser.js`。验证使用 8896 端口的临时数据库和模拟控制器，保存混合品牌方案并下载实际清单与 3MF，不连接真实舵机。需要已导入的模型和已确认 v1 色库。
+隔离界面验证：先 `npm ci && npm run build`，再运行 `npx tsx tests/browser/run-check.ts --fixture debug --check tests/filament_browser.ts`。runner 使用自己分配的端口、临时数据库和模拟控制器，保存混合品牌方案并下载实际清单与 3MF，不连接真实舵机。需要已导入的模型和已确认 v1 色库。

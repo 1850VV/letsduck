@@ -1,3 +1,4 @@
+import {frozenPythonResult} from './fixtures/legacy-sql-storage.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -8,60 +9,16 @@ import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 const root = resolve(import.meta.dirname, '../..');
-const python = process.env.PYTHON || (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
-const oracle = String.raw`
-import hashlib,json,sqlite3,sys
-from pathlib import Path
-sys.path.insert(0,str(Path(sys.argv[1])/'backend'))
-sys.path.insert(0,str(Path(sys.argv[1])/'tests'))
-from test_migration import legacy_database,DESIGN
-from migrate_database import COLUMNS,fingerprint,target_data,migrate_sqlite
-from database import open_database
-from store import Store
-op=sys.argv[2]
-p=Path(sys.argv[3])
-if op=='create':
- legacy_database(p)
- with sqlite3.connect(p) as c:
-  c.execute('UPDATE schemes SET voice_salt=?,created=?,updated=?',(9223372036854775807,9007199254740993,9007199254740995))
-  c.execute('UPDATE works SET description=? WHERE id=?',('中文\\n\u2028🦆','w-root'))
-elif op=='snapshot':
- c=sqlite3.connect(p);c.row_factory=sqlite3.Row
- data={name:[dict(r) for r in c.execute('SELECT '+','.join(columns)+' FROM '+name)] for name,columns in COLUMNS.items()}
- data={name:sorted(rows,key=lambda r:tuple(str(r[k]) for k in COLUMNS[name])) for name,rows in data.items()}
- print(json.dumps({'fingerprint':fingerprint(data),'data':data},ensure_ascii=False,separators=(',',':')))
- c.close()
-elif op=='target':
- e=open_database(sys.argv[3])
- try:
-  with e.connect() as c:data=target_data(c)
-  data={name:sorted(rows,key=lambda r:tuple(str(r[k]) for k in COLUMNS[name])) for name,rows in data.items()}
-  print(json.dumps({'fingerprint':fingerprint(data),'data':data},ensure_ascii=False,separators=(',',':')))
- finally:e.dispose()
-elif op=='fingerprint': print(fingerprint(json.load(sys.stdin)))
-elif op=='migrate': print(json.dumps(migrate_sqlite(p,sys.argv[4])))
-elif op=='rollback':
- s=Store(sys.argv[3],part_ids=['P1-01'])
- try:
-  assert s.login('alpha','legacy-pass')['user']['id']=='u-a'
-  assert s.user_for('retained-token-b')['id']=='u-b'
-  rows=s.schemes('u-a');assert any(r['id']=='node-added' and r['name']=='Node 写入🦆' and r['voiceSalt']==9007199254740993 for r in rows)
-  assert s.work('w-root','u-b')['rating']=={'count':1,'average':4.0,'mine':4}
-  assert s.work('w-fork')['parentId']=='w-root'
-  s.save_scheme('u-a','python-added',{'name':'Python 回退写入','design':DESIGN,'voiceSalt':9007199254740995})
-  print(json.dumps({'ok':True}))
- finally:s.close()
-`;
-function py(op: string, source: string, ...extra: string[]): string {
-  const run = spawnSync(python, ['-I', '-c', oracle, root, op, source, ...extra], { cwd: root, encoding: 'utf8' });
+function legacy(op: string, source: string, ...extra: string[]): string {
+  const run = spawnSync(process.execPath, ['--import', 'tsx', 'tooling/test/fixtures/legacy-sql-storage.ts', op, source, ...extra], { cwd: root, encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   return run.stdout.trim();
 }
 function temporary(t: { after(fn: () => void): void }): { directory: string; source: string; target: string; backup: string } {
   const directory = mkdtempSync(resolve(tmpdir(), 'duck-migration-'));
-  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  t.after(() => { rmSync(directory, { recursive: true, force: true }); if (existsSync(directory)) throw new Error('Owned migration fixture was not removed'); });
   const source = resolve(directory, 'legacy.db');
-  py('create', source);
+  legacy('create', source);
   return { directory, source, target: resolve(directory, 'target.db'), backup: resolve(directory, 'backup.db') };
 }
 const modules = async () => {
@@ -81,7 +38,7 @@ function empty(path: string): void {
   });
 }
 
-test('migration preserves every Python original field and exact large integer in a retained backup', async t => {
+test('migration preserves every frozen Python original field and exact large integer in a retained backup', async t => {
   const { source, target, backup } = temporary(t), before = hash(source), m = await modules();
   const result = await m.migrateSqlite(source, target, backup);
   assert.equal(result.status, 'migrated');
@@ -89,9 +46,9 @@ test('migration preserves every Python original field and exact large integer in
   assert.deepEqual(result.counts, { users: 2, sessions: 2, schemes: 1, works: 2, ratings: 1 });
   assert.equal(result.backup, backup);
   assert.equal(hash(source), before);
-  const original = py('snapshot', source), copied = py('snapshot', target);
-  assert.equal(copied, original, 'Python must see identical original fields, IDs, hashes, tokens and relationships');
-  assert.equal(py('snapshot', backup), original);
+  const original = legacy('snapshot', source), copied = legacy('snapshot', target);
+  assert.equal(copied, original, 'Independent SQL must see identical original fields, IDs, hashes, tokens and relationships');
+  assert.equal(legacy('snapshot', backup), original);
   assert.equal(result.fingerprint, JSON.parse(original).fingerprint);
 });
 
@@ -105,10 +62,8 @@ test('fingerprint matches Python str tuple sorting, Unicode code points and comp
       { id: 'same', name: 'same', pw_salt: 'a', pw_hash: 'b', avatar: '🦆', color: '#FFFFFF', created: 2 },
     ], sessions: [], schemes: [], works: [], ratings: [],
   };
-  // The oracle receives literal integer tokens; JSON.stringify would round or reject them.
-  const literal = JSON.stringify(data, (_key, value: unknown) => typeof value === 'bigint' ? '__INT_' + String(value) + '__' : value)
-    .replace(/"__INT_(-?\d+)__"/g, '$1');
-  const run = spawnSync(python, ['-I', '-c', oracle, root, 'fingerprint', 'unused'], { cwd: root, input: literal, encoding: 'utf8' });
+  // Frozen output was captured from the original Python source at the revision recorded in storage-python-v1.json.
+  const run = frozenPythonResult('sort',data);
   assert.equal(run.status, 0, run.stderr);
   assert.equal(m.fingerprint(data), run.stdout.trim());
   assert.equal(m.fingerprint({ ...data, users: [...data.users].reverse() }), run.stdout.trim());
@@ -174,14 +129,14 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
     await assert.rejects(m.migrateSqlite(fixture.source, target, fixture.backup), /Import was not confirmed/);
     await assertEmpty(target);
     assert.equal(hash(fixture.source), before);
-    assert.equal(py('snapshot', fixture.backup), py('snapshot', fixture.source));
+    assert.equal(legacy('snapshot', fixture.backup), legacy('snapshot', fixture.source));
   });
-  test(dialect + ': exact data survives Node writes, old Python rollback reads and Python writes', options, async t => {
+  test(dialect + ': exact data survives Node writes, independent legacy SQL reads and legacy SQL writes', options, async t => {
     const fixture = temporary(t), target = await destination(t, fixture), m = await modules();
-    const original = py('snapshot', fixture.source);
+    const original = legacy('snapshot', fixture.source);
     const imported = await m.migrateSqlite(fixture.source, target);
     assert.equal(imported.fingerprint, JSON.parse(original).fingerprint);
-    assert.equal(py('target', target), original, 'Python independently reads every original field from the target');
+    assert.equal(legacy('target', target), original, 'Independent SQL reads every original field from the target');
     const { openDatabase } = await import('../../packages/storage/src/database.js');
     const database = await openDatabase(target);
     const design = '{"colors":{"P1-01":"#FFFFFF"},"assignments":{"P1-01":"pla-white"},"finishes":{}}';
@@ -189,7 +144,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
       await connection.run('INSERT INTO schemes (id,user_id,name,design,provenance,voice_salt,created,updated) VALUES (?,?,?,?,?,?,?,?)',
         ['node-added', 'u-a', 'Node 写入🦆', design, null, 9007199254740993n, 1720000000008, 1720000000009]);
     }); } finally { await database.close(); }
-    assert.deepEqual(JSON.parse(py('rollback', target)), { ok: true });
+    assert.deepEqual(JSON.parse(legacy('rollback', target)), { ok: true });
     const reread = await openDatabase(target);
     try { await reread.transaction(async connection => {
       assert.deepEqual(await connection.rows('SELECT id,voice_salt FROM schemes WHERE id=?', ['python-added']), [{ id: 'python-added', voice_salt: 9007199254740995n }]);
@@ -199,14 +154,14 @@ for (const dialect of ['sqlite', 'mysql'] as const) {
   });
 }
 
-test('Python migration receipts and TypeScript migration receipts reconcile in both directions', async t => {
+test('frozen Python migration receipts and Node receipts reconcile in both directions', async t => {
   const fixture = temporary(t), m = await modules();
-  const legacy = JSON.parse(py('migrate', fixture.source, fixture.target));
-  assert.equal(legacy.status, 'migrated');
+  const legacyReceipt = JSON.parse(legacy('receipt', fixture.source, fixture.target));
+  assert.equal(legacyReceipt.status, 'migrated');
   assert.equal((await m.migrateSqlite(fixture.source, fixture.target)).status, 'already_migrated');
   const nodeTarget = resolve(fixture.directory, 'node-target.db');
   assert.equal((await m.migrateSqlite(fixture.source, nodeTarget)).status, 'migrated');
-  assert.equal(JSON.parse(py('migrate', fixture.source, nodeTarget)).status, 'already_migrated');
+  assert.equal(JSON.parse(legacy('receipt', fixture.source, nodeTarget)).status, 'already_migrated');
 });
 
 test('fingerprint refuses unsafe Number integers instead of silently rounding identity', async () => {
@@ -246,8 +201,8 @@ test('snapshot backup includes committed WAL rows while preserving the original 
     db.exec('PRAGMA journal_mode=WAL');
     db.prepare('UPDATE schemes SET name=? WHERE id=?').run('已提交 WAL🦆', 's-old');
     await m.migrateSqlite(fixture.source, fixture.target, fixture.backup);
-    assert.equal(py('snapshot', fixture.backup), py('snapshot', fixture.source));
-    assert.equal(py('snapshot', fixture.target), py('snapshot', fixture.source));
+    assert.equal(legacy('snapshot', fixture.backup), legacy('snapshot', fixture.source));
+    assert.equal(legacy('snapshot', fixture.target), legacy('snapshot', fixture.source));
     assert.equal(db.prepare('PRAGMA table_info(users)').all().some(row => row.name === 'name_key'), false);
   } finally { db.close(); }
 });
@@ -262,7 +217,7 @@ test('CLI uses the configured target, prints a verified receipt and exits 2 for 
   const result: unknown = JSON.parse(run.stdout);
   assert.ok(result && typeof result === 'object');
   assert.equal(Reflect.get(result, 'status'), 'migrated');
-  assert.equal(Reflect.get(result, 'fingerprint'), JSON.parse(py('snapshot', fixture.source)).fingerprint);
+  assert.equal(Reflect.get(result, 'fingerprint'), JSON.parse(legacy('snapshot', fixture.source)).fingerprint);
   for (const args of [[], [fixture.source, '--unknown'], [resolve(fixture.directory, 'missing.db')], [fixture.source, '--backup']]) {
     const rejected = invoke(args);
     assert.equal(rejected.status, 2, rejected.stderr); assert.ok(rejected.stderr.trim());
@@ -272,7 +227,7 @@ test('CLI uses the configured target, prints a verified receipt and exits 2 for 
 test('fingerprint keeps Python scientific notation for fractional legacy SQLite cells', async () => {
   const m = await modules();
   const data = { users: [], sessions: [{ token: 't', user_id: 'u', created: 1e-7 }], schemes: [], works: [], ratings: [] };
-  const run = spawnSync(python, ['-I', '-c', oracle, root, 'fingerprint', 'unused'], { cwd: root, input: JSON.stringify(data), encoding: 'utf8' });
+  const run = frozenPythonResult('fraction',data);
   assert.equal(run.status, 0, run.stderr);
   assert.equal(m.fingerprint(data), run.stdout.trim());
 });

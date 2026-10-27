@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext", "moduleResolution": "Bundler", "noEmit": true,
+    "declaration": false, "composite": false,
+    "lib": ["ES2023", "DOM", "DOM.Iterable", "WebWorker"],
+    "types": ["vite/client"], "allowJs": false
+  },
+  "include": ["**/*.ts", "**/*.d.ts"],
+  "exclude": ["dist", "vendor", "node_modules"]
+}

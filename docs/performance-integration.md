@@ -1,5 +1,7 @@
 # Approved performance integration
 
+This document records the earlier Python/native-module integration and its measurements. Current TypeScript reproduction commands appear below; these historical numbers are not new migration measurements.
+
 Base: `4cdc08d` (main); experiment reference: `d1e5bc7`. Preserve all UI and material presets.
 
 Approved stages: (1) full-resolution position pack + Worker normals + exact print matrices; (2) demand rendering, no preserved framebuffer, original-sort depth prepass where measurements justify it; (3) asynchronous GPU hover picking with coarse bounds and stale-result suppression; (4) ZIP entry reuse and binary thumbnail upload. On 2026-10-23 the user also explicitly approved shared export geometry and all three candidate image groups on the “正式集成” artboard page (basic, silk, translucent). The artboard records all three as passed. The user subsequently approved transmission at 0.5; its separate integration and measurements are recorded in [Transmission 0.5](transmission-half.md).
@@ -52,7 +54,7 @@ Actual before/after images are on the existing local performance artboard, in th
 
 With local assets imported: `npm ci && npm run pack:positions`. Start an isolated backend with its own SQLite database and static frontend, then set `DUCK_BROWSER_URL` (default port 8897). `tests/model-browser.js` additionally uses `DUCK_BASELINE_URL` (default port 8896) for the untouched original studio.
 
-Run `node tests/model-browser.js`, `node tests/performance-browser.js`, `node tests/picking-browser.js`, and `node tests/export-browser.js` sequentially, not concurrently (GPU timing is shared). `tests/export-cold-browser.js` alternates fresh pages against the experiment baseline. `tests/export-fallback-browser.js` tests concurrent palettes, view restoration, readback/Worker failure and recovery. `DUCK_NGINX_BIN=/path/to/nginx node tests/delivery-browser.js` builds a temporary stamped site and checks actual wire payloads, Worker download overlap and shared export; it closes both nginx and Chromium. Each closes its own managed browser in `finally`. Results and images stay under ignored `output/integration/`. Browser scripts use `.js` so the existing `node --test tests/*.mjs` command stays independent of running servers and licensed assets.
+Run each owned fixture sequentially for GPU diagnostics, for example `npx tsx tests/browser/run-check.ts --fixture debug --check tests/model-browser.ts --script`, then the corresponding `performance-browser.ts`, `picking-browser.ts`, `export-browser.ts`, `export-cold-browser.ts` and `export-fallback-browser.ts`. Current cold/fallback cases exercise this candidate's compatibility paths; they are not a new historical-version performance comparison. Native nginx delivery uses `DUCK_NGINX_BIN=/path/to/nginx npx tsx tests/browser/run-check.ts --fixture debug --check tests/delivery-browser.ts --script`. Runners own their ports, data and managed browser; private results remain under ignored output directories. `npm run test:web` remains independent of running services and explicitly lists any checks not executed because licensed assets are absent.
 
 ## Final validation
 
@@ -62,7 +64,9 @@ Run `node tests/model-browser.js`, `node tests/performance-browser.js`, `node te
 - A final regression test found that an action prop attached inside a joint could accidentally enter depth prepass. The test first failed, then passed after checking visible meshes throughout the rig, not only root children. Prop states now retain the original pass.
 - Export UI smoke initially omitted the existing Print tab, then attempted to read multipart bytes through Playwright's nullable request body API. Both were harness issues; the corrected real tab/click/download flow passed (HTTP 200). Transfer size is measured from the serialized FormData, not guessed from that API.
 
-## Architecture recommendation
+## Historical architecture recommendation
+
+The following recommendation applied to that earlier performance integration. The separately approved TypeScript migration supersedes its language/runtime deferral; retain the rendering and manufacturing boundaries.
 
 Keep Three.js and the existing Python service for this integration. The measured gains come from the asset pipeline, frame scheduling, picking and ZIP reuse. Keep original material shaders and source 3MF validation. Defer the renderer/language rewrite until Windows measurements demonstrate a remaining bottleneck that these changes cannot address. Shared export rendering now addresses cold-export latency. Per-language loading and bundle trimming remain separate unimplemented work.
 

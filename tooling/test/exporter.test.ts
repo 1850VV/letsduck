@@ -1,17 +1,15 @@
+import {frozenOracle} from './fixtures/frozen-oracle.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 import { strToU8, zipSync } from 'fflate';
 import { PNG } from 'pngjs';
 import { errorPayload, parseWireJson, isJsonObject } from '@letsduck/domain';
 import { writeSyntheticAssets } from './synthetic-assets.js';
 import * as module from '@letsduck/exporter';
 
-const root = resolve(import.meta.dirname, '../..');
-const python = process.env.PYTHON || (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
 const required = () => { assert.ok(module, 'The shared exporter package is missing'); return module; };
 const json = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
 function fixture() {
@@ -29,10 +27,9 @@ function fixture() {
   const payload = { name: '合成🦆', source_sha256: model.source_sha256, assignments: Object.fromEntries(model.parts.map((part: { id: string; material: string; color: string }) => [part.id, catalog.products.find((product: { series: string; hex: string }) => product.series === part.material && product.hex === part.color).id])), thumbnails: Object.fromEntries(names.map(name => [name, image])) };
   return { directory, assets, payload };
 }
-function pythonExport(assets: string, payload: unknown, output: string) {
-  const script = `import sys,json\nfrom pathlib import Path\nsys.path.insert(0,'backend')\nimport exporter\ncontent,report=exporter.export_3mf(json.load(sys.stdin))\nPath(sys.argv[1]).write_bytes(content)\nprint(json.dumps(report))`;
-  const result = spawnSync(python, ['-I', '-c', script, output], { cwd: root, env: { ...process.env, DUCK_ASSETS: assets }, input: JSON.stringify(payload), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
-  assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout);
+function pythonExport(_assets: string,payload: unknown,output: string) {
+ const result=frozenOracle('exporter',JSON.stringify(payload));assert.equal(result.status,0,result.stderr);
+ writeFileSync(output,zipSync(Object.fromEntries([...result.entries].map(([name,value])=>[name,new Uint8Array(value)])),{mtime:new Date(2001,1,3,4,5,6)}));return JSON.parse(result.stdout);
 }
 
 test('ZIP rewrites retain exact untouched local records and archive comments', () => {
@@ -45,7 +42,7 @@ test('ZIP rewrites retain exact untouched local records and archive comments', (
   for (const name of ['3D/model.model', '中文.txt']) assert.deepEqual(current.entries.get(name)!.local, old.entries.get(name)!.local);
 });
 
-test('synthetic 3MF entries, BOM and manufacturing validation match current Python', () => {
+test('synthetic 3MF entries, BOM and manufacturing validation match frozen Python', () => {
   const { Exporter, ZipArchive } = required(), f = fixture();
   try {
     const engine = new Exporter(f.assets);
@@ -112,8 +109,7 @@ test('multiple unavailable profiles preserve the complete current Python error p
     catalog.products.push({ id: 'unknown-pps', brand: 'Example', series: 'PPS', material: 'PPS', name: 'Unknown', hex: '#010203' });
     writeFileSync(join(f.assets, 'filament-catalog.json'), JSON.stringify(catalog));
     const payload = { ...f.payload, assignments: { ...f.payload.assignments, p0: 'unknown-peek', p1: 'unknown-pps' } };
-    const script = "import sys,json;sys.path.insert(0,'backend');import exporter;from errors import payload\ntry: exporter.export_3mf(json.load(sys.stdin))\nexcept Exception as exc: print(json.dumps(payload(exc),ensure_ascii=False))";
-    const reference = spawnSync(python, ['-I', '-c', script], { cwd: root, env: { ...process.env, DUCK_ASSETS: f.assets }, input: JSON.stringify(payload), encoding: 'utf8' });
+    const reference=frozenOracle('exporter-plan',JSON.stringify(payload));
     assert.equal(reference.status, 0, reference.stderr);
     assert.throws(() => new module.Exporter(f.assets).export(payload), error => { assert.deepEqual(errorPayload(error), JSON.parse(reference.stdout)); return true; });
   } finally { rmSync(f.directory, { recursive: true, force: true }); }

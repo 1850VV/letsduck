@@ -20,77 +20,39 @@ jobs:
           --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pci-test-password --silent"
           --health-interval=5s --health-timeout=3s --health-retries=30
     env:
-      DUCK_TEST_DATABASE_URL: mysql+pymysql://root:ci-test-password@127.0.0.1:3306/duck_test_ci?charset=utf8mb4
+      DUCK_TEST_DATABASE_URL: mysql://root:ci-test-password@127.0.0.1:3306/duck_test_ci?charset=utf8mb4
+      DUCK_NGINX_BIN: /usr/sbin/nginx
+      DUCK_TEST_BROWSER: '1'
+      WEB_STUDIO_BROWSER: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24.20.0'
           cache: npm
-      - name: Install locked TypeScript workspace dependencies
+      - name: Install locked Node workspace dependencies
         run: npm ci
-      - name: Strict TypeScript workspace and runtime compatibility
+      - name: Strict TypeScript, runtime compatibility and language boundaries
         run: |
           npm run typecheck
           npm run probe:runtime
-      - name: Personal edition with no third-party packages installed
-        run: |
-          python3 -I -m unittest discover -s tests -p test_personal.py -v
-          python3 -I -m unittest discover -s tests -p test_stamp.py -v
-          python3 -I -m unittest discover -s tests -p test_pack_geometry.py -v
-          python3 -I -m compileall -q personal run.py frontend/stamp.py scripts/pack_geometry.py backend/rules.py backend/errors.py backend/exporter.py
-      - name: Install pinned backend and test dependencies
-        run: |
-          python3 -m venv .venv
-          .venv/bin/python -m pip install -r requirements-dev.txt
-          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
-      - name: Shared TypeScript contracts and Python database interoperability
-        run: npm run test:typescript
-      - name: Build and exercise the Node server image and disposable MySQL migration
-        run: |
-          DUCK_TEST_DATABASE_URL= npx tsx tooling/test/server-container.ts
-          DUCK_MYSQL_PASSWORD=ci-compose-password DUCK_MYSQL_ROOT_PASSWORD=ci-root-password docker compose config --quiet
-          DUCK_MYSQL_PASSWORD=ci-compose-password DUCK_MYSQL_ROOT_PASSWORD=ci-root-password DUCK_DOMAIN=example.invalid docker compose -f docker-compose.yml -f docker-compose.https.yml config --quiet
-      - name: Check publication boundary
-        run: python3 scripts/publication_audit.py
-      - name: Real filament rules without licensed assets
-        run: |
-          node --test tests/filaments.test.mjs
-          python3 -I -m unittest discover -s tests -p test_filaments.py -v
-          python3 -I -m unittest discover -s tests -p test_material_profiles.py -v
-      - name: Test local asset importer and the account store with synthetic fixtures
-        run: |
-          python3 -m unittest discover -s tests -p test_local_assets.py -v
-          python3 -m unittest discover -s tests -p test_assembly_import.py -v
-          python3 -m unittest discover -s tests -p test_store.py -v
-          python3 -m unittest discover -s tests -p test_api.py -v
-          python3 -m unittest discover -s tests -p test_store_scaling.py -v
-          python3 -m unittest discover -s tests -p test_export_queue.py -v
-          python3 -m unittest discover -s tests -p test_migration.py -v
-          python3 -m unittest discover -s tests -p test_startup.py -v
-          python3 -m unittest discover -s tests -p test_mysql.py -v
-      - name: Performance unit contracts without licensed assets
-        run: |
-          node --test tests/test_positions.mjs tests/test_model_loader.mjs tests/test_render_policy.mjs tests/test_hover_queue.mjs
-          python3 -I -m unittest discover -s tests -p test_zip_reuse.py -v
-          python3 -I -m unittest discover -s tests -p test_export_transport_unit.py -v
-      - name: Assembly guide logic without licensed assets
-        # cable-clearance and hardware-models read the local assembly models (scripts/import_assembly_assets.py).
-        run: node --test $(ls tests/assembly/*.test.mjs | grep -v -e cable-clearance -e hardware-models)
-      - name: Debug duck controller and shared servo numbering
-        run: |
-          python3 -I -m unittest discover -s tests -p test_duck_debug.py -v
-          node --test tests/duck-debug.test.mjs tests/servo-map.test.mjs tests/servo-preparation.test.mjs
-      - name: Verify precompressed asset delivery with native nginx
+          npm run audit:typescript
+      - name: Install owned managed-browser and native nginx test dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends nginx
-          DUCK_NGINX_BIN=/usr/sbin/nginx python3 -I -m unittest discover -s tests -p test_nginx_assets.py -v
-      - name: Check Python and browser module syntax
+          PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium
+      - name: Node contracts, real MySQL, browser lifecycle and source-only web checks
+        run: npm test
+      - name: Build and exercise Node server and Vite nginx images
         run: |
-          python3 -m compileall -q backend personal run.py
-          for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs frontend/home/*.mjs frontend/locales/*.mjs frontend/assemble/*.mjs frontend/assemble/full/*.mjs frontend/debug/*.mjs; do
-            node --check "$file"
-          done
+          DUCK_TEST_DATABASE_URL= npx tsx tooling/test/server-container.ts
+          npx tsx tooling/test/web-container.ts
+          DUCK_MYSQL_PASSWORD=ci-compose-password DUCK_MYSQL_ROOT_PASSWORD=ci-root-password docker compose config --quiet
+          DUCK_MYSQL_PASSWORD=ci-compose-password DUCK_MYSQL_ROOT_PASSWORD=ci-root-password DUCK_DOMAIN=example.invalid docker compose -f docker-compose.yml -f docker-compose.https.yml config --quiet
+      - name: Check publication boundary
+        run: npm run audit:publication
       - name: State the validation boundary
-        run: echo "Real-model export and browser checks need a separately licensed local asset pack and are not run in public CI."
+        run: echo "Licensed-model browser, manufacturing, native-control and physical-device checks require their separate local acceptance evidence."
