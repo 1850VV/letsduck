@@ -1,5 +1,6 @@
 import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // One-click styling for the fixed XGO Duck V2 regions: four colour roles, recipes, dice, themes and share links.
 import { ZONES, SOURCE, editableIds } from './duck-workbench.mjs';
+import {compatibleProduct} from './filaments.mjs';
 export let SLOTS = [{ id: 'main', get name() {return _t("text.0536");} }, { id: 'sub', get name() {return _t("text.0537");} }, { id: 'accent', get name() {return _t("text.0538");} }, { id: 'pad', get name() {return _t("text.0539");}, material: 'TPU 90A' }];
 // Zone → colour role. The eye itself (P3-01) is resolved separately so it always reads against its shell.
 export const RECIPES = {
@@ -36,7 +37,7 @@ export function quickDesign(parts, products, slots, recipe) {
   for (const zone of ZONES) for (const id of zone.ids) {
     const part = parts.find((p) => p.id === id);if (!part) continue;
     const product = byId.get(slots[map[zone.id]]);
-    if (product.series !== part.material) throw Error(_t("text.0553", { v0: zone.name, v1: product.series }));
+    if (!compatibleProduct(part.material,product)) throw Error(_t("text.0553", { v0: zone.name, v1: product.series }));
     colors[id] = product.hex.toUpperCase();assignments[id] = product.id;
   }
   if (colors[EYE]) {const shell = colors['P2-06'] || colors['P4-01'],eye = byCode(products, luminance(shell) < .12 ? '10100' : '10101', 'PLA Basic');colors[EYE] = eye.hex.toUpperCase();assignments[EYE] = eye.id;}
@@ -69,16 +70,19 @@ export function designNotes(colors, assignments) {
 // Share format: look=v1.<source prefix>.<colour codes>.<one base36 index per part, model order>[.<name>]
 export function encodeLook(parts, products, assignments, name = '', source = SOURCE) {
   const byId = new Map(list(products).map((p) => [p.id, p])),used = [];
-  const index = parts.map((part) => {const p = byId.get(assignments[part.id]);if (!p || p.series !== part.material) throw Error(_t("text.0555", { v0: parts.length }));const key = (p.series === 'TPU 90A' ? 't' : '') + p.colorCode;if (!used.includes(key)) used.push(key);return used.indexOf(key).toString(36);}).join('');
-  return ['v1', source.slice(0, 8), used.join('-'), index, encodeURIComponent(String(name).trim().slice(0, 40))].join('.').replace(/\.$/, '');
+  const legacy=parts.every(part=>{const p=byId.get(assignments[part.id]);return p?.brand==='Bambu Lab'&&p.series===part.material&&p.colorCode;});
+  const index = parts.map((part) => {const p = byId.get(assignments[part.id]);if (!compatibleProduct(part.material,p)) throw Error(_t("text.0555", { v0: parts.length }));const key = legacy?(p.series === 'TPU 90A' ? 't' : '') + p.colorCode:p.id;if (!used.includes(key)) used.push(key);return used.indexOf(key).toString(36);}).join('');
+  const codes=legacy?used.join('-'):btoa(JSON.stringify(used)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return [legacy?'v1':'v2', source.slice(0, 8), codes, index, encodeURIComponent(String(name).trim().slice(0, 40))].join('.').replace(/\.$/, '');
 }
 export function decodeLook(parts, products, text, source = SOURCE) {
   const [version, prefix, codes, index, name = ''] = String(text).split('.');
-  if (version !== 'v1' || !codes || !index) throw Error(_t("text.0556"));
+  if (!['v1','v2'].includes(version) || !codes || !index) throw Error(_t("text.0556"));
   if (prefix !== source.slice(0, 8)) throw Error(_t("text.0557"));
   if (index.length !== parts.length) throw Error(_t("text.0558"));
-  const keys = codes.split('-'),colors = {},assignments = {};
-  parts.forEach((part, i) => {const key = keys[parseInt(index[i], 36)];if (!key) throw Error(_t("text.0559"));const tpu = key.startsWith('t'),p = byCode(products, tpu ? key.slice(1) : key, tpu ? 'TPU 90A' : 'PLA Basic');if (!p || p.series !== part.material) throw Error(_t("text.0560"));colors[part.id] = p.hex.toUpperCase();assignments[part.id] = p.id;});
+  let keys;try{keys=version==='v1'?codes.split('-'):JSON.parse(atob(codes.replace(/-/g,'+').replace(/_/g,'/')));if(!Array.isArray(keys))throw Error();}catch{throw Error(_t('text.0556'));}
+  const colors = {},assignments = {},byId=new Map(list(products).map(p=>[p.id,p]));
+  parts.forEach((part, i) => {const key = keys[parseInt(index[i], 36)];if (typeof key!=='string') throw Error(_t("text.0559"));const tpu = key.startsWith('t'),p = version==='v2'?byId.get(key):byCode(products, tpu ? key.slice(1) : key, tpu ? 'TPU 90A' : 'PLA Basic');if (!compatibleProduct(part.material,p)) throw Error(_t("text.0560"));colors[part.id] = p.hex.toUpperCase();assignments[part.id] = p.id;});
   let title = '';try {title = decodeURIComponent(name).slice(0, 40);} catch {}
   return { colors, assignments, name: title };
 }

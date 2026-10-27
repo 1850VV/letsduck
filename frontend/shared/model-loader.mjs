@@ -31,7 +31,7 @@ export async function loadModel() {
   const worker=startWorker();
   try {
     const positions=get('geometry.positions.bin').catch(()=>null);
-    const [model,catalog]=await Promise.all([get('model.json','json'),get('catalog.json','json')]);
+    const [model,catalog]=await Promise.all([get('model.json','json'),fetch(new URL('../api/catalog',import.meta.url)).then(response=>{if(!response.ok)throw Error('Catalogue: '+response.status);return response.json();})]);
     let legacy;
     const loadLegacy=()=>legacy||=(async()=>{
       try{return unpackGeometry(await get('geometry.pack.bin'),model);}catch{return get('geometry.bin');}
