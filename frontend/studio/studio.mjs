@@ -9,6 +9,7 @@ import { SLOTS, RECIPES, THEMES, quickDesign, rollSlots, themeSlots, designNotes
 import { sideParts, paintTargets } from '../lib/color-workflows.mjs';
 import { createEvolution } from '../lib/evolution.mjs';
 import { createLineup } from './lineup.mjs';
+import { bindCompareHold } from './compare-hold.mjs';
 import { createActionPlayer, ACTIONS, VOICES, describeVoice, seedFromText } from '../shared/duck-actions.mjs';
 import { hexToHsv, hsvToHex } from '../lib/focus-rules.mjs';
 import { applyBrand, BRAND, brandName } from '../shared/brand.mjs';
@@ -215,14 +216,30 @@ const compareColors = () => compareId === 'saved' ? baseline().colors : compareI
 const compareName = () => compareTargets().find(([k]) => k === compareId)?.[1] || _t("text.0069");
 function renderCompare() {
   if (!compareTargets().some(([k]) => k === compareId)) compareId = 'original';
-  $('#hold').textContent = _t("text.0098", { v0: compareName() });
+  $('#hold').textContent = _t("text.0600");
   $('#cmp-menu').innerHTML = compareTargets().map(([k, l]) => `<button data-cmp="${k}" class="${k === compareId ? 'on' : ''}">${esc(l)}</button>`).join('') + `<hr><button data-cmp-split class="${splitOn ? 'on' : ''}">${_t("text.0099", { v1: splitOn ? '✓ ' : '' })}</button>`;
   view.setSplit(splitOn ? compareColors() : null);$('#split-labels').hidden = !splitOn;$('#split-a').textContent = 'A · ' + compareName();
+  requestAnimationFrame(layoutCompareDock);
 }
+function layoutCompareDock() {
+  const dock=$('#dock'),stage=$('#stage');
+  if(innerWidth<=900){delete dock.dataset.flow;dock.style.width='';return;}
+  if(step===1||!stage.clientWidth)return;
+  const left=$('#views').offsetWidth+$('#spin').offsetWidth+8,right=$('#bgs').scrollWidth,hold=$('#hold').offsetWidth,room=stage.clientWidth-28,wing=Math.max(left,right+26);
+  const full=2*wing+hold+30;
+  dock.style.setProperty('--wing',wing+'px');dock.dataset.flow=full<=room?'balanced':left+right+22<=room?'two':'stack';
+  dock.style.width=(full<=room?full:room)+'px';stage.style.setProperty('--dock-height',dock.offsetHeight+'px');
+  const tools=$('#tools');stage.style.setProperty('--compare-top',Math.max(80,tools.offsetTop+tools.offsetHeight+10)+'px');
+}
+new ResizeObserver(()=>requestAnimationFrame(layoutCompareDock)).observe($('#stage'));
 $('#cmp-pick').onclick = (e) => {e.stopPropagation();const m = $('#cmp-menu');m.hidden = !m.hidden;};
 $('#cmp-menu').onclick = (e) => {const b = e.target.closest('[data-cmp]');if (b) {compareId = b.dataset.cmp;} else if (e.target.closest('[data-cmp-split]')) {splitOn = !splitOn;if (splitOn && sideOn) toggleSide(false);}renderCompare();$('#cmp-menu').hidden = true;};
-const holdOn = () => {if (step === 1) return;view.setColors(compareColors());$('#hold').classList.add('on');},holdOff = () => {view.setColors(design.colors);$('#hold').classList.remove('on');};
-$('#hold').addEventListener('pointerdown', holdOn);$('#hold').addEventListener('pointerup', holdOff);$('#hold').addEventListener('pointerleave', holdOff);
+const comparison=bindCompareHold({button:$('#hold'),stage:$('#stage'),line:$('#compare-wipe'),canStart:()=>step!==1,
+  begin:()=>{hover.cancel();$('#part-tag').hidden=true;view.setColors(design.colors,true);view.setWipe(compareColors());view.stage.controls.enabled=false;$('#split-labels').hidden=true;$('#compare-before').textContent=compareName();},
+  move:at=>view.setWipe(compareColors(),at),
+  rotate:(dx,dy)=>view.orbitBy(dx,dy),
+  end:()=>{view.setWipe(null);view.stage.controls.enabled=true;$('#split-labels').hidden=!splitOn;}
+});
 
 // ---------- selection ----------
 function targetIds() {
@@ -502,6 +519,7 @@ async function updateVoice() {
 }
 function renderAll(lite = false) {renderHeader();renderSteps();renderRail();if (lite && step === 2 && $('#cdock')) updateStep2();else if (lite && step === 1) renderStarts();else renderPanel();renderStage();renderCompare();renderMenu();$('#undo').disabled = !undo.length;$('#redo').disabled = !redo.length;updateVoice();}
 function goStep(n) {
+  comparison.stop();
   if (step === 3 && n !== 3) {actions.stop();applyPose();}
   if (focused && n !== 2) {focused = false;focusKey = '';view.view('hero');}
   if (step === 1 && n !== 1) lineup.hide(squad().findIndex(([id]) => id === startId));
@@ -814,7 +832,7 @@ addEventListener('keydown', (e) => {
   if ((e.metaKey || e.ctrlKey) && k === 'z') {e.preventDefault();(e.shiftKey ? $('#redo') : $('#undo')).click();return;}
   if ((e.metaKey || e.ctrlKey) && k === 's') {e.preventDefault();saveScheme(false);return;}
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.code === 'Space' && !e.repeat) {e.preventDefault();holdOn();return;}
+  if (e.code === 'Space' && !e.repeat) {e.preventDefault();comparison.start();return;}
   if (step === 1) {
     const list = squad(),tabs = ['classic', 'dice', 'mine'];
     if (k === 'r') rerollAll();else if (/^[1-4]$/.test(k) && list[+k - 1]) applyStart(list[+k - 1][0]);
@@ -828,7 +846,7 @@ addEventListener('keydown', (e) => {
   if (k === 'p') return toggleSide();
   if (k === 'escape' || k === 'v') setTool('select');else if (k === 'b') setTool(tool === 'brush' ? 'select' : 'brush');else if (k === 'i') setTool('pick');
 });
-addEventListener('keyup', (e) => {if (e.code === 'Space') holdOff();});
+addEventListener('keyup', (e) => {if (e.code === 'Space') comparison.stop();});
 
 // ---------- misc ----------
 let toastTimer,lastToast;
