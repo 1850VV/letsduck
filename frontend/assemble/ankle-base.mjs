@@ -29,7 +29,7 @@ export const STEPS = [
 ];
 
 export const ACTORS = {
-  motor:{label:'舵机 · 视频 ID14',source:'现有辅助网格',color:'#242832',end:[0,26.5,0],start:[0,26.5,0],step:0},
+  motor:{label:'舵机 · ID24',source:'现有辅助网格',color:'#242832',end:[0,26.5,0],start:[0,26.5,0],step:0},
   foot:{label:'脚掌 · P2-03',source:'真实 3MF 网格',color:'#f7ce3c',end:[1.17,14.98,6.78],start:[1.17,14.98,61.78],step:4},
   shank:{label:'小腿连接件 · P6-04',source:'真实 3MF 网格',color:'#f7f8fb',end:[13.52,41.47,-.01],start:[48,44,0],step:3},
   bearing:{label:'小轴承 · 10×15×3',source:'现有辅助网格',color:'#b3bac8',end:[16.7,19,0],start:[48,19,0],step:5},

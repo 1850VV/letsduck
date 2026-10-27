@@ -52,6 +52,10 @@ jobs:
       - name: Assembly guide logic without licensed assets
         # cable-clearance and hardware-models read the local assembly models (scripts/import_assembly_assets.py).
         run: node --test $(ls tests/assembly/*.test.mjs | grep -v -e cable-clearance -e hardware-models)
+      - name: Debug duck controller and shared servo numbering
+        run: |
+          python3 -I -m unittest discover -s tests -p test_duck_debug.py -v
+          node --test tests/duck-debug.test.mjs tests/servo-map.test.mjs tests/servo-preparation.test.mjs
       - name: Verify precompressed asset delivery with native nginx
         run: |
           sudo apt-get update -qq
@@ -60,7 +64,7 @@ jobs:
       - name: Check Python and browser module syntax
         run: |
           python3 -m compileall -q backend personal run.py
-          for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs frontend/home/*.mjs frontend/locales/*.mjs frontend/assemble/*.mjs frontend/assemble/full/*.mjs; do
+          for file in frontend/lib/*.mjs frontend/shared/*.mjs frontend/studio/studio.mjs frontend/gallery/gallery.mjs frontend/home/*.mjs frontend/locales/*.mjs frontend/assemble/*.mjs frontend/assemble/full/*.mjs frontend/debug/*.mjs; do
             node --check "$file"
           done
       - name: State the validation boundary
