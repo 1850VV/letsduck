@@ -33,13 +33,13 @@ const docker=(...args:string[])=>command('docker',args);
 async function ownDirectory(path:string){try{await lstat(path);}catch(error){if(!record(error)||error.code!=='ENOENT')throw error;await mkdir(path);directories.push(path);}}
 async function canary(path:string){await writeFile(join(root,path),'Public CI exclusion probe; no private data.\n',{flag:'wx'});canaries.push(path);}
 async function contextProbe(temporary:string){
- await ownDirectory(join(root,'.ryugi'));await canary(`.ryugi/${id}.txt`);await canary(`.env.${id}`);await canary(`${id}.db`);await canary(`packages/domain/src/.env.${id}`);
+ await ownDirectory(join(root,'.ryugi'));await canary(`.ryugi/${id}.txt`);await canary(`.env.${id}`);await canary(`${id}.db`);await canary(`packages/domain/src/.env.${id}`);await canary(`packages/domain/${id}.tsbuildinfo`);
  // Never write through an existing assets directory or stable-data symlink.
  try{await lstat(join(root,'assets'));}catch(error){if(!record(error)||error.code!=='ENOENT')throw error;await mkdir(join(root,'assets'));directories.push(join(root,'assets'));await canary(`assets/${id}.3mf`);}
  const forbidden=['.ryugi','.git','assets','node_modules',...canaries];
- const shell=forbidden.map(path=>`test ! -e '/context/${path}'`).join(' && ')+ ' && (test ! -d /context/frontend/dist || test -z "$(find /context/frontend/dist -type f -print)")';
+ const shell=forbidden.map(path=>`test ! -e '/context/${path}'`).join(' && ')+ ' && (test ! -d /context/frontend/dist || test -z "$(find /context/frontend/dist -type f -print)") && test -z "$(find /context -type f -name \"*.tsbuildinfo\" -print)"';
  const dockerfile=join(temporary,'context.Dockerfile');await writeFile(dockerfile,`FROM ${webImage}\nCOPY . /context\nRUN ${shell}\n`);images.push(contextImage);await docker('build','--file',dockerfile,'--tag',contextImage,root);
- console.log('PASS private .ryugi/Git/assets/env/DB/dist/node_modules excluded from actual ROOT context');
+ console.log('PASS private .ryugi/Git/assets/env/DB/dist/node_modules and incremental tsbuildinfo excluded from actual ROOT context');
 }
 async function request(url:string,path:string,options:RequestInit={}):Promise<Response>{return fetch(url+path,{...options,signal:AbortSignal.timeout(15_000)});}
 async function json(url:string,path:string,options:RequestInit={}):Promise<Record<string,unknown>>{const response=await request(url,path,options),body:unknown=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.ok(record(body));return body;}

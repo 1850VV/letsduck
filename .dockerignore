@@ -90,4 +90,6 @@
 **/.git/**
 **/node_modules/**
 **/dist/**
+# Host incremental state can skip declaration emit when dist is excluded.
+**/*.tsbuildinfo
 **/__pycache__/**
