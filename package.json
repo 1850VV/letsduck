@@ -22,7 +22,8 @@
     "probe:runtime": "tsx tooling/src/runtime-probe.ts",
     "baseline:capture": "tsx tooling/src/baseline.ts",
     "verify:phase0": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
-    "verify:phase1": "npm run typecheck && npm test && npm run test:python && npm run audit:publication"
+    "verify:phase1": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
+    "verify:phase2": "npm run typecheck && npm test && npm run test:python && npm run audit:publication"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",

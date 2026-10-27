@@ -109,6 +109,8 @@ TypeScript 工作区使用 Node 24.20+（24 系列），由 `packages/` 与 `too
 
 请求适配器使用 `parseWireJson` 保留原始数字信息，再把解析对象交给共享规则；大整数保留为 `bigint`。这使 Python 风格的名称转换和 `voiceSalt` 保持兼容，避免普通 JSON 解析先把整数取整。
 
+`@letsduck/exporter` 提供 3MF、BOM 和 multipart 解析。`ExportManager` 默认使用一个执行位、两个等待位；请求取消后仍保留在途任务的容量，`close()` 等待已接收任务完成再退出线程。它使用调用者指定的本地资产目录。
+
 ```sh
 npm ci
 npm run build
@@ -117,6 +119,7 @@ npm run test:typescript
 npm run probe:runtime
 npm run verify:phase0
 npm run verify:phase1
+npm run verify:phase2
 ```
 
 `verify:phase0` 执行新工作区检查、现有 Node/组装检查、README 的 Python 检查和公开发行扫描。Python 默认使用本仓库 `.venv`，也可用 `PYTHON` 指定解释器。`probe:runtime -- --electron /path/to/electron` 额外验证 Node 与 Electron 的 SQLite 互读回写；它不代替真实 MySQL、安装包或设备验收。
