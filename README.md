@@ -105,6 +105,10 @@ docker compose up -d --build
 
 TypeScript 工作区使用 Node 24.20+（24 系列），由 `packages/` 与 `tooling/` 组成。现有 Python 运行入口和前端继续独立工作；新增工具不切换服务或迁移用户数据。
 
+`@letsduck/contracts` 提供 JSON Schema、由 schema 推导的类型和设备映射；`@letsduck/domain` 提供配色、方案、耗材兼容与打印预设规则。两个包均可用于浏览器。共享规则通过当前 Python 实现的差分用例验证；旧页面的接入按后续迁移批次完成。
+
+请求适配器使用 `parseWireJson` 保留原始数字信息，再把解析对象交给共享规则；大整数保留为 `bigint`。这使 Python 风格的名称转换和 `voiceSalt` 保持兼容，避免普通 JSON 解析先把整数取整。
+
 ```sh
 npm ci
 npm run build
@@ -112,6 +116,7 @@ npm run typecheck
 npm run test:typescript
 npm run probe:runtime
 npm run verify:phase0
+npm run verify:phase1
 ```
 
 `verify:phase0` 执行新工作区检查、现有 Node/组装检查、README 的 Python 检查和公开发行扫描。Python 默认使用本仓库 `.venv`，也可用 `PYTHON` 指定解释器。`probe:runtime -- --electron /path/to/electron` 额外验证 Node 与 Electron 的 SQLite 互读回写；它不代替真实 MySQL、安装包或设备验收。

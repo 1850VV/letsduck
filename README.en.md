@@ -105,6 +105,10 @@ For public deployment, follow [deployment instructions](docs/deployment.md) for 
 
 The TypeScript workspace uses Node 24.20+ (24.x), with `packages/` and `tooling/`. Existing Python launchers and frontend remain independently usable. The new tools do not switch services or migrate user data.
 
+`@letsduck/contracts` supplies JSON Schema, inferred types and device mappings. `@letsduck/domain` supplies design, scheme, filament compatibility and print-profile rules. Both packages work in browsers. Differential cases compare the shared rules with the current Python implementation; later migration batches connect the existing pages.
+
+Request adapters use `parseWireJson` to retain numeric source information before passing the decoded object to shared rules. Large integers remain `bigint`, preserving Python-style name conversion and `voiceSalt` without rounding them during ordinary JSON decoding.
+
 ```sh
 npm ci
 npm run build
@@ -112,6 +116,7 @@ npm run typecheck
 npm run test:typescript
 npm run probe:runtime
 npm run verify:phase0
+npm run verify:phase1
 ```
 
 `verify:phase0` runs the new workspace checks, existing Node/assembly checks, the README Python checks and publication audit. Python defaults to this checkout's `.venv`; set `PYTHON` to override it. `probe:runtime -- --electron /path/to/electron` also checks SQLite interoperability between Node and Electron. It does not replace real MySQL, installed-app or hardware acceptance.
