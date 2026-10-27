@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "scripts",
+    "outDir": "dist-scripts",
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
+    "declaration": false
+  },
+  "include": [
+    "scripts/icon.cts"
+  ]
+}

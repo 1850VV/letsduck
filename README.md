@@ -56,7 +56,7 @@
 | 账号与配色广场 | 无 | 昵称账号、私有方案、发布、评分、「做同款」和改编家族 |
 | USB 设备控制 | 本机支持 | 不提供 |
 
-两个版本共用 TypeScript 前端、配色校验、存储和 3MF 导出包。以下是源码个人版与 Docker 服务器版的启动方式；Electron 桌面交付仍单独验证。
+个人版、服务器版与 Electron 桌面端共用 TypeScript 前端、配色校验、存储和 3MF 导出包。以下介绍源码个人版与 Docker 服务器版；桌面候选和随附 Node 的浏览器包见[桌面与离线打包](apps/desktop/README.md)。安装、更新、签名和设备验收分别进行。
 
 ## 本机启动
 
@@ -117,7 +117,7 @@ npm run start:server -- --host 127.0.0.1 --port 8880 --static frontend/dist
 
 应用源码、前端、工具和常规测试统一使用严格 TypeScript。`frontend/` 经 Vite 构建到 `frontend/dist/`，个人版和服务器都服务构建产物。保留 `/paint`、`/assemble/`、`/debug/`、`/gallery/` 与各自版本的入口规则；服务器的 `/` 是涂装台，个人版的 `/` 是三入口首页。
 
-工作区职责：`packages/contracts` 提供 schema 与类型；`domain` 提供浏览器/Node 共用规则和精确 JSON；`exporter` 提供 3MF、BOM、预检和有界 worker；`storage` 提供个人 SQLite 与服务器 SQLite/MySQL；`devices` 提供共享总线上的异步设备控制；`host` 用 Cordis 组合 Fastify、存储和服务生命周期。`apps/local`、`apps/server` 是各自入口。
+工作区职责：`packages/contracts` 提供 schema 与类型；`domain` 提供浏览器/Node 共用规则和精确 JSON；`exporter` 提供 3MF、BOM、预检和有界 worker；`storage` 提供个人 SQLite 与服务器 SQLite/MySQL；`devices` 提供共享总线上的异步设备控制；`host` 用 Cordis 组合 Fastify、存储和服务生命周期。`apps/local`、`apps/server`、`apps/desktop` 是各自入口。桌面窗口只管理本机协议、下载、更新与进程，共用业务代码。
 
 ```sh
 npm ci
@@ -131,7 +131,7 @@ npm run audit:publication
 
 `typecheck` 检查前端、全部测试、工具和构建配置，禁止用 JS 绕过严格检查。`audit:typescript` 检查活跃自有代码的语言、类型抑制及固定 vendor 指纹；厂商 JS 与 `tools/history/` 的归档工具有明确保留用途。`audit:publication` 检查跟踪文件中的私有路径、资产、凭据与生成物。扫描是启发式检查，不能代替人工核查。
 
-`npm test` 使用临时数据库和假设备。缺少独立授权资产时，会逐文件列出未执行的资产测试；几何包测试也会明确跳过。完整迁移验收使用已有合法资产运行 `npm run verify:phase6`，不能把资产缺失的源代码 CI 当作完整产品验收。MySQL 测试需要专用 `duck_test_*` 库的 `DUCK_TEST_DATABASE_URL`，未配置时明确跳过；测试按序运行。
+`npm test` 使用临时数据库和假设备，包含桌面单元测试。缺少独立授权资产时，会逐文件列出未执行的资产测试；几何包测试也会明确跳过。完整迁移源码检查使用已有合法资产运行 `npm run verify:phase7`，桌面真实运行与安装专项见[打包说明](apps/desktop/README.md)；不能把资产缺失的源代码 CI 当作完整产品验收。MySQL 测试需要专用 `duck_test_*` 库的 `DUCK_TEST_DATABASE_URL`，未配置时明确跳过；测试按序运行。
 
 浏览器检查使用 Playwright 托管 Chromium。安装匹配版本后，设置 `DUCK_TEST_BROWSER=1` 可运行浏览器生命周期专项；需 nginx 的协议检查在没有本机 nginx 时明确跳过。原生控件、人工视觉、真实设备与安装包验收分别报告。
 

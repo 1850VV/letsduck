@@ -1,6 +1,7 @@
 # Build from the repository root: docker build -f backend/Dockerfile .
 # The API stays in one Node process; bounded worker threads calculate 3MF exports.
 FROM node:24.20.0-bookworm-slim AS build
+ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.base.json tsconfig.build.json ./
 COPY packages/contracts/package.json packages/contracts/tsconfig.json ./packages/contracts/

@@ -49,3 +49,9 @@ storage-state*.json
 /assets/*.tmp
 /.venv
 /assets/assembly/
+
+# Desktop staging may contain separately licensed assets and generated installers.
+/apps/desktop/build/
+/apps/desktop/release/
+/apps/desktop/dist-config/
+/apps/desktop/dist-scripts/

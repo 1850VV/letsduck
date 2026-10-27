@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "rootDir": "../..",
+    "declaration": false
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.cts",
+    "scripts/**/*.ts",
+    "scripts/**/*.cts",
+    "test/**/*.ts",
+    "electron-builder.cts"
+  ]
+}

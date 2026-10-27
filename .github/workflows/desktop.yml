@@ -1,0 +1,77 @@
+name: Desktop and portable candidates
+on:
+  push:
+    branches: [main]
+    paths: ['apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
+  pull_request:
+    paths: ['apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            platform: win32
+            arch: x64
+            target: '--win --x64'
+          - os: macos-15
+            platform: darwin
+            arch: arm64
+            target: '--mac --arm64'
+          - os: macos-15-intel
+            platform: darwin
+            arch: x64
+            target: '--mac --x64'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      # PR builds skip even ad-hoc signing unless enabled; re-seal the packaged macOS bundle.
+      CSC_NAME: '-'
+      CSC_FOR_PULL_REQUEST: 'true'
+      DUCK_BUILD_ARCH: ${{ matrix.arch }}
+      DUCK_RELEASE_VERSION: '0.1.0-beta.4'
+      DUCK_PACKAGE_WITHOUT_ASSETS: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+          cache: npm
+      - run: npm ci
+      - name: Install the pinned official Electron binary
+        run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
+      - name: Strict desktop, tooling and renderer checks
+        run: |
+          npm run typecheck
+          npm run test:desktop
+          npx tsx --test tooling/test/stage-runtime-assets.test.ts tooling/test/package-browser.test.ts tooling/test/fetch-node-runtime.test.ts
+      - name: POSIX CLI signal handling and portable paths
+        if: runner.os != 'Windows'
+        run: npx tsx --test tooling/test/local-cli.test.ts
+      - name: Actual Electron protocol, startup, utility lifecycle and retained profile
+        run: node --import tsx apps/desktop/test/shell.browser.ts
+      - name: Build an offline source-only installer
+        run: npm run package:desktop -- ${{ matrix.target }}
+      - name: Install the candidate and check the synthetic subset
+        run: node --import tsx apps/desktop/scripts/installed-smoke.ts --synthetic
+      - name: Download and verify the matching official Node runtime
+        run: npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
+      - name: Build the portable browser archive
+        run: npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
+      - name: Source and publication boundary
+        run: |
+          npm run audit:typescript
+          npm run audit:publication
+      - name: State the candidate boundary
+        run: echo "Source-only installers and portable archives exclude licensed models. Synthetic installation checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."

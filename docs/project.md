@@ -17,6 +17,8 @@
 | `frontend/shared/poster.ts` | 分享海报与配色码 |
 | `frontend/lib/` | 配色规则：分区、套色与配色码、色彩工具、超进化动画 |
 | `apps/local/` · `启动来做鸭.command` · `.bat` | Node 个人版启动、资产检查与自有服务生命周期 |
+| `apps/desktop/` | Electron 窗口、duck 协议、受限 preload、下载与更新；复用同一宿主与前端 |
+| `tooling/src/stage-runtime-assets.ts` · `package-browser.ts` | 桌面/离线浏览器包共用资源暂存与生产依赖闭包 |
 | `apps/server/` · `packages/host/` | Node/Fastify 路由、版本组合与静态服务 |
 | `packages/contracts/` · `packages/domain/` | 两版及浏览器共用的类型、精确 JSON 与规则 |
 | `packages/storage/` | SQLite/MySQL、账号、方案、作品、评分与只读源库迁移 |

@@ -4,7 +4,7 @@
 
 `frontend/vendor/` contains Three.js revision 180: `three.core.js`, `three.module.js`, `OrbitControls.js`, `BufferGeometryUtils.js`, `RoomEnvironment.js`, and `GLTFLoader.js`. Copyright remains with the Three.js authors. These files retain the accompanying [MIT license](frontend/vendor/THREE-LICENSE.txt). Source: [mrdoob/three.js, r180](https://github.com/mrdoob/three.js/tree/r180).
 
-`frontend/shared/duck-voice.mjs` is a JavaScript port of MicroDuck's voice synthesizer (`sounds/src/rng.rs`, `synth.rs`, `personality.rs`, `voices.rs`), Copyright Pollen Robotics, under the [Apache License 2.0](frontend/shared/MICRODUCK-LICENSE.txt). Source: [pollen-robotics/microduck at 942e58e](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567/sounds). Changes: translated from Rust to JavaScript, with u64 arithmetic and f32 rounding emulated; WAV output, the hardware seed and the chorale/stream modules are not ported. The earlier Python original (`apirrone/microduck_sounds`) carries no license and is not used. No MicroDuck scores or recordings are included.
+`frontend/shared/duck-voice.ts` is a TypeScript port of MicroDuck's voice synthesizer (`sounds/src/rng.rs`, `synth.rs`, `personality.rs`, `voices.rs`), Copyright Pollen Robotics, under the [Apache License 2.0](frontend/shared/MICRODUCK-LICENSE.txt). Source: [pollen-robotics/microduck at 942e58e](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567/sounds). Changes: translated from Rust to JavaScript, with u64 arithmetic and f32 rounding emulated; WAV output, the hardware seed and the chorale/stream modules are not ported. The earlier Python original (`apirrone/microduck_sounds`) carries no license and is not used. No MicroDuck scores or recordings are included.
 
 letsduck's (formerly DoodleDuck / DuckPalette) original software and documentation are MIT licensed. Imported libraries retain their own notices. Historical research documents quote and link external sources; those sources and trademarks do not become letsduck's intellectual property.
 
@@ -31,8 +31,12 @@ The screenshots and animated clips in `docs/media/` (used by the README) show re
 
 ## Project mark
 
-The 来做鸭 / letsduck mark (`frontend/shared/brand/logo.svg`, drawn inline by `frontend/shared/brand.mjs`) embeds the original white-and-orange MicroDuck full-body product render by Pollen Robotics, sourced from the [MicroDuck website](https://pollen-robotics.com/microduck/) ([original PNG](https://pollen-robotics.com/assets/microduck/moves-portrait-alpha/posters/walk.png)). The PNG bytes are unchanged; the SVG viewport fits the complete robot into the existing avatar background. This third-party artwork is excluded from this repository's MIT licence; its copyright and applicable upstream terms remain with their respective owners. Use of this reference does not imply endorsement or trademark permission. The project name uses the visitor's system font; no font files are shipped.
+The 来做鸭 / letsduck mark (`frontend/shared/brand/logo.svg`, drawn inline by `frontend/shared/brand.ts`) embeds the original white-and-orange MicroDuck full-body product render by Pollen Robotics, sourced from the [MicroDuck website](https://pollen-robotics.com/microduck/) ([original PNG](https://pollen-robotics.com/assets/microduck/moves-portrait-alpha/posters/walk.png)). The PNG bytes are unchanged; the SVG viewport fits the complete robot into the existing avatar background. This third-party artwork is excluded from this repository's MIT licence; its copyright and applicable upstream terms remain with their respective owners. Use of this reference does not imply endorsement or trademark permission. The project name uses the visitor's system font; no font files are shipped.
 
 ## meshoptimizer 1.0.1
 
 The position decoder in `frontend/vendor/meshopt_decoder.mjs` is from meshoptimizer 1.0.1 (MIT); see `frontend/vendor/MESHOPT-LICENSE.txt`. The encoder is a build-only npm dependency.
+
+## Desktop and bundled runtimes
+
+Electron 45.0.0 and electron-updater 6.8.11 retain their upstream MIT licenses and dependency notices. electron-builder 26.18.0 and @electron/asar 3.4.1 are build/test dependencies. Portable browser packages include the official Node 24.20.0 binary with its complete upstream LICENSE file. These runtime licenses do not grant redistribution rights for the separate model and manufacturer assets described above.
