@@ -145,10 +145,10 @@ test('S69 tidies intermediate cable loops without disconnecting either end', () 
 });
 
 // Catches conflating short self-tapping screws with M3 board machine screws.
-test('fastener groups preserve the video counts and remain absent before their step', () => {
-  const expected = [[1, 'M2x6', 4], [2, 'M2x6', 5], [3, 'M2x6', 8], [5, 'M3x16', 4], [8, 'M2.3x4', 2], [10, 'M2.3x4', 2]];
+test('confirmed fastener groups match PDF counts while uncertain candidates stay uninstalled', () => {
+  const expected = [[1, 'M2x6', 4], [2, 'M2x6', 4], [3, 'M2x6', 8], [5, 'M3x16', 4]];
   for (const [step, fastener, count] of expected) {
-    const actors = Object.entries(ACTORS).filter(([, a]) => a.kind === 'screw' && a.step === step);
+    const actors = Object.entries(ACTORS).filter(([, a]) => a.kind === 'screw' && a.step === step && !a.hardwareStatus);
     assert.equal(actors.length, count);
     for (const [id, a] of actors) {
       assert.equal(a.fastener, fastener);

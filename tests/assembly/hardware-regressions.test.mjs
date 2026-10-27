@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Quaternion} from '../../frontend/vendor/three.module.js';
-import {STEPS,snapshot,ACTORS} from '../../frontend/assemble/hardware-state.mjs';
+import {STEPS,snapshot,ACTORS} from '../../frontend/assemble/pdf-state.mjs';
 import {buildFineCues} from '../../frontend/assemble/fine-cues.mjs';
 import {interpolatePose,actorQuaternion} from '../../frontend/assemble/render-pose.mjs';
 

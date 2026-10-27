@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from '../../frontend/vendor/three.module.js';
-import {ACTORS,STEPS,snapshot} from '../../frontend/assemble/hardware-state.mjs';
+import {ACTORS,STEPS,snapshot} from '../../frontend/assemble/pdf-state.mjs';
 import {MODEL_FIT_ISSUES,fitsForCue} from '../../frontend/assemble/model-fit.mjs';
 import {buildFineCues} from '../../frontend/assemble/fine-cues.mjs';
 import {actorQuaternion,cableStyle,cablePlugQuaternion} from '../../frontend/assemble/render-pose.mjs';

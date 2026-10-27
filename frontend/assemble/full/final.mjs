@@ -33,10 +33,10 @@ step('tray', BODY, '安装电池仓', '把装有电池的电池仓固定到身�
   '先对齐再固定，保持电源线引出；螺丝位置和配合是教学示意，须逐孔核对实物。',
   '组件整体就位 · M2×6 ×4', [0, 108, -18], [180, 190, -280], 3.5);
 step('body-shells', BODY, '安装身体壳', '安装两侧身体外壳，并保留上部线路', 1126, 1150,
-  ['f_sideR', 'f_sideL', 'f_bodyScrew0', 'f_bodyScrew1', 'f_bodyScrew2', 'f_bodyScrew3', 'f_bodyScrew4', 't_support'],
-  '将两片身体壳对齐安装，保留上部线束出口。19:05 左右字幕标出 5 颗 M2×6；本步只按这组总数示意。',
-  '5 颗的逐侧、逐孔分配尚未核验。图中使用源网格已有圆孔作教学候选，其中上下孔与接缝孔的真实步骤归属仍待核；不据此给出每侧 5 颗的结论。',
-  'M2×6 ×5 · 源孔候选，分配待核', [0, 125, 12], [-205, 205, 235], 3.6);
+  ['f_sideR', 'f_sideL', 'f_bodyScrew0', 'f_bodyScrew1', 'f_bodyScrew2', 'f_bodyScrew3', 't_support'],
+  '将两片身体壳对齐安装，保留上部线束出口。装配指南第24页标示共4颗 M2×6。',
+  '按指南两侧合计4颗；使用现有四处源孔候选。原先第5处接缝孔用途未定，不计为这一步的固定件。实体配合仍待核。',
+  'M2×6 ×4 · 孔位与配合待核', [0, 125, 12], [-205, 205, 235], 3.6);
 step('head-join', BODY, '连接整个头颈', '把已装好的整个头颈总成接到身体', 1150, 1170,
   ['h_neckA', 'h_neckB', 'h_shell', 't_support', 'f_neckScrewR0', 'f_neckScrewL0'],
   '整体移动已完成的头部、颈部、螺丝与线束，先让下端舵机连接部位就位，再按视频两侧各标示的 4 颗 M2×6 固定。',"固定前核对头颈主副盘、插座开口与身体朝向；ID30 / 31 副盘保留。实体配合仍待核。",
@@ -63,18 +63,20 @@ step('buses', ELECTRONICS, '逐根插总线', '把三根舵机主总线逐根插
   '三次独立插接 · 端点与针脚待核验', [0, 130, -40], [130, 205, -225], 4.5);
 step('thigh-first', ELECTRONICS, '第一侧大腿壳', '安装第一侧大腿外壳', 1230, 1242,
   ['f_thighR', 'f_thighScrewR0', 'f_thighScrewR1'],
-  '安装第一侧大腿外壳，字幕标示用 2 颗 M2.3×4 平头自攻固定。原型先演示机器人右侧，视频左右映射待核验。',
-  '20:37 字幕 M2.3×4 与官方 BOM 的 M2.3×8 有差异；保留原片规格，不直接替换或用于采购。孔位待核验。',
-  '视频 M2.3×4 ×2 · 与 BOM 有差异', [-55, 83, 0], [-240, 150, 225], 3.5);
+  '安装第一侧腿部侧板，准备M2.3×4自攻螺丝和拆下保留的副舵盘原配螺丝，按指南第14页区分固定位置。',
+  '指南标注的“2颗”未说明单侧或双侧；原配螺丝与自攻螺丝的孔位分配待核，不将两处都标为新增自攻螺丝。',
+  '自攻＋原配螺丝 · 分配待核', [-55, 83, 0], [-240, 150, 225], 3.5);
 step('route', ELECTRONICS, '整理线束', '整理线束，给另一侧外壳和关节留出空间', 1242, 1250,
   ['f_bus0', 'f_bus1', 'f_bus2', 'f_powerCable', 'f_thighR'],
   '整理可见的线束环线，让线束避开外壳压合处和关节活动区域，保留适当余量后再安装另一侧外壳。',"核对主副盘及插座朝向，不以线弯判断副盘侧；为关节留余量，再合上外壳。",
   '保持接头连接 · 整理余量', [10, 105, -5], [220, 190, -230]);
 step('thigh-second', ELECTRONICS, '另一侧大腿壳', '安装另一侧大腿外壳，完成本段总装', 1250, 1258,
   ['f_thighL', 'f_thighScrewL0', 'f_thighScrewL1', 'f_uno', 'f_extension'],
-  '按镜像方向安装另一侧大腿壳。20:57 字幕同样标 2 颗 M2.3×4，保留原片与 BOM 的规格差异。',
-  '本段到 20:58 总装收尾为止。控制、编号与校准由后续章节说明，本模块没有验证上电或机械精度。',
-  '另一侧 M2.3×4 ×2 · 总装收尾', [0, 125, 25], [235, 220, 295], 3.5);
+  '按镜像方向安装另一侧腿部侧板，同样复用副舵盘原配螺丝，并与M2.3×4自攻螺丝区分。',
+  '原配与自攻螺丝的具体孔位和逐侧数量待核；保留原配件，不据动画判定紧固与机械精度。',
+  '另一侧 · 原配螺丝复用，分配待核', [0, 125, 25], [235, 220, 295], 3.5);
+STEPS.find(s=>s.id==='final-thigh-first').reusedFasteners=['r_upperHornScrew'];
+STEPS.find(s=>s.id==='final-thigh-second').reusedFasteners=['l_upperHornScrew'];
 STEPS.at(-1).complete = true;
 
 export const ACTORS = {};
@@ -141,6 +143,10 @@ screws('f_neckScrewL', 3, [
 screws('f_boardScrew', 5, [[-22.65,69.7,-51.8],[22.65,69.7,-51.8],[-22.65,130.3,-51.8],[22.65,130.3,-51.8]].map(center => hole(center,[0,0,-1])), 'M3x16', .64);
 screws('f_thighScrewR', 8, [[-70.707102,64.597164,-17.220284],[-72.028416,88.915577,16.969354]].map(center => hole(center,[-.996959794,-.076309614,.015748389],'P5-01')), 'M2.3x4');
 screws('f_thighScrewL', 10, [[71.017546,64.119812,-16.580651],[71.889688,89.957777,16.490506]].map(center => hole(center,[.997669905,-.063984561,.023679866],'P5-02')), 'M2.3x4');
+
+ACTORS.f_bodyScrew4.hardwareStatus='pending-step-assignment';
+ACTORS.f_bodyScrew4.source+='；PDF第24页所需4颗不含此候选';
+for(const id of ['f_thighScrewR0','f_thighScrewR1','f_thighScrewL0','f_thighScrewL1']){ACTORS[id].fastenerRole='pending';ACTORS[id].hardwareStatus='pending-fastener-allocation';ACTORS[id].label='侧板固定件 · 规格分配待核';}
 
 ACTORS.f_uno = {
   kind: 'board', boardType: 'uno-q', label: 'Arduino UNO Q · 独立教学板', color: '#17688b',
@@ -225,6 +231,7 @@ export function snapshot(localIndex, progress = 1) {
       }
       status = !visible ? 'waiting' : t >= .999 ? 'installed' : 'moving';
     }
+    if(actor.hardwareStatus?.startsWith('pending-')){visible=false;opacity=0;status=index>=actor.step?'pending':'waiting';}
     result[id] = { visible, position, turn, status, opacity };
     if (actor.mountRotation) result[id].rotation = [...actor.mountRotation];
   }

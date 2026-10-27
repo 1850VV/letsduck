@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../../frontend/vendor/three.module.js';
-import {ACTORS,STEPS,snapshot} from '../../frontend/assemble/hardware-state.mjs';
+import {ACTORS,STEPS,snapshot} from '../../frontend/assemble/pdf-state.mjs';
 import {buildCableCurve} from '../../frontend/assemble/cable-path.mjs';
 import {actorQuaternion,interpolatePose} from '../../frontend/assemble/render-pose.mjs';
 function curve(id,state){const pose=state[id],plugs=[0,1].map(end=>{const o=new THREE.Group();o.position.fromArray(pose.points[end?pose.points.length-1:0]);o.quaternion.fromArray(pose.endpointQuaternions[end]);return o;});const c=buildCableCurve({id,points:pose.points,plugs,lane:0,approved:ACTORS[id].cableType!=='power'&&ACTORS[id].cableType!=='usb-c',state}),matrix=new THREE.Matrix4().compose(new THREE.Vector3(...pose.position),actorQuaternion(ACTORS[id],pose),new THREE.Vector3(1,1,1));return Array.from({length:21},(_,i)=>c.getPointAt(i/20).applyMatrix4(matrix));}
@@ -18,7 +18,8 @@ test('backward interpolation keeps cable routing progress continuous',()=>{
  const before=curve('f_bus2',a),start=curve('f_bus2',mixed);
  before.forEach((p,n)=>assert.ok(p.distanceTo(start[n])<.001,'backward route jumps at its first frame'));
 });
-test('the tidy-wires action visibly moves the rendered loop while both plug exits stay fixed',()=>{
+test('the leg-routing reminder has no future electronics and keeps the already connected cable exits fixed',()=>{
  const index=STEPS.findIndex(s=>s.id==='final-route'),a=snapshot(index,0),b=snapshot(index,1);
- for(const id of['f_bus0','f_bus1','f_bus2']){const before=curve(id,a),after=curve(id,b);assert.ok(before[0].distanceTo(after[0])<.001&&before.at(-1).distanceTo(after.at(-1))<.001,id);assert.ok(Math.max(...before.map((p,n)=>p.distanceTo(after[n])))>2,`${id} tidy action disappeared`);}
+ for(const id of['r_legWireB','l_legWireB']){const before=curve(id,a),after=curve(id,b);assert.ok(before[0].distanceTo(after[0])<.001&&before.at(-1).distanceTo(after.at(-1))<.001,id);}
+ for(const id of ['f_bus0','f_bus1','f_bus2','f_uno'])assert.equal(a[id].visible,false,id);
 });

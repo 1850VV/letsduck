@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from '../vendor/OrbitControls.js';
 import {RoomEnvironment} from '../vendor/RoomEnvironment.js';
 import {LOOK} from '../shared/duck-look.mjs';
-import {ACTORS,STEPS,CHAPTERS,snapshot,chapterFor} from './hardware-state.mjs';
+import {ACTORS,STEPS,CHAPTERS,snapshot,chapterFor} from './pdf-state.mjs';
 import {chapterMaterials} from './material-catalog.mjs';
 import {specimenLayout,arrangeGroups} from './material-layout.mjs';
 import {firstVisibleIntersection,hornPart} from './horn-selection.mjs';
@@ -100,7 +100,7 @@ function showPreparation(c,rows=chapterMaterials(c),title=c.name+' · 本章零�
  const sizes=trayGroups.map(g=>new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3()));
  arrangeGroups(rows,sizes).forEach((p,i)=>trayGroups[i].position.fromArray(p));
  trayGroups.forEach((g,i)=>{const label=document.createElement('span');label.className='tray-label';label.textContent=String(i+1).padStart(2,'0')+' · '+(rows[i].quantity||`×${rows[i].count}`);trayLabelHost.append(label);trayLabels.push(label);});
- $('kit-title').textContent=title;$('kit').querySelector('.kit-eyebrow').textContent=`第 ${CHAPTERS.indexOf(c)+1} / 14 章 · 点零件查看`;
+ $('kit-title').textContent=title;$('kit').querySelector('.kit-eyebrow').textContent=`第 ${CHAPTERS.indexOf(c)+1} / ${CHAPTERS.length} 章 · 点零件查看`;
  $('kit-parts').replaceChildren();$('kit-screws-block').hidden=true;
  rows.forEach((m,i)=>{const li=document.createElement('li'),b=document.createElement('button');b.className='material-row';b.type='button';b.setAttribute('aria-pressed','false');
   const ordinal=document.createElement('span');ordinal.className='ordinal';ordinal.textContent=String(i+1).padStart(2,'0');

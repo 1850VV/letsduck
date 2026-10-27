@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {STEPS,snapshot} from './hardware-state.mjs';
+import {STEPS,snapshot} from './pdf-state.mjs';
 import {buildFineCues,selectFineCue} from './fine-cues.mjs';
 import {createFineGeometry} from './fine-geometry.mjs';
 

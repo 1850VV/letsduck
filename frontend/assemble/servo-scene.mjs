@@ -38,7 +38,7 @@ export function createServoScene({host,labelsHost,hardware,entities,actors,poses
   for(const [id,label] of labels){
    const object=view==='tray'?specimens.get(id):motors.get(id);
    label.hidden=!object||id!==selected||id!==labelTarget;if(label.hidden)continue;
-   const p=object.position.clone().add(new THREE.Vector3(view==='tray'?0:id<20?-29:29,view==='tray'?25:12,17)).project(camera);
+   const p=object.position.clone().add(new THREE.Vector3(view==='tray'?0:Math.sign(object.position.x)*29,view==='tray'?25:12,17)).project(camera);
    label.style.left=(p.x*.5+.5)*host.clientWidth+'px';label.style.top=(-p.y*.5+.5)*host.clientHeight+'px';
    label.hidden=p.z>1||p.z< -1||Math.abs(p.x)>1.1||Math.abs(p.y)>1.1;
   }
