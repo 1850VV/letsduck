@@ -1,3 +1,4 @@
+import { requestTracker } from './http-lifecycle.js';
 import { isIP } from 'node:net';
 import type { IncomingMessage } from 'node:http';
 import Fastify, { LogController } from 'fastify';
@@ -85,8 +86,7 @@ export function createPersonalHttp(options: PersonalHttpOptions): PersonalHttpSe
       socket.end(Buffer.concat([Buffer.from(`HTTP/1.1 ${status} ${tooLarge ? 'Request Entity Too Large' : 'Bad Request'}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: ${bytes.length}\r\nCache-Control: ${path.startsWith('/api/') ? 'no-store' : 'no-cache'}\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n`), bytes]));
     },
   });
-  const requests = new Set<Promise<unknown>>();
-  const waitRequests = async () => { while (requests.size) await Promise.allSettled([...requests]); };
+  const tracker = requestTracker();
   const files = personalStatic(options);
   const needExporter = (catalog = false) => { if (!options.exporter?.available) throw new Invalid(catalog ? '耗材色表未加载' : '没有加载模型资产，暂时不能导出', catalog ? 'validation.29' : 'validation.31'); return options.exporter; };
   async function api(request: FastifyRequest, path: string): Promise<unknown> {
@@ -169,17 +169,6 @@ export function createPersonalHttp(options: PersonalHttpOptions): PersonalHttpSe
     return payload;
   });
   app.addContentTypeParser('*', (_request, _payload, done) => { done(null, undefined); });
-  app.all('/*', (request, reply) => {
-    const delivered = new Promise<void>(resolve => {
-      const response = reply.raw;
-      const done = () => { response.off('finish', done); response.off('close', done); resolve(); };
-      if (response.writableFinished || response.destroyed) done();
-      else { response.once('finish', done); response.once('close', done); }
-    });
-    const task = dispatch(request, reply), settled = Promise.allSettled([task, delivered]);
-    requests.add(settled);
-    void settled.then(() => requests.delete(settled));
-    return task;
-  });
-  return Object.assign(app, { waitRequests });
+  app.all('/*', (request, reply) => tracker.run(reply, () => dispatch(request, reply)));
+  return Object.assign(app, { waitRequests: tracker.waitRequests });
 }

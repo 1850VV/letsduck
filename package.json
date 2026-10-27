@@ -27,7 +27,9 @@
     "verify:phase3": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
     "migrate:database": "tsx tooling/src/migrate-database.ts",
     "verify:phase4": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
-    "start:local": "npm run build && node apps/local/dist/main.js"
+    "start:local": "npm run build && node apps/local/dist/main.js",
+    "verify:phase5": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
+    "start:server": "npm run build && node apps/server/dist/main.js"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",

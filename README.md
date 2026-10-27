@@ -51,7 +51,7 @@
 | | 个人使用版 | 服务器版 |
 | --- | --- | --- |
 | 用途 | 一人在本机涂装、调试和组装 | 朋友间分享配色、评分和改编 |
-| 启动 | Python 3.9+，只用标准库 | Docker Compose：nginx + FastAPI + MySQL 8.4 |
+| 启动 | Python 3.9+，只用标准库 | Docker Compose：nginx + Node.js + MySQL 8.4 |
 | 数据 | 本机 SQLite；草稿与偏好在浏览器 | MySQL；浏览器保存未登录草稿 |
 | 账号与配色广场 | 无 | 昵称账号、私有方案、发布、评分、「做同款」和改编家族 |
 | USB 设备控制 | 本机支持 | 不提供 |
@@ -101,6 +101,17 @@ docker compose up -d --build
 
 对外部署时，按 [部署说明](docs/deployment.md) 配置 HTTPS、域名和备份。仓库提供可选的 Caddy 配置。`DUCK_PUBLIC_URL` 必须是可公开访问的 HTTPS 域名，分享链接与海报二维码才会生成。`.env` 里的 `DUCK_BIND`、`DUCK_PORT`、数据库与导出并发设置见 [.env.example](.env.example)。
 
+服务器 API 使用 `apps/server` 和共享 TypeScript 包。直接运行时可选 `--static` 提供前端：
+
+```sh
+npm ci
+npm run start:server -- --host 127.0.0.1 --port 8880 --static frontend
+```
+
+服务器端口被占用时直接报错。`DUCK_DATABASE_URL` 或 `DUCK_DB_ENGINE` 配置数据库；账号、私有方案、广场和评分使用同一个 `ServerStore`。导出预检复用纯 `Planner`，生成 3MF 使用有界 worker 队列。服务器不会创建设备服务。
+
+后端镜像使用 Node 24，不安装 Python。前端镜像的构建脚本和旧个人版启动器仍使用 Python；它们按后续批次迁移。升级、只读源库迁移和回退见 [部署说明](docs/deployment.md)。
+
 ## 开发与验证
 
 TypeScript 工作区使用 Node 24.20+（24 系列），由 `apps/`、`packages/` 与 `tooling/` 组成。现有 Python 启动器仍可使用；正常构建与测试不切换服务或迁移真实用户数据。
@@ -121,7 +132,7 @@ npm run verify:phase0
 npm run verify:phase1
 npm run verify:phase2
 npm run verify:phase3
-npm run verify:phase4
+npm run verify:phase5
 ```
 
 `verify:phase0` 执行新工作区检查、现有 Node/组装检查、README 的 Python 检查和公开发行扫描。Python 默认使用本仓库 `.venv`，也可用 `PYTHON` 指定解释器。`probe:runtime -- --electron /path/to/electron` 额外验证 Node 与 Electron 的 SQLite 互读回写；它不代替真实 MySQL、安装包或设备验收。
@@ -190,7 +201,8 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tests/browser/home-language
 ```text
 frontend/   首页、涂装台、调试鸭、组装教程、配色广场与共享模块
 personal/   本机 HTTP 服务、SQLite、UNO Q / ADB 调试与舵机准备
-backend/    FastAPI、账号与社区存储、共用配色规则和 3MF 导出
+backend/    旧 Python 兼容实现与 Node 服务器 Dockerfile
+apps/server/ Node 服务器入口（账号、广场、导出）
 deploy/     可选 HTTPS 配置
 scripts/    本地资产导入、显示模型打包与公开发行检查
 tests/      Python、Node 与浏览器检查

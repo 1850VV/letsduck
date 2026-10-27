@@ -1,4 +1,4 @@
-# 来做鸭 letsduck server edition (accounts + 配色广场): nginx frontend, FastAPI backend, MySQL 8.4.
+# 来做鸭 letsduck server edition (accounts + 配色广场): nginx frontend, Node 24 backend, MySQL 8.4.
 #   cp .env.example .env   # then set the two MySQL passwords
 #   docker compose up -d --build
 # Fits a 1-core / 2 GB server (add swap, see README); raise DUCK_MYSQL_BUFFER_POOL on bigger hosts.
@@ -28,8 +28,11 @@ services:
       retries: 30
       start_period: 30s
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
+    stop_grace_period: 70s
     depends_on:
       mysql:
         condition: service_healthy

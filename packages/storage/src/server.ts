@@ -189,10 +189,10 @@ export class ServerStore {
         rating: { count: rating ? integerCell(rating, 'n') : 0, average: ratingRound(average), mine: mine.get(id) ?? 0 }, forks: forks.get(id) ?? 0 };
     });
   }
-  async works(viewer?: string, author?: string, limit = 200, offset = 0): Promise<ServerWork[]> {
+  async works(viewer?: string, author?: string, limit: number | bigint = 200, offset: number | bigint = 0): Promise<ServerWork[]> {
     if (!(limit >= 1 && limit <= 200) || offset < 0) throw new Invalid('分页范围不对', 'request.pagination');
     // Integer LIMIT/OFFSET are literals because MySQL prepared LIMIT parameters differ across versions.
-    if (!Number.isSafeInteger(limit) || !Number.isSafeInteger(offset)) throw new TypeError('LIMIT and OFFSET must be exact integers');
+    if ((typeof limit !== 'bigint' && !Number.isSafeInteger(limit)) || (typeof offset !== 'bigint' && !Number.isSafeInteger(offset))) throw new TypeError('LIMIT and OFFSET must be exact integers');
     const filter = author ? ' WHERE works.user_id = ?' : '';
     return this.db.transaction(async connection => this.workRows(connection, await connection.rows(workSelect + filter + ` ORDER BY works.created DESC, works.id DESC LIMIT ${limit} OFFSET ${offset}`, author ? [author] : []), viewer));
   }
