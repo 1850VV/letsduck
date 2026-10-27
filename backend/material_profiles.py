@@ -26,5 +26,5 @@ def resolve_profile(product,data):
     for status,choices in [('official-product',exact),('official-generic',generic)]:
         if choices:
             chosen=sorted(choices,key=lambda p:not p.get('compatibleP1P',False))[0]
-            return dict(status=status,name=chosen['name'],type=material_type,sourceUrl=chosen.get('sourceUrl'),compatibleP1P=chosen.get('compatibleP1P',False),settings=chosen['settings'])
+            return dict(status=status,name=chosen['name'],type=(chosen['settings'].get('filament_type') or [material_type])[0],sourceUrl=chosen.get('sourceUrl'),compatibleP1P=chosen.get('compatibleP1P',False),settings=chosen['settings'])
     return dict(status='unavailable',name=product['series'],type=material_type,settings={})

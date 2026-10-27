@@ -2,6 +2,7 @@
 const rigid=new Set(['PLA','PETG','PET','ABS','ASA','PC','PC-ABS','PA','PA6','PA12','PA612','PAHT','PPA','PPS','PEEK','PP','HIPS','PVB','PBT','CoPA','CoPE']);
 const hardness=value=>String(value||'').match(/\b(\d+(?:\.\d+)?[AD])\b/i)?.[1].toUpperCase();
 export function compatibleProduct(material,product){
+ if(product?.role==='support'||/support|支撑|支撐/i.test(product?.series||''))return false;
  if(!product||product.demo||product.selectable===false||!/^#[\da-f]{6}$/i.test(product.hex))return false;
  const family=product.material||String(product.series||'').split(/[ -]/)[0];
  if(String(material).startsWith('TPU'))return family==='TPU'&&!!hardness(material)&&hardness(product.hardness||product.series)===hardness(material);

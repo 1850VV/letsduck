@@ -8,6 +8,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'backend'))
 from filaments import load_catalog, compatible_product
 
 class FilamentTests(unittest.TestCase):
+    def test_support_role_is_rejected_even_when_family_is_structural(self):
+        for series,family in [('PolySupport for PLA','PLA'),('PolySupport for PA12','PA12')]:
+            self.assertFalse(compatible_product('PLA Basic',{'id':'support','brand':'Example','series':series,'material':family,'hex':'#FFFFFF'}))
     def test_optional_catalog_keeps_legacy_product_and_excludes_missing_hex(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)

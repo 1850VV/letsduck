@@ -16,6 +16,10 @@ class ProfileTests(unittest.TestCase):
         self.db['profiles'][exact['name']]=exact
         self.assertEqual(resolve_profile({'brand':'Example','series':'PETG+','material':'PETG'},self.db)['status'],'official-product')
         self.assertEqual(resolve_profile({'brand':'Example','series':'TPU 90A','material':'TPU','hardness':'90A'},self.db)['status'],'source-tpu90a')
+    def test_native_type_comes_from_the_selected_official_profile(self):
+        name='Example PAHT-CF @BBL P1P'
+        self.db['profiles'][name]={'name':name,'compatibleP1P':True,'settings':{'filament_type':['PA-CF']}}
+        self.assertEqual(resolve_profile({'brand':'Example','series':'PAHT-CF','material':'PAHT'},self.db)['type'],'PA-CF')
     def test_unknown_profile_is_explicit_instead_of_borrowing_pla(self):
         p=resolve_profile({'brand':'Example','series':'PEEK','material':'PEEK'},self.db)
         self.assertEqual(p['status'],'unavailable');self.assertEqual(p['settings'],{})

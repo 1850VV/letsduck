@@ -25,3 +25,7 @@ test('BOM rows preserve series, missing codes, all SKUs and all published colour
  assert.deepEqual(rows[0],['part',2,'Part','part.stl','PLA','Sample Maker','PLA-CF','Sample blue','','S1 | S2','sample-cf','','#123456','#123456 #FEDCBA',5,'Generic PLA-CF','https://example.test/official','uuid']);
  assert.equal(csvText([['a"b',null]]),'\ufeff"a""b",""');
 });
+
+test('support filaments cannot become structural parts through their broad polymer family',()=>{
+ for(const [series,material]of [['PolySupport for PLA','PLA'],['PolySupport for PA12','PA12']])assert.equal(compatibleProduct('PLA Basic',{...product,series,material}),false);
+});

@@ -14,6 +14,7 @@ def selectable(product):
 
 def compatible_product(material,product):
     if not product or not selectable(product):return False
+    if product.get('role')=='support' or re.search(r'support|支撑|支撐',product.get('series',''),re.I):return False
     family=product.get('material') or re.split(r'[ -]',product.get('series',''))[0]
     if str(material).startswith('TPU'):
         required=hardness(material)
