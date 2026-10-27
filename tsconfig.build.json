@@ -23,6 +23,9 @@
       "path": "apps/local"
     },
     {
+      "path": "apps/server"
+    },
+    {
       "path": "tooling"
     }
   ]

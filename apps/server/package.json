@@ -1,0 +1,9 @@
+{
+  "name": "@letsduck/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@letsduck/host": "0.0.0"
+  }
+}

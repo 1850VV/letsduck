@@ -3,7 +3,7 @@ import { AdbRuntime, DuckDebug, ServoSetup } from '@letsduck/devices';
 import type { DuckRuntime } from '@letsduck/devices';
 import { ExportManager } from '@letsduck/exporter';
 import { PersonalStore } from '@letsduck/storage';
-import { pythonInteger, pythonStrip } from '@letsduck/domain';
+export { parseListenPort } from './listen.js';
 import { createPersonalHttp } from './http.js';
 import type { HostExporter, PersonalHttpServer } from './http-types.js';
 
@@ -24,14 +24,6 @@ export interface HostOptions {
   search?: number;
 }
 
-export function parseListenPort(value: string): number {
-  try {
-    if (!pythonStrip(value)) throw new Error('Empty port');
-    const port = Number(pythonInteger(value));
-    if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Port out of range');
-    return port;
-  } catch { throw new RangeError('端口必须是0–65535的整数。'); }
-}
 
 export async function startHost(options: HostOptions) {
   const host = options.host ?? '127.0.0.1', port = options.port ?? 0, search = options.search ?? 20;
