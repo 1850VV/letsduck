@@ -24,6 +24,19 @@ test('permits existing copy and video fullscreen actions only for the local app'
  assert.equal(localPermission('https://example.com','fullscreen'),false);
 });
 
+test('network-path duck URLs cannot replace the backend authority or receive trusted IPC',async()=>{
+ const sender={};let fetched=0;
+ const handler=createProtocolHandler({backend:'http://127.0.0.1:8123/',panel:async()=>'',write:()=>{},fetch:async()=>{fetched++;return new Response('external HTML');}});
+ for(const url of ['duck://app//127.0.0.1:49755/attacker.html','duck://app/\\127.0.0.1:49755/attacker.html']){
+  assert.equal(new URL(proxyURL(url,'http://127.0.0.1:8123/')).origin,'http://127.0.0.1:8123');
+  assert.equal(localURL(url),false);
+  const mainFrame={url};assert.equal(trustedFrame({sender,senderFrame:mainFrame},{sender,mainFrame}),false);
+  assert.equal((await handler(new Request(url))).status,403);
+ }
+ assert.equal(fetched,0);
+ assert.equal(proxyURL('duck://app/paint//part?next=//example.invalid','http://127.0.0.1:8123/'),'http://127.0.0.1:8123/paint//part?next=//example.invalid');
+});
+
 test('packaged runtime paths use app/resources roots and preserve explicit overrides',()=>{
  const packaged=desktopPaths({packaged:true,moduleDirectory:'/ignored',appPath:'/app',resourcesPath:'/resources',appData:'/profile',env:{}});
  assert.equal(packaged.host,join('/app','apps/desktop/dist/host.js'));

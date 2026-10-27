@@ -56,7 +56,7 @@ jobs:
       - name: POSIX CLI signal handling and portable paths
         if: runner.os != 'Windows'
         run: npx tsx --test tooling/test/local-cli.test.ts
-      - name: Actual Electron protocol, utility lifecycle and retained profile
+      - name: Actual Electron protocol, startup, utility lifecycle and retained profile
         run: node --import tsx apps/desktop/test/shell.browser.ts
       - name: Build an offline unsigned source-only installer
         run: npm run package:desktop -- ${{ matrix.target }}

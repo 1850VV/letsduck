@@ -13,11 +13,14 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {build} from 'esbuild';
+import {createServer} from 'node:http';
 
 const require=createRequire(import.meta.url),root=resolve(import.meta.dirname,'../../..');
 const temporary=await mkdtemp(join(tmpdir(),'duck-shell-electron-')),frontend=join(temporary,'frontend'),database=join(temporary,'personal.db'),downloads=join(temporary,'downloads'),assets=join(temporary,'empty-assets');
 const children:ReturnType<ElectronApplication['process']>[]=[],utilityPids:number[]=[];
 const errors:string[]=[];let application:ElectronApplication|undefined;
+let externalRequests=0;
+const external=createServer((_request,response)=>{externalRequests++;response.setHeader('content-type','text/html');response.end('<html><title>External response at trusted origin</title><body id="external-owned"><script>globalThis.externalRead=localStorage.getItem("owned-profile");</script></body></html>');});
 const env:NodeJS.ProcessEnv={...process.env,DUCK_DESKTOP_DATA:join(temporary,'profile'),DUCK_PERSONAL_DB:database,DUCK_ASSETS:assets,DUCK_FRONTEND:frontend,DUCK_ASSEMBLY_MANIFEST:join(temporary,'assembly.json'),DUCK_ADB:join(temporary,process.platform==='win32'?'adb.exe':'adb')};
 delete env.DUCK_DB;delete env.DUCK_DATABASE_URL;delete env.DUCK_TEST_DATABASE_URL;delete env.DUCK_LEGACY_DB;
 delete env.ELECTRON_RUN_AS_NODE;
@@ -68,6 +71,13 @@ try{
  // The malformed body cannot start hardware even if a transport changes headers.
  const url=await application!.evaluate(({app})=>app.getAppMetrics().filter(item=>item.name==='LetsDuck shared host').length);
  assert.equal(url,1,'Exactly one shared utility host');
+ await new Promise<void>(resolve=>external.listen(0,'127.0.0.1',resolve));
+ const address=external.address();assert.ok(address&&typeof address!=='string');
+ const attack='duck://app//127.0.0.1:'+address.port+'/attacker.html';
+ await page.goto(attack);
+ const escaped=await page.evaluate(async()=>({external:document.body.id==='external-owned',marker:Reflect.get(window,'externalRead'),bridge:window.letsduckDesktop?await window.letsduckDesktop.state().then(()=>'allowed',()=> 'rejected'):'absent'}));
+ assert.equal(externalRequests,0,JSON.stringify(escaped));assert.equal(escaped.external,false);assert.equal(escaped.marker,undefined);assert.notEqual(escaped.bridge,'allowed','Network-path main frame must not pass trusted IPC');
+ await page.goto('duck://app/');
  assert.equal(await download(page),join(downloads,'fixture (1).txt'));
  assert.equal(await download(page),join(downloads,'fixture (2).txt'));
  assert.equal(await readFile(join(downloads,'fixture.txt'),'utf8'),'existing user file');
@@ -103,8 +113,10 @@ try{
   const result=await promisify(execFile)(executable,[fixture],{env:{...env,DUCK_DESKTOP_DATA:profile,DUCK_PERSONAL_DB:path,DUCK_UTILITY_TEST_ENTRY:join(root,'apps/desktop/dist/host.js'),DUCK_UTILITY_TEST_MODE:mode},timeout:30_000});
   const line=result.stdout.trim().split('\n').find(value=>value.startsWith('{"mode"'));assert.ok(line);const recorded:unknown=JSON.parse(line);assert.ok(object(recorded)&&recorded.expected===true);utilityCases.push(recorded);
  }
- console.log(JSON.stringify({actualElectron:true,packaged:!!process.env.DUCK_APP_EXECUTABLE,version,utilityStarts:utilityPids.length,utilityCases,origin:'duck://app',sharedHost:true,isolatedPreload:true,nativeDownloads:3,quitWaitsNativeDownload:true,profileRestart:true,bigintSqlite:true,fakeAdbInvocations:0,errors}));
+ await import('./startup.browser.js');
+ console.log(JSON.stringify({actualElectron:true,packaged:!!process.env.DUCK_APP_EXECUTABLE,version,utilityStarts:utilityPids.length,utilityCases,origin:'duck://app',sharedHost:true,isolatedPreload:true,externalRequests,nativeDownloads:3,quitWaitsNativeDownload:true,profileRestart:true,bigintSqlite:true,fakeAdbInvocations:0,errors}));
 }finally{
+ external.closeAllConnections();if(external.listening)await new Promise<void>((resolve,reject)=>external.close(error=>error?reject(error):resolve()));
  if(application&&application.process().exitCode===null)await application.close();
  for(const child of children)assert.ok(child.exitCode!==null||child.signalCode!==null,'Owned Electron exited');
  for(const pid of utilityPids)assert.throws(()=>process.kill(pid,0),'Owned utility process exited');

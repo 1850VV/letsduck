@@ -61,8 +61,8 @@ try {
   await required(page).locator('#letsduck-update button').click(); await phase('error'); assert.equal((await state()).retry, 'download'); await required(page).screenshot({ path: join(output, 'retry.png') });
   await required(application).evaluate(({ session }) => session.fromPartition('electron-updater', { cache: false }).webRequest.onBeforeRequest(null));
   await required(page).locator('#letsduck-update button').click(); await phase('ready', 300_000); assert.equal((await state()).currentVersion, from); await required(page).screenshot({ path: join(output, 'ready.png') });
-  const original = required(application), oldPid = original.process().pid;
-  await required(page).locator('#letsduck-update button').click(); await until(async () => original.process().exitCode !== null ? true : false, 'original process exited', 180_000);
+  const originalProcess = required(application).process(), oldPid = originalProcess.pid;
+  await required(page).locator('#letsduck-update button').click(); await until(async () => originalProcess.exitCode !== null ? true : false, 'original process exited', 180_000);
   const relaunched = await until(async () => (await listOwned()).find(process => process.ProcessId !== oldPid && !process.CommandLine.includes('--type=')) || false, 'installer automatically relaunched the app', 180_000);
   await until(async () => (await ps('Get-Process | Where-Object { $_.Path -eq $env:DUCK_INSTALLED_EXE -and $_.MainWindowHandle -ne 0 } | Select-Object -ExpandProperty Id')).length > 0 ? true : false, 'automatically relaunched window appeared');
   await stopOwned(); await launch(); assert.equal(await required(application).evaluate(({ app }) => app.getVersion()), to);

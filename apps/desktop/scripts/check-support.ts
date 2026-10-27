@@ -83,6 +83,7 @@ export async function desktopScope(prefix: string) {
   await writeFile(fakeAdb, process.platform === 'win32' ? 'Intentionally invalid executable; isolated test refuses ADB execution.' : '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$DUCK_DESKTOP_TEST_ADB_LOG"\nexit 1\n');
   if (process.platform !== 'win32') await chmod(fakeAdb, 0o755);
   const applications: ElectronApplication[] = [], children: ChildProcess[] = [], pids = new Set<number>();
+  const applicationProcesses = new Map<ElectronApplication, ChildProcess>();
   const cleanups: Array<() => Promise<unknown>> = [];
   let adbCalls: string[] | null = process.platform === 'win32' ? null : [];
   let cleanupPromise: Promise<void> | undefined;
@@ -102,7 +103,7 @@ export async function desktopScope(prefix: string) {
     for (const [key, value] of Object.entries(env)) if (typeof value === 'string') launchEnv[key] = value;
     if (target) { delete launchEnv.DUCK_ASSETS; delete launchEnv.DUCK_FRONTEND; delete launchEnv.DUCK_ASSEMBLY_MANIFEST; }
     const application = await electron.launch({ executablePath: binary, args, env: launchEnv, timeout: 60_000, ...(video ? { recordVideo: video } : {}) });
-    applications.push(application); const child = application.process(); children.push(child);
+    applications.push(application); const child = application.process(); children.push(child); applicationProcesses.set(application, child);
     if (child.pid) pids.add(child.pid);
     child.stderr?.on('data', (data: Buffer) => process.stderr.write(data));
     // tsx preserves callback names using an outer helper; Playwright serializes only the callback.
@@ -116,7 +117,7 @@ export async function desktopScope(prefix: string) {
     return application;
   };
   const close = async (application: ElectronApplication): Promise<void> => {
-    const child = application.process();
+    const child = required(applicationProcesses.get(application));
     if (child.exitCode !== null || child.signalCode !== null) return;
     for (const pid of await application.evaluate(({ app }) => app.getAppMetrics().map(item => item.pid))) pids.add(pid);
     await application.close();

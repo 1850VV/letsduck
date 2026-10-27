@@ -32,11 +32,12 @@ async function boot(){
   if(quitting)return;event.preventDefault();quitting=true;updates?.dispose();session.defaultSession.flushStorageData();
   void activity.wait().then(()=>{if(!exited)child.postMessage({kind:'stop'});return finished;}).then(()=>{if(childStatus===0)app.quit();else app.exit(1);});
  });
- const backend=await new Promise<string>((resolve,reject)=>{
-  const timeout=setTimeout(()=>{reject(new Error('Local service did not become ready'));if(!exited)child.postMessage({kind:'stop'});},30_000);
+ const backend=await new Promise<string|undefined>((resolve,reject)=>{
+  const timeout=setTimeout(()=>{if(quitting)return;reject(new Error('Local service did not become ready'));if(!exited)child.postMessage({kind:'stop'});},30_000);
   const message=(value:unknown)=>{const reply=parseHostReply(value);if(reply?.kind==='ready'){clearTimeout(timeout);child.removeListener('message',message);resolve(reply.url);}if(reply?.kind==='failed'){clearTimeout(timeout);child.removeListener('message',message);reject(new Error(reply.message));}};
-  child.on('message',message);child.once('exit',code=>{clearTimeout(timeout);reject(new Error('Local service exited: '+code));});
+  child.on('message',message);child.once('exit',code=>{clearTimeout(timeout);if(quitting&&code===0)resolve(undefined);else reject(new Error('Local service exited: '+code));});
  }).catch(async(error:unknown)=>{if(!exited)child.postMessage({kind:'stop'});await finished;throw error;});
+ if(backend===undefined||quitting)return;
  child.on('message',(value:unknown)=>{const reply=parseHostReply(value);if(reply?.kind!=='busy')return;const request=pending.get(reply.id);if(request){clearTimeout(request.timer);pending.delete(reply.id);request.resolve(reply.busy);}});
  const hostBusy=()=>exited?Promise.resolve(true):new Promise<boolean>(resolve=>{const id=++sequence;const timer=setTimeout(()=>{pending.delete(id);resolve(true);},5_000);pending.set(id,{resolve,timer});child.postMessage({kind:'busy',id});});
  protocol.handle('duck',createProtocolHandler({backend,panel:()=>readFile(paths.panel,'utf8'),accepting:()=>!quitting,write:delta=>{writes+=delta;activity.change(delta);}}));

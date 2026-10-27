@@ -10,6 +10,8 @@ export function createProtocolHandler(options:{backend:string;panel:()=>Promise<
  return async(request:Request):Promise<Response>=>{
   if(!localURL(request.url))return new Response('Forbidden',{status:403});
   if(new URL(request.url).pathname==='/__desktop/update-panel.js')return new Response(await options.panel(),{headers:{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache'}});
+  const target=new URL(proxyURL(request.url,options.backend));
+  if(target.origin!==new URL(options.backend).origin)return new Response('Forbidden',{status:403});
   const headers=new Headers(request.headers);headers.delete('host');
   const writing=request.method!=='GET'&&request.method!=='HEAD';
   if(writing&&options.accepting?.()===false)return new Response('Application is closing',{status:503});
@@ -21,7 +23,7 @@ export function createProtocolHandler(options:{backend:string;panel:()=>Promise<
    // Custom-scheme Request omits Content-Length; shared Python-compatible HTTP
    // deliberately reads exactly that length instead of accepting chunked JSON.
    if(writing){const bytes=await request.arrayBuffer();init.body=bytes;headers.set('content-length',String(bytes.byteLength));}
-   const response=await(options.fetch??fetch)(proxyURL(request.url,options.backend),init);
+   const response=await(options.fetch??fetch)(target.href,init);
    const output=new Headers(response.headers),location=output.get('location');
    if(location){const redirect=new URL(location,options.backend);if(redirect.origin!==new URL(options.backend).origin){await response.body?.cancel();release();return new Response('External redirect refused',{status:502});}output.set('location',APP_ORIGIN+redirect.pathname+redirect.search+redirect.hash);}
    let body=response.body;
