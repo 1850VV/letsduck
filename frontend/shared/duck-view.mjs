@@ -89,7 +89,7 @@ export function createDuckView(data) {
     let extra=false;root.traverse(o=>{if(o.isMesh&&o.visible&&!originalMeshes.has(o))extra=true;});
     return !extra&&[...meshes.values()].some(m=>m.material.transmission>0);
   }
-  let host = null,observer = null,turntable = false,tween = null,frame,selected = new Set(),hovered = new Set(),layout = 'assembly',beforeArrange = null,moving = false,split = null;
+  let host = null,observer = null,turntable = false,tween = null,frame,selected = new Set(),hovered = new Set(),layout = 'assembly',beforeArrange = null,moving = false,split = null,wipe = null;
   const tanV = () => Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   // Selection is drawn as an outline (an inverted hull), never by tinting the part, so the colour on
   // screen is always the colour that will be printed — and matches the enlarged copy beside the duck.
@@ -109,6 +109,12 @@ export function createDuckView(data) {
   function fly(to, target) {invalidate();tween = { from: camera.position.clone(), to, tFrom: controls.target.clone(), tTo: target.clone(), start: performance.now() };}
   function arrangedCamera() {const w = GRID.cols * GRID.cell,h = Math.ceil(model.parts.length / GRID.cols) * GRID.cell,d = Math.max(h / 2 / tanV(), w / 2 / (tanV() * camera.aspect)) * 1.12;return GRID.center.clone().add(new THREE.Vector3(0, 0, d * 1.18));}
   function view(name) {if (layout === 'arrange') return fly(arrangedCamera(), GRID.center);fly(framed(name), TARGET);}
+  function orbitBy(dx,dy) {
+    const sphere=new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target)),height=renderer.domElement.clientHeight;
+    sphere.theta-=dx/height*Math.PI*2*controls.rotateSpeed;sphere.phi-=dy/height*Math.PI*2*controls.rotateSpeed;
+    sphere.phi=THREE.MathUtils.clamp(sphere.phi,controls.minPolarAngle,controls.maxPolarAngle);sphere.makeSafe();
+    camera.position.setFromSpherical(sphere).add(controls.target);controls.update();tween=null;invalidate();
+  }
   function placeCamera(name) {camera.position.copy(framed(name));controls.target.copy(TARGET);controls.update();}
   function boxOf(ids) {const b = new THREE.Box3();root.updateMatrixWorld(true);for (const id of ids) {const m = meshes.get(id);if (m) b.expandByObject(m);}return b;}
   // Flies to the selection from the current direction so the viewer keeps their bearings.
@@ -172,10 +178,27 @@ export function createDuckView(data) {
     renderer.setScissorTest(false);renderer.setViewport(0, 0, cb.width, cb.height);camera.aspect = aspect;camera.updateProjectionMatrix();
   }
 
+  // One full-size camera projection on both sides; only the scissor rectangle moves.
+  function renderWipe() {
+    const {width:w,height:h}=renderer.domElement.getBoundingClientRect(),cut=w*wipe.at;
+    const current=[...meshes.values(),...side.inner.children].map(m=>[m,m.material.color.clone()]);
+    renderer.setViewport(0,0,w,h);renderer.setScissorTest(true);
+    try {
+      if(cut>0){
+        for(const [m] of current)if(wipe.colors[m.userData.id])m.material.color.set(wipe.colors[m.userData.id]);
+        renderer.setScissor(0,0,cut,h);renderer.render(scene,camera);
+      }
+      current.forEach(([m,color])=>m.material.color.copy(color));
+      if(cut<w){renderer.setScissor(cut,0,w-cut,h);renderer.render(scene,camera);}
+    } finally {
+      current.forEach(([m,color])=>m.material.color.copy(color));renderer.setScissorTest(false);renderer.setScissor(0,0,w,h);
+    }
+  }
+
   // ---- loop ----
   // Resizing clears the canvas after this frame was drawn, so draw again at once: a stage that grows or shrinks
   // with the panel stays visible instead of flashing blank.
-  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();if (split) renderSplit();else draw(depthAllowed(), finishState);}
+  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();if(wipe)renderWipe();else if (split) renderSplit();else draw(depthAllowed(), finishState);}
   function mount(el, { view: name = 'hero', preserveView=false } = {}) {host = el;observer?.disconnect();el.prepend(renderer.domElement);observer = new ResizeObserver(resize);observer.observe(el);resize();if(!preserveView)placeCamera(name);}
   const ray = new THREE.Raycaster(),pointer = new THREE.Vector2();
   function pick(clientX, clientY) {
@@ -200,7 +223,7 @@ export function createDuckView(data) {
     stepLayout();stepColors();
     let hooked = false;for (const hook of frameHooks) hooked = hook(performance.now()) || hooked;
     if (turntable && !tween) root.rotation.y += .006;
-    if (renderer.domElement.isConnected) {controls.update();placeSide();if (split) renderSplit();else draw(depthAllowed(),finishState);}
+    if (renderer.domElement.isConnected) {controls.update();placeSide();if(wipe)renderWipe();else if (split) renderSplit();else draw(depthAllowed(),finishState);}
     return !!(tween||moving||tweening||turntable||hooked);
   }
 
@@ -250,10 +273,11 @@ export function createDuckView(data) {
     });
     exportQueue=run.catch(()=>{});return run;
   }
-  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, focus, snapshot, still, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
+  return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, orbitBy, focus, snapshot, still, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
     stage: { layer, camera, controls, root, shadow, meshes, hardware, onFrame: (hook) => {frameHooks.add(hook);invalidate();} },
     setSideCopy, setSplit: (colors) => {split = colors || null;invalidate();},
+    setWipe: (colors,at=1) => {wipe=colors?{colors,at}:null;if(wipe)tween=null;invalidate();},
     setTurntable: (on) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},
     setExplode: (on) => setLayout(on ? 'explode' : 'assembly'), get turntable() {return turntable;} };
 }

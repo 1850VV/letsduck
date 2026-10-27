@@ -60,14 +60,19 @@
       <button id="pose-toggle" aria-pressed="false" title="摆姿势：张嘴、转头、下蹲、抬脚" data-i18n-title="text.0630"><b>🦴</b><span data-i18n="label.pose">姿态</span></button>
     </div>
     <div class="split-labels" id="split-labels" hidden><span id="split-a">A</span><span data-i18n="text.0598">B · 当前</span></div>
+    <div class="compare-labels"><span id="compare-before"></span><span data-i18n="text.0598">B · 当前</span></div>
+    <div class="compare-wipe" id="compare-wipe" hidden aria-hidden="true"></div>
     <div class="side-label" id="side-label" hidden></div>
     <div class="pose-panel" id="pose-panel" hidden></div>
     <div class="hint" id="hint"></div>
     <div class="part-tag" id="part-tag" hidden></div>
     <div class="dock" id="dock">
+      <div class="dock-left">
       <div class="seg" id="views" role="group" aria-label="视角" data-i18n-aria-label="text.0631"><button data-view="hero" class="on">¾</button><button data-view="front" data-i18n="text.0429">正</button><button data-view="side" data-i18n="text.0430">侧</button><button data-view="back" data-i18n="text.0431">背</button><button data-view="top" data-i18n="text.0599">俯</button></div>
       <button class="toggle" id="spin" aria-pressed="false" data-i18n="text.0441">⟳ 转台</button>
-      <div class="compare"><button class="hold" id="hold" title="按住对比（空格）" data-i18n="text.0600" data-i18n-title="text.0632">按住对比</button><button class="cmp-pick" id="cmp-pick" aria-label="选择对比对象" aria-expanded="false" data-i18n-aria-label="text.0633">▾</button><div class="cmp-menu" id="cmp-menu" hidden></div></div>
+      </div>
+      <div class="compare"><button class="hold" id="hold" aria-pressed="false" title="按住对比（空格）" data-i18n="text.0600" data-i18n-title="text.0632">按住对比</button><button class="cmp-pick" id="cmp-pick" aria-label="选择对比对象" aria-expanded="false" data-i18n-aria-label="text.0633">▾</button><div class="cmp-menu" id="cmp-menu" hidden></div></div>
+      <div class="dock-right">
       <div class="bgs" id="bgs" role="group" aria-label="背景" data-i18n-aria-label="text.0481"><button data-bg="auto" class="on auto" title="自动：选中浅色零件时换成中灰，看得更清楚" data-i18n-title="text.0634">A</button><button data-bg="soft" style="--c:#e9edf6" title="冷灰" data-i18n-title="text.0003"></button><button data-bg="sand" style="--c:#f0dfc6" title="暖沙" data-i18n-title="text.0635"></button><button data-bg="sage" style="--c:#cfe4dc" title="雾绿" data-i18n-title="text.0636"></button><button data-bg="night" style="--c:#151b33" title="夜空" data-i18n-title="text.0637"></button><button data-bg="custom" class="custom" id="bg-custom" title="自己调一个背景色" data-i18n-title="text.0638"></button>
         <div class="bg-pop" id="bg-pop" hidden>
           <div class="bg-pop-head"><b data-i18n="text.0601">背景颜色</b><button id="bg-random" title="随机一个好看的背景" data-i18n="text.0602" data-i18n-title="text.0639">🎲 随机</button></div>
@@ -77,6 +82,7 @@
           <label class="bg-slider"><span data-i18n="label.lightness">明暗</span><input type="range" id="bg-l" min="6" max="96"></label>
           <div class="bg-hex"><i id="bg-chip"></i><input id="bg-hex" maxlength="7" aria-label="背景 HEX" autocomplete="off" data-i18n-aria-label="text.0640"></div>
         </div></div>
+      </div>
     </div>
   </section>
   <aside class="panel" id="panel"></aside>

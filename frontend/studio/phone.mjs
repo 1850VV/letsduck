@@ -82,14 +82,14 @@ stage.addEventListener('pointerdown', (e) => {
   // Long press: show the original colours while the finger stays down (the studio's 按住对比).
   press = {x: e.clientX, y: e.clientY, id: e.pointerId, fired: false, timer: setTimeout(() => {
     press.fired = true;stage.dataset.longpress = '1';body.classList.add('ph-holding');buzz(14);
-    $('#hold').dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
+    $('#hold').dispatchEvent(new Event('compare-start'));
   }, 480)};
 });
 stage.addEventListener('pointermove', (e) => {if (press && e.pointerId === press.id && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) {clearTimeout(press.timer);if (!press.fired) press = null;}});
 function release(e) {
   if (!press || e.pointerId !== press.id) return;
   clearTimeout(press.timer);
-  if (press.fired) {body.classList.remove('ph-holding');$('#hold').dispatchEvent(new PointerEvent('pointerup', {bubbles: true}));press = null;return;}
+  if (press.fired) {body.classList.remove('ph-holding');$('#hold').dispatchEvent(new Event('compare-end'));press = null;return;}
   press = null;
   // Double tap: focus the tapped part in step 2 (the studio's double-click), elsewhere reset the view.
   const now = performance.now();
@@ -102,7 +102,7 @@ function release(e) {
   }
   tap = {t: now, x: e.clientX, y: e.clientY};
 }
-stage.addEventListener('pointerup', release);stage.addEventListener('pointercancel', (e) => {if (press && e.pointerId === press.id) {clearTimeout(press.timer);if (press.fired) {body.classList.remove('ph-holding');$('#hold').dispatchEvent(new PointerEvent('pointerup', {bubbles: true}));}press = null;}});
+stage.addEventListener('pointerup', release);stage.addEventListener('pointercancel', (e) => {if (press && e.pointerId === press.id) {clearTimeout(press.timer);if (press.fired) {body.classList.remove('ph-holding');$('#hold').dispatchEvent(new Event('compare-end'));}press = null;}});
 
 // The view button shows the current angle; tapping it moves to the next one.
 stage.addEventListener('click', (e) => {
