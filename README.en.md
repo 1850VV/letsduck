@@ -56,7 +56,7 @@ Mobile painting supports bottom panels, pinch zoom, double-tap focus and long-pr
 | Accounts and gallery | None | Nickname accounts, private schemes, publishing, ratings and remix families |
 | USB device control | Local only | Unavailable |
 
-Both editions share the frontend, colour validation and 3MF exporter. The Electron desktop client remains on a separate development branch. The instructions below cover the TypeScript source personal edition and Docker server edition.
+The personal, server and Electron desktop entries share the TypeScript renderer, validation, storage and 3MF exporter. The instructions below cover the source personal edition and Docker server edition. See [desktop and offline packaging](apps/desktop/README.md) for desktop candidates and browser archives with bundled Node. Installation, updates, signing and physical devices have separate acceptance checks.
 
 ## Run locally
 
@@ -116,9 +116,9 @@ npm run audit:typescript
 npm run audit:publication
 ```
 
-Shared packages provide contracts, domain rules and lossless JSON, export workers, SQLite/MySQL storage, device controllers and Cordis/Fastify composition. `apps/local` and `apps/server` are the host entry points. Source launchers build before starting. The server can serve the renderer with `npm run start:server -- --static frontend/dist --port 8880`.
+Shared packages provide contracts, domain rules and lossless JSON, export workers, SQLite/MySQL storage, device controllers and Cordis/Fastify composition. `apps/local`, `apps/server` and `apps/desktop` are the host entry points. Source launchers build before starting. The server can serve the renderer with `npm run start:server -- --static frontend/dist --port 8880`.
 
-Tests use disposable databases and fake devices. Asset-dependent files that cannot run are listed explicitly; they require a separately authorized model pack. Full migration acceptance uses `npm run verify:phase6` with that pack. MySQL contracts require an isolated `duck_test_*` database via `DUCK_TEST_DATABASE_URL`; otherwise they report skips. Every owned source, test and configuration remains covered by strict type checks.
+Tests use disposable databases and fake devices. Asset-dependent files that cannot run are listed explicitly; they require a separately authorized model pack. Full migration source checks use `npm run verify:phase7` with that pack; actual desktop and installation checks are listed in the desktop packaging guide. MySQL contracts require an isolated `duck_test_*` database via `DUCK_TEST_DATABASE_URL`; otherwise they report skips. Every owned source, test and configuration remains covered by strict type checks.
 
 Install Playwright's matching managed Chromium, then set `DUCK_TEST_BROWSER=1` for the actual browser lifecycle checks. nginx protocol tests report a skip when native nginx is unavailable. Visual review, native controls, installers and physical-device acceptance are separate checks.
 

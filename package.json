@@ -13,8 +13,8 @@
   "scripts": {
     "pack:positions": "tsx scripts/pack_positions.ts",
     "build": "npm run build:core && npm run build:web",
-    "typecheck": "npm run build:core && tsc -p frontend/tsconfig.json --noEmit && tsc -p tsconfig.config.json --noEmit && tsc -p scripts/tsconfig.json --noEmit && tsc -p tooling/tsconfig.test.json --noEmit",
-    "test": "npm run test:typescript && npm run test:web",
+    "typecheck": "npm run build:core && tsc -p frontend/tsconfig.json --noEmit && tsc -p tsconfig.config.json --noEmit && tsc -p scripts/tsconfig.json --noEmit && tsc -p tooling/tsconfig.test.json --noEmit && tsc -p apps/desktop/tsconfig.check.json --noEmit",
+    "test": "npm run test:typescript && npm run test:web && npm run test:desktop",
     "test:legacy": "npm run test:web",
     "test:typescript": "npm run build && tsx --test --test-concurrency=1 tooling/test/*.test.ts",
     "audit:publication": "tsx scripts/publication_audit.ts",
@@ -42,13 +42,26 @@
     "prepack:geometry": "npm run build:core",
     "preimport:assets": "npm run build:core",
     "preimport:assembly": "npm run build:core",
-    "prebaseline:capture": "npm run build:core"
+    "prebaseline:capture": "npm run build:core",
+    "build:desktop": "npm run build && tsc -b apps/desktop && tsc -p apps/desktop/tsconfig.config.json && esbuild apps/desktop/src/preload.cts --bundle --platform=node --format=cjs --external:electron --outfile=apps/desktop/dist/preload.cjs && tsc -p apps/desktop/tsconfig.scripts.json",
+    "test:desktop": "npm run build:desktop && tsx --test --test-concurrency=1 apps/desktop/test/*.test.ts",
+    "verify:phase7": "npm run verify:phase6 && npm run test:desktop",
+    "start:desktop": "npm run build:desktop && electron apps/desktop",
+    "setup:electron": "node node_modules/electron/install.js",
+    "desktop:prepare": "npm run build:desktop && tsx apps/desktop/scripts/prepare-assets.ts",
+    "desktop:icon": "electron apps/desktop/dist-scripts/icon.cjs",
+    "package:desktop": "npm run desktop:prepare && npm run desktop:icon && electron-builder --projectDir apps/desktop --config dist-config/electron-builder.cjs --publish never",
+    "package:browser": "npm run build && tsx tooling/src/package-browser.ts",
+    "fetch:node": "tsx tooling/src/fetch-node-runtime.ts"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",
+    "@electron/asar": "3.4.1",
     "@types/node": "24.19.2",
     "@types/pngjs": "6.0.5",
     "@types/three": "0.180.0",
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0",
     "esbuild": "0.28.2",
     "fastify": "5.12.7",
     "fflate": "0.8.3",
@@ -61,6 +74,7 @@
     "vite": "8.3.5"
   },
   "allowScripts": {
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "electron@45.0.0": true
   }
 }

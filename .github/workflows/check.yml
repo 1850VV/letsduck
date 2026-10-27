@@ -20,6 +20,7 @@ jobs:
           --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pci-test-password --silent"
           --health-interval=5s --health-timeout=3s --health-retries=30
     env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       DUCK_TEST_DATABASE_URL: mysql://root:ci-test-password@127.0.0.1:3306/duck_test_ci?charset=utf8mb4
       DUCK_NGINX_BIN: /usr/sbin/nginx
       DUCK_TEST_BROWSER: '1'
@@ -45,7 +46,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends nginx
           PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium
       - name: Node contracts, real MySQL, browser lifecycle and source-only web checks
-        run: npm test
+        run: |
+          npm test
+          node --import tsx apps/desktop/test/update-panel.browser.ts
       - name: Build and exercise Node server and Vite nginx images
         run: |
           DUCK_TEST_DATABASE_URL= npx tsx tooling/test/server-container.ts

@@ -1,0 +1,21 @@
+{
+  "name": "@letsduck/desktop",
+  "version": "0.1.0-beta.4",
+  "private": true,
+  "description": "来做鸭个人版桌面客户端",
+  "author": "letsduck contributors",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/main.js",
+  "engines": {
+    "node": ">=24.20.0 <25"
+  },
+  "dependencies": {
+    "@letsduck/host": "0.0.0",
+    "electron-updater": "6.8.11"
+  },
+  "scripts": {
+    "build": "npm --prefix ../.. run build:desktop",
+    "start": "npm run build && electron ."
+  }
+}
