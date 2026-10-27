@@ -71,3 +71,11 @@ jobs:
       - run: npm ci
       - name: Compare fixed legacy and current assembly on Linux
         run: npx tsx tooling/test/assembly-diagnostic.ts .
+        env:
+          DUCK_ASSEMBLY_DIAGNOSTIC_OUTPUT: ${{ runner.temp }}/assembly-diagnostic.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: assembly-diagnostic-${{ github.run_id }}
+          path: ${{ runner.temp }}/assembly-diagnostic.json*
+          retention-days: 1

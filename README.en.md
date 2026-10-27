@@ -130,6 +130,8 @@ For development, use `npm run start:local -- --port 0 --no-open` with `DUCK_PERS
 
 Ordinary build, test and tool paths need no Python. Synthetic historical Python results are frozen oracles. `npm run test:historical -- --list` lists optional replay suites; select the old interpreter with `--python /path/to/legacy/python`. The runner extracts a fixed Git reference to a read-only temporary tree and owns all data/services. `baseline:capture -- --engine historical ...` labels old-engine measurements separately. Fetch the reference first in shallow clones.
 
+For explicit cross-platform assembly diagnosis, run `npx tsx tooling/test/assembly-diagnostic.ts .`. Node compares the fixed historical MJS and current TS poses, order and numeric values, then removes the temporary reference. It needs no Python and is outside ordinary tests.
+
 ## Source and documentation
 
 ```text

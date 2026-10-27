@@ -1,3 +1,6 @@
+import {personalMimeProfiles,isPersonalMimeProfile,personalMimeInput} from './fixtures/personal-http-mime.js';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {frozenOracle} from './fixtures/frozen-oracle.js';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rm, symlink, writeFile, readdir, utimes } from 'node:fs/promises';
@@ -218,6 +221,22 @@ test('wire framing returns personal errors for invalid or excessive declared len
 });
 
 test('frozen Python handler and TypeScript HTTP agree on synthetic routes, errors, caches and byte ranges', async context => {
+  const profile=process.env.DUCK_PERSONAL_HTTP_MIME_PROFILE;
+  if(profile===undefined){
+    // MIME tables are host configuration. Each child reads controlled system files
+    // through the unchanged production algorithm; historical Python supplies every expected response.
+    for(const name of Object.keys(personalMimeProfiles))await context.test(name,async()=>{
+      const env:NodeJS.ProcessEnv={...process.env,DUCK_PERSONAL_HTTP_MIME_PROFILE:name};delete env.NODE_TEST_CONTEXT;
+      const child=spawn(process.execPath,['--import','tsx','--import',fileURLToPath(new URL('./fixtures/personal-http-mime.ts',import.meta.url)),'--test','--test-name-pattern','^frozen Python handler',fileURLToPath(import.meta.url)],{env});
+      let stdout='',stderr='';child.stdout.on('data',(bytes:Buffer)=>{stdout+=bytes.toString();});child.stderr.on('data',(bytes:Buffer)=>{stderr+=bytes.toString();});
+      const status=await new Promise<number|null>((done,reject)=>{child.once('error',reject);child.once('exit',done);});
+      assert.equal(status,0,stdout+stderr);assert.match(stdout,new RegExp('Controlled MIME profile: '+name));assert.match(stdout,/Frozen Python HTTP reference: 52 requests replayed against Node/);
+      context.diagnostic('Independent Python MIME profile '+name+': 52 requests; child exited 0');
+    });
+    return;
+  }
+  assert.ok(isPersonalMimeProfile(profile));
+  context.diagnostic('Controlled MIME profile: '+profile);
   const f = await fixture();
   try {
     await f.app.listen({ host: '127.0.0.1', port: 0 }); const address = f.app.server.address(); assert.ok(address && typeof address === 'object');
@@ -238,7 +257,7 @@ test('frozen Python handler and TypeScript HTTP agree on synthetic routes, error
       { method: 'OPTIONS', path: '/api/site' },
       { path: '/assets/%zz' }, { path: '/%zz' }, { method: 'PUT', path: '/api/schemes/%zz', body: 'bad', headers: 'Content-Type: bad\r\n' },
     ];
-    const snapshot=frozenOracle('personal-http',JSON.stringify(cases));assert.equal(snapshot.status,0,snapshot.stderr);
+    const snapshot=frozenOracle('personal-http',personalMimeInput(cases,profile));assert.equal(snapshot.status,0,snapshot.stderr);
     const expectedRows:Awaited<ReturnType<typeof rawCall>>[]=JSON.parse(snapshot.stdout);assert.equal(expectedRows.length,cases.length);
     context.diagnostic(`Frozen Python HTTP reference: ${cases.length} requests replayed against Node`);
     for (const [index,item] of cases.entries()) {
