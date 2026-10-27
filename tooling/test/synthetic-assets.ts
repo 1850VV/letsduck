@@ -21,7 +21,7 @@ export function writeSyntheticAssets(directory: string) {
   for (let plate = 1; plate <= 6; plate++) xml += `<plate><metadata key="plate_id" value="${plate}"/></plate>`;
   xml += '</config>';
   const config = { filament_type: ['PLA', 'PLA', 'PLA', 'TPU'], filament_vendor: ['Example', 'Example', 'Example', 'Example'], filament_ids: ['a', 'b', 'c', 'd'], nozzle_temperature: ['220', '220', '220', '225'], filament_settings_id: ['a', 'b', 'c', 'd'], filament_colour: ['#FFFFFF', '#000000', '#00FF00', '#888888'], filament_multi_colour: ['#FFFFFF', '#000000', '#00FF00', '#888888'], filament_extruder_variant: ['1', '1', '1', '1'], filament_self_index: ['1', '2', '3', '4'], flush_volumes_matrix: Array.from({ length: 16 }, (_, index) => index % 5 === 0 ? '0' : '100'), flush_volumes_vector: ['1', '2', '3', '4', '5', '6', '7', '8'] };
-  const source = zipSync({ '3D/model.model': strToU8('<model><mesh>synthetic geometry</mesh></model>'), '[Content_Types].xml': strToU8('<Types></Types>'), 'Metadata/project_settings.config': strToU8(JSON.stringify(config)), 'Metadata/model_settings.config': strToU8(xml) });
+  const source = zipSync({ '3D/model.model': strToU8('<model><mesh>synthetic geometry</mesh></model>'), '[Content_Types].xml': strToU8('<Types></Types>'), 'Metadata/project_settings.config': strToU8(JSON.stringify(config)), 'Metadata/model_settings.config': strToU8(xml) }, {mtime:new Date(2001,1,3,4,5,6)});
   writeFileSync(join(directory, 'source.3mf'), source);
   writeFileSync(join(directory, 'model.json'), JSON.stringify({ source_sha256: createHash('sha256').update(source).digest('hex'), parts }));
   writeFileSync(join(directory, 'catalog.json'), JSON.stringify({ version: 'synthetic', products }));

@@ -3,14 +3,13 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
+import {frozenOracle} from './fixtures/frozen-oracle.js';
+import {legacyServerAccount,legacyServerReadback,legacyServerSchema} from './fixtures/legacy-server-sql.js';
 import { ServerStore, AVATARS, COLORS } from '../../packages/storage/src/server.js';
 import type { Connection, Database, Row } from '../../packages/storage/src/database.js';
 import { errorPayload, Invalid, parseWireJson, pythonString, readJsonField } from '@letsduck/domain';
 
-const root = resolve(import.meta.dirname, '../..');
-const python = process.env.PYTHON || (existsSync(join(root, '.venv/bin/python')) ? join(root, '.venv/bin/python') : 'python3');
 const PARTS = ['P1-01', 'P1-02', 'P2-01'];
 const DESIGN = { colors: Object.fromEntries(PARTS.map(id => [id, '#aBcD09'])), assignments: Object.fromEntries(PARTS.map(id => [id, 'pla-white'])) };
 const NORMALIZED = { ...DESIGN, colors: Object.fromEntries(PARTS.map(id => [id, '#ABCD09'])), finishes: {} };
@@ -55,7 +54,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) describe(`${dialect} server 
     a = await store.register('小鸭A', 'pass-a');
     b = await store.register('小鸭B', 'pass-b');
   });
-  afterEach(async () => { await store?.close(); if (directory) await rm(directory, { recursive: true, force: true }); });
+  afterEach(async () => { try{await store?.close();}finally{if (directory){await rm(directory, { recursive: true, force: true });if(existsSync(directory))throw Error('Owned server storage fixture leaked');}} });
 
   test('passwords, session creation/logout and reopen preserve the original account contract', async () => {
     assert.match(a.token, /^[\w-]{43}$/);
@@ -225,24 +224,7 @@ for (const dialect of ['sqlite', 'mysql'] as const) describe(`${dialect} server 
     }
   });
 
-  test('current Python errors and request coercions match in server use cases', async () => {
-    const code = String.raw`
-import sys,json,tempfile
-from pathlib import Path
-sys.path.insert(0,str(Path(sys.argv[1])/'backend'))
-from store import Store
-from errors import payload
-with tempfile.TemporaryDirectory() as d:
- s=Store(Path(d)/'oracle.db',part_ids=['P1-01','P1-02','P2-01']);u=s.register('Oracle','pass')['user']['id'];out=[]
- for case in json.load(sys.stdin):
-  try:
-   name,args=case['method'],case['args']
-   if name in ('update_user','save_scheme','publish'):args=[u]+args
-   result=getattr(s,name)(*args)
-   out.append({'value':result['name'] if name=='update_user' else result})
-  except Exception as e:out.append({'failure':payload(e)})
- s.close();print(json.dumps(out,ensure_ascii=False))
-`;
+  test('frozen historical Python errors and request coercions match in server use cases', async () => {
     const cases = [
       { method: 'register', args: [null, 'pass'] }, { method: 'register', args: ['Empty', true] },
       { method: 'login', args: [[], {}] }, { method: 'update_user', args: [{ name: [] }] },
@@ -253,7 +235,7 @@ with tempfile.TemporaryDirectory() as d:
       { method: 'save_scheme', args: ['bad', []] },
       { method: 'save_scheme', args: ['bad', { name: 'Bad', design: DESIGN, voiceSalt: '3.5' }] },
     ];
-    const run = spawnSync(python, ['-I', '-c', code, root], { input: JSON.stringify(cases), encoding: 'utf8' }); assert.equal(run.status, 0, run.stderr);
+    const run = frozenOracle('server-storage-v1',JSON.stringify(cases)); assert.equal(run.status, 0, run.stderr);
     const expected = JSON.parse(run.stdout); const actual: unknown[] = [];
     for (const entry of cases) {
       try {
@@ -269,31 +251,21 @@ with tempfile.TemporaryDirectory() as d:
     assert.deepEqual(actual, expected);
   });
 
-  test('Python-created password/token work unchanged and Python reads TS profile, scheme and work writes', async () => {
-    const create = String.raw`
-import sys,json
-from pathlib import Path
-sys.path.insert(0,str(Path(sys.argv[1])/'backend'))
-from store import Store
-s=Store(database_url=sys.argv[2],part_ids=['P1-01','P1-02','P2-01']);a=s.register('旧鸭🦆','old-password');print(json.dumps(a,ensure_ascii=False));s.close()
-`;
-    const pythonTarget = dialect === 'mysql' ? database.replace(/^mysql:/, 'mysql+pymysql:') : 'sqlite:///' + database;
-    const created = spawnSync(python, ['-I', '-c', create, root, pythonTarget], { encoding: 'utf8' }); assert.equal(created.status, 0, created.stderr);
-    const account = JSON.parse(created.stdout);
-    assert.deepEqual(await store.userFor(account.token), account.user);
-    assert.deepEqual((await store.login('旧鸭🦆', 'old-password')).user, account.user);
-    await store.updateUser(account.user.id, { name: '新鸭🦆', password: 'new-password' });
-    const scheme = await store.saveScheme(account.user.id, 'python-roundtrip', { name: '往返🦆', design: DESIGN, voiceSalt: 9007199254740993n, provenance: { note: '🦆', n: 9007199254740993n } });
-    const work = await store.publish(account.user.id, { title: 'TS作品', design: DESIGN, schemeId: scheme.id });
-    const readback = String.raw`
-import sys,json
-from pathlib import Path
-sys.path.insert(0,str(Path(sys.argv[1])/'backend'))
-from store import Store
-s=Store(database_url=sys.argv[2],part_ids=['P1-01','P1-02','P2-01']);u=s.user_for(sys.argv[3]);assert u['name']=='新鸭🦆';assert s.login('新鸭🦆','new-password')['user']==u
-x=s.schemes(u['id'])[0];assert x['name']=='往返🦆' and x['voiceSalt']==9007199254740993 and x['provenance']['n']==9007199254740993
-w=s.work(sys.argv[4],u['id']);assert w['schemeId']==x['id'] and w['title']=='TS作品';s.close();print('python-readback-ok')
-`;
-    const read = spawnSync(python, ['-I', '-c', readback, root, pythonTarget, account.token, work.id], { encoding: 'utf8' }); assert.equal(read.status, 0, read.stderr); assert.match(read.stdout, /python-readback-ok/);
+  test('legacy SQL passwords/tokens survive both Node and frozen legacy schemas, and an independent SQL consumer reads TS writes', async () => {
+    for (const schema of ['node', 'legacy'] as const) {
+      if (schema === 'legacy') {
+        await store.close();
+        await legacyServerSchema(database);
+        store = await ServerStore.open({ database, partIds: PARTS });
+      }
+      const created = await legacyServerAccount(database); assert.equal(created.status, 0, created.stderr);
+      const account = created.account;
+      assert.deepEqual(await store.userFor(account.token), account.user);
+      assert.deepEqual((await store.login('旧鸭🦆', 'old-password')).user, account.user);
+      await store.updateUser(account.user.id, { name: '新鸭🦆', password: 'new-password' });
+      const scheme = await store.saveScheme(account.user.id, 'python-roundtrip', { name: '往返🦆', design: DESIGN, voiceSalt: 9007199254740993n, provenance: { note: '🦆', n: 9007199254740993n } });
+      const work = await store.publish(account.user.id, { title: 'TS作品', design: DESIGN, schemeId: scheme.id });
+      const read = await legacyServerReadback(database,account.token,work.id); assert.equal(read.status, 0, read.stderr); assert.match(read.stdout, /legacy-sql-readback-ok/);
+    }
   });
 });

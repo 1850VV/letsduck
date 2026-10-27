@@ -1,3 +1,4 @@
+import {frozenOracle} from './fixtures/frozen-oracle.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -190,41 +191,11 @@ test('closing an unowned debug session sends no controller request or transport 
   assert.ok(rt.calls.every(call => call.method === 'GET')); assert.equal(rt.closed, 0); assert.equal(rt.halted, 0);
 });
 
-import { spawnSync } from 'node:child_process';
 import { jsonParse, jsonStringify } from '@letsduck/storage';
-const root = resolve(import.meta.dirname, '../..');
-const oracle = String.raw`
-import json,sys,tempfile
-from pathlib import Path
-sys.path.insert(0,sys.argv[1]+'/tests');sys.path.insert(0,sys.argv[1]+'/personal');sys.path.insert(0,sys.argv[1]+'/backend')
-from test_duck_debug import Firmware,Setup
-from duck_debug import DuckDebug,DebugError
-from schemes import PersonalStore
-payload=json.load(sys.stdin)
-rt=Firmware();rt.state=payload['state'];rt.motors={int(k):v for k,v in payload['motors']}
-with tempfile.TemporaryDirectory() as tmp:
- store=PersonalStore(Path(tmp)/'p.db',part_ids=())
- debug=DuckDebug(store,Setup(rt));out=[]
- try:
-  for body in payload['operations']:
-   try:
-    result=debug.status() if body.get('action')=='$status' else debug.numbering() if body.get('action')=='$numbering' else debug.action(body)
-    for r in result.get('records',[]) if isinstance(result,dict) else []:
-     if 'verifiedAt' in r:r['verifiedAt']='<time>'
-    if isinstance(result,dict) and 'numbering' in result:
-     for r in result['numbering']['records']:
-      if 'verifiedAt' in r:r['verifiedAt']='<time>'
-    out.append({'value':result})
-   except DebugError as e:out.append({'failure':{'error':str(e),'details':e.details}})
-  print(json.dumps({'output':out,'calls':rt.calls},ensure_ascii=False,separators=(',',':')))
- finally:debug.close();store.close()
-`;
 async function differential(t: Parameters<typeof temporary>[0], raw: string[]): Promise<void> {
   const { rt, debug } = await harness(t);
-  const run = spawnSync(process.env.PYTHON || resolve(root, '.venv/bin/python'), ['-I', '-c', oracle, root], {
-    input: '{"state":' + JSON.stringify(rt.state) + ',"motors":' + JSON.stringify([...rt.motors]) + ',"operations":[' + raw.join(',') + ']}', encoding: 'utf8',
-  });
-  assert.equal(run.status, 0, run.stderr);
+  const input='{"state":'+JSON.stringify(rt.state)+',"motors":'+JSON.stringify([...rt.motors])+',"operations":['+raw.join(',')+']}';
+  const run=frozenOracle('duck-debug',input);assert.equal(run.status,0,run.stderr);
   const output: unknown[] = [];
   for (const text of raw) {
     const body = jsonParse(text) as Record<string, unknown>;

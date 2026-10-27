@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { join, resolve, delimiter } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { unzipSync } from 'fflate';
@@ -11,7 +11,7 @@ import { writeSyntheticAssets } from './synthetic-assets.js';
 
 const root = resolve(import.meta.dirname, '../..');
 
-test('captures the old API in an owned temporary database and cleans up the service', () => {
+test('captures the Node API in an owned temporary database and cleans up the service', () => {
   const dir = mkdtempSync(join(tmpdir(), 'letsduck-baseline-test-'));
   const assets = join(dir, 'assets'), output = join(dir, 'evidence'), sentinel = join(dir, 'user.db');
   mkdirSync(assets); writeFileSync(sentinel, 'Do not open the real database.');
@@ -22,6 +22,8 @@ test('captures the old API in an owned temporary database and cleans up the serv
     assert.equal(run.status, 0, run.stderr);
     const result = JSON.parse(readFileSync(join(output, 'baseline.json'), 'utf8'));
     assert.equal(result.schema, 'letsduck-baseline/1');
+    assert.equal(result.engine.kind,'node');assert.equal(result.environment.python,null);
+    assert.match(result.responses.saved.raw.sha256,/^[a-f0-9]{64}$/);assert.match(result.responses.saved.request.sha256,/^[a-f0-9]{64}$/);
     assert.equal(result.responses.site.body.edition, 'personal');
     assert.equal(result.responses.health.body.export, false);
     assert.equal(result.responses.catalog.status, 422);
@@ -43,9 +45,11 @@ test('captures the old API in an owned temporary database and cleans up the serv
 test('an unavailable Python runtime cannot produce successful baseline evidence', () => {
   const dir = mkdtempSync(join(tmpdir(), 'letsduck-baseline-failure-'));
   try {
-    const run = spawnSync(process.execPath, ['--import', 'tsx', 'tooling/src/baseline.ts', '--output', dir, '--python', join(dir, 'absent-python')], { cwd: root, encoding: 'utf8', timeout: 15_000 });
+    const run = spawnSync(process.execPath, ['--import', 'tsx', 'tooling/src/baseline.ts', '--output', dir, '--engine','historical','--python', join(dir, 'absent-python')], { cwd: root, encoding: 'utf8', timeout: 15_000 });
     assert.notEqual(run.status, 0);
     assert.equal(existsSync(join(dir, 'baseline.json')), false);
+    const reference=run.stdout.trim().split('\n').map(line=>JSON.parse(line)).find(entry=>entry.status==='historical_reference');
+    assert.ok(reference);assert.equal(existsSync(reference.historicalDirectory),false);assert.equal(existsSync(reference.temporaryDirectory),false);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -98,4 +102,37 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) test(`${signal} cancels col
     }
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+
+test('default baseline captures with a Node-only PATH and labels its actual engine', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'letsduck-baseline-node-only-')), assets=join(dir,'assets'), output=join(dir,'evidence'),bin=join(dir,'bin');
+  mkdirSync(assets);mkdirSync(bin);
+  const locate=(name:string)=>{const path=(process.env.PATH??'').split(delimiter).map(folder=>join(folder,name)).find(existsSync);if(!path)throw Error('Missing baseline prerequisite '+name);return path;};
+  for(const name of ['git','ps'])symlinkSync(locate(name),join(bin,name));
+  symlinkSync(process.execPath,join(bin,'node'));
+  try{
+    const run=spawnSync(process.execPath,['--import','tsx','tooling/src/baseline.ts','--assets',assets,'--output',output,'--save-samples','1','--export-samples','0'],{cwd:root,encoding:'utf8',timeout:30000,env:{...process.env,PATH:bin,PYTHON:join(dir,'absent-python')}});
+    assert.equal(run.status,0,run.stderr);
+    const result=JSON.parse(readFileSync(join(output,'baseline.json'),'utf8'));
+    assert.equal(result.engine.kind,'node');assert.equal(result.environment.python,null);
+    assert.equal(result.responses.saved.status,200);assert.equal(result.timings.saveMs.n,1);
+    assert.equal(existsSync(result.isolation.temporaryDirectory),false);
+    assert.throws(()=>process.kill(result.isolation.servicePid,0),{code:'ESRCH'});
+  }finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+
+for(const signal of ['SIGINT','SIGTERM'] as const)test(`${signal} closes the actual managed Chromium and owned Node host during browser collection`,{skip:process.platform==='win32'?'POSIX signal ownership check':process.env.DUCK_TEST_BROWSER!=='1'?'Set DUCK_TEST_BROWSER=1 for managed browser lifecycle checks':false},async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'letsduck-baseline-browser-')),assets=join(dir,'assets');mkdirSync(assets);
+ const child=spawn(process.execPath,['--import','tsx','tooling/src/baseline.ts','--assets',assets,'--output',join(dir,'evidence'),'--save-samples','0','--export-samples','0','--browser'],{cwd:root,stdio:['ignore','pipe','pipe','ipc']});
+ const exited=once(child,'exit');let stderr='';child.stderr?.on('data',chunk=>{stderr+=String(chunk);});
+ let owned:{servicePid:number;temporaryDirectory:string;processIds:number[]}|undefined;
+ try{
+  owned=await new Promise<NonNullable<typeof owned>>((done,reject)=>{const timer=setTimeout(()=>reject(new Error('Managed Chromium ownership was not reported: '+stderr)),15000);child.once('exit',()=>{clearTimeout(timer);reject(new Error('Collector exited before browser ownership: '+stderr));});child.on('message',(message:unknown)=>{if(!message||typeof message!=='object'||!('status'in message)||message.status!=='browser_acquired'||!('servicePid'in message)||typeof message.servicePid!=='number'||!('temporaryDirectory'in message)||typeof message.temporaryDirectory!=='string'||!('processIds'in message)||!Array.isArray(message.processIds)||!message.processIds.every(pid=>typeof pid==='number'))return;clearTimeout(timer);done({servicePid:message.servicePid,temporaryDirectory:message.temporaryDirectory,processIds:message.processIds.map(pid=>Number(pid))});});});
+  assert.ok(owned.processIds.length>0);child.kill(signal);await exited;
+  assert.throws(()=>process.kill(owned!.servicePid,0),{code:'ESRCH'});
+  for(const pid of owned.processIds)assert.throws(()=>process.kill(pid,0),{code:'ESRCH'});
+  assert.equal(existsSync(owned.temporaryDirectory),false);assert.equal(existsSync(join(dir,'evidence/baseline.json')),false);
+ }finally{if(child.exitCode===null&&child.signalCode===null){child.kill('SIGKILL');await exited;}if(owned){try{process.kill(owned.servicePid,'SIGINT');}catch{}rmSync(owned.temporaryDirectory,{recursive:true,force:true});}rmSync(dir,{recursive:true,force:true});}
 });

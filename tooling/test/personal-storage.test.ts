@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import {legacyPersonalSql} from './fixtures/legacy-personal-sql.js';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -11,7 +11,6 @@ const root = resolve(import.meta.dirname, '../..');
 const design = { colors: { p: '#abcdef' }, assignments: { p: null }, finishes: { p: 'matte' } };
 const normalizedDesign = { colors: { p: '#ABCDEF' }, assignments: { p: null }, finishes: { p: 'matte' } };
 const data = { name: ' 我的方案 🦆 ', design, voiceSalt: 7, provenance: { author: '示例' } };
-const python = process.env.PYTHON || (existsSync(join(root, '.venv/bin/python')) ? join(root, '.venv/bin/python') : 'python3');
 
 async function storage() {
   assert.ok(existsSync(join(root, 'packages/storage/src/personal.ts')), 'Personal SQLite adapter is not implemented');
@@ -19,18 +18,17 @@ async function storage() {
 }
 function temp(t: TestContext) {
   const directory = mkdtempSync(join(tmpdir(), 'letsduck-personal-'));
-  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  t.after(() => { rmSync(directory, { recursive: true, force: true }); if(existsSync(directory))throw Error('Owned personal storage fixture leaked'); });
   return directory;
 }
 function query(path: string, sql: string) {
   const db = new DatabaseSync(path);
   try { return db.prepare(sql).all(); } finally { db.close(); }
 }
-function pythonRun(path: string, code: string, input?: unknown): unknown {
-  const source = `import sys,json,sqlite3\nfrom pathlib import Path\nsys.path[:0]=[str(Path(sys.argv[1])/'personal'),str(Path(sys.argv[1])/'backend')]\nfrom schemes import PersonalStore\np=Path(sys.argv[2])\n${code}`;
-  const run = spawnSync(python, ['-I', '-c', source, root, path], { input: JSON.stringify(input ?? null), encoding: 'utf8' });
-  assert.equal(run.status, 0, run.stderr);
-  return run.stdout.trim() ? JSON.parse(run.stdout) : undefined;
+function legacyRun(path:string,operation:'records'|'readback'|'legacy30'|'legacy1'|'busy'):unknown {
+  const run=legacyPersonalSql(path,operation);
+  assert.equal(run.status,0,run.stderr);
+  return run.stdout.trim()?JSON.parse(run.stdout):undefined;
 }
 
 test('personal schemes survive reopen, preserve created time, normalize design and sort deterministically', async t => {
@@ -134,9 +132,9 @@ test('SQLite integer overflow is rejected without rounding, partial batches or s
   } finally { store.close(); }
 });
 
-test('Python-created records in all three tables retain exact integers through Node edits and old Python reads', async t => {
+test('frozen legacy SQL records in all three tables retain exact integers through Node edits and an independent SQL reader', async t => {
   const { PersonalStore } = await storage(), path = join(temp(t), 'personal.db');
-  pythonRun(path, `s=PersonalStore(p,part_ids=['p'])\ns.save_scheme('python',dict(name='Python🦆',design=dict(colors={'p':'#abcdef'},assignments={'p':None}),voiceSalt=9007199254740993,provenance={'nested':9007199254740995}))\ns.save_servo_record('Python板',dict(id=10,state='verified',evidence={'counter':9007199254740997}))\ns.save_servo_preparation([dict(id=12,state='picked',preparedLeads=['线'])])\ns.db.execute('UPDATE schemes SET created=?,updated=?',(9007199254740999,9007199254741001))\ns.db.execute('UPDATE servo_preparation SET updated=?',(9007199254741003,))\ns.close()`);
+  legacyRun(path,'records');
   const store = new PersonalStore({ path, partIds: ['p'] });
   try {
     const saved = store.schemes()[0]!;
@@ -150,13 +148,13 @@ test('Python-created records in all three tables retain exact integers through N
     store.saveServoRecord('Node板', { id: 20, state: 'review', evidence: { counter: -9007199254741005n } });
     store.saveServoPreparation([{ id: 12, state: 'installed' }, { id: 14, preparedLeads: [9007199254741007n] }]);
   } finally { store.close(); }
-  const result = pythonRun(path, `s=PersonalStore(p,part_ids=['p'])\nv=s.schemes()[0]\nassert v['name']=='Node🦆' and v['voiceSalt']==9007199254740993 and v['created']==9007199254740999\nassert v['provenance']=={'nested':9007199254740995}\nassert s.servo_records('Python板')[0]['evidence']['counter']==9007199254740997\nassert s.servo_records('Node板')[0]['evidence']['counter']==-9007199254741005\nr=s.servo_preparation_records()\nassert [(v['id'],v['state'],v['preparedLeads']) for v in r]==[(12,'installed',['线']),(14,'available',[9007199254741007])]\nassert s.db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'\nprint(json.dumps({'schemes':len(s.schemes()),'servo':s.db.execute('SELECT count(*) FROM servo_setup').fetchone()[0],'preparation':len(r)}))\ns.close()`);
+  const result = legacyRun(path,'readback');
   assert.deepEqual(result, { schemes: 1, servo: 2, preparation: 2 });
 });
 
 test('fresh stores import only the latest 30 legacy-owner schemes without writing the source', async t => {
   const { PersonalStore } = await storage(), directory = temp(t), legacy = join(directory, 'legacy.db'), path = join(directory, 'personal.db');
-  pythonRun(legacy, `db=sqlite3.connect(p)\ndb.execute('CREATE TABLE schemes(id TEXT PRIMARY KEY,user_id TEXT,name TEXT,design TEXT,provenance TEXT,voice_salt INTEGER,created INTEGER,updated INTEGER)')\nfor n in range(35):\n db.execute('INSERT INTO schemes VALUES(?,?,?,?,?,?,?,?)',('old-%02d'%n,'personal-owner','旧🦆',json.dumps({'colors':{},'assignments':{}}),json.dumps({'n':9007199254740993}),9007199254740995,9007199254740997,n))\ndb.execute('INSERT INTO schemes VALUES(?,?,?,?,?,?,?,?)',('other','another-owner','Other','{}',None,0,1,999))\ndb.commit();db.close()`);
+  legacyRun(legacy,'legacy30');
   const before = readFileSync(legacy);
   let store = new PersonalStore({ path, legacy });
   try {
@@ -183,7 +181,7 @@ test('missing, malformed and ownerless legacy sources are ignored, and existing 
     try { assert.equal(store.imported, 0); assert.deepEqual(store.schemes(), []); } finally { store.close(); }
   }
   const legacy = join(directory, 'valid.db');
-  pythonRun(legacy, `db=sqlite3.connect(p)\ndb.execute('CREATE TABLE schemes(id TEXT,user_id TEXT,name TEXT,design TEXT,provenance TEXT,voice_salt INTEGER,created INTEGER,updated INTEGER)')\ndb.execute("INSERT INTO schemes VALUES('old','personal-owner','old','{}',NULL,0,1,2)")\ndb.commit();db.close()`);
+  legacyRun(legacy,'legacy1');
   const existing = join(directory, 'already-exists.db'); writeFileSync(existing, '');
   const store = new PersonalStore({ path: existing, legacy });
   try { assert.equal(store.imported, 0); assert.deepEqual(store.schemes(), []); } finally { store.close(); }
@@ -207,9 +205,9 @@ test('closing the personal store releases its database and permits repeated clea
   assert.doesNotThrow(() => store.close());
 });
 
-test('personal SQLite preserves the Python five-second busy wait', async t => {
+test('personal SQLite preserves the frozen Python five-second busy wait', async t => {
   const { PersonalStore } = await storage(), path = join(temp(t), 'personal.db');
-  assert.equal(pythonRun(path, "s=PersonalStore(p)\nprint(s.db.execute('PRAGMA busy_timeout').fetchone()[0])\ns.close()"), 5000);
+  assert.equal(legacyRun(path,'busy'), 5000);
   const store = new PersonalStore({ path });
   try { assert.equal(store.db.prepare('PRAGMA busy_timeout').get()?.timeout, 5000); }
   finally { store.close(); }

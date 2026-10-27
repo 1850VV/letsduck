@@ -22,7 +22,7 @@ COPY packages/host/src ./packages/host/src
 COPY apps/local/src ./apps/local/src
 COPY apps/server/src ./apps/server/src
 COPY tooling/src ./tooling/src
-RUN npm run build && npm prune --omit=dev
+RUN npm run build:core && npm prune --omit=dev
 
 FROM node:24.20.0-bookworm-slim AS runtime
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8876 \

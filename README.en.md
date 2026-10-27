@@ -51,28 +51,29 @@ Mobile painting supports bottom panels, pinch zoom, double-tap focus and long-pr
 | | Personal | Server |
 | --- | --- | --- |
 | Use | Local painting, debugging and assembly | Sharing palettes, ratings and remixes with friends |
-| Runtime | Python 3.9+, standard library only | Docker Compose: nginx + FastAPI + MySQL 8.4 |
+| Runtime | Node.js 24.20+ (24.x) | Docker Compose: nginx + Node.js + MySQL 8.4 |
 | Data | Local SQLite; drafts and preferences in the browser | MySQL; anonymous drafts in the browser |
 | Accounts and gallery | None | Nickname accounts, private schemes, publishing, ratings and remix families |
 | USB device control | Local only | Unavailable |
 
-Both editions share the frontend, colour validation and 3MF exporter. The Electron desktop client remains on a separate development branch. The instructions below cover the Python personal edition and Docker server edition on `main`.
+Both editions share the frontend, colour validation and 3MF exporter. The Electron desktop client remains on a separate development branch. The instructions below cover the TypeScript source personal edition and Docker server edition.
 
 ## Run locally
 
 ```sh
 git clone https://github.com/1850VV/letsduck.git
 cd letsduck
-python3 scripts/import_local_assets.py /path/to/authorized/assets
-python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
-python3 run.py
+npm ci
+npm run import:assets -- /path/to/authorized/assets
+npm run import:assembly -- /path/to/authorized/assembly/assets
+npm run start:local
 ```
 
-On Windows, replace `python3` with `py -3`. Assembly asset import can be deferred; assembly and the home page's model previews need those files. See [asset requirements](docs/local-assets.md).
+Source development requires Node.js 24.20 or newer in the 24.x series. Assembly asset import can be deferred; assembly and the home page's model previews need those files. See [asset requirements](docs/local-assets.md).
 
-You can also double-click `启动来做鸭.command` on macOS or `启动来做鸭.bat` on Windows. Follow the launcher's Python installation prompt if needed. On macOS, use Finder's right-click → Open for the first launch if blocked.
+You can also double-click `启动来做鸭.command` on macOS or `启动来做鸭.bat` on Windows. Install Node 24.20+ (24.x) and run `npm ci` first. On macOS, use Finder's right-click → Open for the first launch if blocked.
 
-The browser opens `http://127.0.0.1:8876/`, trying the next port if occupied. Use `python3 run.py --port 8880 --no-open` to choose a port and suppress browser launch. Stop the launcher process to exit.
+The browser opens `http://127.0.0.1:8876/`, trying the next port if occupied. Use `npm run start:local -- --port 8880 --no-open` to choose a port and suppress browser launch. Stop the launcher process to exit.
 
 The personal server listens locally. Named schemes, numbering verification and pickup progress live outside the application folder:
 
@@ -87,7 +88,7 @@ Override the location with `DUCK_PERSONAL_DB`. Back up this file before updating
 Prepare an authorised painting asset pack, then configure database passwords:
 
 ```sh
-python3 scripts/import_local_assets.py /path/to/authorized/assets
+npm run import:assets -- /path/to/authorized/assets
 cp .env.example .env
 # Edit .env and set two different long random passwords.
 docker compose up -d --build
@@ -103,89 +104,41 @@ For public deployment, follow [deployment instructions](docs/deployment.md) for 
 
 ## Develop and verify
 
-The TypeScript workspace uses Node 24.20+ (24.x), with `apps/`, `packages/` and `tooling/`. Existing Python launchers remain usable. Normal builds and tests do not switch services or migrate real user data.
-
-`@letsduck/contracts` supplies JSON Schema, inferred types and device mappings. `@letsduck/domain` supplies design, scheme, filament compatibility and print-profile rules. Both packages work in browsers. Differential cases compare the shared rules with the current Python implementation; later migration batches connect the existing pages.
-
-Request adapters use `parseWireJson` to retain numeric source information before passing the decoded object to shared rules. Large integers remain `bigint`, preserving Python-style name conversion and `voiceSalt` without rounding them during ordinary JSON decoding.
-
-`@letsduck/exporter` provides 3MF/BOM generation and multipart decoding. `ExportManager` defaults to one execution slot and two waiting slots. Cancelled requests retain their underlying job's capacity; `close()` drains accepted work before joining threads. Assets come from the caller's explicit local directory.
+Active application, renderer, tools and ordinary tests use strict TypeScript. Vite builds `frontend/` into `frontend/dist/`, which both Node hosts serve. The personal home page contains three entry points; the server's `/` is the paint studio.
 
 ```sh
 npm ci
 npm run build
 npm run typecheck
-npm run test:typescript
+npm test
 npm run probe:runtime
-npm run verify:phase0
-npm run verify:phase1
-npm run verify:phase2
-npm run verify:phase3
-npm run verify:phase4
+npm run audit:typescript
+npm run audit:publication
 ```
 
-`verify:phase0` runs the new workspace checks, existing Node/assembly checks, the README Python checks and publication audit. Python defaults to this checkout's `.venv`; set `PYTHON` to override it. `probe:runtime -- --electron /path/to/electron` also checks SQLite interoperability between Node and Electron. It does not replace real MySQL, installed-app or hardware acceptance.
+Shared packages provide contracts, domain rules and lossless JSON, export workers, SQLite/MySQL storage, device controllers and Cordis/Fastify composition. `apps/local` and `apps/server` are the host entry points. Source launchers build before starting. The server can serve the renderer with `npm run start:server -- --static frontend/dist --port 8880`.
 
-`@letsduck/storage` provides the personal three-table adapter, server SQLite/MySQL, accounts, sessions and community storage. Tests use temporary SQLite files; with `DUCK_TEST_DATABASE_URL`, the same contracts also run against a disposable `duck_test_*` MySQL database. TypeScript test files run sequentially so suites cannot reset the same test database concurrently.
+Tests use disposable databases and fake devices. Asset-dependent files that cannot run are listed explicitly; they require a separately authorized model pack. Full migration acceptance uses `npm run verify:phase6` with that pack. MySQL contracts require an isolated `duck_test_*` database via `DUCK_TEST_DATABASE_URL`; otherwise they report skips. Every owned source, test and configuration remains covered by strict type checks.
 
-`npm run migrate:database -- SOURCE.db --backup COPY.db` selects its destination from the existing `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` configuration. It retains a consistent read-only source backup and verifies every original field. It accepts only an empty target or an unchanged repeat snapshot, preserving writes made after migration. Running this command writes to the configured destination; normal tests use neither personal nor production databases. The old Python launchers have not switched to the new storage.
+Install Playwright's matching managed Chromium, then set `DUCK_TEST_BROWSER=1` for the actual browser lifecycle checks. nginx protocol tests report a skip when native nginx is unavailable. Visual review, native controls, installers and physical-device acceptance are separate checks.
 
-`@letsduck/devices` supplies the asynchronous ADB client, preparation and debug controllers sharing one physical-bus scheduler. It connects to the existing board runtime and does not install or replace firmware. Fake-runtime tests and temporary records do not establish real device connectivity, numbering, wiring or calibration.
+For development, use `npm run start:local -- --port 0 --no-open` with `DUCK_PERSONAL_DB` set to a development database. The source audit protects TypeScript, pinned vendor files and explicitly archived tools. Publication scanning checks private-data boundaries and requires review.
 
-`@letsduck/host` composes storage, devices, exports and Fastify HTTP through Cordis, keeping the existing frontend and personal API. The export worker supplies validated model/catalog metadata. Shutdown stops admission and background observation, drains accepted HTTP/export work, then closes the owned forward, database and services. After importing authorized assets, run the new Node local entry with:
+`npm run migrate:database -- SOURCE.db --backup COPY.db` reads the source and creates a consistent backup. It writes the configured target, which must be empty or an unchanged copy of the same snapshot.
 
-```sh
-npm run start:local -- --no-open
-```
+`npm run baseline:capture -- --assets /path/to/authorized/assets --output output/baseline --browser` measures an owned Node host with temporary data. Keep environment, request/response and ZIP evidence private. Compare only identical inputs and environments.
 
-It retains `--host`, `--port` and `--no-open`, defaults to 127.0.0.1:8876 and tries the next 19 ports when occupied. `--port 0` selects a free port. Existing `DUCK_ASSETS`, `DUCK_PERSONAL_DB` and one-time legacy import via `DUCK_DB` remain supported. This command uses the configured personal database; development previews should specify a temporary database and a different port. Normal startup requires no Python. Server, desktop and frontend-build integration follow in later batches; the new device client still needs real hardware acceptance. Node's native HTTP parser rejects nonstandard Content-Length syntax such as signed values rather than replacing the transport parser.
-
-Capture the existing behavior and performance locally:
-
-```sh
-npm run baseline:capture -- --assets /path/to/authorized/assets --output output/baseline --browser
-```
-
-The tool starts its own legacy personal service with a temporary database, measuring 30 saves and 10 real-model exports by default. `--browser` uses the matching Playwright-managed Chromium and blocks browser hardware requests. It retains an actual exported 3MF, its request, and digests of decoded ZIP entries and original compressed records. Evidence includes local environment and separately licensed asset information; keep it in the ignored local output directory. It accepts no existing service URL and never uses the user's personal database. Without models, it captures only the available behavior and cannot establish export acceptance.
-
-The frontend uses native ES modules and needs no build step for development. Run the personal edition with `python3 run.py`. Server development requires Python 3.11+:
-
-```sh
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python backend/server.py --static frontend
-```
-
-Without a configured database connection, the development server uses local SQLite; production uses MySQL. See [deployment](docs/deployment.md) for connection settings, migration, backup and rollback.
-
-```sh
-python3 -I -m unittest discover -s tests -p test_personal.py -v
-python3 scripts/publication_audit.py
-.venv/bin/python -m unittest discover -s tests -v
-node --test tests/*.mjs tests/assembly/*.test.mjs
-```
-
-Full tests require local assets and development dependencies. Real MySQL regression tests also require `DUCK_TEST_DATABASE_URL`, with a database name starting with `duck_test_`; otherwise those tests skip. [Public CI](.github/workflows/check.yml) uses synthetic fixtures and MySQL, without restricted models. It does not replace real-model export, browser interaction or physical acceptance.
-
-Debug and home browser checks use the fake runtime and temporary database in `tests/debug_browser_fixture.py`, followed by `tests/duck_debug_browser.js` and `tests/home_carousel_browser.js`. They require local assembly assets. Keep these automated checks disconnected from real hardware.
-
-The home language menu has a separate read-only check, using the same isolated fixture on port 8896. It requires local Playwright, its matching managed Chromium and model assets:
-
-```sh
-PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tests/browser/home-language-menu.mjs --url http://127.0.0.1:8896 --output output/playwright/home-language-menu
-```
-
-Omit `PLAYWRIGHT_MODULE` if Node can import `playwright` directly. The script uses a temporary browser profile and blocks HTTP writes. It checks the header position, expanded bounds, clipping, clicks, keyboard exit, language persistence and runtime errors across desktop, responsive breakpoints, narrow screens, long labels and an existing RTL language. It defaults to headless Chromium with software WebGL; use `--headed` to watch. Results and screenshots go to the chosen output directory. This check does not replace other pages, native browser zoom or human visual acceptance.
+Ordinary build, test and tool paths need no Python. Synthetic historical Python results are frozen oracles. `npm run test:historical -- --list` lists optional replay suites; select the old interpreter with `--python /path/to/legacy/python`. The runner extracts a fixed Git reference to a read-only temporary tree and owns all data/services. `baseline:capture -- --engine historical ...` labels old-engine measurements separately. Fetch the reference first in shallow clones.
 
 ## Source and documentation
 
 ```text
 frontend/   Home, painting, debug, assembly, gallery and shared modules
-personal/   Local HTTP service, SQLite, UNO Q / ADB debugging and servo preparation
-backend/    FastAPI, accounts and community storage, shared rules and 3MF export
+apps/       Personal and server entry points
+packages/   Shared contracts, domain, storage, devices, exporter and HTTP hosts
 deploy/     Optional HTTPS configuration
 scripts/    Asset import, display model packing and publication checks
-tests/      Python, Node and browser checks
+tests/      TypeScript Node and browser checks
 assets/     Separately supplied local assets; do not commit
 ```
 

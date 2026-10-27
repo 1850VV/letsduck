@@ -5,7 +5,7 @@ import { ExportManager } from '@letsduck/exporter';
 import { PersonalStore } from '@letsduck/storage';
 export { parseListenPort } from './listen.js';
 import { createPersonalHttp } from './http.js';
-import type { HostExporter, PersonalHttpServer } from './http-types.js';
+import type { AssemblyManifest, HostExporter, PersonalHttpServer } from './http-types.js';
 
 interface HostAssets { partIds: string[]; exporter: HostExporter }
 interface HostDevices { setup: ServoSetup; debug: DuckDebug }
@@ -15,6 +15,7 @@ declare module '@deepseek-ai/cordis' {
 export interface HostOptions {
   assets: string;
   frontend: string;
+  assemblyManifest?: AssemblyManifest;
   database?: string;
   legacy?: string;
   runtime?: DuckRuntime;
@@ -76,7 +77,7 @@ export async function startHost(options: HostOptions) {
       ctx.provide('duckDevices', devices);
     } });
     await root.plugin({ name: 'duck-http', inject: ['duckAssets', 'duckStore', 'duckDevices', 'duckExports'], async apply(ctx) {
-      const server = http = createPersonalHttp({ assets: options.assets, frontend: options.frontend, store: ctx.duckStore, setup: ctx.duckDevices.setup, debug: ctx.duckDevices.debug, exporter: ctx.duckAssets.exporter, listenHost: host, ...(options.uiOrigin === undefined ? {} : { uiOrigin: options.uiOrigin }) });
+      const server = http = createPersonalHttp({ assets: options.assets, frontend: options.frontend, ...(options.assemblyManifest === undefined ? {} : {assemblyManifest: options.assemblyManifest}), store: ctx.duckStore, setup: ctx.duckDevices.setup, debug: ctx.duckDevices.debug, exporter: ctx.duckAssets.exporter, listenHost: host, ...(options.uiOrigin === undefined ? {} : { uiOrigin: options.uiOrigin }) });
       server.addHook('onRequest', async (_request, reply) => {
         if (closing) return reply.code(503).type('application/json; charset=utf-8').send({ error: '服务正在关闭，请稍后重试', code: 'request.failed', params: {} });
       });

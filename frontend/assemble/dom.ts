@@ -1,0 +1,153 @@
+import type { RyugiButton, RyugiActionIcon, RyugiSelect, RyugiSlider, RyugiSwitch } from './ui-elements.js';
+// These IDs and element kinds are the existing Assembly HTML/template contract.
+interface Elements {
+    "desk-toggle": HTMLButtonElement;
+    "servo-open": HTMLButtonElement;
+    "overview": RyugiButton;
+    "reference-toggle": RyugiButton;
+    "render-quality": RyugiSelect;
+    "focus-zoom-toggle": RyugiButton;
+    "focus-zoom-toggle-label": HTMLElement;
+    "reset-view": RyugiButton;
+    "front-view": RyugiButton;
+    "back-view": RyugiButton;
+    "stage": HTMLElement;
+    "loading": HTMLElement;
+    "stage-step": HTMLElement;
+    "canvas-host": HTMLElement;
+    "journey": HTMLElement;
+    "stuck": HTMLButtonElement;
+    "desk-recenter": HTMLButtonElement;
+    "guard-card": HTMLElement;
+    "desk-count": HTMLElement;
+    "desk-title": HTMLElement;
+    "desk-specs": HTMLElement;
+    "kit": HTMLElement;
+    "kit-title": HTMLElement;
+    "kit-parts": HTMLElement;
+    "kit-screws-block": HTMLElement;
+    "kit-screws": HTMLElement;
+    "kit-go": HTMLButtonElement;
+    "focus-zoom-leader": SVGSVGElement;
+    "focus-zoom-line": SVGLineElement;
+    "focus-zoom-dot": SVGCircleElement;
+    "focus-zoom": HTMLElement;
+    "focus-zoom-handle": HTMLElement;
+    "focus-zoom-title": HTMLElement;
+    "focus-zoom-factor": HTMLElement;
+    "focus-zoom-close": RyugiActionIcon;
+    "focus-zoom-view": HTMLElement;
+    "focus-zoom-status": HTMLElement;
+    "part-leader": SVGSVGElement & {
+        hidden?: boolean;
+    };
+    "part-leader-line": HTMLElement;
+    "part-leader-dot": SVGCircleElement;
+    "part-tooltip": HTMLElement;
+    "part-name": HTMLElement;
+    "part-source": HTMLElement;
+    "part-close": HTMLButtonElement;
+    "play-dot": HTMLElement;
+    "play-state": HTMLElement;
+    "motion-label": HTMLElement;
+    "action-indicator": HTMLElement;
+    "action-caption": HTMLElement;
+    "motion-progress": RyugiSlider;
+    "motion-percent": HTMLElement;
+    "back": RyugiButton;
+    "replay": RyugiButton;
+    "replay-label": HTMLElement;
+    "pause": RyugiButton;
+    "pause-label": HTMLElement;
+    "autoplay": RyugiButton;
+    "autoplay-label": HTMLElement;
+    "playback-rate": RyugiSelect;
+    "sound-controls": HTMLDetailsElement;
+    "sound-panel": HTMLElement;
+    "sound-close": RyugiActionIcon;
+    "music-enabled": RyugiSwitch;
+    "piano-track": RyugiSelect;
+    "effects-enabled": RyugiSwitch;
+    "sound-volume": RyugiSlider;
+    "sound-volume-label": HTMLElement;
+    "sound-status": HTMLElement;
+    "start": RyugiButton;
+    "next": RyugiButton;
+    "restart": RyugiButton;
+    "phase-select": RyugiSelect;
+    "step-list": HTMLElement;
+    "instruction-toggle": HTMLButtonElement;
+    "instruction-summary-title": HTMLElement;
+    "instruction-dialog": HTMLDialogElement;
+    "instruction-close": HTMLButtonElement;
+    "step-count": HTMLElement;
+    "source-time": HTMLElement;
+    "step-title": HTMLElement;
+    "step-description": HTMLElement;
+    "software-guide": HTMLElement;
+    "software-guide-note": HTMLElement;
+    "servo-guide-open": HTMLButtonElement;
+    "servo-id-list": HTMLElement;
+    "needed-parts": HTMLElement;
+    "step-check": HTMLElement;
+    "source-step": RyugiButton;
+    "reference-panel": HTMLElement;
+    "reference-close": RyugiActionIcon;
+    "reference-video": HTMLVideoElement;
+    "reference-check": HTMLElement;
+    "reference-caption": HTMLElement;
+    "servo-workbench": HTMLElement;
+    "full-saved-step": HTMLInputElement;
+    "full-saved-progress": HTMLInputElement;
+    "focus-zoom-saved": HTMLInputElement;
+    "focus-zoom-step": HTMLInputElement;
+    "focus-zoom-position": HTMLInputElement;
+    "piano-audio": HTMLAudioElement;
+    "completion-audio": HTMLAudioElement;
+    "sp-close": HTMLButtonElement;
+    "sp-id": HTMLElement;
+    "sp-position": HTMLElement;
+    "sp-error": HTMLElement;
+    "sp-take": HTMLButtonElement;
+    "sp-return": HTMLButtonElement;
+    "sv-title": HTMLElement;
+    "sv-dot": HTMLElement;
+    "sv-device": HTMLElement;
+    "sv-close": HTMLButtonElement;
+    "sv-viewport": HTMLElement;
+    "sv-tag": HTMLElement;
+    "sv-arrange": HTMLButtonElement;
+    "sv-labels": HTMLElement;
+    "sv-count": HTMLElement;
+    "sv-counts": HTMLElement;
+    "sv-completion": HTMLButtonElement;
+    "sv-meter": HTMLElement;
+    "sv-slots": HTMLElement;
+    "sv-online": HTMLElement;
+    "sv-refresh": HTMLButtonElement;
+    "sv-next": HTMLElement;
+    "sv-preparation-count": HTMLElement;
+    "sv-panel": HTMLElement;
+}
+export function byId<K extends keyof Elements>(id: K): Elements[K];
+export function byId(id: string): HTMLElement;
+export function byId(id: string): Element {
+    const element = document.getElementById(id);
+    if (!element)
+        throw new Error('Assembly element missing: ' + id);
+    return element;
+}
+declare global {
+    interface HTMLElementTagNameMap {
+        'ryugi-button': RyugiButton;
+        'ryugi-action-icon': RyugiActionIcon;
+        'ryugi-select': RyugiSelect;
+        'ryugi-slider': RyugiSlider;
+        'ryugi-switch': RyugiSwitch;
+    }
+    interface HTMLElementEventMap {
+        'ryugi-change': CustomEvent<{
+            value: string | number | boolean;
+        }>;
+    }
+}

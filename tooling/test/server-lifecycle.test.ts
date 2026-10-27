@@ -38,6 +38,13 @@ test('server gets validated planning metadata without another archive and can pl
     const jsonZip = new ZipArchive(Buffer.from(await exported.arrayBuffer())); assert.ok(jsonZip.read('3D/model.model').equals(new ZipArchive(await readFile(join(root, 'source.3mf'))).read('3D/model.model')));
     const form = new FormData(); form.set('plan', JSON.stringify(payload)); for (const name of names) form.set(name, new Blob([new Uint8Array(image)], { type: 'image/png' }), name + '.png');
     const multipart = await fetch(server.url + 'api/export', { method: 'POST', body: form }); assert.equal(multipart.status, 200); const multipartZip = new ZipArchive(Buffer.from(await multipart.arrayBuffer())); assert.deepEqual(multipartZip.read('3D/model.model'), jsonZip.read('3D/model.model'));
+    assert.deepEqual([...multipartZip.entries.keys()].sort(),[...jsonZip.entries.keys()].sort());
+    for(const name of jsonZip.entries.keys()){
+      const a=jsonZip.read(name),b=multipartZip.read(name);
+      if(name==='Metadata/duck_studio_materials.json'){const left=JSON.parse(a.toString()) as Record<string,unknown>,right=JSON.parse(b.toString()) as Record<string,unknown>;delete left.createdAt;delete right.createdAt;assert.deepEqual(left,right,name);}
+      else assert.deepEqual(a,b,name);
+    }
+
 
   } finally { await server.close(); await rm(root, { recursive: true, force: true }); }
 });

@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { parseListenPort, startHost } from '@letsduck/host';
+import { parseListenPort, startHost, loadAssemblyManifest } from '@letsduck/host';
 
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
 export async function main(argv = process.argv.slice(2)): Promise<void> {
@@ -16,7 +16,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   if (missing.length) { console.error('还缺少模型资产包（单独授权，不随源码提供）：' + missing.join(', ')); console.error('请参考 docs/local-assets.md 导入已授权的资产包。'); process.exitCode = 2; return; }
   const port = parseListenPort(values.port!);
-  const host = await startHost({ assets, frontend: join(repo, 'frontend'), host: values.host!, port, legacy: process.env.DUCK_DB || join(repo, 'backend/data/doodleduck.db') });
+  const assemblyManifest = loadAssemblyManifest(join(repo,'scripts/assembly-assets.json'));
+  const host = await startHost({ ...(assemblyManifest === undefined ? {} : {assemblyManifest}), assets, frontend: join(repo, 'frontend/dist'), host: values.host!, port, legacy: process.env.DUCK_DB || join(repo, 'backend/data/doodleduck.db') });
   console.log('来做鸭 letsduck 个人版已启动：' + host.url);
   console.log('方案保存在：' + host.storePath);
   if (host.imported) console.log('已从旧版本带入 ' + host.imported + ' 套方案。');

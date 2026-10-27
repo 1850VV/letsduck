@@ -1,0 +1,82 @@
+{
+  "format": 1,
+  "sourceSha": "d5c38e4fa890a4eca40d8857317ac463163b46c3",
+  "sources": {
+    "tests/test_migration.py": "3cc0d95b2cb0cab9ecaef146c4af1069d8dede6c6b4329c66d02dc648c7e0f38",
+    "backend/migrate_database.py": "a0ccbfddb156cfb81eb99cc30af80c9bb3350dfafccf5218c0b2abeafabb7833",
+    "backend/database.py": "e75224276ec730a7e005df0831fbc752557bc81726255cdfd7cacb195d35cdcc",
+    "backend/store.py": "2399dbce930b863b2c4ed3158a862c8010ff5592e2107852b9026d0d83336087",
+    "tooling/test/storage-migration.test.ts": "1d96ed8e88dd90114e99b5e51b66fbcb4b4726d82ce16462a6002b613520f0dd",
+    "tooling/test/storage-json.test.ts": "0d7db32032b921de1da0f32bd82c1382d7179a623e4fb8847833dae375f0216c"
+  },
+  "pythonVersion": "3.12.13 (main, Apr  7 2026, 21:09:58) [Clang 22.1.1 ]",
+  "columns": {
+    "users": [
+      "id",
+      "name",
+      "pw_salt",
+      "pw_hash",
+      "avatar",
+      "color",
+      "created"
+    ],
+    "sessions": [
+      "token",
+      "user_id",
+      "created"
+    ],
+    "schemes": [
+      "id",
+      "user_id",
+      "name",
+      "design",
+      "provenance",
+      "voice_salt",
+      "created",
+      "updated"
+    ],
+    "works": [
+      "id",
+      "user_id",
+      "title",
+      "description",
+      "design",
+      "provenance",
+      "parent_id",
+      "scheme_id",
+      "created"
+    ],
+    "ratings": [
+      "work_id",
+      "user_id",
+      "stars"
+    ]
+  },
+  "snapshot": "{\"fingerprint\":\"8d218142543baea4614298d56c0fd40810ee74a610c64137e240a9274fdfe24b\",\"data\":{\"users\":[{\"id\":\"u-a\",\"name\":\"Alpha\",\"pw_salt\":\"01010101010101010101010101010101\",\"pw_hash\":\"858c7276ddfd5d9195c3026c47278cbe902335a760e8831236548b98b87d26ac\",\"avatar\":\"🦆\",\"color\":\"#4d6bfe\",\"created\":1720000000000},{\"id\":\"u-b\",\"name\":\"Beta\",\"pw_salt\":\"01010101010101010101010101010101\",\"pw_hash\":\"858c7276ddfd5d9195c3026c47278cbe902335a760e8831236548b98b87d26ac\",\"avatar\":\"🐤\",\"color\":\"#ff7a59\",\"created\":1720000000001}],\"sessions\":[{\"token\":\"retained-token-a\",\"user_id\":\"u-a\",\"created\":1720000000002},{\"token\":\"retained-token-b\",\"user_id\":\"u-b\",\"created\":1720000000003}],\"schemes\":[{\"id\":\"s-old\",\"user_id\":\"u-a\",\"name\":\"方案🦆\",\"design\":\"{\\\"colors\\\": {\\\"P1-01\\\": \\\"#FFFFFF\\\"}, \\\"assignments\\\": {\\\"P1-01\\\": \\\"pla-white\\\"}, \\\"finishes\\\": {}}\",\"provenance\":\"{\\\"workId\\\":\\\"official-1\\\"}\",\"voice_salt\":9223372036854775807,\"created\":9007199254740993,\"updated\":9007199254740995}],\"works\":[{\"id\":\"w-fork\",\"user_id\":\"u-b\",\"title\":\"改编\",\"description\":\"\",\"design\":\"{\\\"colors\\\": {\\\"P1-01\\\": \\\"#FFFFFF\\\"}, \\\"assignments\\\": {\\\"P1-01\\\": \\\"pla-white\\\"}, \\\"finishes\\\": {}}\",\"provenance\":\"{\\\"workId\\\":\\\"w-root\\\"}\",\"parent_id\":\"w-root\",\"scheme_id\":null,\"created\":1720000000007},{\"id\":\"w-root\",\"user_id\":\"u-a\",\"title\":\"原作🦆\",\"description\":\"中文\\\\n 🦆\",\"design\":\"{\\\"colors\\\": {\\\"P1-01\\\": \\\"#FFFFFF\\\"}, \\\"assignments\\\": {\\\"P1-01\\\": \\\"pla-white\\\"}, \\\"finishes\\\": {}}\",\"provenance\":null,\"parent_id\":null,\"scheme_id\":\"s-old\",\"created\":1720000000006}],\"ratings\":[{\"work_id\":\"w-root\",\"user_id\":\"u-b\",\"stars\":4}]}}",
+  "legacySql": "BEGIN TRANSACTION;\nCREATE TABLE ratings(work_id TEXT,user_id TEXT,stars INTEGER,PRIMARY KEY(work_id,user_id));\nINSERT INTO \"ratings\" VALUES('w-root','u-b',4);\nCREATE TABLE schemes(id TEXT PRIMARY KEY,user_id TEXT,name TEXT,design TEXT,provenance TEXT,voice_salt INTEGER,created INTEGER,updated INTEGER);\nINSERT INTO \"schemes\" VALUES('s-old','u-a','方案🦆','{\"colors\": {\"P1-01\": \"#FFFFFF\"}, \"assignments\": {\"P1-01\": \"pla-white\"}, \"finishes\": {}}','{\"workId\":\"official-1\"}',9223372036854775807,9007199254740993,9007199254740995);\nCREATE TABLE sessions(token TEXT PRIMARY KEY,user_id TEXT,created INTEGER);\nINSERT INTO \"sessions\" VALUES('retained-token-a','u-a',1720000000002);\nINSERT INTO \"sessions\" VALUES('retained-token-b','u-b',1720000000003);\nCREATE TABLE users(id TEXT PRIMARY KEY,name TEXT UNIQUE COLLATE NOCASE,pw_salt TEXT,pw_hash TEXT,avatar TEXT,color TEXT,created INTEGER);\nINSERT INTO \"users\" VALUES('u-a','Alpha','01010101010101010101010101010101','858c7276ddfd5d9195c3026c47278cbe902335a760e8831236548b98b87d26ac','🦆','#4d6bfe',1720000000000);\nINSERT INTO \"users\" VALUES('u-b','Beta','01010101010101010101010101010101','858c7276ddfd5d9195c3026c47278cbe902335a760e8831236548b98b87d26ac','🐤','#ff7a59',1720000000001);\nCREATE TABLE works(id TEXT PRIMARY KEY,user_id TEXT,title TEXT,description TEXT,design TEXT,provenance TEXT,parent_id TEXT,scheme_id TEXT,created INTEGER);\nINSERT INTO \"works\" VALUES('w-root','u-a','原作🦆','中文\\n 🦆','{\"colors\": {\"P1-01\": \"#FFFFFF\"}, \"assignments\": {\"P1-01\": \"pla-white\"}, \"finishes\": {}}',NULL,NULL,'s-old',1720000000006);\nINSERT INTO \"works\" VALUES('w-fork','u-b','改编','','{\"colors\": {\"P1-01\": \"#FFFFFF\"}, \"assignments\": {\"P1-01\": \"pla-white\"}, \"finishes\": {}}','{\"workId\":\"w-root\"}','w-root',NULL,1720000000007);\nCOMMIT;",
+  "migratedSql": "BEGIN TRANSACTION;\nCREATE TABLE migration_runs (\n\tfingerprint VARCHAR(64) NOT NULL, \n\tcounts TEXT NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (fingerprint)\n);\nINSERT INTO \"migration_runs\" VALUES('8d218142543baea4614298d56c0fd40810ee74a610c64137e240a9274fdfe24b','{\"users\": 2, \"sessions\": 2, \"schemes\": 1, \"works\": 2, \"ratings\": 1}',1793118553692);\nCREATE TABLE ratings (\n\twork_id VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tstars INTEGER NOT NULL, \n\tPRIMARY KEY (work_id, user_id), \n\tCONSTRAINT rating_stars CHECK (stars BETWEEN 1 AND 5), \n\tFOREIGN KEY(work_id) REFERENCES works (id) ON DELETE CASCADE, \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nINSERT INTO \"ratings\" VALUES('w-root','u-b',4);\nCREATE TABLE schemes (\n\tid VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tname TEXT NOT NULL, \n\tdesign TEXT NOT NULL, \n\tprovenance TEXT, \n\tvoice_salt BIGINT DEFAULT '0' NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tupdated BIGINT NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nINSERT INTO \"schemes\" VALUES('s-old','u-a','方案🦆','{\"colors\": {\"P1-01\": \"#FFFFFF\"}, \"assignments\": {\"P1-01\": \"pla-white\"}, \"finishes\": {}}','{\"workId\":\"official-1\"}',9223372036854775807,9007199254740993,9007199254740995);\nCREATE TABLE sessions (\n\ttoken VARCHAR(128) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (token), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nINSERT INTO \"sessions\" VALUES('retained-token-a','u-a',1720000000002);\nINSERT INTO \"sessions\" VALUES('retained-token-b','u-b',1720000000003);\nCREATE TABLE users (\n\tid VARCHAR(64) NOT NULL, \n\tname VARCHAR(80) NOT NULL, \n\tpw_salt VARCHAR(32) NOT NULL, \n\tpw_hash VARCHAR(64) NOT NULL, \n\tavatar VARCHAR(32) NOT NULL, \n\tcolor VARCHAR(16) NOT NULL, \n\tcreated BIGINT NOT NULL, \n\tname_key VARCHAR(80) NOT NULL, \n\tPRIMARY KEY (id)\n);\nINSERT INTO \"users\" VALUES('u-a','Alpha','01010101010101010101010101010101','858c7276ddfd5d9195c3026c47278cbe902335a760e8831236548b98b87d26ac','🦆','#4d6bfe',1720000000000,'alpha');\nINSERT INTO \"users\" VALUES('u-b','Beta','01010101010101010101010101010101','858c7276ddfd5d9195c3026c47278cbe902335a760e8831236548b98b87d26ac','🐤','#ff7a59',1720000000001,'beta');\nCREATE TABLE works (\n\tid VARCHAR(64) NOT NULL, \n\tuser_id VARCHAR(64) NOT NULL, \n\ttitle TEXT NOT NULL, \n\tdescription TEXT NOT NULL, \n\tdesign TEXT NOT NULL, \n\tprovenance TEXT, \n\tparent_id VARCHAR(64), \n\tscheme_id VARCHAR(64), \n\tcreated BIGINT NOT NULL, \n\tPRIMARY KEY (id), \n\tFOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE\n);\nINSERT INTO \"works\" VALUES('w-root','u-a','原作🦆','中文\\n 🦆','{\"colors\": {\"P1-01\": \"#FFFFFF\"}, \"assignments\": {\"P1-01\": \"pla-white\"}, \"finishes\": {}}',NULL,NULL,'s-old',1720000000006);\nINSERT INTO \"works\" VALUES('w-fork','u-b','改编','','{\"colors\": {\"P1-01\": \"#FFFFFF\"}, \"assignments\": {\"P1-01\": \"pla-white\"}, \"finishes\": {}}','{\"workId\":\"w-root\"}','w-root',NULL,1720000000007);\nCREATE UNIQUE INDEX users_name_key ON users (name_key);\nCREATE INDEX schemes_user ON schemes (user_id, updated);\nCREATE INDEX works_user_created ON works (user_id, created, id);\nCREATE INDEX works_created ON works (created, id);\nCREATE INDEX works_parent ON works (parent_id);\nCOMMIT;",
+  "receipt": {
+    "status": "migrated",
+    "counts": {
+      "users": 2,
+      "sessions": 2,
+      "schemes": 1,
+      "works": 2,
+      "ratings": 1
+    },
+    "fingerprint": "8d218142543baea4614298d56c0fd40810ee74a610c64137e240a9274fdfe24b",
+    "database": "sqlite"
+  },
+  "sort": {
+    "input": "{\"users\":[{\"id\":\"🦆\",\"name\":\"非 ASCII\",\"pw_salt\":\"a\",\"pw_hash\":\"b\",\"avatar\":\" \",\"color\":\"#FFFFFF\",\"created\":9223372036854775807},{\"id\":\"\",\"name\":\"line\\ncontrol\\u0000\",\"pw_salt\":\"a\",\"pw_hash\":\"b\",\"avatar\":\"🦆\",\"color\":\"#FFFFFF\",\"created\":-9007199254740993},{\"id\":\"same\",\"name\":\"same\",\"pw_salt\":\"a\",\"pw_hash\":\"b\",\"avatar\":\"🦆\",\"color\":\"#FFFFFF\",\"created\":10},{\"id\":\"same\",\"name\":\"same\",\"pw_salt\":\"a\",\"pw_hash\":\"b\",\"avatar\":\"🦆\",\"color\":\"#FFFFFF\",\"created\":2}],\"sessions\":[],\"schemes\":[],\"works\":[],\"ratings\":[]}",
+    "fingerprint": "94ce9de2aafe4aacc8cccde2f8f5d1ace1874b718d9fd6369a9941dbc99ba544"
+  },
+  "fraction": {
+    "input": "{\"users\":[],\"sessions\":[{\"token\":\"t\",\"user_id\":\"u\",\"created\":1e-7}],\"schemes\":[],\"works\":[],\"ratings\":[]}",
+    "fingerprint": "4f7af1805a4801370012e31a8959430e88bb0447df4ad2ed3047525cfcf33071"
+  },
+  "canonical": {
+    "input": "{\"z\":[{\"voice\":9007199254740993,\"a\":\"🦆\\n\"}],\"a\":null}",
+    "expected": "{\"a\":null,\"z\":[{\"a\":\"🦆\\n\",\"voice\":9007199254740993}]}"
+  }
+}

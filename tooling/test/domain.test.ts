@@ -1,7 +1,7 @@
+import {frozenOracle} from './fixtures/frozen-oracle.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildSync } from 'esbuild';
 import * as domain from '@letsduck/domain';
@@ -33,32 +33,6 @@ const cases: { op: string; args: unknown[] }[] = [
   { op: 'mergeCatalog', args: [{ version: 'base', products: [product] }, null] },
 ];
 
-const oracle = String.raw`
-import sys,json,tempfile
-from pathlib import Path
-sys.path.insert(0,str(Path(sys.argv[1])/'backend'))
-from errors import payload
-from rules import validate_design,scheme_values,text
-from filaments import hardness,compatible_product,load_catalog
-from material_profiles import resolve_profile
-def merge(base,extra):
-  with tempfile.TemporaryDirectory() as directory:
-    p=Path(directory);(p/'catalog.json').write_text(json.dumps(base))
-    if extra is not None:(p/'filament-catalog.json').write_text(json.dumps(extra))
-    return load_catalog(p)
-def pack(v):
-  if isinstance(v,int) and not isinstance(v,bool) and abs(v)>9007199254740991:return {'$integer':str(v)}
-  if isinstance(v,dict):return {k:pack(x) for k,x in v.items()}
-  if isinstance(v,list):return [pack(x) for x in v]
-  return v
-ops={'validateDesign':validate_design,'schemeValues':scheme_values,'text':text,'hardness':hardness,'compatibleProduct':compatible_product,'resolveProfile':resolve_profile,'mergeCatalog':merge}
-out=[]
-for case in json.load(sys.stdin):
-  try:out.append({'value':pack(ops[case['op']](*case['args']))})
-  except Exception as e:out.append({'failure':payload(e)})
-print(json.dumps(out))
-`;
-
 test('shared validation normalizes design without changing caller data', () => {
   const d = required(), before = structuredClone(design);
   assert.deepEqual(d.validateDesign(design, ['p']), { colors: { p: '#ABCD09' }, assignments: { p: null }, finishes: { p: 'matte' } });
@@ -66,10 +40,9 @@ test('shared validation normalizes design without changing caller data', () => {
   assert.equal(d.MAX_SCHEMES, 30);
 });
 
-test('shared rules match current Python errors, Unicode, integer, catalogue and profile behavior', t => {
+test('shared rules match frozen Python errors, Unicode, integer, catalogue and profile behavior', t => {
   const d = required();
-  const python = process.env.PYTHON || (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
-  const run = spawnSync(python, ['-I', '-c', oracle, root], { input: JSON.stringify(cases), encoding: 'utf8' });
+  const run = frozenOracle('domain-rules',JSON.stringify(cases));
   assert.equal(run.status, 0, run.stderr);
   const expected = JSON.parse(run.stdout);
   for (const [index, c] of cases.entries()) {
@@ -81,7 +54,7 @@ test('shared rules match current Python errors, Unicode, integer, catalogue and 
     actual = JSON.parse(JSON.stringify(actual, (_key, value) => typeof value === 'bigint' ? { $integer: String(value) } : value));
     assert.deepEqual(actual, expected[index], `case ${index}: ${JSON.stringify(c)}`);
   }
-  t.diagnostic(`Compared ${cases.length} cases against current Python source`);
+  t.diagnostic(`Compared ${cases.length} cases against frozen Python reference`);
 });
 
 test('the shared error payload retains codes and parameters supplied by adapters', () => {
@@ -94,9 +67,7 @@ test('raw numeric JSON preserves Python text coercion and exact integer identity
   const d = required();
   const tokens = ['1.0', '1e16', '1e20', '1e21', '1e-5', '1e-7', '-0.0', '-0', '9007199254740993', '-9007199254740993', '[1.0,9007199254740993]', '{"n":1e16}'];
   const raw = tokens.map(token => '{"name":' + token + ',"design":{"colors":{"p":"#FFFFFF"},"assignments":{"p":null}},"voiceSalt":9007199254740993}');
-  const python = process.env.PYTHON || (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
-  const code = `import json,sys\nsys.path.insert(0,'backend')\nfrom rules import scheme_values\nfrom errors import payload\nout=[]\nfor raw in json.load(sys.stdin):\n try:\n  v=scheme_values('s',json.loads(raw),['p']);out.append({'value':{'name':v['name'],'voiceSalt':str(v['voiceSalt'])}})\n except Exception as e:out.append({'failure':payload(e)})\nprint(json.dumps(out))`;
-  const run = spawnSync(python, ['-I', '-c', code], { cwd: root, input: JSON.stringify(raw), encoding: 'utf8' });
+  const run = frozenOracle('domain-raw',JSON.stringify(raw));
   assert.equal(run.status, 0, run.stderr);
   assert.equal(typeof d.parseWireJson, 'function', 'The numeric input boundary is missing');
   const expected = JSON.parse(run.stdout);

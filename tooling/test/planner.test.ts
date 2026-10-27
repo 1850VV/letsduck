@@ -1,10 +1,10 @@
+import {frozenOracle} from './fixtures/frozen-oracle.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { errorPayload, parseWireJson } from '@letsduck/domain';
 import { jsonStringify } from '@letsduck/storage';
@@ -13,8 +13,6 @@ import * as exports from '@letsduck/exporter';
 import type { ExportMetadata } from '@letsduck/exporter';
 import { writeSyntheticAssets } from './synthetic-assets.js';
 
-const repo = resolve(import.meta.dirname, '../..');
-const python = process.env.PYTHON || (existsSync(join(repo, '.venv/bin/python')) ? join(repo, '.venv/bin/python') : 'python3');
 const fixed = '2001-02-03T04:05:06.000Z';
 const json = <T>(file: string): T => JSON.parse(readFileSync(file, 'utf8')) as T;
 const Planner = () => { assert.equal(typeof Reflect.get(exports, 'Planner'), 'function', 'The standalone pure Planner is missing'); return Reflect.get(exports, 'Planner') as typeof exports.Planner; };
@@ -45,10 +43,8 @@ function fixture() {
 function metadata(engine: exports.Exporter): ExportMetadata {
   return { sourceSha256: engine.model.source_sha256, partIds: engine.model.parts.map(part => part.id), catalog: engine.catalog, planning: engine.planningData };
 }
-const oracle = `import sys,json\nsys.path.insert(0,'backend')\nimport exporter\nfrom errors import payload as error_payload\nclass FrozenMoment:\n def isoformat(self): return sys.argv[1]\nclass FrozenDate:\n @staticmethod\n def now(zone): return FrozenMoment()\nexporter.datetime=FrozenDate\nresults=[]\nfor body in json.load(sys.stdin):\n try: results.append({'ok':exporter.plan(body)})\n except exporter.InvalidDesign as exc: results.append({'error':error_payload(exc)})\nprint(json.dumps(results,ensure_ascii=False))`;
-function pythonPlans(assets: string, cases: unknown[]): unknown[] {
-  const child = spawnSync(python, ['-I', '-c', oracle, fixed], { cwd: repo, env: { ...process.env, DUCK_ASSETS: assets }, input: jsonStringify(cases), encoding: 'utf8', maxBuffer: 16 << 20 });
-  assert.equal(child.status, 0, child.stderr || child.error?.message); return JSON.parse(child.stdout) as unknown[];
+function pythonPlans(_assets: string, cases: unknown[]): unknown[] {
+  const child=frozenOracle('planner',jsonStringify(cases));assert.equal(child.status,0,child.stderr);return JSON.parse(child.stdout) as unknown[];
 }
 function outcome(planner: exports.Planner, payload: unknown) { try { return { ok: planner.plan(payload, fixed) }; } catch (error) { return { error: errorPayload(error) }; } }
 

@@ -1,0 +1,11 @@
+{
+  "schema": "letsduck-frozen-oracle/1",
+  "referenceCommit": "d5c38e4fa890a4eca40d8857317ac463163b46c3",
+  "cases": [
+    {
+      "inputSha256": "4db04b730608271fe0530286938e340b60545c57103ea088c7c6d2367245f74c",
+      "output": "{\"error\": \"暂无法导出 3MF：尚无匹配打印预设（Example PEEK, Example PPS）。可先导出耗材清单。\", \"code\": \"request.invalid\", \"params\": {}}\n"
+    }
+  ],
+  "capturedExitCode": 0
+}

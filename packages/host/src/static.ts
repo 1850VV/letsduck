@@ -30,9 +30,9 @@ export function htmlError(request: FastifyRequest, reply: FastifyReply, status: 
 async function fileStat(path: string): Promise<Stats | null> { try { return await stat(path); } catch (error) { if (error instanceof Error && 'code' in error && ['ENOENT', 'ENOTDIR'].includes(String(error.code))) return null; throw error; } }
 function mime(path: string, frontend = false): string { const suffix = extname(path); return kinds[suffix] ?? (frontend ? kinds[suffix.toLowerCase()] ?? frontendMime(suffix) : undefined) ?? 'application/octet-stream'; }
 function stamp(info: Stats): string { return new Date(Math.floor(info.mtimeMs / 1000) * 1000).toUTCString(); }
-function loadManifest(frontend: string): AssemblyManifest | undefined {
+export function loadAssemblyManifest(path: string): AssemblyManifest | undefined {
   try {
-    const manifest: unknown = JSON.parse(readFileSync(resolve(frontend, '../scripts/assembly-assets.json'), 'utf8'));
+    const manifest: unknown = JSON.parse(readFileSync(path, 'utf8'));
     if (manifest && typeof manifest === 'object' && 'files' in manifest && manifest.files && typeof manifest.files === 'object' && !Array.isArray(manifest.files)) return manifest as AssemblyManifest;
   } catch { /* A programmatic host can run without an assembly bundle. */ }
   return undefined;
@@ -68,8 +68,8 @@ async function sendFile(request: FastifyRequest, reply: FastifyReply, target: st
   return sendBody(request, reply, 200, await readFile(target), mime(target, frontend), { 'last-modified': modified, ...(range ? { 'accept-ranges': 'bytes' } : {}) });
 }
 
-export function personalStatic(options: PersonalHttpOptions) {
-  const manifest = options.assemblyManifest ?? loadManifest(options.frontend);
+export function personalStatic(options: Pick<PersonalHttpOptions,'frontend'|'assets'|'assemblyManifest'>&{debug:Pick<PersonalHttpOptions['debug'],'numbering'>}) {
+  const manifest = options.assemblyManifest ?? loadAssemblyManifest(resolve(options.frontend, '../scripts/assembly-assets.json'));
   const assemblyFiles = new Set(Object.keys(manifest?.files ?? {}));
   const allAssembly = new Set([...assemblyFiles, ...Object.keys(manifest?.optionalFiles ?? {})]);
   return {

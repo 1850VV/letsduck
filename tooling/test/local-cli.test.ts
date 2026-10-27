@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -37,4 +37,9 @@ test('Node local CLI starts without Python, accepts legacy integer ports and dra
     if (child.exitCode === null && child.signalCode === null) { child.kill('SIGKILL'); await exited; }
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('source launcher help needs no assets, database, listener or Python',()=>{
+ const result=spawnSync(process.execPath,['apps/local/dist/main.js','--help'],{cwd:repo,encoding:'utf8',env:{...process.env,PATH:'',PYTHON:'absent-python'}});
+ assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/--port/);assert.match(result.stdout,/--no-open/);assert.doesNotMatch(result.stdout,/http:\/\/127/);
 });

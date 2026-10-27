@@ -1,4 +1,0 @@
-fastapi>=0.159,<0.160
-uvicorn>=0.54,<0.55
-SQLAlchemy>=2.0,<2.1
-PyMySQL[rsa]>=1.2,<2
