@@ -4,192 +4,145 @@
 
 <p align="center"><img src="frontend/shared/brand/logo.svg" width="128" alt="来做鸭 letsduck"></p>
 
+为 XGO Duck V2 准备的涂装、舵机调试和 3D 组装工具。给机器鸭选颜色，导出改色 3MF 和物料清单；在本机连接 UNO Q，核查舵机编号与参数，再跟着教程组装。
 
-给 XGO Duck V2 机器鸭涂装的小工具：三步配好颜色，让它点头、嘎嘎叫、摇摆，生成海报分享给朋友，再导出保留打印结构的改色 3MF 交给代打服务商。分两个版本：双击即用的**个人使用版**，和带配色广场、评分、「做同款」的**服务器版**。
+**公开主线提供软件源码。运行需要另行准备有权使用的本地资产包，单独一份 3MF 不够。** 模型、制造数据、教程媒体及其衍生资产有独立授权，代码的 MIT 许可证不覆盖它们。先读 [本地资产说明](docs/local-assets.md) 和 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
-<p align="center"><img src="docs/media/outfits.gif" width="560" alt="点一张卡片，机器鸭马上换装"></p>
+<p align="center"><img src="docs/media/outfits.gif" width="560" alt="在涂装台切换机器鸭配色"></p>
 
-**这是源码发行版。仓库不附带模型、3MF、衍生网格或耗材数据包。** 它们有独立的第三方授权；MIT 不覆盖这些资产。运行需要自行合法持有完整本地资产包，单独一份 3MF 还不足以复现装配预览。详见 [本地资产说明](docs/local-assets.md)。
+## 三个入口
 
-## 三步涂装
+个人版首页可以左右拖动三只鸭，也可以用方向键切换。点侧面的鸭子先转到中间，再点中间的鸭子进入功能。
 
-**① 选个起点**：白胚、经典配色、灵感骰子（可锁定、单张重掷）或「我的方案」，点一张鸭子马上换装。
+| 入口 | 可以做什么 | 使用条件 |
+| --- | --- | --- |
+| 来涂鸭 `/paint` | 选配色、细调零件、摆姿势、制作海报、保存方案、导出 3MF + BOM | 完整涂装资产包 |
+| 调试鸭 `/debug/` | 查看连接与实时反馈，扫描、核查和修改舵机编号与参数，微调和零位校准 | 本机 USB 连接 UNO Q；已安装 ADB 和兼容的 Duck Runtime |
+| 组装鸭 `/assemble/` | 按章节查看材料、取件盘位、3D 安装步骤及参考视频 | 组装资产包；首页入口在 15 个安装编号读回验证通过后解锁 |
 
-![第 1 步：选个起点](docs/media/zh/01-start.jpg)
+涂装台里的动作是屏幕预览。调试鸭中的设备操作会作用于实物，需点击对应操作按钮。打开调试界面只读取状态。
 
-**② 细调部位**：在模型或左侧列表点部位，再点颜色。拓竹 PLA Basic / TPU 90A 真实色表，也可以自由调色；刷子、吸管、聚焦、并排放大、A/B 对比和锁定部位都在手边。
+### 涂装与导出
 
-<table><tr>
-<td width="60%"><img src="docs/media/zh/02-refine.jpg" alt="第 2 步：细调部位"></td>
-<td width="40%"><img src="docs/media/refine.gif" alt="点部位、点颜色"></td>
-</tr></table>
-
-**③ 展示分享**：摆姿势，播放 MicroDuck 经典动作和叫声（每套配色有自己的嗓音），换背景，生成海报，保存或发布到配色广场，或者导出 3MF。
-
-<table><tr>
-<td width="60%"><img src="docs/media/zh/03-show.jpg" alt="第 3 步：展示分享"></td>
-<td width="40%"><img src="docs/media/moves.gif" alt="嘎嘎叫、摇摆、捡东西"></td>
-</tr></table>
-
-![分享海报](docs/media/zh/04-poster.jpg)
-
-## 配色广场（服务器版）
-
-朋友们发布的配色都在这里：热门 / 最新 / 高分、色系和标签筛选、评分。喜欢就「做同款」带回涂装台接着改，改编会挂在原作的家族树下，并标出改了什么。
-
-![配色广场](docs/media/zh/05-gallery.jpg)
+1. **选个起点**：白胚、经典配色、灵感骰子，或自己的已存方案。
+2. **细调部位**：点模型或列表选零件，再选耗材颜色或自由调色。支持刷子、吸管、聚焦、A/B 对比和部位锁定。
+3. **展示与导出**：摆姿势、播放动作和叫声、换背景、生成海报，导出保留原打印结构的改色 3MF 和 BOM。
 
 <table><tr>
-<td><img src="docs/media/zh/06-detail.jpg" alt="作品详情：改编来源和改了什么"></td>
-<td><img src="docs/media/zh/07-family.jpg" alt="改编家族树"></td>
+<td><img src="docs/media/zh/02-refine.jpg" alt="选择零件并修改颜色"></td>
+<td><img src="docs/media/zh/03-show.jpg" alt="姿势、海报与导出"></td>
 </tr></table>
 
-<p align="center"><img src="docs/media/zh/08-mobile.jpg" width="300" alt="手机上的配色广场"></p>
+导出面向固定版本的 35 个零件、6 块打印板。显示姿势和散开效果不写回制造网格。它不提供任意 3MF 导入、自动切片或打印机控制。屏幕颜色不能保证实物色差，模型预览也不能证明装配公差。
 
-截图中的作者、作品和评分都是演示用的示例数据。
+手机涂装支持底部步骤面板、双指缩放、双击聚焦和长按对比。涂装与社区提供 12 种语言词典，新增调试和组装界面仍有中文内容；见 [翻译维护](docs/i18n.md)。
 
-## 还有这些
+### 舵机准备与组装
 
-- **真实耗材**：拓竹 PLA Basic / TPU 90A 色表；其他品牌色卡只是示意，发布和导出前会提示换成真实耗材。
-- **手机**：鸭子几乎占满屏幕；三步放在底部标签栏，每步的内容在可拖动的底部面板里（上滑展开、下滑收起到一条缝）；涂装工具和视角按钮浮在两侧。双指缩放、双击聚焦所选部位、长按鸭子对比原色，支持的手机上点选会轻微震动。
-- **导出**：核对 35 个零件的耗材分配，生成改色 3MF（重新渲染 6 块打印板缩略图）和 BOM，交给代打服务商。
-- **账号（服务器版）**：昵称 + 简单密码。私有方案存进账号；未登录时方案先存在浏览器，登录时同步。
-- **分享**：配色码随时可复制、粘贴带入；已发布作品的海报带真实二维码，与复制链接指向同一作品（需要配置 `DUCK_PUBLIC_URL`）。
-- **12 种语言**：简中、繁中、英、日、韩、法、德、西、巴西葡语、俄、阿拉伯语和印地语。右上角切换，默认跟随浏览器语言。见 [翻译维护](docs/i18n.md)。
+- 按[厂商指引](https://www.xgorobot.com/duck.html#software)完成 Arduino App Lab、Duck OS 与板卡设置。程序复用已安装的 ADB；非标准路径可通过 `DUCK_ADB` 指定。
+- 首次编号时只连接一只舵机。目标编号为 `10–14`、`20–24`、`30–34`。程序匹配运行端配置档，写入后读回复核；同号舵机需分开接入，不能分别寻址。
+- 换接前使用安全停机，等待至少 15 秒并确认停止，再断开 USB 和电池。不要带电换接。
+- 编号验证记录与当前在线状态分别保存。断线保留记录，改号或未确认的写入会重新计算完成状态；在线数量不代表编号已验证数量。
+- 组装教程提供按数量陈列的材料、单件放大旋转、主副舵盘点选和取件记录。取件盘按三排五列固定摆放，取走后留空，不补位。
+- 编号、参数与机械零位是不同的事。软件不能修复装反或卡住的机构。线材规格及部分安装朝向仍需结合厂商资料和实物核对，页面完成状态不等于实物验收。
 
-屏幕颜色不是实物色差保证；踝轴等装配位置有示意成分，尚未验证装配公差。
-
-## 两个版本
+## 选择运行方式
 
 | | 个人使用版 | 服务器版 |
 | --- | --- | --- |
-| 适合 | 自己在电脑上涂色 | 几个朋友一起用：账号、配色广场、评分、做同款 |
-| 运行 | 双击启动，Mac / Windows | Docker：nginx 前端 + FastAPI 后端 + MySQL 8.4 |
-| 依赖 | 只需要 Python 3.9+，不安装任何包 | Docker Compose（服务器上） |
-| 数据 | 本机一个 SQLite 文件 | MySQL（`mysql-data` 卷） |
-| 代码 | `personal/`（Python 标准库） | `backend/`（FastAPI + SQLAlchemy） |
+| 用途 | 一人在本机涂装、调试和组装 | 朋友间分享配色、评分和改编 |
+| 启动 | Python 3.9+，只用标准库 | Docker Compose：nginx + FastAPI + MySQL 8.4 |
+| 数据 | 本机 SQLite；草稿与偏好在浏览器 | MySQL；浏览器保存未登录草稿 |
+| 账号与配色广场 | 无 | 昵称账号、私有方案、发布、评分、「做同款」和改编家族 |
+| USB 设备控制 | 本机支持 | 不提供 |
 
-两个版本共用同一套前端 `frontend/`，前端通过 `/api/site` 得知当前版本：个人版隐藏登录、配色广场和发布。配色校验（`backend/rules.py`）和 3MF 导出（`backend/exporter.py`）只用标准库，两个版本共用，结果一致。
+两个版本共用前端、配色校验和 3MF 导出逻辑。Electron 桌面客户端仍在独立开发分支；以下启动方式对应 `main` 的 Python 个人版和 Docker 服务器版。
 
-```
-frontend/   静态前端：index.html（涂装台）、home.html + home/（个人版首页）、assemble/（组装教程）、gallery/（配色广场，仅服务器版）、shared/、lib/、locales/、vendor/
-personal/   个人版服务：app.py（静态文件 + 方案/导出接口）、schemes.py（本机 SQLite）
-backend/    服务器版 API：server.py（FastAPI 路由）、store.py / database.py（MySQL）、rules.py、exporter.py
-assets/     本地资产包（被 Git 忽略；个人版直接读取，服务器版只读挂载）
-```
-
-## 个人使用版：双击启动
-
-1. 把资产包放进 `assets/`：`python3 scripts/import_local_assets.py /path/to/assets`（Windows：`py -3 scripts\import_local_assets.py C:\path\to\assets`）。组装教程的模型、视频和音乐另用 `scripts/import_assembly_assets.py` 导入，见 [本地资产说明](docs/local-assets.md)。
-2. 双击启动：
-   - **macOS**：`启动来做鸭.command`。用系统自带的 Python 3 就行；没有的话会弹出「安装命令行开发者工具」，点安装即可。第一次若提示无法验证开发者：在 Finder 里右键 → 打开。
-   - **Windows**：`启动来做鸭.bat`。没有 Python 时会询问是否用 winget 安装 Python 3.12，或打开 python.org 下载页（安装时勾选 Add python.exe to PATH）。
-3. 浏览器自动打开 `http://127.0.0.1:8876/`（端口被占用时自动换下一个）：首页两张卡片，「想涂鸦」进涂装台（`/paint`），「想做鸭」进组装教程（`/assemble/`，打印件用涂装台当前的配色；没导入组装资产时显示「即将开放」）。关闭启动窗口即退出。
-
-也可以在终端运行 `python3 run.py`（`--port` 改端口，`--no-open` 不自动开浏览器）。
-
-组装台的「舵机准备」可在本机通过 USB 连接 UNO Q。先按[厂商指引](https://www.xgorobot.com/duck.html#software)完成 Arduino App Lab、Duck OS 和配网；程序复用 Arduino 安装的 ADB，不分发第三方刷机工具。非标准 ADB 路径可用 `DUCK_ADB` 指定。
-
-点选任意舵机或编号即可配置、读取和核查；「展开舵机 / 收回整机」只改变展示。清单分别标出待配置、配置中、已验证和需复核，在线圆点来自当前检测，断开连接后保留成功记录。全部 15 只读回验证通过后显示完成面板，再安全停机进入组装。
-
-实物按固定的三排五列摆放：10–14、20–24、30–34，编号朝向自己。教程中点舵机或舵机零件卡，可在当前视窗查看对应盘位；取走后留空、不补位，也可放回原位。安装节点的「已装好，下一步」记录本步安装，无须先另点一次取件。播放、重播、回退和跳章节都不会自动记录实物安装。取件记录与编号记录分别保存在个人数据库，刷新或重新启动后保留。
-
-连接当前只之前，舵机准备会显示其预接线要求；取件图和后续教程沿用同一份信息。现有资料仍未明确长短 AMP 线对应的编号、长度和两端，界面保持「线材规格待核定」；三只需长线仅作为待核线索。未核定的线不会自动计为已备好，也不要求重写已有编号或参数。
-
-一次启动本轮后，程序逐只扫描、匹配运行端配置档、写入中位与参数、改 ID 并读回复核。只接一只；换接前请求停机，等待至少 15 秒并确认停止，再断开 USB 和电池。已编号的舵机接回后只复核必要项目。记录保存在原有个人版 SQLite 中；历史记录、当前在线、机械零位校准分开表示。模型位置沿用教程参照，左右称呼冲突与头颈候选仍需对照原片核实。服务器版和远程浏览器保留教学功能，不开放本机设备控制。
-
-- 「我的方案」保存在本机：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，Linux `~/.local/share/doodleduck/personal.db`；`DUCK_PERSONAL_DB` 可指定别的位置。放在应用文件夹之外，换新版本解压覆盖不会丢；最多 30 套。
-- 草稿、语言和背景偏好在浏览器里。没有账号、配色广场和发布；可以导出 3MF、保存海报、复制或粘贴配色码。
-- 只监听本机 `127.0.0.1`。旧版个人模式（`backend/data/doodleduck.db` 里的个人方案）在第一次启动时自动带入一次。
-
-## 服务器版：Docker + MySQL
-
-1 核 2 GB 的云服务器就够用（见下面「小服务器建议」）。三个容器空闲时合计约 250–330 MB 内存；3D 渲染和涂色都在用户浏览器里完成，服务器只存数据和导出 3MF。
+## 本机启动
 
 ```sh
-git clone git@github.com:1850VV/letsduck.git
+git clone https://github.com/1850VV/letsduck.git
 cd letsduck
-python3 scripts/import_local_assets.py /path/to/assets   # 资产包只挂载，不打进镜像；同时生成更小的 geometry.pack.bin
-cp .env.example .env                                      # 填两个不同的随机长密码
+python3 scripts/import_local_assets.py /path/to/authorized/assets
+python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
+python3 run.py
+```
+
+Windows 可以把 `python3` 换成 `py -3`。组装资产导入可以暂时跳过，组装和首页模型预览需要它们；文件要求见 [本地资产说明](docs/local-assets.md)。
+
+也可以双击 `启动来做鸭.command`（macOS）或 `启动来做鸭.bat`（Windows）。缺少 Python 时按启动器提示安装。macOS 首次打开如被拦截，可在 Finder 中右键文件并选择「打开」。
+
+浏览器默认打开 `http://127.0.0.1:8876/`，端口被占用时尝试下一个。`python3 run.py --port 8880 --no-open` 可指定端口并关闭自动打开浏览器。关闭启动进程即退出。
+
+个人版只监听本机。命名方案、编号验证和取件进度保存在应用目录外的数据库：
+
+- macOS：`~/Library/Application Support/DoodleDuck/personal.db`
+- Windows：`%APPDATA%\DoodleDuck\personal.db`
+- Linux：`~/.local/share/doodleduck/personal.db`
+
+可用 `DUCK_PERSONAL_DB` 指定数据库位置。更新源码前备份该文件；浏览器草稿与偏好需另行保留。
+
+## 服务器部署
+
+先准备有权使用的涂装资产包，再配置数据库密码：
+
+```sh
+python3 scripts/import_local_assets.py /path/to/authorized/assets
+cp .env.example .env
+# 编辑 .env，设置两个不同的随机长密码
 docker compose up -d --build
 ```
 
-打开 `http://<服务器地址>:8080/`（`.env` 里 `DUCK_PORT` / `DUCK_BIND` 可改）。
+默认地址为 `http://<服务器地址>:8080/`。nginx 提供前端并转发 `/api/`；后端和 MySQL 留在容器内部网络。资产只读挂载，源 3MF 不通过静态地址提供。
 
-- `frontend`（nginx）提供静态页面、gzip 压缩和只读的 `/assets/`（不对外提供源 3MF），并把 `/api/` 转发给 `backend`；`backend` 只在内部网络，MySQL 不映射宿主机端口。
-- **HTTPS（自动证书）**：把域名和 `www.` 都解析到服务器、放行 80 和 443 端口，然后在 `.env` 里设置：
+配色广场支持热门、最新和高分排序、筛选、评分、「做同款」及改编家族。截图中的账号、作品和评分均为示例数据。
 
-  ```dotenv
-  DUCK_DOMAIN=你的域名
-  DUCK_PUBLIC_URL=https://你的域名
-  DUCK_BIND=127.0.0.1
-  DUCK_PORT=8080
-  COMPOSE_FILE=docker-compose.yml:docker-compose.https.yml
-  ```
+![配色广场示例](docs/media/zh/05-gallery.jpg)
 
-  再 `docker compose up -d`。`docker-compose.https.yml` 加一个 Caddy 容器，自动申请和续期 Let's Encrypt 证书，HTTP 跳转 HTTPS，`www.` 跳转到主域名。设置 `DUCK_PUBLIC_URL` 后，复制链接和海报二维码才会生成（指向 `<DUCK_PUBLIC_URL>/gallery/#d/<作品ID>`）；未配置、非 HTTPS、localhost 或 IP 地址都不会生成分享链接。也可以改用你已有的反向代理。
-- 备份：`docker compose exec -T mysql sh -c 'mysqldump --single-transaction -uduck -p"$MYSQL_PASSWORD" doodleduck' > backup.sql`。从旧的 SQLite 部署升级、回退和外部 MySQL 见 [部署与迁移说明](docs/deployment.md)。
+对外部署时，按 [部署说明](docs/deployment.md) 配置 HTTPS、域名和备份。仓库提供可选的 Caddy 配置。`DUCK_PUBLIC_URL` 必须是可公开访问的 HTTPS 域名，分享链接与海报二维码才会生成。`.env` 里的 `DUCK_BIND`、`DUCK_PORT`、数据库与导出并发设置见 [.env.example](.env.example)。
 
-### 小服务器建议（1 核 2 GB）
+## 开发与验证
 
-- **先开 2 GB swap**，防止构建镜像或偶发高峰时内存不够、进程被系统杀掉（Ubuntu / Debian，只需做一次）：
-
-  ```sh
-  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
-  sudo mkswap /swapfile && sudo swapon /swapfile
-  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-  ```
-
-- **MySQL 缓存**：`.env` 里 `DUCK_MYSQL_BUFFER_POOL` 默认 `128M`，几个朋友的数据量足够；4 GB 内存可改成 `256M`。改完 `docker compose up -d` 生效。
-- **导出**保持 `DUCK_EXPORT_WORKERS=1`：单核每次导出约 1–2 秒，同时算 1 个、排队 2 个，再多会提示稍后重试。
-- **带宽比 CPU 和内存更关键**：新用户第一次打开约下载 3.8 MB（gzip 后，其中模型 3 MB），5 Mbps 大约每分钟能承受 10 个新用户首次打开，30 Mbps 约 60 个。构建前端镜像时，`frontend/stamp.py` 给每个脚本和样式加上内容哈希、一个 import map 和预加载，所有模块和模型一打开就并行下载；带哈希的代码缓存一年，模型缓存 7 天，老用户再来基本不用联网等待。更换资产包后，7 天内访问过的浏览器可能需要强制刷新。
-
-## 本地开发
-
-前端无需构建。个人版用系统 Python 直接跑 `python3 run.py`。服务器版需要 Python 3.11+ 和依赖：
+前端为原生 ES 模块，无需构建即可开发。个人版执行 `python3 run.py`。服务器版开发使用 Python 3.11+：
 
 ```sh
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
-DUCK_DATABASE_URL='mysql+pymysql://user:pass@127.0.0.1:3306/doodleduck' .venv/bin/python backend/server.py --static frontend
+.venv/bin/python backend/server.py --static frontend
 ```
 
-不设 `DUCK_DATABASE_URL` 时服务器版开发用 `backend/data/doodleduck.db`（SQLite，仅供开发和测试；部署一律用 MySQL）。
-
-## 验证
+未设置数据库连接时，服务器开发进程使用本地 SQLite；生产部署使用 MySQL。连接、迁移、备份和回退见 [部署说明](docs/deployment.md)。
 
 ```sh
-python3 -m unittest discover -s tests -p test_personal.py -v   # 个人版：系统 Python，不装任何包
-.venv/bin/python scripts/publication_audit.py
-.venv/bin/python -m unittest discover -s tests -v              # 全部 Python 测试（需资产包）
+python3 -I -m unittest discover -s tests -p test_personal.py -v
+python3 scripts/publication_audit.py
+.venv/bin/python -m unittest discover -s tests -v
 node --test tests/*.mjs tests/assembly/*.test.mjs
 ```
 
-真实 MySQL 回归：设置 `DUCK_TEST_DATABASE_URL`（库名必须以 `duck_test_` 开头），否则相关测试跳过。CI 同时提供 MySQL。CI 不持有模型资产，不能替代真实模型、导出和浏览器验收。
+完整测试需要本地资产和开发依赖。真实 MySQL 回归还需设置 `DUCK_TEST_DATABASE_URL`，库名必须以 `duck_test_` 开头；未配置时相关测试跳过。[公开 CI](.github/workflows/check.yml) 使用合成数据和 MySQL，不持有受限模型。它不能代替真实模型导出、浏览器交互或实物验收。
 
-导出默认同时执行 1 个任务，最多等待 2 个；超过容量返回 `503` 和 `Retry-After`。可用 `DUCK_EXPORT_WORKERS` / `DUCK_EXPORT_QUEUE` 调整。
+调试鸭和首页浏览器回归使用 `tests/debug_browser_fixture.py` 的假运行端和临时数据库，再执行 `tests/duck_debug_browser.js` 与 `tests/home_carousel_browser.js`。这些检查需要本地组装资产；不要把自动化检查连到真实设备。
 
-## 文档
+## 源码与文档
 
-- [部署模式、数据迁移、备份和回退](docs/deployment.md)
-- [性能集成、实测结果与待验收边界](docs/performance-integration.md)
+```text
+frontend/   首页、涂装台、调试鸭、组装教程、配色广场与共享模块
+personal/   本机 HTTP 服务、SQLite、UNO Q / ADB 调试与舵机准备
+backend/    FastAPI、账号与社区存储、共用配色规则和 3MF 导出
+deploy/     可选 HTTPS 配置
+scripts/    本地资产导入、显示模型打包与公开发行检查
+tests/      Python、Node 与浏览器检查
+assets/     另行准备的本地资产；不应提交
+```
+
 - [项目结构与边界](docs/project.md)
-- [本地资产与复现边界](docs/local-assets.md)
+- [本地资产与复现条件](docs/local-assets.md)
+- [部署、迁移与备份](docs/deployment.md)
 - [第三方来源与许可证](THIRD_PARTY_NOTICES.md)
-- [公开发行检查与排除项](docs/publication.md)
-- [设计与研究历史](docs/history/README.md)
-- [贡献指南](CONTRIBUTING.md) / [安全报告](SECURITY.md)
+- [公开发行范围](docs/publication.md)
+- [贡献指南](CONTRIBUTING.md) · [安全报告](SECURITY.md)
 
-## 开源范围
+## 许可证
 
-原创代码和文档采用 [MIT](LICENSE)。Three.js 保留其 [MIT 声明](frontend/vendor/THREE-LICENSE.txt)；MicroDuck 叫声合成器移植保留 [Apache-2.0 声明](frontend/shared/MICRODUCK-LICENSE.txt)。模型、制造商数据和品牌名称不因本仓库而获得新的授权；`docs/media/` 里的截图和动图画有该模型，同样不在 MIT 范围内。来做鸭不是 Luwu Dynamics、Pollen Robotics、Bambu Lab 或 DeepSeek 的官方产品，也不表示这些项目认可本工具。
-
-个人版首页的调试鸭通过已安装的 ADB 连接同一块 UNO Q 的 Duck Runtime（9527）。打开界面只读取状态；进入单舵机操作或开始校准须点击对应按钮。微动每次限 ±10 编码器单位，当前固件会在约 0.25 秒后自动卸载。读取失败时不把历史位置当作实时读数。
-
-编号验证记录沿用个人数据库，并与当前在线状态分开保存。组装入口在 15 个安装编号全部读回复核后解锁；断开连接保留进度，改号或未确认的写入会重新计算完成状态。只修改编号不改中位，互换编号会先检测临时空闲地址。同号舵机无法分别寻址，须分开接入。保护广播回执不等于逐只验证。
-
-组装模块可从 `frontend/shared/numbering-readiness.mjs` 订阅状态，或只读访问 `GET /api/duck-debug/numbering`：`ready`、`verifiedIds`、`missingIds`、`reviewIds` 和 `records`。`GET /api/duck-debug/status` 另行提供当前连接、在线编号及实时反馈；不要用在线数量代替编号完成数。
-
-可选的调试鸭浏览器回归使用 `python3 tests/debug_browser_fixture.py` 启动隔离控制器（8896，只用假运行端和临时数据库），再用 Playwright CLI 的 `run-code` 执行 `tests/duck_debug_browser.js`。它检查持续反馈刷新，以及读取期间发生轮询时微调开关仍能开启。需要本地组装资产包；检查完关闭该任务的浏览器会话并用 Ctrl+C 退出测试服务。
-
-首页支持左右拖动三只鸭，松手后吸附到 C 位。点侧面的鸭子先转到前面，点 C 位鸭子进入功能；关闭窗口后保存最近使用。方向键可切换，复位回到默认调试鸭。`tests/home_carousel_browser.js` 复用上述隔离控制器，检查拖动、触摸、误触、最近使用以及组装入口的编号门槛。
+原创代码和文档采用 [MIT](LICENSE)。Three.js、meshoptimizer、MicroDuck 等第三方代码保留各自声明，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。模型、制造商数据、品牌及 README 中的模型画面不因本仓库获得新的授权。来做鸭不是 Luwu Dynamics、Pollen Robotics、Bambu Lab 或 DeepSeek 的官方产品。
