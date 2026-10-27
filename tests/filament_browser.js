@@ -1,3 +1,5 @@
+// Export/data setup uses selectOption; it does not certify native dropdown interaction.
+// Check homepage paint interaction with tests/browser/paint-basic-ui.mjs plus native OS input.
 // Optional real-asset UI verification. Run only against the isolated debug_browser_fixture.py.
 import {chromium} from 'playwright';
 import fs from 'node:fs/promises';
