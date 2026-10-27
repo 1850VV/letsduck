@@ -59,7 +59,7 @@ test('PDF tutorial in the actual browser, with synthetic numbering and no hardwa
    await page.waitForFunction(()=>window.anklePrototype.state.stepId==='r-prepare');
    await page.locator('#step-'+at('r-shank')).click();await page.waitForFunction(()=>window.anklePrototype.state.stepId==='r-shank');
   });
-  await check('scrubbing forward/back keeps the installed linkage fixed and moves ID14',async()=>{
+  await check('scrubbing forward/back keeps the installed linkage fixed and moves ID24',async()=>{
    await go('r-shank');await seek(0);const a=await state();await seek(1);const b=await state();
    assert.deepEqual(a.actors.shank.position,b.actors.shank.position);assert.notDeepEqual(a.actors.motor.position,b.actors.motor.position);
    const slider=await page.locator('#motion-progress input').boundingBox();
@@ -81,7 +81,7 @@ test('PDF tutorial in the actual browser, with synthetic numbering and no hardwa
   });
   await check('mixed source videos select the right asset within a single PDF chapter',async()=>{
    await go('final-thigh-first');assert.match(await page.locator('#reference-video').getAttribute('src'),/full-final/);
-   await go('final-route');assert.match(await page.locator('#reference-video').getAttribute('src'),/reference-right-leg/);
+   await go('final-route');assert.match(await page.locator('#reference-video').getAttribute('src'),/reference-left-leg/);
   });
   await check('random seeking and reversal never write numbering or physical inventory',async()=>{
    const before=await fetch(url+'/api/servo-preparation').then(r=>r.json());

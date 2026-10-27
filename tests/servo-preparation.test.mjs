@@ -38,7 +38,7 @@ test('only explicit installation milestones identify motors for normal next',()=
  assert.equal(typeof module.installationServosForStep,'function');
  const at=id=>STEPS.findIndex(s=>s.id===id);
  assert.deepEqual(module.installationServosForStep(map,at('r-prepare')).map(b=>b.id),[]);
- assert.deepEqual(module.installationServosForStep(map,at('r-tighten')).map(b=>b.id),[14]);
- assert.deepEqual(module.installationServosForStep(map,at('r-support')).map(b=>b.id),[12,13]);
+ assert.deepEqual(module.installationServosForStep(map,at('r-tighten')).map(b=>b.id),[24]);
+ assert.deepEqual(module.installationServosForStep(map,at('r-support')).map(b=>b.id),[22,23]);
  assert.deepEqual(module.installationServosForStep(map,at('head-neck-plate')).map(b=>b.id),[30,31]);
 });

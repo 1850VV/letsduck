@@ -1,4 +1,5 @@
 import * as Legacy from './hardware-state.mjs';
+import {SERVO_IDS} from '../shared/servo-map.mjs';
 
 export const FLOW_VERSION='assembly-guide-20261013';
 export const GUIDE_SHA256='649e93e883db0296a062e9faf0038ffd82169c7362473cdb3bfe17b9b8213ffe';
@@ -55,12 +56,13 @@ for(const id of ['prepare-app','prepare-scan','prepare-id','prepare-all-ids']){
 for(const side of ['r','l']){
  const s=STEPS.find(s=>s.id==='t-motor-'+side);
  s.parts=s.parts.filter(id=>id!==side+'_legWireB');
- s.text=`底座与髋部舵机的线已经预接。装入ID${side==='r'?11:21}并固定；整腿线缆在第13页连接。`;
+ s.text=`底座与髋部舵机的线已经预接。装入ID${SERVO_IDS[side==='r'?'t_motor11':'t_motor21']}并固定；整腿线缆在第13页连接。`;
 }
-for(const [side,a,b]of [['r',13,14],['l',23,24]]){
+for(const side of ['r','l']){
+ const a=SERVO_IDS[side+'_lowerMotor'],b=SERVO_IDS[side==='r'?'motor':'l_motor'];
  patch(side+'-prepare',{text:`准备已编号的ID${b}以及这一侧的脚掌、轴承和踝轴；白色连杆已经固定在腿部。`});
  patch(side+'-join',{title:'固定腿部连杆',short:'安装连杆',text:'先将连杆和轴承对准腿部舵机，再用4颗M2×6固定。脚踝舵机随后接线并安装。',check:'连杆已经固定后保持不动，随后把脚部舵机装到连杆另一端。主舵盘和输出轴保留。'});
- patch(side+'-wire-a',{title:`先连接ID${a}与ID${b}`,short:'连接脚部线缆',text:`先完成ID${a}与ID${b}两端线缆的连接，再固定脚部舵机。`+(side==='l'?'这一侧按另一条腿的镜像关系对应。':''),check:'第10页明确13↔14；另一侧为镜像对应。线长、具体端口和针脚仍待核。',caption:`先连接 ${a}↔${b} · 再固定`});
+ patch(side+'-wire-a',{title:`先连接ID${a}与ID${b}`,short:'连接脚部线缆',text:`先完成ID${a}与ID${b}两端线缆的连接，再固定脚部舵机。`+(side==='r'?'这一侧按另一条腿的镜像关系对应。':''),check:'第10页明确13↔14；另一侧为镜像对应。线长、具体端口和针脚仍待核。',caption:`先连接 ${a}↔${b} · 再固定`});
  patch(side+'-shank',{title:`安装脚部舵机ID${b}`,short:'装入脚部舵机',text:'保持已固定的连杆不动，把已接好线的脚部舵机对准另一端，再用两颗M2×6固定。',check:'先确认两端线缆已经连接，固定时不拉扯插头。主舵盘和输出轴保留。'});
  const reference=sourceById.get('t-motor-'+side);
  patch(side+'-wire-b',{title:'先连接腿部与底座线缆',short:'连接腿部总线',text:'按装配指南第13页先连接腿部与底座的线缆，留出关节余量，再把整条腿装到底座。',check:'总线端点、针脚与线长仍按对应硬件资料核对；模型只示意连接顺序。',caption:'先连接线缆 · 再安装整腿',video:reference.chapter.video,videoStart:reference.chapter.videoStart,sourceStart:reference.step.sourceStart,sourceEnd:reference.step.sourceEnd});

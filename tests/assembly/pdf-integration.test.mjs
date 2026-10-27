@@ -30,8 +30,8 @@ test('physical installation declarations use the PDF mounting milestones without
  const data=JSON.parse(await readFile(new URL('../../frontend/assemble/servo-map.json',import.meta.url))),map=resolveServoMap(data,{actors:flow.ACTORS,steps:flow.STEPS});
  assert.equal(map.version,'tutorial-reference-1');
  for(const id of [10,20])assert.equal(map.byId.get(id).installedAt,'t-support');
- for(const id of [12,13])assert.equal(map.byId.get(id).installedAt,'r-support');
- for(const id of [22,23])assert.equal(map.byId.get(id).installedAt,'l-support');
+ for(const id of [12,13])assert.equal(map.byId.get(id).installedAt,'l-support');
+ for(const id of [22,23])assert.equal(map.byId.get(id).installedAt,'r-support');
 });
 test('the chapter chooser offers every PDF chapter with the same names and ordering',async()=>{
  const html=await readFile(new URL('../../frontend/assemble/index.html',import.meta.url),'utf8');

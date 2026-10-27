@@ -43,10 +43,10 @@ test('prepared servos stay uninstalled until their mounting action and the camer
  close(step.target,source.target.map((v,i)=>v+[-95,0,65][i]),'staged leg camera');
 });
 
-test('the already mounted white leg linkage stays fixed while ID14 is attached',()=>{
+test('the already mounted white leg linkage stays fixed while ID24 is attached',()=>{
   const n=at('r-shank'),before=flow.snapshot(n,0),after=flow.snapshot(n,1);
   close(before.shank.position,after.shank.position,'fixed linkage');
-  assert.notDeepEqual(before.motor.position,after.motor.position,'move servo14 to the linkage');
+  assert.notDeepEqual(before.motor.position,after.motor.position,'move servo24 to the linkage');
 });
 
 test('both mirrored feet, bearings and shafts animate in their own action rather than the opposite side',()=>{
@@ -57,12 +57,12 @@ test('both mirrored feet, bearings and shafts animate in their own action rather
  const beforeHead=flow.snapshot(at('final-thigh-second'),1);for(const id of ['f_uno','f_extension','h_motor30','h_headLead'])assert.equal(beforeHead[id].visible,false,id);
 });
 
-test('the preconnected 13-14 cable stays on both real model sockets while ID14 moves',()=>{
+test('the preconnected 23-24 cable stays on both real model sockets while ID24 moves',()=>{
   const n=at('r-shank');
   for(const p of [0,.25,.6,1]){
     const s=flow.snapshot(n,p),wire=s.wire;
     const world=point=>new THREE.Vector3(...point).applyQuaternion(actorQuaternion(flow.ACTORS.wire,wire)).add(new THREE.Vector3(...wire.position)).toArray();
-    close(world(wire.points[0]),s.plug.position,'ID14 plug follows the servo');
+    close(world(wire.points[0]),s.plug.position,'ID24 plug follows the servo');
     const motor=s.r_lowerMotor,ports=flow.ACTORS.r_lowerMotor.servoPorts;
     const docks=ports.map(port=>new THREE.Vector3(...port.position).addScaledVector(new THREE.Vector3(...port.normal),2.25).applyQuaternion(actorQuaternion(flow.ACTORS.r_lowerMotor,motor)).add(new THREE.Vector3(...motor.position)).toArray());
     assert.ok(docks.some(d=>Math.hypot(...d.map((v,i)=>v-world(wire.points.at(-1))[i]))<1e-6),'other end remains connected to13');
