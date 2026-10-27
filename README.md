@@ -191,3 +191,5 @@ node --test tests/*.mjs tests/assembly/*.test.mjs
 组装模块可从 `frontend/shared/numbering-readiness.mjs` 订阅状态，或只读访问 `GET /api/duck-debug/numbering`：`ready`、`verifiedIds`、`missingIds`、`reviewIds` 和 `records`。`GET /api/duck-debug/status` 另行提供当前连接、在线编号及实时反馈；不要用在线数量代替编号完成数。
 
 可选的调试鸭浏览器回归使用 `python3 tests/debug_browser_fixture.py` 启动隔离控制器（8896，只用假运行端和临时数据库），再用 Playwright CLI 的 `run-code` 执行 `tests/duck_debug_browser.js`。它检查持续反馈刷新，以及读取期间发生轮询时微调开关仍能开启。需要本地组装资产包；检查完关闭该任务的浏览器会话并用 Ctrl+C 退出测试服务。
+
+首页支持左右拖动三只鸭，松手后吸附到 C 位。点侧面的鸭子先转到前面，点 C 位鸭子进入功能；关闭窗口后保存最近使用。方向键可切换，复位回到默认调试鸭。`tests/home_carousel_browser.js` 复用上述隔离控制器，检查拖动、触摸、误触、最近使用以及组装入口的编号门槛。

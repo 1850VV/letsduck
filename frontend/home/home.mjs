@@ -5,32 +5,36 @@ import {readNumberingReadiness,subscribeNumberingReadiness,updateNumberingReadin
 import {applyBrand} from '../shared/brand.mjs';
 import {readDraft} from '../shared/draft.mjs';
 import {completePoses,assemblyActors,actorQuaternion} from '../debug/poses.mjs';
+import {createCarousel} from './carousel.mjs';
 applyBrand();
 const $=id=>document.getElementById(id),KEY='letsduck.duck-hub.v1';
 const entries=[{id:'paint',name:'来涂鸭',caption:'配色 · 涂装 · 导出',color:0x7187f9},{id:'debug',name:'调试鸭',caption:'舵机 · 参数 · 连接',color:0x3aa276},{id:'assemble',name:'组装鸭',caption:'原组装台 · 3D教程',color:0xe5a06a}];
 const valid=id=>entries.some(e=>e.id===id);
-let focus='debug',hasUsed=false,opened=null,ready=false;
-try{const stored=localStorage.getItem(KEY);if(valid(stored)){focus=stored;hasUsed=true;}}catch{}
+let focus='debug',lastUsed=null,opened=null,ready=false,carousel;
+try{const stored=localStorage.getItem(KEY);if(valid(stored)){focus=stored;lastUsed=stored;}}catch{}
 const host=$('home-viewport'),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(35,1,.1,3000);
 const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;host.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0xa7b4cc,2.7));const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(-250,550,400);scene.add(key);const fill=new THREE.DirectionalLight(0xffffff,1.8);fill.position.set(300,250,-250);scene.add(fill);
-const models=new Map(),buttons=new Map(),placements=new Map();let pending=false;
-for(const e of entries){const b=document.createElement('button');b.className='duck-choice';b.dataset.duck=e.id;b.setAttribute('aria-label','打开'+e.name);b.innerHTML=`<strong>${e.name}<span class="go">↗</span></strong><small>${e.caption}</small>`;b.onclick=()=>open(e.id);$('duck-labels').append(b);buttons.set(e.id,b);}
+const models=new Map(),buttons=new Map(),placements=new Map(),stage=document.querySelector('.duck-stage');let pending=false;
+for(const e of entries){const b=document.createElement('button');b.className='duck-choice';b.dataset.duck=e.id;b.innerHTML=`<strong>${e.name}<span class="go">↗</span></strong><small>${e.caption}</small>`;$('duck-labels').append(b);buttons.set(e.id,b);}
+carousel=createCarousel({stage,ids:entries.map(e=>e.id),initial:focus,enabled:()=>ready&&!opened,pick:hitAt,render:positionModels,activate:open});
 function invalidate(){if(pending||document.hidden)return;pending=true;requestAnimationFrame(()=>{pending=false;if(!opened){renderer.render(scene,camera);layoutLabels();}});}
 function resize(){const r=host.getBoundingClientRect();if(!r.width||!r.height)return;renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;
- const mobile=r.width<700;camera.position.set(0,mobile?460:365,mobile?1230:970);camera.lookAt(0,110,0);camera.updateProjectionMatrix();positionModels();invalidate();}
+ const mobile=r.width<700;camera.position.set(0,mobile?460:365,mobile?1230:970);camera.lookAt(0,mobile?80:-15,0);camera.updateProjectionMatrix();positionModels();invalidate();}
 new ResizeObserver(resize).observe(host);document.addEventListener('visibilitychange',invalidate);
-function positionModels(){
- const others=entries.filter(e=>e.id!==focus),mobile=host.clientWidth<700;
- const targets=new Map([[focus,[0,0,mobile?190:170]],[others[0].id,[mobile?-155:-205,0,-110]],[others[1].id,[mobile?155:205,0,-110]]]);
- for(const e of entries){const obj=models.get(e.id),front=e.id===focus;if(obj){obj.position.fromArray(targets.get(e.id));obj.scale.setScalar(front?1:.82);obj.rotation.y=e.id==='paint'?.35:e.id==='assemble'?-.35:.1;}
-  placements.set(e.id,targets.get(e.id));buttons.get(e.id).classList.toggle('front',front);buttons.get(e.id).setAttribute('data-c-position',String(front));
+function positionModels(angle=carousel.angle,current=focus){
+ focus=current;const radius=host.clientWidth<700?185:250;
+ for(const [index,e] of entries.entries()){
+  const a=(index-1)*Math.PI*2/3+angle,z=Math.cos(a),position=[Math.sin(a)*radius,0,z*radius],obj=models.get(e.id),front=e.id===focus;
+  if(obj){obj.position.fromArray(position);obj.scale.setScalar(.9+.1*z);obj.rotation.y=(e.id==='paint'?.35:e.id==='assemble'?-.35:.1)+Math.sin(a)*.12;}
+  placements.set(e.id,position);const b=buttons.get(e.id);b.classList.toggle('front',front);b.setAttribute('data-c-position',String(front));b.style.opacity=String(.64+.36*(z+1)/2);b.style.zIndex=String(Math.round((z+1)*100));
+  b.setAttribute('aria-label',front?'进入'+e.name:'将'+e.name+'转到前面');
  }
- $('remember-status').textContent=hasUsed?`最近使用 · ${entries.find(e=>e.id===focus).name}`:'首次打开 · 调试鸭在 C 位';invalidate();
+ $('remember-status').textContent=lastUsed?`最近使用 · ${entries.find(e=>e.id===lastUsed).name}`:'首次使用 · 默认从调试鸭开始';invalidate();
 }
-function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const p=new THREE.Vector3(...placements.get(e.id));p.y=-9;p.z+=35;p.project(camera);const b=buttons.get(e.id);b.style.left=(p.x*.5+.5)*host.clientWidth+'px';b.style.top=(-p.y*.5+.5)*host.clientHeight+'px';b.hidden=!ready||p.z>1;}}
-function persist(id){if(!valid(id))return;try{localStorage.setItem(KEY,id);}catch{}hasUsed=true;}
-function open(id){if(!ready||!valid(id))return;if(id==='assemble'&&!readNumberingReadiness().ready)id='debug';focus=id;opened=id;persist(id);positionModels();
+function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const obj=models.get(e.id),p=new THREE.Vector3(0,-9,e.id==='debug'?175:95);if(obj){obj.updateMatrixWorld(true);p.applyMatrix4(obj.matrixWorld);}else p.add(new THREE.Vector3(...placements.get(e.id)));p.project(camera);const b=buttons.get(e.id);b.hidden=!ready||p.z>1;b.style.left=(p.x*.5+.5)*host.clientWidth+'px';b.style.top=Math.min((-p.y*.5+.5)*host.clientHeight,host.clientHeight-b.offsetHeight-12)+'px';}}
+function persist(id){if(!valid(id))return;try{localStorage.setItem(KEY,id);}catch{}lastUsed=id;}
+function open(id){if(!ready||!valid(id))return;if(id==='assemble'&&!readNumberingReadiness().ready)id='debug';carousel.jump(id);opened=id;persist(id);positionModels();
  $('module-title').textContent=entries.find(e=>e.id===id).name;
  $('window-note').textContent='';
  $('module-frame').src=id==='debug'?'/debug/?embedded=1':id==='assemble'?'/assemble/':'/paint';
@@ -40,8 +44,9 @@ function close(){if(!opened)return;updatePaint();persist(opened);opened=null;$('
 $('close-module').onclick=close;$('close-x').onclick=close;
 $('module-frame').addEventListener('load',()=>{try{$('module-frame').contentWindow.addEventListener('keydown',e=>{if(e.key==='Escape')close();});}catch{}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});window.addEventListener('pagehide',()=>{if(opened)persist(opened);});
-const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down;
-renderer.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});renderer.domElement.addEventListener('pointerup',e=>{if(!ready||!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6)return;const r=host.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects([...models.values()],true)[0];if(hit){let o=hit.object;while(o&&!o.userData.duckId)o=o.parent;if(o)open(o.userData.duckId);}});
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+function hitAt(e){const label=e.target.closest('[data-duck]');if(label)return label.dataset.duck;const r=host.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);scene.updateMatrixWorld(true);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects([...models.values()],true)[0];let o=hit?.object;while(o&&!o.userData.duckId)o=o.parent;return o?.userData.duckId;}
+$('reset-carousel').onclick=()=>{try{localStorage.removeItem(KEY);}catch{}lastUsed=null;carousel.rotateTo('debug');};
 const servoIds=new Map(ACTORS.map((id,i)=>[id,IDS[i]]));
 function updateReadiness(progress){const b=buttons.get('assemble');b.classList.toggle('locked',!progress.ready);b.dataset.numberingReady=String(progress.ready);
  b.querySelector('small').textContent=progress.ready?'取件 · 3D组装教程':`编号已验证 ${progress.verifiedIds.length}/15 · 前往调试鸭`;
