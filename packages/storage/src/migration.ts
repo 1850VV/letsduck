@@ -96,7 +96,7 @@ export async function migrateSqlite(source: string, target?: string, backup?: st
   const snapshot = await snapshotSqlite(source, backup);
   const digest = fingerprint(snapshot.data);
   const counts = Object.fromEntries(tables.map(table => [table, snapshot.data[table].length])) as MigrationCounts;
-  const database = await openDatabase(destination.dialect === 'sqlite' ? destination.path : destination.url);
+  const database = await openDatabase(destination);
   try {
     const status = await database.transaction(async connection => {
       const previous = await connection.rows('SELECT fingerprint FROM migration_runs WHERE fingerprint=?', [digest]);

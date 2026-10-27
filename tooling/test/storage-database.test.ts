@@ -68,3 +68,20 @@ test('SQLite URL options reopen the existing database instead of splitting accou
     assert.deepEqual(databaseTarget(path + '?literal=true'), { dialect: 'sqlite', path: path + '?literal=true' });
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('database environment values remain literal and explicit empty configuration is preserved', () => {
+  const keys = ['DUCK_DATABASE_URL', 'DUCK_DB_ENGINE', 'DUCK_DB', 'DUCK_DB_HOST', 'DUCK_DB_PORT', 'DUCK_DB_USER', 'DUCK_DB_PASSWORD', 'DUCK_DB_NAME'];
+  const saved = new Map(keys.map(key => [key, process.env[key]]));
+  try {
+    for (const key of keys) delete process.env[key];
+    Object.assign(process.env, { DUCK_DB_ENGINE: 'mysql', DUCK_DB_USER: 'fixture%20', DUCK_DB_PASSWORD: 'example%2F/@', DUCK_DB_NAME: 'fixture%20?x#y' });
+    assert.deepEqual(databaseTarget(), { dialect: 'mysql', host: '127.0.0.1', port: 3306, user: 'fixture%20', password: 'example%2F/@', database: 'fixture%20?x#y', charset: 'utf8mb4' });
+    assert.deepEqual(databaseTarget('mysql+pymysql://a%2Fb:p%20x@[::1]/db%20name'), { dialect: 'mysql', host: '::1', port: 3306, user: 'a/b', password: 'p x', database: 'db%20name', charset: 'utf8mb4' });
+    process.env.DUCK_DB_NAME = ''; assert.equal(Reflect.get(databaseTarget(), 'database'), '');
+    process.env.DUCK_DB_PORT = ''; assert.throws(() => databaseTarget());
+    process.env.DUCK_DB_ENGINE = ''; assert.throws(() => databaseTarget(), /SQLite|MySQL/);
+    process.env.DUCK_DB_ENGINE = 'sqlite'; process.env.DUCK_DB = ''; assert.deepEqual(databaseTarget(), { dialect: 'sqlite', path: process.cwd() });
+  } finally {
+    for (const [key, value] of saved) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+  }
+});

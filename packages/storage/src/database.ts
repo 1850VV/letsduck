@@ -4,6 +4,7 @@ import { closeSync, existsSync, mkdirSync, openSync, realpathSync, statSync } fr
 import { dirname, resolve, basename, extname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Duplex } from 'node:stream';
+import { pythonInteger } from '@letsduck/domain';
 import { safeInteger } from './json.js';
 import { acquireMysqlConnection, mysqlOperation } from './mysql-timeout.js';
 
@@ -19,23 +20,33 @@ export interface Database {
   transaction<T>(body: (connection: Connection) => Promise<T>, write?: boolean): Promise<T>;
   close(): Promise<void>;
 }
-export type DatabaseTarget = { dialect: 'sqlite'; path: string } | { dialect: 'mysql'; url: string };
+export interface MysqlTarget { dialect: 'mysql'; host: string; port: number; user: string; password: string; database: string; charset: string }
+export type DatabaseTarget = { dialect: 'sqlite'; path: string } | MysqlTarget;
 export const nameKey = (name: string) => name.replace(/[A-Z]/g, char => char.toLowerCase());
+function mysqlPort(value: string): number {
+  if (value === '') throw new RangeError('Invalid MySQL port');
+  const port = pythonInteger(value);
+  if (typeof port !== 'number' || port < 0 || port > 65535) throw new RangeError('Invalid MySQL port');
+  return port;
+}
 export function databaseTarget(target?: string): DatabaseTarget {
   if (target === undefined) {
     if (process.env.DUCK_DATABASE_URL) return databaseTarget(process.env.DUCK_DATABASE_URL);
-    const engine = process.env.DUCK_DB_ENGINE || 'sqlite';
+    const engine = process.env.DUCK_DB_ENGINE ?? 'sqlite';
     if (engine === 'mysql') {
-      const url = new URL('mysql://127.0.0.1');
-      url.hostname = process.env.DUCK_DB_HOST || '127.0.0.1'; url.port = process.env.DUCK_DB_PORT || '3306';
-      url.username = process.env.DUCK_DB_USER || 'duck'; url.password = process.env.DUCK_DB_PASSWORD || '';
-      url.pathname = '/' + (process.env.DUCK_DB_NAME || 'doodleduck'); url.searchParams.set('charset', 'utf8mb4');
-      return { dialect: 'mysql', url: url.href };
+      return { dialect: 'mysql', host: process.env.DUCK_DB_HOST ?? '127.0.0.1', port: mysqlPort(process.env.DUCK_DB_PORT ?? '3306'),
+        user: process.env.DUCK_DB_USER ?? 'duck', password: process.env.DUCK_DB_PASSWORD ?? '', database: process.env.DUCK_DB_NAME ?? 'doodleduck', charset: 'utf8mb4' };
     }
     if (engine !== 'sqlite') throw new Error('Only SQLite and MySQL are supported');
-    target = process.env.DUCK_DB || resolve(import.meta.dirname, '../../../backend/data/doodleduck.db');
+    target = process.env.DUCK_DB ?? resolve(import.meta.dirname, '../../../backend/data/doodleduck.db');
   }
-  if (/^mysql(?:\+[^:]+)?:\/\//.test(target)) return { dialect: 'mysql', url: target.replace(/^mysql\+[^:]+:/, 'mysql:') };
+  if (/^mysql(?:\+[^:]+)?:\/\//.test(target)) {
+    const address = target.replace(/^mysql\+[^:]+:/, 'mysql:'), url = new URL(address);
+    const database = /^mysql:\/\/[^/?]*(?:\/([^?]*))?/u.exec(address)?.[1] ?? '';
+    const query = new URLSearchParams(address.includes('?') ? address.slice(address.indexOf('?') + 1) : '');
+    return { dialect: 'mysql', host: url.hostname.replace(/^\[|\]$/g, ''), port: mysqlPort(url.port || '3306'),
+      user: decodeURIComponent(url.username), password: decodeURIComponent(url.password), database, charset: query.get('charset') || 'utf8mb4' };
+  }
   if (target === ':memory:' || /^sqlite(?:\+[^:]+)?:\/\/(?:\?.*)?$/.test(target)) return { dialect: 'sqlite', path: ':memory:' };
   if (/^sqlite(?:\+[^:]+)?:\/\/\//.test(target)) {
     target = target.replace(/^sqlite(?:\+[^:]+)?:\/\/\//, '').split('?', 1)[0]!;
@@ -124,9 +135,9 @@ function mysqlConnection(connection: PoolConnection): Connection {
     async run(sql, params = []) { await mysqlOperation(() => connection.execute({ sql, timeout: 30_000 }, bind(params)), () => disposeMysql(connection)); },
   };
 }
-function mysqlDatabase(url: string): Database {
-  const target = new URL(url);
-  const pool: Pool = createPool({ host: target.hostname, port: Number(target.port || 3306), user: decodeURIComponent(target.username), password: decodeURIComponent(target.password), database: decodeURIComponent(target.pathname.slice(1)), charset: target.searchParams.get('charset') || 'utf8mb4', connectionLimit: 10, connectTimeout: 10_000, supportBigNumbers: true, bigNumberStrings: true });
+function mysqlDatabase(target: MysqlTarget): Database {
+  const { dialect: _dialect, ...settings } = target;
+  const pool: Pool = createPool({ ...settings, connectionLimit: 10, connectTimeout: 10_000, supportBigNumbers: true, bigNumberStrings: true });
   let closing = false;
   return {
     dialect: 'mysql',
@@ -145,8 +156,8 @@ function mysqlDatabase(url: string): Database {
     async close() { closing = true; await pool.end(); },
   };
 }
-export async function openDatabase(target?: string): Promise<Database> {
-  const config = databaseTarget(target), db = config.dialect === 'sqlite' ? sqliteDatabase(config.path) : mysqlDatabase(config.url);
+export async function openDatabase(target?: string | DatabaseTarget): Promise<Database> {
+  const config = typeof target === 'object' ? target : databaseTarget(target), db = config.dialect === 'sqlite' ? sqliteDatabase(config.path) : mysqlDatabase(config);
   try {
     await db.transaction(async connection => {
       for (const [name, columns] of Object.entries(tables)) await connection.run(`CREATE TABLE IF NOT EXISTS ${name} (${columns.replaceAll('{JSON}', db.dialect === 'mysql' ? 'LONGTEXT' : 'TEXT')})` + (db.dialect === 'mysql' ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin' : ''));
