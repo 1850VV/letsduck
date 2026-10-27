@@ -124,6 +124,14 @@ Full tests require local assets and development dependencies. Real MySQL regress
 
 Debug and home browser checks use the fake runtime and temporary database in `tests/debug_browser_fixture.py`, followed by `tests/duck_debug_browser.js` and `tests/home_carousel_browser.js`. They require local assembly assets. Keep these automated checks disconnected from real hardware.
 
+The home language menu has a separate read-only check, using the same isolated fixture on port 8896. It requires local Playwright, its matching managed Chromium and model assets:
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tests/browser/home-language-menu.mjs --url http://127.0.0.1:8896 --output output/playwright/home-language-menu
+```
+
+Omit `PLAYWRIGHT_MODULE` if Node can import `playwright` directly. The script uses a temporary browser profile and blocks HTTP writes. It checks the header position, expanded bounds, clipping, clicks, keyboard exit, language persistence and runtime errors across desktop, responsive breakpoints, narrow screens, long labels and an existing RTL language. It defaults to headless Chromium with software WebGL; use `--headed` to watch. Results and screenshots go to the chosen output directory. This check does not replace other pages, native browser zoom or human visual acceptance.
+
 ## Source and documentation
 
 ```text

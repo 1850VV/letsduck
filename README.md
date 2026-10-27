@@ -124,6 +124,14 @@ node --test tests/*.mjs tests/assembly/*.test.mjs
 
 调试鸭和首页浏览器回归使用 `tests/debug_browser_fixture.py` 的假运行端和临时数据库，再执行 `tests/duck_debug_browser.js` 与 `tests/home_carousel_browser.js`。这些检查需要本地组装资产；不要把自动化检查连到真实设备。
 
+首页语言菜单另有独立只读回归，可复用上述 8896 隔离夹具。需要本地 Playwright、匹配的托管 Chromium 和模型资产：
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tests/browser/home-language-menu.mjs --url http://127.0.0.1:8896 --output output/playwright/home-language-menu
+```
+
+若 Node 环境能直接导入 `playwright`，可省略 `PLAYWRIGHT_MODULE`。脚本使用临时浏览器配置并阻止 HTTP 写入，检查入口位置、展开边界、裁切、点击、键盘退出、语言记忆及运行错误；包含桌面、响应断点、窄屏、长标签和现有 RTL 语言。默认使用无界面 Chromium 和软件 WebGL；`--headed` 可查看过程。结果及截图写入指定目录；它不代替其他页面、原生浏览器缩放或人工视觉验收。
+
 ## 源码与文档
 
 ```text
