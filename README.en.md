@@ -2,175 +2,155 @@
 
 # letsduck · 来做鸭
 
-<p align="center"><img src="frontend/shared/brand/logo.svg" width="128" alt="来做鸭 letsduck"></p>
+<p align="center"><img src="frontend/shared/brand/logo.svg" width="128" alt="letsduck"></p>
 
+A painting, servo debugging and 3D assembly tool for the XGO Duck V2. Choose colours, export a recoloured 3MF and bill of materials, connect an UNO Q locally to check servo IDs and parameters, then follow the assembly guide.
 
-A painting studio for the XGO Duck V2 robot duck: pick colours in three steps, make it nod, quack and sway, share a poster with friends, then export a recoloured 3MF (print structure preserved) for a print service. It comes in two editions: a double-click **personal edition**, and a **server edition** with a colour gallery, ratings and remixes.
+**The public main branch provides software source. Running it requires a complete local asset pack that you are entitled to use; a single 3MF is insufficient.** Models, manufacturing data, tutorial media and derived assets have separate terms. The code's MIT licence does not cover them. Read [local assets](docs/local-assets.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
 
-<p align="center"><img src="docs/media/outfits.gif" width="560" alt="Click a card and the duck changes its colours"></p>
+<p align="center"><img src="docs/media/outfits.gif" width="560" alt="Switching palettes in the painting studio"></p>
 
-**This is a source release. The model, 3MF, derived meshes and filament data are not included.** They are separately licensed; MIT does not cover them. Running letsduck requires a complete local asset pack that you are entitled to use; a single 3MF is not enough to reproduce the assembled preview. See [local assets](docs/local-assets.md) (Chinese).
+## Three entry points
 
-## Three steps
+On the personal home page, drag the three ducks sideways or use the arrow keys. Click a side duck to bring it to the centre, then click the centre duck to open its tool.
 
-**① Pick a start**: a blank duck, a classic palette, inspiration dice (lock a card, reroll one or all) or one of your saved designs. One click and the duck changes.
-
-![Step 1: pick a start](docs/media/en/01-start.jpg)
-
-**② Refine parts**: click a part on the model or in the list, then a colour. Real Bambu Lab PLA Basic / TPU 90A colours, or free colour mixing; brush, eyedropper, focus, side-by-side zoom, A/B compare and part locks are close at hand.
-
-<table><tr>
-<td width="60%"><img src="docs/media/en/02-refine.jpg" alt="Step 2: refine parts"></td>
-<td width="40%"><img src="docs/media/refine.gif" alt="Click a part, click a colour"></td>
-</tr></table>
-
-**③ Show & share**: pose the duck, play MicroDuck's classic moves and sounds (every palette gets its own voice), change the background, make a poster, save or publish to the gallery, or export the 3MF.
-
-<table><tr>
-<td width="60%"><img src="docs/media/en/03-show.jpg" alt="Step 3: show and share"></td>
-<td width="40%"><img src="docs/media/moves.gif" alt="Quack, sway, pick something up"></td>
-</tr></table>
-
-![Share poster](docs/media/en/04-poster.jpg)
-
-## Colour gallery (server edition)
-
-Everything your friends publish: popular / newest / top rated, colour-family and tag filters, star ratings. Like one? "Remix" it back into the studio; remixes hang under the original in a family tree that shows what changed.
-
-![Colour gallery](docs/media/en/05-gallery.jpg)
-
-<table><tr>
-<td><img src="docs/media/en/06-detail.jpg" alt="Work detail: source and what changed"></td>
-<td><img src="docs/media/en/07-family.jpg" alt="Remix family tree"></td>
-</tr></table>
-
-<p align="center"><img src="docs/media/en/08-mobile.jpg" width="300" alt="The gallery on a phone"></p>
-
-Authors, works and ratings in the screenshots are sample data; their titles are user content and stay in Chinese. The interface is available in 12 languages, but apart from Chinese the translations are machine-assisted and not yet fully reviewed by native speakers, so some English wording in the screenshots is still rough.
-
-## More
-
-- **Real filaments**: Bambu Lab PLA Basic / TPU 90A colour table. Other brands are illustrative swatches; you are asked to switch to real filaments before publishing or exporting.
-- **Phones**: the duck fills almost the whole screen; the three steps sit in a bottom tab bar and each step's controls in a draggable bottom sheet (swipe up to expand, down to a sliver); paint and view tools float at the sides. Pinch to zoom, double-tap to focus the selected part, long-press the duck to compare with the original colours, and a light vibration on taps where the phone supports it.
-- **Export**: checks the filament of all 35 parts and writes a recoloured 3MF (six plate thumbnails re-rendered) plus a BOM for your print service.
-- **Accounts (server edition)**: nickname + simple password. Private designs live in your account; before you sign in they stay in the browser and sync when you do.
-- **Sharing**: copy or paste a colour code any time; posters of published works carry a real QR code pointing to the same page as the copied link (needs `DUCK_PUBLIC_URL`).
-- **12 languages**: Simplified and Traditional Chinese, English, Japanese, Korean, French, German, Spanish, Brazilian Portuguese, Russian, Arabic and Hindi; switch at the top right, defaults to the browser language. See [translations](docs/i18n.md) (Chinese).
-
-Screen colours are not a guarantee of printed colour; some assembly positions (e.g. ankle axes) are approximate and assembly tolerances are unverified.
-
-## Two editions
-
-| | Personal edition | Server edition |
+| Entry | Features | Requirements |
 | --- | --- | --- |
-| For | Painting on your own computer | A circle of friends: accounts, gallery, ratings, remixes |
-| Runs | Double-click, macOS / Windows | Docker: nginx frontend + FastAPI backend + MySQL 8.4 |
-| Needs | Python 3.9+ only, nothing to install | Docker Compose (on the server) |
-| Data | One local SQLite file | MySQL (`mysql-data` volume) |
-| Code | `personal/` (Python standard library) | `backend/` (FastAPI + SQLAlchemy) |
+| Paint `/paint` | Palettes, part colours, poses, posters, saved schemes, 3MF + BOM export | Complete painting asset pack |
+| Debug `/debug/` | Connection status, live feedback, scanning, servo ID and parameter checks and writes, jogging and zero calibration | Local USB connection to UNO Q, installed ADB and compatible Duck Runtime |
+| Assemble `/assemble/` | Chapter materials, pickup positions, 3D installation steps and reference videos | Assembly asset pack; the home entry unlocks after all 15 installation IDs pass read-back verification |
 
-Both editions share the frontend in `frontend/`; it reads `/api/site` to learn the edition, and the personal edition hides sign-in, the gallery and publishing. Design validation (`backend/rules.py`) and 3MF export (`backend/exporter.py`) use only the standard library and are shared, so both editions give identical results.
+Studio animations are screen previews. Device actions in Debug affect real hardware and require clicking the corresponding control. Opening Debug only reads status.
 
-```
-frontend/   static frontend: index.html (studio), home.html + home/ (personal edition home), assemble/ (assembly guide), gallery/ (server edition only), shared/, lib/, locales/, vendor/
-personal/   personal edition: app.py (static files + design/export API), schemes.py (local SQLite)
-backend/    server edition API: server.py (FastAPI), store.py / database.py (MySQL), rules.py, exporter.py
-assets/     local asset pack (git-ignored; read directly by the personal edition, mounted read-only on servers)
-```
+### Paint and export
 
-## Personal edition: double-click to start
+1. **Choose a start:** a blank duck, classic palette, inspiration dice or a saved scheme.
+2. **Refine parts:** select a part on the model or in the list, then choose a filament colour or mix your own. Tools include a brush, eyedropper, focus, A/B comparison and part locks.
+3. **Show and export:** pose the duck, play moves and sounds, change the background, make a poster, and export a recoloured 3MF and BOM with the print structure preserved.
 
-1. Put the asset pack in `assets/`: `python3 scripts/import_local_assets.py /path/to/assets` (Windows: `py -3 scripts\import_local_assets.py C:\path\to\assets`).
-2. Double-click:
-   - **macOS**: `启动来做鸭.command`. The system Python 3 is enough; if there is none, macOS offers to install the Command Line Developer Tools. If macOS says the developer cannot be verified, right-click the file in Finder → Open.
-   - **Windows**: `启动来做鸭.bat`. Without Python it offers to install Python 3.12 with winget, or opens python.org (tick "Add python.exe to PATH" when installing).
-3. Your browser opens `http://127.0.0.1:8876/` (the next free port if that one is taken) on a home page with two cards: “Paint a duck” opens the studio (`/paint`), “Build a duck” the assembly guide (`/assemble/`, printed parts in the studio's current colors; shown as coming soon until its assets are imported with `scripts/import_assembly_assets.py`, see [local assets](docs/local-assets.md)). Close the launcher window to quit.
+<table><tr>
+<td><img src="docs/media/en/02-refine.jpg" alt="Select parts and change colours"></td>
+<td><img src="docs/media/en/03-show.jpg" alt="Poses, posters and export"></td>
+</tr></table>
 
-Or run `python3 run.py` in a terminal (`--port` to change the port, `--no-open` to skip opening the browser).
+Export targets a fixed project with 35 parts and 6 print plates. Display poses and exploded views do not alter manufacturing meshes. Arbitrary 3MF import, automatic slicing and printer control are outside the project. Screen colours do not guarantee physical colour accuracy, and model previews do not validate assembly tolerances.
 
-- Saved designs are kept on this computer: macOS `~/Library/Application Support/DoodleDuck/personal.db`, Windows `%APPDATA%\DoodleDuck\personal.db`, Linux `~/.local/share/doodleduck/personal.db`; set `DUCK_PERSONAL_DB` to choose another place. They live outside the app folder, so unzipping a newer version keeps them; up to 30 designs.
-- Drafts, language and background preferences stay in the browser. There are no accounts, gallery or publishing; 3MF export, posters and colour codes all work.
-- Listens on `127.0.0.1` only. Personal designs from the earlier all-in-one version (`backend/data/doodleduck.db`) are imported once on first start.
+Mobile painting supports bottom panels, pinch zoom, double-tap focus and long-press comparison. Painting and community screens have 12 language dictionaries; newer debug and assembly screens still contain Chinese. See [translation maintenance](docs/i18n.md).
 
-## Server edition: Docker + MySQL
+### Servo preparation and assembly
 
-A 1-core / 2 GB cloud server is enough (see "Small servers" below). The three containers use about 250–330 MB of memory when idle; 3D rendering and painting run in each visitor's browser, the server only stores data and exports 3MF.
+- Follow the [manufacturer's instructions](https://www.xgorobot.com/duck.html#software) to set up Arduino App Lab, Duck OS and the board. letsduck reuses installed ADB; set `DUCK_ADB` for a custom executable path.
+- Connect one servo at a time for initial numbering. Target IDs are `10–14`, `20–24` and `30–34`. The tool matches the runtime profile and verifies writes by reading them back. Duplicate-ID servos must be connected separately.
+- Use safe shutdown before changing connections. Wait at least 15 seconds and confirm the board has stopped, then disconnect USB and battery power. Do not reconnect servos while powered.
+- Saved numbering verification and current online status are separate. Disconnecting preserves progress; ID changes or unconfirmed writes recalculate readiness. An online count is not a verified-ID count.
+- Assembly includes material quantities, enlarged rotatable items, direct main/secondary horn selection and pickup records. Keep the tray in its fixed three-by-five arrangement; leave removed positions empty.
+- IDs, parameters and mechanical zero are separate. Software cannot fix reversed or jammed hardware. Cable specifications and some installation orientations still need manufacturer and physical checks; a completed page is not physical acceptance.
+
+## Choose an edition
+
+| | Personal | Server |
+| --- | --- | --- |
+| Use | Local painting, debugging and assembly | Sharing palettes, ratings and remixes with friends |
+| Runtime | Python 3.9+, standard library only | Docker Compose: nginx + FastAPI + MySQL 8.4 |
+| Data | Local SQLite; drafts and preferences in the browser | MySQL; anonymous drafts in the browser |
+| Accounts and gallery | None | Nickname accounts, private schemes, publishing, ratings and remix families |
+| USB device control | Local only | Unavailable |
+
+Both editions share the frontend, colour validation and 3MF exporter. The Electron desktop client remains on a separate development branch. The instructions below cover the Python personal edition and Docker server edition on `main`.
+
+## Run locally
 
 ```sh
-git clone git@github.com:1850VV/letsduck.git
+git clone https://github.com/1850VV/letsduck.git
 cd letsduck
-python3 scripts/import_local_assets.py /path/to/assets   # mounted, never baked into an image; also writes the smaller geometry.pack.bin
-cp .env.example .env                                      # set two different long random passwords
+python3 scripts/import_local_assets.py /path/to/authorized/assets
+python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
+python3 run.py
+```
+
+On Windows, replace `python3` with `py -3`. Assembly asset import can be deferred; assembly and the home page's model previews need those files. See [asset requirements](docs/local-assets.md).
+
+You can also double-click `启动来做鸭.command` on macOS or `启动来做鸭.bat` on Windows. Follow the launcher's Python installation prompt if needed. On macOS, use Finder's right-click → Open for the first launch if blocked.
+
+The browser opens `http://127.0.0.1:8876/`, trying the next port if occupied. Use `python3 run.py --port 8880 --no-open` to choose a port and suppress browser launch. Stop the launcher process to exit.
+
+The personal server listens locally. Named schemes, numbering verification and pickup progress live outside the application folder:
+
+- macOS: `~/Library/Application Support/DoodleDuck/personal.db`
+- Windows: `%APPDATA%\DoodleDuck\personal.db`
+- Linux: `~/.local/share/doodleduck/personal.db`
+
+Override the location with `DUCK_PERSONAL_DB`. Back up this file before updating; browser drafts and preferences are stored separately.
+
+## Deploy the server
+
+Prepare an authorised painting asset pack, then configure database passwords:
+
+```sh
+python3 scripts/import_local_assets.py /path/to/authorized/assets
+cp .env.example .env
+# Edit .env and set two different long random passwords.
 docker compose up -d --build
 ```
 
-Open `http://<server>:8080/` (change with `DUCK_PORT` / `DUCK_BIND` in `.env`).
+The default address is `http://<server-address>:8080/`. nginx serves the frontend and proxies `/api/`; the backend and MySQL stay on the container network. Assets are mounted read-only; the source 3MF has no public static endpoint.
 
-- `frontend` (nginx) serves the static pages with gzip and a read-only `/assets/` (the source 3MF is never served), and proxies `/api/` to `backend`; `backend` stays on the internal network and MySQL has no host port.
-- **HTTPS (automatic certificates)**: point your domain and its `www.` at the server, open ports 80 and 443, then set in `.env`:
+The gallery supports popular, recent and top-rated sorting, filters, ratings, remixes and family trees. Accounts, works and ratings in these screenshots are sample data.
 
-  ```dotenv
-  DUCK_DOMAIN=your-domain
-  DUCK_PUBLIC_URL=https://your-domain
-  DUCK_BIND=127.0.0.1
-  DUCK_PORT=8080
-  COMPOSE_FILE=docker-compose.yml:docker-compose.https.yml
-  ```
+![Example gallery](docs/media/en/05-gallery.jpg)
 
-  and run `docker compose up -d`. `docker-compose.https.yml` adds a Caddy container that obtains and renews Let's Encrypt certificates, redirects HTTP to HTTPS and `www.` to the bare domain. Copy-link and poster QR codes appear once `DUCK_PUBLIC_URL` is set (pointing to `<DUCK_PUBLIC_URL>/gallery/#d/<work id>`); unset, non-HTTPS, localhost or IP addresses produce no share links. An existing reverse proxy works too.
-- Backup: `docker compose exec -T mysql sh -c 'mysqldump --single-transaction -uduck -p"$MYSQL_PASSWORD" doodleduck' > backup.sql`. Upgrading from an older SQLite deployment, rollback and external MySQL: see [deployment](docs/deployment.md) (Chinese).
+For public deployment, follow [deployment instructions](docs/deployment.md) for HTTPS, domains and backups. An optional Caddy configuration is included. Share links and poster QR codes require a public HTTPS domain in `DUCK_PUBLIC_URL`. See [.env.example](.env.example) for bind address, port, database and export concurrency settings.
 
-### Small servers (1 core / 2 GB)
+## Develop and verify
 
-- **Add 2 GB of swap first**, so building images or a busy moment cannot run out of memory and get processes killed (Ubuntu / Debian, once):
-
-  ```sh
-  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
-  sudo mkswap /swapfile && sudo swapon /swapfile
-  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-  ```
-
-- **MySQL cache**: `DUCK_MYSQL_BUFFER_POOL` in `.env`, default `128M`, plenty for a circle of friends; use `256M` with 4 GB. Apply with `docker compose up -d`.
-- **Export**: keep `DUCK_EXPORT_WORKERS=1`. One export takes about 1–2 s on a single core; one runs, two wait, more are asked to retry shortly.
-- **Bandwidth matters more than CPU or memory**: a first visit downloads about 3.8 MB (gzipped; the model is 3 MB). At 5 Mbps that is roughly 10 first visits per minute, at 30 Mbps about 60. When the frontend image is built, `frontend/stamp.py` adds a content hash to every script and stylesheet, one import map and preload links, so all modules and the model download in parallel from the start; hashed code is cached for a year and the model for 7 days, so returning visitors barely touch the network. After replacing the asset pack, browsers that visited within 7 days may need a hard refresh.
-
-## Development
-
-The frontend has no build step. The personal edition runs with the system Python: `python3 run.py`. The server edition needs Python 3.11+ and its dependencies:
+The frontend uses native ES modules and needs no build step for development. Run the personal edition with `python3 run.py`. Server development requires Python 3.11+:
 
 ```sh
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
-DUCK_DATABASE_URL='mysql+pymysql://user:pass@127.0.0.1:3306/doodleduck' .venv/bin/python backend/server.py --static frontend
+.venv/bin/python backend/server.py --static frontend
 ```
 
-Without `DUCK_DATABASE_URL` the server edition uses `backend/data/doodleduck.db` (SQLite, for development and tests only; deployments always use MySQL).
-
-## Checks
+Without a configured database connection, the development server uses local SQLite; production uses MySQL. See [deployment](docs/deployment.md) for connection settings, migration, backup and rollback.
 
 ```sh
-python3 -m unittest discover -s tests -p test_personal.py -v   # personal edition: system Python, nothing installed
-.venv/bin/python scripts/publication_audit.py
-.venv/bin/python -m unittest discover -s tests -v              # all Python tests (needs the asset pack)
-node --test tests/*.mjs
+python3 -I -m unittest discover -s tests -p test_personal.py -v
+python3 scripts/publication_audit.py
+.venv/bin/python -m unittest discover -s tests -v
+node --test tests/*.mjs tests/assembly/*.test.mjs
 ```
 
-Real MySQL tests run when `DUCK_TEST_DATABASE_URL` is set (the database name must start with `duck_test_`); otherwise they are skipped. CI provides MySQL. CI has no model assets and cannot replace real-model, export and browser checks.
+Full tests require local assets and development dependencies. Real MySQL regression tests also require `DUCK_TEST_DATABASE_URL`, with a database name starting with `duck_test_`; otherwise those tests skip. [Public CI](.github/workflows/check.yml) uses synthetic fixtures and MySQL, without restricted models. It does not replace real-model export, browser interaction or physical acceptance.
 
-Exports run one at a time with up to two waiting; beyond that the API returns `503` with `Retry-After`. Tune with `DUCK_EXPORT_WORKERS` / `DUCK_EXPORT_QUEUE`.
+Debug and home browser checks use the fake runtime and temporary database in `tests/debug_browser_fixture.py`, followed by `tests/duck_debug_browser.js` and `tests/home_carousel_browser.js`. They require local assembly assets. Keep these automated checks disconnected from real hardware.
 
-## Documentation
+The home language menu has a separate read-only check, using the same isolated fixture on port 8896. It requires local Playwright, its matching managed Chromium and model assets:
 
-Most project documents are in Chinese.
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tests/browser/home-language-menu.mjs --url http://127.0.0.1:8896 --output output/playwright/home-language-menu
+```
 
-- [Deployment, data migration, backup and rollback](docs/deployment.md)
+Omit `PLAYWRIGHT_MODULE` if Node can import `playwright` directly. The script uses a temporary browser profile and blocks HTTP writes. It checks the header position, expanded bounds, clipping, clicks, keyboard exit, language persistence and runtime errors across desktop, responsive breakpoints, narrow screens, long labels and an existing RTL language. It defaults to headless Chromium with software WebGL; use `--headed` to watch. Results and screenshots go to the chosen output directory. This check does not replace other pages, native browser zoom or human visual acceptance.
+
+## Source and documentation
+
+```text
+frontend/   Home, painting, debug, assembly, gallery and shared modules
+personal/   Local HTTP service, SQLite, UNO Q / ADB debugging and servo preparation
+backend/    FastAPI, accounts and community storage, shared rules and 3MF export
+deploy/     Optional HTTPS configuration
+scripts/    Asset import, display model packing and publication checks
+tests/      Python, Node and browser checks
+assets/     Separately supplied local assets; do not commit
+```
+
 - [Project structure and boundaries](docs/project.md)
-- [Local assets and reproduction limits](docs/local-assets.md)
+- [Local assets and reproduction requirements](docs/local-assets.md)
+- [Deployment, migration and backups](docs/deployment.md)
 - [Third-party sources and licences](THIRD_PARTY_NOTICES.md)
-- [Publication checks and exclusions](docs/publication.md)
-- [Design and research history](docs/history/README.md)
-- [Contributing](CONTRIBUTING.md) / [Security](SECURITY.md)
+- [Publication scope](docs/publication.md)
+- [Contributing](CONTRIBUTING.md) · [Security reports](SECURITY.md)
 
 ## Licence
 
-Original code and documentation are [MIT](LICENSE). Three.js keeps its [MIT notice](frontend/vendor/THREE-LICENSE.txt); the MicroDuck voice synthesizer port keeps its [Apache-2.0 notice](frontend/shared/MICRODUCK-LICENSE.txt). The model, manufacturer data and brand names gain no new licence from this repository; the screenshots and clips in `docs/media/` show that model and are not covered by MIT either. letsduck is not an official product of Luwu Dynamics, Pollen Robotics, Bambu Lab or DeepSeek, and is not endorsed by them.
+Original code and documentation use [MIT](LICENSE). Three.js, meshoptimizer, MicroDuck and other third-party code retain their respective notices; see [third-party notices](THIRD_PARTY_NOTICES.md). Models, manufacturer data, brands and model imagery in this README receive no new licence through this repository. letsduck is not an official product of Luwu Dynamics, Pollen Robotics, Bambu Lab or DeepSeek.
