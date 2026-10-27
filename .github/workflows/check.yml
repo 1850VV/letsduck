@@ -29,10 +29,9 @@ jobs:
           cache: npm
       - name: Install locked TypeScript workspace dependencies
         run: npm ci
-      - name: Strict TypeScript workspace and isolated tooling contracts
+      - name: Strict TypeScript workspace and runtime compatibility
         run: |
           npm run typecheck
-          npm run test:typescript
           npm run probe:runtime
       - name: Personal edition with no third-party packages installed
         run: |
@@ -42,6 +41,8 @@ jobs:
           python3 -I -m compileall -q personal run.py frontend/stamp.py scripts/pack_geometry.py backend/rules.py backend/errors.py backend/exporter.py
       - name: Install pinned backend and test dependencies
         run: python3 -m pip install -r requirements-dev.txt
+      - name: Shared TypeScript contracts and Python database interoperability
+        run: npm run test:typescript
       - name: Check publication boundary
         run: python3 scripts/publication_audit.py
       - name: Real filament rules without licensed assets
