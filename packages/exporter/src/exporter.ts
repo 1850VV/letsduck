@@ -155,7 +155,7 @@ export class Exporter {
   }
   export(payload: unknown) {
     const report = this.plan(payload), unresolved = report.slots.filter(slot => slot.used && slot.profile.status === 'unavailable');
-    if (unresolved.length) throw new Invalid('暂无法导出 3MF：尚无匹配打印预设（' + unresolved.map(slot => slot.product.brand + ' ' + slot.product.series).join('、') + '）。可先导出耗材清单。');
+    if (unresolved.length) throw new Invalid('暂无法导出 3MF：尚无匹配打印预设（' + unresolved.map(slot => slot.product.brand + ' ' + slot.product.series).join(', ') + '）。可先导出耗材清单。');
     const config = this.remapConfig(report), replacements: Record<string, Buffer> = { 'Metadata/project_settings.config': Buffer.from(JSON.stringify(config, null, 4)), 'Metadata/model_settings.config': this.remapObjects(report) };
     const thumbnails = object(payload) ? payload.thumbnails : undefined;
     if (!object(thumbnails) || Object.keys(thumbnails).length !== THUMBNAILS.length || THUMBNAILS.some(name => !Object.hasOwn(thumbnails, name))) throw new Invalid('缺少当前方案的完整缩略图。', 'export.24');

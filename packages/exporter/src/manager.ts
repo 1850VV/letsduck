@@ -59,11 +59,17 @@ export class ExportManager {
   private dispatch() {
     if (!this.available || this.broken) return;
     for (const slot of this.slots) {
-      if (slot.job !== null) continue;
-      const id = this.queue.shift(); if (id === undefined) return;
-      const job = this.jobs.get(id); if (!job) continue;
-      slot.job = id;
-      const request: ExportRequest = { id, method: job.method, body: job.body }; slot.worker.postMessage(request);
+      while (slot.job === null) {
+        const id = this.queue.shift(); if (id === undefined) return;
+        const job = this.jobs.get(id); if (!job) continue;
+        slot.job = id;
+        const request: ExportRequest = { id, method: job.method, body: job.body };
+        try { slot.worker.postMessage(request); }
+        catch (error) {
+          this.jobs.delete(id); slot.job = null;
+          job.reject(error instanceof Error ? error : new Error('Export worker submission failed', { cause: error }));
+        }
+      }
     }
   }
   run(method: 'export', body: unknown, signal?: AbortSignal): Promise<Buffer>;

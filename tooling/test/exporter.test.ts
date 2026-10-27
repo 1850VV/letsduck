@@ -11,6 +11,7 @@ import { writeSyntheticAssets } from './synthetic-assets.js';
 import * as module from '@letsduck/exporter';
 
 const root = resolve(import.meta.dirname, '../..');
+const python = process.env.PYTHON || (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
 const required = () => { assert.ok(module, 'The shared exporter package is missing'); return module; };
 const json = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
 function fixture() {
@@ -29,7 +30,6 @@ function fixture() {
   return { directory, assets, payload };
 }
 function pythonExport(assets: string, payload: unknown, output: string) {
-  const python = process.env.PYTHON || (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
   const script = `import sys,json\nfrom pathlib import Path\nsys.path.insert(0,'backend')\nimport exporter\ncontent,report=exporter.export_3mf(json.load(sys.stdin))\nPath(sys.argv[1]).write_bytes(content)\nprint(json.dumps(report))`;
   const result = spawnSync(python, ['-I', '-c', script, output], { cwd: root, env: { ...process.env, DUCK_ASSETS: assets }, input: JSON.stringify(payload), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout);
@@ -103,6 +103,20 @@ test('the real worker preserves raw names, binary previews and current print pro
     assert.equal(config.filament_settings_id[4], 'Example · PETG+ · Blue · B');
     assert.deepEqual(archive.read('Metadata/plate_1.png'), previews.plate1);
   } finally { await manager?.close(); rmSync(f.directory, { recursive: true, force: true }); }
+});
+
+test('multiple unavailable profiles preserve the complete current Python error payload', () => {
+  const f = fixture();
+  try {
+    const catalog = json(join(f.assets, 'filament-catalog.json'));
+    catalog.products.push({ id: 'unknown-pps', brand: 'Example', series: 'PPS', material: 'PPS', name: 'Unknown', hex: '#010203' });
+    writeFileSync(join(f.assets, 'filament-catalog.json'), JSON.stringify(catalog));
+    const payload = { ...f.payload, assignments: { ...f.payload.assignments, p0: 'unknown-peek', p1: 'unknown-pps' } };
+    const script = "import sys,json;sys.path.insert(0,'backend');import exporter;from errors import payload\ntry: exporter.export_3mf(json.load(sys.stdin))\nexcept Exception as exc: print(json.dumps(payload(exc),ensure_ascii=False))";
+    const reference = spawnSync(python, ['-I', '-c', script], { cwd: root, env: { ...process.env, DUCK_ASSETS: f.assets }, input: JSON.stringify(payload), encoding: 'utf8' });
+    assert.equal(reference.status, 0, reference.stderr);
+    assert.throws(() => new module.Exporter(f.assets).export(payload), error => { assert.deepEqual(errorPayload(error), JSON.parse(reference.stdout)); return true; });
+  } finally { rmSync(f.directory, { recursive: true, force: true }); }
 });
 
 test('export validation preserves source, assignment, palette and preview error codes', () => {

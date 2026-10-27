@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import * as exporter from '@letsduck/exporter';
 const workerUrl = new URL('./fixtures/export-worker.ts', import.meta.url);
@@ -7,6 +9,12 @@ const gate = () => new Int32Array(new SharedArrayBuffer(8));
 function release(value: Int32Array) { Atomics.store(value, 0, 1); Atomics.notify(value, 0); }
 async function started(value: Int32Array) { for (let index = 0; index < 1000; index++) { if (Atomics.load(value, 1)) return; await delay(5); } throw new Error('The owned worker did not start'); }
 const ports = () => process.getActiveResourcesInfo().filter(name => name === 'MessagePort').length;
+
+for (const mode of ['immediate', 'queued']) test(`${mode} submission errors release capacity and cannot strand shutdown`, () => {
+  // A child owns the real threads, including when the old submission bug throws or hangs.
+  const result = spawnSync(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('./fixtures/export-submission.ts', import.meta.url)), mode], { encoding: 'utf8', timeout: 10_000 });
+  assert.equal(result.status, 0, result.stderr || result.error?.message);
+});
 
 test('active plus waiting exports have a hard bound and owned threads exit', async () => {
   assert.equal(typeof exporter.ExportManager, 'function', 'The bounded worker manager is missing');
