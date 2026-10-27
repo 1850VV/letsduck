@@ -1,10 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PNG} from 'pngjs';
+import {existsSync} from 'node:fs';
+import {join,resolve} from 'node:path';
+import {loadAssemblyManifest} from '@letsduck/host';
 import {createBrowserFixture} from '../../tests/browser/fixture.js';
 import {launchBrowser,preparePage} from '../../tests/browser/checks.js';
 
-test('disconnected preparation fixture reaches the actual dist tray without fabricating numbering',{skip:process.env.WEB_STUDIO_BROWSER!=='1'?'Set WEB_STUDIO_BROWSER=1 for licensed-asset managed Chromium evidence':false,timeout:90000},async()=>{
+const repository=resolve(import.meta.dirname,'../..'),manifest=loadAssemblyManifest(join(repository,'scripts/assembly-assets.json'));
+assert.ok(manifest,'Reviewed assembly manifest must exist');
+const missingAssets=['model.json','geometry.bin',...Object.keys(manifest.files).map(name=>'assembly/'+name)].filter(name=>!existsSync(join(repository,'assets',name)));
+const browserOptions={skip:process.env.WEB_STUDIO_BROWSER!=='1'?'Set WEB_STUDIO_BROWSER=1 for licensed-asset managed Chromium evidence':missingAssets.length?'Licensed model assets unavailable ('+missingAssets.length+' files); run the full local asset acceptance separately':false,timeout:90000};
+
+test('disconnected preparation fixture reaches the actual dist tray without fabricating numbering',browserOptions,async()=>{
  const f=await createBrowserFixture({mode:'preparation'}),browser=await launchBrowser({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
   const page=await browser.newPage({viewport:{width:1400,height:1040}}),errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await preparePage(page);
@@ -20,7 +28,7 @@ test('disconnected preparation fixture reaches the actual dist tray without fabr
  }finally{await browser.close();await f.close();assert.equal(f.app.server.address(),null);await assert.rejects(fetch(f.url));}
 });
 
-test('the disposable debug firmware serves the production model, read-only mapping and feedback controls',{skip:process.env.WEB_STUDIO_BROWSER!=='1'?'Set WEB_STUDIO_BROWSER=1 for licensed-asset managed Chromium evidence':false,timeout:90000},async()=>{
+test('the disposable debug firmware serves the production model, read-only mapping and feedback controls',browserOptions,async()=>{
  const [{default:mapping},{default:feedback}]=await Promise.all([import('../../tests/debug_leg_map_browser.js'),import('../../tests/duck_debug_browser.js')]);
  const f=await createBrowserFixture({mode:'debug'}),browser=await launchBrowser({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']}),previous=process.env.DUCK_BROWSER_URL;
  process.env.DUCK_BROWSER_URL=f.url;

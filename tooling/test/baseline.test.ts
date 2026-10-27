@@ -166,7 +166,7 @@ test('baseline records modified Node inputs and nested untracked files while exc
   writeFileSync(join(dir,'packages/host/src/index.ts'),'export {startHost,loadAssemblyManifest} from '+JSON.stringify(new URL('../../packages/host/src/index.ts',import.meta.url).href)+';\n');
   for(const file of ['packages/host/src/input.ts','apps/local/src/input.ts','tooling/src/input.ts'])writeFileSync(join(dir,file),'// committed fixture\n');
   writeFileSync(join(dir,'.gitignore'),'assets/\nevidence/\nnode_modules/\nignored/\n');symlinkSync(join(root,'node_modules'),join(dir,'node_modules'),'dir');
-  git('init','--quiet');git('config','user.name','Baseline fixture');git('config','user.email','baseline@example.invalid');git('add','.');git('commit','--quiet','-m','baseline input fixture');
+  git('init','--quiet');git('config','user.name','Baseline fixture');git('config','user.email','baseline@example.invalid');git('add','.');git('commit','--no-gpg-sign','--quiet','-m','baseline input fixture');
   for(const file of ['packages/host/src/input.ts','apps/local/src/input.ts','tooling/src/input.ts'])writeFileSync(join(dir,file),'// changed fixture\n');
   mkdirSync(join(dir,'new/nested'),{recursive:true});writeFileSync(join(dir,'new/nested/a.ts'),'// new input\n');writeFileSync(join(dir,'new/nested/b.ts'),'// second new input\n');mkdirSync(join(dir,'ignored'));writeFileSync(join(dir,'ignored/private.db'),'ignored fixture');git('config','status.showUntrackedFiles','no');
   const run=spawnSync(process.execPath,['--import','tsx',join(root,'tooling/src/baseline.ts'),'--repository',dir,'--assets',assets,'--output',output,'--save-samples','0','--export-samples','0'],{cwd:root,encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stderr);
