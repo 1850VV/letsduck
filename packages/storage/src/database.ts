@@ -52,12 +52,12 @@ export async function backupSqlite(source: string, destination?: string): Promis
 }
 
 const tables: Record<string, string> = {
-  users: 'id VARCHAR(64) PRIMARY KEY,name VARCHAR(80) NOT NULL,pw_salt VARCHAR(32) NOT NULL,pw_hash VARCHAR(64) NOT NULL,avatar VARCHAR(32) NOT NULL,color VARCHAR(16) NOT NULL,created BIGINT NOT NULL,name_key VARCHAR(80) NOT NULL',
-  sessions: 'token VARCHAR(128) PRIMARY KEY,user_id VARCHAR(64) NOT NULL,created BIGINT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE',
-  schemes: 'id VARCHAR(64) PRIMARY KEY,user_id VARCHAR(64) NOT NULL,name TEXT NOT NULL,design {JSON} NOT NULL,provenance {JSON},voice_salt BIGINT NOT NULL DEFAULT 0,created BIGINT NOT NULL,updated BIGINT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE',
-  works: 'id VARCHAR(64) PRIMARY KEY,user_id VARCHAR(64) NOT NULL,title TEXT NOT NULL,description TEXT NOT NULL,design {JSON} NOT NULL,provenance {JSON},parent_id VARCHAR(64),scheme_id VARCHAR(64),created BIGINT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE',
+  users: 'id VARCHAR(64) NOT NULL PRIMARY KEY,name VARCHAR(80) NOT NULL,pw_salt VARCHAR(32) NOT NULL,pw_hash VARCHAR(64) NOT NULL,avatar VARCHAR(32) NOT NULL,color VARCHAR(16) NOT NULL,created BIGINT NOT NULL,name_key VARCHAR(80) NOT NULL',
+  sessions: 'token VARCHAR(128) NOT NULL PRIMARY KEY,user_id VARCHAR(64) NOT NULL,created BIGINT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE',
+  schemes: 'id VARCHAR(64) NOT NULL PRIMARY KEY,user_id VARCHAR(64) NOT NULL,name TEXT NOT NULL,design {JSON} NOT NULL,provenance {JSON},voice_salt BIGINT NOT NULL DEFAULT 0,created BIGINT NOT NULL,updated BIGINT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE',
+  works: 'id VARCHAR(64) NOT NULL PRIMARY KEY,user_id VARCHAR(64) NOT NULL,title TEXT NOT NULL,description TEXT NOT NULL,design {JSON} NOT NULL,provenance {JSON},parent_id VARCHAR(64),scheme_id VARCHAR(64),created BIGINT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE',
   ratings: 'work_id VARCHAR(64) NOT NULL,user_id VARCHAR(64) NOT NULL,stars INTEGER NOT NULL,PRIMARY KEY(work_id,user_id),CONSTRAINT rating_stars CHECK(stars BETWEEN 1 AND 5),FOREIGN KEY(work_id) REFERENCES works(id) ON DELETE CASCADE,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE',
-  migration_runs: 'fingerprint VARCHAR(64) PRIMARY KEY,counts TEXT NOT NULL,created BIGINT NOT NULL',
+  migration_runs: 'fingerprint VARCHAR(64) NOT NULL PRIMARY KEY,counts TEXT NOT NULL,created BIGINT NOT NULL',
 };
 const indexes = [
   ['users_name_key', 'users', 'name_key', true], ['schemes_user', 'schemes', 'user_id,updated', false],

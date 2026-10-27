@@ -191,13 +191,13 @@ test('missing, malformed and ownerless legacy sources are ignored, and existing 
 
 test('default paths preserve the original macOS, Windows, Linux and environment conventions', async () => {
   const { defaultPersonalPath } = await storage();
-  assert.equal(defaultPersonalPath('darwin', {}, '/home/example'), '/home/example/Library/Application Support/DoodleDuck/personal.db');
-  assert.equal(defaultPersonalPath('linux', {}, '/home/example'), '/home/example/.local/share/doodleduck/personal.db');
-  assert.equal(defaultPersonalPath('linux', { XDG_DATA_HOME: '/tmp/xdg' }, '/home/example'), '/tmp/xdg/doodleduck/personal.db');
+  assert.equal(defaultPersonalPath('darwin', {}, '/fixture-home'), '/fixture-home/Library/Application Support/DoodleDuck/personal.db');
+  assert.equal(defaultPersonalPath('linux', {}, '/fixture-home'), '/fixture-home/.local/share/doodleduck/personal.db');
+  assert.equal(defaultPersonalPath('linux', { XDG_DATA_HOME: '/tmp/xdg' }, '/fixture-home'), '/tmp/xdg/doodleduck/personal.db');
   assert.equal(defaultPersonalPath('win32', {}, 'C:\\Users\\example'), 'C:\\Users\\example\\AppData\\Roaming\\DoodleDuck\\personal.db');
   assert.equal(defaultPersonalPath('win32', { APPDATA: 'D:\\Profile' }, 'C:\\Users\\example'), 'D:\\Profile\\DoodleDuck\\personal.db');
-  assert.equal(defaultPersonalPath('darwin', { DUCK_PERSONAL_DB: './custom.db' }, '/home/example'), './custom.db');
-  assert.equal(defaultPersonalPath('linux', { DUCK_PERSONAL_DB: '', XDG_DATA_HOME: '' }, '/home/example'), '/home/example/.local/share/doodleduck/personal.db');
+  assert.equal(defaultPersonalPath('darwin', { DUCK_PERSONAL_DB: './custom.db' }, '/fixture-home'), './custom.db');
+  assert.equal(defaultPersonalPath('linux', { DUCK_PERSONAL_DB: '', XDG_DATA_HOME: '' }, '/fixture-home'), '/fixture-home/.local/share/doodleduck/personal.db');
 });
 
 test('closing the personal store releases its database and permits repeated cleanup like Python', async t => {

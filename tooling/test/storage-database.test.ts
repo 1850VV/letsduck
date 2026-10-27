@@ -12,6 +12,10 @@ test('server SQLite has original schema, exact integers, atomic rollback and ser
   try {
     const tables = await db.transaction(c => c.rows("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"));
     assert.deepEqual(tables.map(row => row.name), ['migration_runs', 'ratings', 'schemes', 'sessions', 'users', 'works']);
+    for (const table of ['users', 'sessions', 'schemes', 'works', 'migration_runs']) {
+      const columns = await db.transaction(c => c.rows(`PRAGMA table_info(${table})`));
+      assert.ok(columns.filter(column => column.pk).every(column => column.notnull === 1), `${table} primary keys must reject NULL like the original server schema`);
+    }
     await db.transaction(c => c.run('CREATE TABLE counter(value INTEGER NOT NULL)'));
     await db.transaction(c => c.run('INSERT INTO counter VALUES(?)', [9007199254740993n]), true);
     assert.equal((await db.transaction(c => c.rows('SELECT value FROM counter')))[0]!.value, 9007199254740993n);
