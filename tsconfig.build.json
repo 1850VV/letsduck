@@ -1,4 +1,29 @@
 {
   "files": [],
-  "references": [{ "path": "packages/contracts" }, { "path": "packages/domain" }, { "path": "packages/exporter" }, { "path": "packages/storage" }, { "path": "tooling" }]
+  "references": [
+    {
+      "path": "packages/contracts"
+    },
+    {
+      "path": "packages/domain"
+    },
+    {
+      "path": "packages/exporter"
+    },
+    {
+      "path": "packages/storage"
+    },
+    {
+      "path": "packages/devices"
+    },
+    {
+      "path": "packages/host"
+    },
+    {
+      "path": "apps/local"
+    },
+    {
+      "path": "tooling"
+    }
+  ]
 }

@@ -1,0 +1,5 @@
+{
+  "name": "@letsduck/host", "version": "0.0.0", "private": true, "type": "module",
+  "exports": { ".": "./dist/index.js" }, "types": "./dist/index.d.ts",
+  "dependencies": { "@deepseek-ai/cordis": "4.0.5", "@letsduck/contracts": "0.0.0", "@letsduck/domain": "0.0.0", "@letsduck/storage": "0.0.0", "@letsduck/devices": "0.0.0", "@letsduck/exporter": "0.0.0", "fastify": "5.12.7" }
+}

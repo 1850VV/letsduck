@@ -9,6 +9,8 @@
   },
   "devDependencies": {
     "@letsduck/domain": "0.0.0",
-    "@letsduck/exporter": "0.0.0"
+    "@letsduck/exporter": "0.0.0",
+    "@letsduck/devices": "0.0.0",
+    "@letsduck/host": "0.0.0"
   }
 }

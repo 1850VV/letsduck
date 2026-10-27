@@ -9,7 +9,7 @@ try {
   if (!data || typeof data !== 'object' || !('assets' in data) || typeof data.assets !== 'string') throw new Error('Missing assets path');
   engine = new Exporter(data.assets);
 } catch { /* Missing or invalid local assets disable export without crashing the host. */ }
-const ready: ExportReply = { type: 'ready', available: !!engine }; port.postMessage(ready);
+const ready: ExportReply = { type: 'ready', available: !!engine, ...(engine ? { metadata: { sourceSha256: engine.model.source_sha256, partIds: engine.model.parts.map(part => part.id), catalog: engine.catalog } } : {}) }; port.postMessage(ready);
 // Requests and replies share this private, compiled protocol; request bodies remain untrusted.
 port.on('message', (job: ExportRequest) => {
   try {

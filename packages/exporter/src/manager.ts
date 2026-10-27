@@ -1,7 +1,8 @@
 import { Worker } from 'node:worker_threads';
 import type { ExportPlan } from '@letsduck/contracts';
 import { Invalid, LocalizedError, pythonString, readJsonField } from '@letsduck/domain';
-import type { ExportReply, ExportRequest } from './protocol.js';
+import type { ExportMetadata, ExportReply, ExportRequest } from './protocol.js';
+export type { ExportMetadata } from './protocol.js';
 
 export class ExportBusy extends LocalizedError {
   readonly status = 503;
@@ -15,6 +16,7 @@ export interface ExportOptions { assets: string; workers?: number; queueSize?: n
 export class ExportManager {
   readonly ready: Promise<void>;
   available = false;
+  metadata: ExportMetadata | null = null;
   private readonly slots: Slot[] = [];
   private readonly jobs = new Map<number, Job>();
   private readonly queue: number[] = [];
@@ -37,6 +39,7 @@ export class ExportManager {
       const slot: Slot = { worker, ready: false, available: false, job: null }; this.slots.push(slot);
       worker.on('message', (reply: ExportReply) => {
         if (reply.type === 'ready') {
+          if (reply.metadata && this.metadata === null) this.metadata = reply.metadata;
           slot.ready = true; slot.available = reply.available;
           if (this.slots.length === workers && this.slots.every(item => item.ready)) {
             this.available = this.slots.every(item => item.available); readyResolve();
