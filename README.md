@@ -183,3 +183,13 @@ node --test tests/*.mjs tests/assembly/*.test.mjs
 ## 开源范围
 
 原创代码和文档采用 [MIT](LICENSE)。Three.js 保留其 [MIT 声明](frontend/vendor/THREE-LICENSE.txt)；MicroDuck 叫声合成器移植保留 [Apache-2.0 声明](frontend/shared/MICRODUCK-LICENSE.txt)。模型、制造商数据和品牌名称不因本仓库而获得新的授权；`docs/media/` 里的截图和动图画有该模型，同样不在 MIT 范围内。来做鸭不是 Luwu Dynamics、Pollen Robotics、Bambu Lab 或 DeepSeek 的官方产品，也不表示这些项目认可本工具。
+
+个人版首页的调试鸭通过已安装的 ADB 连接同一块 UNO Q 的 Duck Runtime（9527）。打开界面只读取状态；进入单舵机操作或开始校准须点击对应按钮。微动每次限 ±10 编码器单位，当前固件会在约 0.25 秒后自动卸载。读取失败时不把历史位置当作实时读数。
+
+编号验证记录沿用个人数据库，并与当前在线状态分开保存。组装入口在 15 个安装编号全部读回复核后解锁；断开连接保留进度，改号或未确认的写入会重新计算完成状态。只修改编号不改中位，互换编号会先检测临时空闲地址。同号舵机无法分别寻址，须分开接入。保护广播回执不等于逐只验证。
+
+组装模块可从 `frontend/shared/numbering-readiness.mjs` 订阅状态，或只读访问 `GET /api/duck-debug/numbering`：`ready`、`verifiedIds`、`missingIds`、`reviewIds` 和 `records`。`GET /api/duck-debug/status` 另行提供当前连接、在线编号及实时反馈；不要用在线数量代替编号完成数。
+
+可选的调试鸭浏览器回归使用 `python3 tests/debug_browser_fixture.py` 启动隔离控制器（8896，只用假运行端和临时数据库），再用 Playwright CLI 的 `run-code` 执行 `tests/duck_debug_browser.js`。它检查持续反馈刷新，以及读取期间发生轮询时微调开关仍能开启。需要本地组装资产包；检查完关闭该任务的浏览器会话并用 Ctrl+C 退出测试服务。
+
+首页支持左右拖动三只鸭，松手后吸附到 C 位。点侧面的鸭子先转到前面，点 C 位鸭子进入功能；关闭窗口后保存最近使用。方向键可切换，复位回到默认调试鸭。`tests/home_carousel_browser.js` 复用上述隔离控制器，检查拖动、触摸、误触、最近使用以及组装入口的编号门槛。

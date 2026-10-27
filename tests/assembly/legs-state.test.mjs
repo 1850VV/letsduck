@@ -7,9 +7,9 @@ test('从第一侧脚踝连续覆盖到双腿及脚底软垫，阶段内可直�
   assert.equal(lesson.STEPS.at(-1).sourceEnd,496);
   assert.equal(lesson.CHAPTERS.length,5);
   for(const chapter of lesson.CHAPTERS){assert.ok(chapter.end-chapter.start+1<=9);assert.equal(lesson.STEPS[chapter.start].chapter,chapter.id);}
-  assert.equal(lesson.STEPS[step('l-prepare')].sourceStart,194);
-  assert.equal(lesson.STEPS[step('r-pair')].sourceStart,248);
-  assert.equal(lesson.STEPS[step('l-pair')].sourceStart,324);
+  assert.equal(lesson.STEPS[step('l-prepare')].sourceStart,126);
+  assert.equal(lesson.STEPS[step('r-pair')].sourceStart,324);
+  assert.equal(lesson.STEPS[step('l-pair')].sourceStart,248);
 });
 
 test('第二侧脚踝和腿内硬件不提前安装，完成的第一侧保持存在',()=>{

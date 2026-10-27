@@ -1,5 +1,6 @@
 import { CATALOG } from '../full-catalog.mjs';
 import { ACTORS as LEG_ACTORS } from '../assembly-state.mjs';
+import {SERVO_IDS} from '../../shared/servo-map.mjs';
 
 // All catalog coordinates are already in the shared Y+2 world frame.
 // Primitive anchors and cable routes are teaching illustrations, not measured fits.
@@ -34,7 +35,7 @@ function step(id, chapter, short, title, sourceStart, sourceEnd, parts, text, ch
 }
 
 step('t-pair', 'torso-base', '排列双舵机', '排列已编号的 ID20 与 ID10', 496, 500,
-  ['t_motor20', 't_motor10'],"按原片桌面视角排列已居中的 ID20、ID10。两只副舵盘可选拆，本教程保留。","主舵盘始终保留。桌面左右不直接等于机器人左右，装支撑前核对插座开口。", '画面左 20 · 画面右 10', {duration: 1.8});
+  ['t_motor10', 't_motor20'],"按原片桌面视角排列已居中的 ID20、ID10。两只副舵盘可选拆，本教程保留。","主舵盘始终保留。桌面左右不直接等于机器人左右，装支撑前核对插座开口。", '画面左 20 · 画面右 10', {duration: 1.8});
 step('t-support', 'torso-base', '固定髋支撑', '用六颗螺丝固定双圆孔髋支撑', 500, 518,
   ['t_support', 't_supportScrew0'],
   '把 P6-09 双圆孔髋支撑放到两只舵机上，对齐后固定六颗 M2×6 沉头自攻螺丝。',"先核对主副盘侧及插座朝向；下面中间两孔按原片留空，不加螺丝。", 'M2×6 ×6 · 下面中间两孔留空', {duration: 3.4});
@@ -58,35 +59,35 @@ step('t-yaw-l', 'torso-base', '装左连接件', '按镜像方向安装左侧轴
   '在 P6-07 独立连接件中先压入另一只大轴承，再把这一组件移到身体左侧固定。',"按左侧镜像核对主副盘和插座方向，不能照搬右侧。逐侧螺丝数量与精确孔位待核。",
   '镜像方向 · 先压轴承再装连接件', {duration: 3.7});
 step('t-roll-pair', 'torso-base', '取髋部舵机', '取出 ID21 与 ID11 两只髋部舵机', 608, 612,
-  ['t_motor21', 't_motor11'],
+  ['t_motor11', 't_motor21'],
   '原片桌面视角为左 ID21、右 ID11。两只舵机先放在独立准备位，此时还没有装进身体。',"核对 ID11、ID21 及主副盘侧，准备拆下插座开口同侧的副舵盘。", '画面左 21 · 画面右 11', {duration: 1.7});
 step('t-roll-horns', 'torso-base',"卸副舵盘","拆下 ID11 / ID21 副舵盘", 612, 624,
   ['t_motor11HornScrew', 't_motor11Horn', 't_motor21HornScrew', 't_motor21Horn'],"认准两只舵机插座开口同侧，先卸副舵盘中央螺丝，再取下副盘并保留。","主舵盘与输出轴不拆。中央原装螺丝不归为 M2×6 自攻。","先卸副盘螺丝 → 再取副舵盘", {duration: 3.2});
 
-step('t-motor-r', 'torso-legs', '装右髋电机', '接线后安装右侧 ID11 髋部舵机', 624, 662,
+step('t-motor-r', 'torso-legs', '装右髋电机', '接线后安装右侧 ID21 髋部舵机', 624, 662,
   ['t_rollWireR', 'r_legWireB', 't_motor11', 't_motorScrewR0'],
-  '按原片先接身体预留线，再接完整右腿上已有线的自由端。两次插接完成后才把 ID11 放入右侧连接件，最后固定两颗 M2×6。',"先核对右侧 ID11 主副盘及插座朝向，线束不夹入支撑。精确配合仍待实物核对。", '先接线 → 对位 · M2×6 ×2', {duration: 3.4});
+  '按原片先接身体预留线，再接完整右腿上已有线的自由端。两次插接完成后才把 ID21 放入右侧连接件，最后固定两颗 M2×6。',"先核对右侧 ID21 主副盘及插座朝向，线束不夹入支撑。精确配合仍待实物核对。", '先接线 → 对位 · M2×6 ×2', {duration: 3.4});
 step('t-cover-r', 'torso-legs', '装右盖板', '用四颗螺丝固定右 Roll 舵机盖板', 662, 678,
   ['t_coverR', 't_coverScrewR0'],
   '把 P6-02 盖板贴合右侧髋部，确认线束不夹在盖板内，再固定四颗 M2×6。',
   '盖板固定后，先给独立完整腿的上端连接件压轴承；现在还没有接入整条腿。', '对齐盖板 · M2×6 ×4', {duration: 3.2});
 step('t-bearing-r', 'torso-legs', '压右大轴承', '接腿前先压入右侧接口大轴承', 678, 684,
   ['t_legBearingR', 'r_topLink'],
-  '按 11:18 后的画面，将新的 16×22×4 mm 大轴承沿轴向压入独立右腿的上端连接件，再准备接入身体。',
+  '对照本步原片，将新的 16×22×4 mm 大轴承沿轴向压入独立右腿的上端连接件，再准备接入身体。',
   '这不是腿模块中已经安装的上端轴承。此步只压新轴承，右腿仍停在准备位；同轴配合为示意。', '先压大轴承 · 完整腿暂不移动');
 step('t-join-r', 'torso-legs', '接入右腿', '将完整右腿子组件接入身体', 684, 694,
   ['r_topLink', 'r_topBearing', 't_legBearingR', 't_legScrewR0'],
   '把已装好的右腿作为一个整体移到身体连接位置，对齐后固定四颗 M2×6。腿上的螺丝、轴承和线束一起移动。',"核对右腿主副盘、插座开口与身体接口方向，再固定完整子组件。实物配合仍待核。", '完整右腿整体接入 · M2×6 ×4', {duration: 3.7});
-step('t-motor-l', 'torso-legs', '装左髋电机', '接线后安装另一侧 ID21 髋部舵机', 694, 734,
+step('t-motor-l', 'torso-legs', '装左髋电机', '接线后安装另一侧 ID11 髋部舵机', 694, 734,
   ['t_rollWireL', 'l_legWireB', 't_motor21', 't_motorScrewL0'],
-  '按镜像方向先接身体预留线，再接完整左腿已有线的自由端。两次插接完成后才将 ID21 装入连接件，固定两颗 M2×6。',"按左侧镜像核对 ID21 主副盘及插座朝向，不照搬右侧。线束不夹入支撑。", '先接线 → 对位 · M2×6 ×2', {duration: 3.4});
+  '按镜像方向先接身体预留线，再接完整左腿已有线的自由端。两次插接完成后才将 ID11 装入连接件，固定两颗 M2×6。',"按左侧镜像核对 ID11 主副盘及插座朝向，不照搬右侧。线束不夹入支撑。", '先接线 → 对位 · M2×6 ×2', {duration: 3.4});
 step('t-cover-l', 'torso-legs', '装左盖板', '固定另一侧 Roll 舵机盖板', 734, 748,
   ['t_coverL', 't_coverScrewL0'],
   '把 P6-03 盖板贴合左侧髋部，检查线束避开接缝，再固定四颗 M2×6。',
   '左腿仍在独立准备位，下一步先给它的上端连接件安装新轴承。', '对齐盖板 · M2×6 ×4', {duration: 3.2});
 step('t-bearing-l', 'torso-legs', '压左大轴承', '第二条腿接入前先压大轴承', 748, 754,
   ['t_legBearingL', 'l_topLink'],
-  '按 12:28 后的画面，将另一只新的大轴承压到独立左腿的上端连接件中，再进行第二条完整腿的对接。',
+  '对照本步原片，将另一只新的大轴承压到独立左腿的上端连接件中，再进行第二条完整腿的对接。',
   '右腿已经安装；左腿还不移动。轴承姿态与接触面使用现有模型示意。', '先压大轴承 · 左腿仍在准备位');
 step('t-join-l', 'torso-legs', '接入左腿', '接入第二条完整腿并固定', 754, 764,
   ['l_topLink', 'l_topBearing', 't_legBearingL', 't_legScrewL0'],
@@ -97,6 +98,12 @@ step('t-complete', 'torso-legs', '检查双腿', '检查身体与双腿的连接
   '这里只验证动画状态。孔位、公差、线端与实物承重仍未验收，下一阶段继续头颈与总装。', '',
   {duration: 1.5, complete: true, target: [0, 76, 12], camera: [235, 211, 292]});
 
+// Keep the numbered servo shown in the footage with its PDF model position.
+for(const part of ['yaw','motor','cover','bearing','join']){
+ const first=STEPS.find(s=>s.id===`t-${part}-r`),second=STEPS.find(s=>s.id===`t-${part}-l`);
+ [first.sourceStart,second.sourceStart]=[second.sourceStart,first.sourceStart];
+ [first.sourceEnd,second.sourceEnd]=[second.sourceEnd,first.sourceEnd];
+}
 const at = id => STEPS.findIndex(s => s.id === id);
 const rightJoin = at('t-join-r'), leftJoin = at('t-join-l');
 const motorSetup = at('t-roll-pair'), hornRemoval = at('t-roll-horns');
@@ -166,12 +173,12 @@ const MOUNTS = {
 };
 
 for (const [number, sourceId, sign] of [[10, 'trunk_base_0', -1], [20, 'trunk_base_4', 1]]) {
-  mesh(`t_motor${number}`, sourceId, 't-pair', {label: `髋部 Yaw 舵机 · ID${number}`, approach: [sign * 25, 8, 20], servoPorts: SERVO_PORTS[`t_motor${number}`]});
+  mesh(`t_motor${number}`, sourceId, 't-pair', {label: `髋部 Yaw 舵机 · ID${SERVO_IDS['t_motor'+number]}`, approach: [sign * 25, 8, 20], servoPorts: SERVO_PORTS[`t_motor${number}`]});
   const axis = [sign * 17.5, 104.5, 20];
   actor(`t_motor${number}Horn`, 'horn', 't-pair', axis,
-    {label: `ID${number} 主舵盘（保留）`, carriedBy: `t_motor${number}`, rotation: [0, 0, PI / 2]});
+    {label: `ID${SERVO_IDS['t_motor'+number]} 主舵盘（保留）`, carriedBy: `t_motor${number}`, rotation: [0, 0, PI / 2]});
   actor(`t_motor${number}HornScrew`, 'screw', 't-pair', add(axis, [0, -1.5, 0]),
-    {label: `ID${number} 主舵盘中央原装螺丝`, fastener: null, source: '原装中央螺丝教学简模 · 规格待核验',
+    {label: `ID${SERVO_IDS['t_motor'+number]} 主舵盘中央原装螺丝`, fastener: null, source: '原装中央螺丝教学简模 · 规格待核验',
       carriedBy: `t_motor${number}`, orientationZ: PI, spinAxis: [0, 1, 0]});
 }
 mesh('t_support', 'P6-09', 't-support', {approach: [0, -28, 0], phase: [0, .52]});
@@ -207,15 +214,15 @@ for (const [side, sign, number, sourceId, yawSource, yawBearingSource, coverSour
     {group, phase: [.74, 1], approach: [0, -22, 0], orientationZ: PI, spinAxis: [0, 1, 0],
       label: `${name}连接件固定螺丝示意 · M2×6 · 逐侧数量待核验`, source: '教学简模 · 视频四颗字幕，逐侧数量及孔位待核验'});
   mesh(`t_motor${number}`, sourceId, 't-roll-pair',
-    {label: `${name}髋部 Roll 舵机 · ID${number}`, prepareOffset: [sign * 80, 25, 45],
+    {label: `${name}髋部 Roll 舵机 · ID${SERVO_IDS['t_motor'+number]}`, prepareOffset: [sign * 80, 25, 45],
       installStep: at(motorStep), installPhase: [.5, .76], servoPorts: SERVO_PORTS[`t_motor${number}`],
       approach: [sign * 24, 12, 15], phase: [.5, .76]});
   const horn = add(CATALOG[sourceId].end, [0, 7.5, -16.5]);
   actor(`t_motor${number}Horn`, 'horn', 't-roll-pair', horn,
-    {label: `ID${number} 副舵盘`, carriedBy: `t_motor${number}`, removeStep: hornRemoval,
+    {label: `ID${SERVO_IDS['t_motor'+number]} 副舵盘`, carriedBy: `t_motor${number}`, removeStep: hornRemoval,
       tray: [sign * 104, 3.5, 100], rotation: [0, PI / 2, 0]});
   actor(`t_motor${number}HornScrew`, 'screw', 't-roll-pair', add(horn, [0, 0, -2]),
-    {label: `ID${number} 原装中央固定螺丝`, fastener: null,
+    {label: `ID${SERVO_IDS['t_motor'+number]} 原装中央固定螺丝`, fastener: null,
       source: '原装中央螺丝教学简模 · 规格待核验', carriedBy: `t_motor${number}`, removeStep: hornRemoval,
       tray: [sign * 92, 2.5, 100], orientationZ: 0, rotation: [-PI / 2, 0, 0], spinAxis: [0, 0, 1]});
   const bodyMotor = side === 'R' ? 't_motor10' : 't_motor20', bodyPort = side === 'R' ? 1 : 0;

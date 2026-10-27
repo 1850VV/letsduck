@@ -1,44 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>来做鸭 / letsduck</title>
-<link rel="icon" href="data:,">
-<!-- Personal edition home: the server serves this file at / and the studio at /paint. -->
-<link rel="stylesheet" href="./home/home.css"><link rel="stylesheet" href="./shared/i18n.css">
-<script type="module" src="./shared/language-menu.mjs"></script>
-<script type="module" src="./home/home.mjs"></script>
-</head>
-<body data-title="home.title">
-<header class="top">
-  <a class="brand" href="./" data-brand-slot title="来做鸭 / letsduck"></a>
-  <span id="profile-slot"></span>
-</header>
-<main class="home">
-  <h1 class="hello" id="hello" data-i18n="home.hello">今天想做点什么？</h1>
-  <p class="lead" id="lead" data-i18n="home.lead">给机器鸭涂一身颜色，或者跟着动画把它装起来。两边随时可以互相切换。</p>
-  <div class="choices">
-    <section class="choice paint" id="paint" data-href="./paint">
-      <span class="tag" data-i18n="home.paintTag">涂装台</span>
-      <div class="art"><svg class="duck" viewBox="0 0 260 320" aria-hidden="true"></svg><span class="badge" data-i18n="home.freshPaint">✨ 新涂装</span></div>
-      <h2 data-i18n="home.paintTitle">想涂鸭</h2>
-      <p class="desc" data-i18n="home.paintDesc">三步配好颜色：选个起点、细调部位、摆姿势生成海报，也能导出 3MF 交给代打。</p>
-      <ul class="facts"><li data-i18n="home.factParts">35 个部位</li><li data-i18n="home.factFilament">拓竹真实色表</li><li data-i18n="home.factMoves">嘎嘎叫和摇摆</li></ul>
-      <div class="context" id="paint-context"></div>
-      <a class="cta" id="paint-go" href="./paint"></a>
-      <div class="alt" id="paint-alt" hidden><a href="./paint#new" data-i18n="home.new">或者新开一只</a></div>
-    </section>
-    <section class="choice build" id="build" data-href="./assemble/">
-      <span class="tag" data-i18n="home.buildTag">组装教程</span>
-      <div class="art"><svg class="duck" viewBox="0 0 260 320" aria-hidden="true"></svg><span class="badge" data-i18n="home.freshBuild">🔧 换上新涂装</span></div>
-      <h2 data-i18n="home.buildTitle">想做鸭</h2>
-      <p class="desc" data-i18n="home.buildDesc">跟着 3D 动画一步一步装。难的地方能局部放大，也能对照原片看。</p>
-      <ul class="facts"><li data-i18n="home.factSteps">14 个阶段 · 111 步</li><li data-i18n="home.factVideo">可对照原片</li><li data-i18n="home.factAuto">自动播放</li></ul>
-      <div class="context" id="build-context"></div>
-      <a class="cta" id="build-go" href="./assemble/"></a>
-    </section>
-  </div>
-  <p class="foot"><i></i><span data-i18n="home.footer">个人版 · 方案和组装进度只保存在这台电脑上</span></p>
-</main>
-</body>
-</html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>来涂鸭 · 调试鸭 · 组装鸭</title><link rel="stylesheet" href="./home/home.css"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script><link rel="stylesheet" href="./shared/i18n.css"><script type="module" src="./shared/language-menu.mjs"></script></head><body data-title="home.title">
+<header class="home-top"><a class="home-brand" href="/" data-brand-slot></a><span id="profile-slot">个人版</span></header>
+<main class="home"><h1>今天想做点什么？</h1><p class="lead">涂颜色、调舵机，或者跟着动画把鸭子装起来。</p>
+<section class="duck-stage" tabindex="0" role="region" aria-roledescription="转盘" aria-label="三只鸭子转盘，左右拖动或使用方向键切换"><div id="home-viewport"></div><div id="duck-labels"></div><div id="home-loading">正在载入三只鸭子…</div></section>
+<div class="carousel-hint"><span aria-hidden="true">↔</span> 左右拖动切换 · 点前面的鸭子进入 <button id="reset-carousel" aria-label="回到默认调试鸭">复位</button></div>
+<p id="remember-status" aria-live="polite"></p></main>
+<section id="module-window" role="dialog" aria-modal="true" aria-labelledby="module-title" hidden><header class="window-top"><button id="close-module" aria-label="关闭功能窗口，返回首页">← 首页</button><h2 id="module-title">调试鸭</h2><span id="window-note"></span><button class="close-x" id="close-x" aria-label="关闭窗口">×</button></header><iframe id="module-frame" title="功能窗口"></iframe></section>
+<script type="module" src="./home/home.mjs"></script></body></html>

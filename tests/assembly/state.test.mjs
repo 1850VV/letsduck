@@ -34,6 +34,6 @@ test('完成态保留两颗小腿螺丝、四颗脚掌螺丝，以及轴承、�
   }
   assert.equal(state.horn.status, 'removed');
   assert.equal(state.hornScrew.status, 'removed');
-  assert.equal(STEPS[1].sourceStart, 126);
+  assert.equal(STEPS[1].sourceStart, 194);
   assert.equal(STEPS.at(-1).sourceEnd, 496);
 });
