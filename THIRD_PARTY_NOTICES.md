@@ -2,7 +2,7 @@
 
 ## Included source
 
-`frontend/vendor/` contains Three.js revision 180: `three.core.js`, `three.module.js`, `OrbitControls.js`, `BufferGeometryUtils.js`, `RoomEnvironment.js`, and `GLTFLoader.js`. Copyright remains with the Three.js authors. These files retain the accompanying [MIT license](assets/vendor/THREE-LICENSE.txt). Source: [mrdoob/three.js, r180](https://github.com/mrdoob/three.js/tree/r180).
+`frontend/vendor/` contains Three.js revision 180: `three.core.js`, `three.module.js`, `OrbitControls.js`, `BufferGeometryUtils.js`, `RoomEnvironment.js`, and `GLTFLoader.js`. Copyright remains with the Three.js authors. These files retain the accompanying [MIT license](frontend/vendor/THREE-LICENSE.txt). Source: [mrdoob/three.js, r180](https://github.com/mrdoob/three.js/tree/r180).
 
 `frontend/shared/duck-voice.mjs` is a JavaScript port of MicroDuck's voice synthesizer (`sounds/src/rng.rs`, `synth.rs`, `personality.rs`, `voices.rs`), Copyright Pollen Robotics, under the [Apache License 2.0](frontend/shared/MICRODUCK-LICENSE.txt). Source: [pollen-robotics/microduck at 942e58e](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567/sounds). Changes: translated from Rust to JavaScript, with u64 arithmetic and f32 rounding emulated; WAV output, the hardware seed and the chorale/stream modules are not ported. The earlier Python original (`apirrone/microduck_sounds`) carries no license and is not used. No MicroDuck scores or recordings are included.
 

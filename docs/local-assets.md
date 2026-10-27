@@ -26,11 +26,12 @@ python3 run.py --no-open
 「想做鸭」的 3D 组装教程另需 26 个本地文件（约 126 MB）：整机组装模型、10 个硬件模型、10 段教程视频和 3 段音频。它们同样不进 Git，放在 `assets/assembly/`。`scripts/assembly-assets.json` 记录每个文件的大小和 SHA-256，导入器逐个核对，不覆盖不同的文件：
 
 ```sh
-python3 scripts/import_assembly_assets.py --git origin/codex/assembly-tutorial   # 从本机已拉取的私有分支读取
-python3 scripts/import_assembly_assets.py /path/to/assembly/assets               # 或者从一个文件夹读取
+python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
 ```
 
-没有导入时，首页的「想做鸭」显示「即将开放」，其余功能不受影响。来源与许可见 [第三方说明](../THIRD_PARTY_NOTICES.md)。
+仅在有权使用对应资产且本机已有匹配 Git 引用时，才可使用导入器的 `--git <ref>` 选项。分支是否公开不代表其资产已获再分发许可。
+
+没有导入时，组装和首页模型预览不可完整使用；涂装仍使用自己的资产包。当前首页提供来涂鸭、调试鸭、组装鸭三个入口，组装入口还需 15 个安装编号读回验证通过。来源与许可见 [第三方说明](../THIRD_PARTY_NOTICES.md)。
 
 主、副舵盘可在组装模型上直接点选识别。本地资产包还可保留 `horn-reference/main.jpg` 与 `horn-reference/secondary.jpg` 两张本批实物照片，供安装时对照。它们是清单中的可选本地文件，导入时会核对大小与哈希；缺少照片不影响 3D 点选。照片不随源码分发，不能据此获得再分发许可。
 
