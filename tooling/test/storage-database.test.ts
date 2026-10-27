@@ -47,6 +47,7 @@ test('legacy server lookup upgrade keeps a private consistent pre-ALTER backup',
 
 test('database configuration and name identity retain existing paths and ASCII-only case folding', () => {
   assert.deepEqual(databaseTarget('sqlite:///:memory:'), { dialect: 'sqlite', path: ':memory:' });
+  for (const target of ['sqlite:///:memory:?timeout=15', 'sqlite://?timeout=15', 'sqlite:///']) assert.deepEqual(databaseTarget(target), { dialect: 'sqlite', path: ':memory:' });
   assert.deepEqual(databaseTarget('sqlite:////tmp/duck-file.db'), { dialect: 'sqlite', path: '/tmp/duck-file.db' });
   assert.equal(databaseTarget('mysql+pymysql://duck:example@localhost/duck_test_ci').dialect, 'mysql');
   assert.throws(() => databaseTarget('postgresql://localhost/db'), /SQLite|MySQL/);

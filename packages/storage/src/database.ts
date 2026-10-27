@@ -36,8 +36,11 @@ export function databaseTarget(target?: string): DatabaseTarget {
     target = process.env.DUCK_DB || resolve(import.meta.dirname, '../../../backend/data/doodleduck.db');
   }
   if (/^mysql(?:\+[^:]+)?:\/\//.test(target)) return { dialect: 'mysql', url: target.replace(/^mysql\+[^:]+:/, 'mysql:') };
-  if (target === 'sqlite://' || target === ':memory:' || target === 'sqlite:///:memory:') return { dialect: 'sqlite', path: ':memory:' };
-  if (/^sqlite(?:\+[^:]+)?:\/\/\//.test(target)) target = target.replace(/^sqlite(?:\+[^:]+)?:\/\/\//, '').split('?', 1)[0]!;
+  if (target === ':memory:' || /^sqlite(?:\+[^:]+)?:\/\/(?:\?.*)?$/.test(target)) return { dialect: 'sqlite', path: ':memory:' };
+  if (/^sqlite(?:\+[^:]+)?:\/\/\//.test(target)) {
+    target = target.replace(/^sqlite(?:\+[^:]+)?:\/\/\//, '').split('?', 1)[0]!;
+    if (!target || target === ':memory:') return { dialect: 'sqlite', path: ':memory:' };
+  }
   else if (target.includes('://')) throw new Error('Only SQLite and MySQL are supported');
   return { dialect: 'sqlite', path: resolve(target) };
 }
