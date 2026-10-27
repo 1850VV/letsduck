@@ -13,7 +13,7 @@ RULES={
     'private-chat-link':rb'(?:chatgpt-conversation|codex)://[^\s]+',
     'credential-url':rb'https?://[^/\s:@]+:[^/\s@]+@',
 }
-LOCAL_ONLY={'source.3mf','geometry.bin','geometry.pack.bin', 'geometry.positions.bin','model.json','catalog.json','export-schema.json'}
+LOCAL_ONLY={'filament-catalog.json','filament-profiles.json','source.3mf','geometry.bin','geometry.pack.bin', 'geometry.positions.bin','model.json','catalog.json','export-schema.json'}
 # README screenshots/clips show model renders; the owner approved publishing them (2026-10-23).
 MEDIA,MEDIA_MAX='docs/media/',3_000_000
 

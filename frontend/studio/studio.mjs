@@ -1,4 +1,4 @@
-import {compatibleProduct,brandId,productLabel,seriesProducts} from '../lib/filaments.mjs';
+import {compatibleProduct,brandId,productLabel,seriesProducts,materialRows,csvText} from '../lib/filaments.mjs';
 import {hoverQueue} from '../shared/hover-queue.mjs';
 import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 涂装台: one stage, three steps (style → refine → showcase), plus schemes, A/B compare, group replace, close-up, arrange, colour finder, plates check,
@@ -359,7 +359,7 @@ function panelStep2() {
   const head = tool === 'brush' ? `<div class="panel-head compact tight brush-head"><div class="sel-line"><h2>${_t("text.0151")}</h2><div class="cur ink slim" id="brush-bar">${
   inkBar()}</div><button class="exit-brush" data-set-tool="select" title="${_attr(_t("text.0152"))}">${_t("text.0153")}</button></div>
       <div class="brush-opts"><label class="pill-check"><input type="checkbox" id="brush-mirror" ${brushMirror ? 'checked' : ''}>${_t("text.0154")}</label><div class="mini-seg" role="group" aria-label="${_attr(_t("text.0155"))}">${['PLA', 'TPU'].map((k) => `<button data-brush-kind="${k}" class="${brushKind === k ? 'on' : ''}">${k === 'PLA' ? 'PLA' : _t("text.0043")}</button>`).join('')}</div></div></div>` : `<div class="panel-head compact tight"><div class="sel-line"><h2>${
-  esc(selectionLabel())}</h2><span class="kind-tag ${kind === 'TPU' ? 'tpu' : ''}">${kind === 'TPU' ? 'TPU 90A' : '硬质部件'}</span>${z.id === 'face' ? `<span class="info-dot" title="${_attr(_t("text.0156"))}">i</span>` : ''}</div>
+  esc(selectionLabel())}</h2><span class="kind-tag ${kind === 'TPU' ? 'tpu' : ''}">${kind === 'TPU' ? 'TPU 90A' : _t('filament.rigid')}</span>${z.id === 'face' ? `<span class="info-dot" title="${_attr(_t("text.0156"))}">i</span>` : ''}</div>
       <div class="scope" role="group" aria-label="${_attr(_t("text.0159"))}">${scopes.map(([k, l]) => `<button class="${sel.scope === k ? 'on' : ''}" data-scope="${k}">${l}</button>`).join('')}${sel.scope === 'one' && pairOf ? `<label class="pill-check" title="${_attr(_t("text.0157", { v0: esc(partById.get(pairOf).name) }))}"><input type="checkbox" id="mirror" ${sel.mirror ? 'checked' : ''}>${_t("text.0158")}</label>` : ''}</div></div>`;
   return head + dockHTML(finishes) + `<div class="panel-foot"><button class="primary" data-go="3">${_t("text.0160")}</button></div>`;
 }
@@ -373,7 +373,7 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
         <div class="take-pop" id="take-pop" hidden></div>
         <div class="brand-row" role="group" aria-label="${_attr(_t("text.0172"))}">${BRANDS.map(b=>`<button data-brand="${b.id}" class="${source===b.id?'on':''}">${b.short}</button>`).join('')}</div>
         <div id="series-slot"></div>
-        <label class="mini-search filament-search"><span>⌕</span><input id="search" placeholder="搜索颜色、色号或 SKU" value="${esc(search)}" autocomplete="off"></label>
+        <label class="mini-search filament-search"><span>⌕</span><input id="search" placeholder="${_attr(_t('filament.search'))}" value="${esc(search)}" autocomplete="off"></label>
         <div class="filament-count" id="filament-count"></div>
         <div class="grid" id="lib-grid" role="listbox" aria-label="${_attr(_t("text.0167"))}"></div>
         <div class="hover-info static" id="hover-info" aria-live="polite"></div>
@@ -393,15 +393,16 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
 const matchSearch = (p) => !search || [p.name,p.colorCode,p.nameEn,p.brand,p.series,...(p.skus||[])].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase());
 function buildGrid() {
   const g=$('#lib-grid');if(!g)return;const all=brandList(source,gridKind()),series=[...new Set(all.map(p=>p.series))];if(!series.includes(filamentSeries))filamentSeries=series[0]||'';
-  if($('#filament-series')?.dataset.scope!==source+':'+gridKind())$('#series-slot').innerHTML=`<label class="filament-series"><span>系列</span><select id="filament-series" data-scope="${source+':'+gridKind()}" aria-label="耗材系列" ${series.length?'':'disabled'}>${series.map(s=>`<option value="${_attr(s)}" ${s===filamentSeries?'selected':''}>${esc(s)}</option>`).join('')}</select></label>`;
-  const list=all.filter(p=>p.series===filamentSeries).filter(matchSearch);$('#filament-count').textContent=list.length+' 条配色 · 厂商官方色值';
+  if($('#filament-series')?.dataset.scope!==source+':'+gridKind())$('#series-slot').innerHTML=`<label class="filament-series"><span>${_t('filament.series')}</span><select id="filament-series" data-scope="${source+':'+gridKind()}" aria-label="${_attr(_t('filament.series'))}" ${series.length?'':'disabled'}>${series.map(s=>`<option value="${_attr(s)}" ${s===filamentSeries?'selected':''}>${esc(s)}</option>`).join('')}</select></label>`;
+  $$('[data-brand]').forEach(button=>button.classList.toggle('on',button.dataset.brand===source));
+  const list=all.filter(p=>p.series===filamentSeries).filter(matchSearch);$('#filament-count').textContent=_t('filament.colours',{count:list.length});
   g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex};${p.colors?.length>1?'background:linear-gradient(135deg,'+p.colors.join(',')+')':''}" aria-label="${_attr(productLabel(p))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
   search ? _t("text.0184") : _t("text.0185")}</p>`;
   markGrid();
 }
 function markGrid() {const keys = new Set(tool === 'brush' ? [brush] : targetIds().map(keyOf)),one = keys.size === 1 ? [...keys][0] : null;$$('#lib-grid .dot').forEach((d) => d.classList.toggle('on', d.dataset.key === one));}
 const chip = (k, { count, on } = {}) => `<button class="chip ${on ? 'on' : ''} fin-${isHex(k) ? hexFinish(k) || 'basic' : finishOfProduct(products.get(k))}" data-key="${k}" style="--c:${keyHex(k)}" aria-label="${_attr(esc(keyName(k)))}">${count ? `<em>${count}</em>` : ''}</button>`;
-function productLink(k){const p=products.get(k),url=p?.productUrl||p?.sourceUrl;return url?`<a href="${_attr(url)}" target="_blank" rel="noreferrer">厂商 ↗</a>`:'';}
+function productLink(k){const p=products.get(k),url=p?.productUrl||p?.sourceUrl;return url?`<a href="${_attr(url)}" target="_blank" rel="noreferrer">${_t('filament.source')}</a>`:'';}
 function hoverInfo(k) {
   const el = $('#hover-info');if (!el) return;
   if (k) {el.innerHTML = `<i style="--c:${keyHex(k)}"></i><span><b>${esc(keyName(k))}</b><small>${esc(keySub(k))}</small></span>${productLink(k)}<kbd>${_t("text.0186")}</kbd>`;el.classList.add('live');return;}
@@ -778,7 +779,7 @@ async function openExport() {
   try {
     plan = await api('POST', '/plan', { source_sha256: model.source_sha256, name, assignments: design.assignments });const usedSlots = plan.slots.filter((s) => s.used);
     body.innerHTML = `<div class="ex-stats"><span><b>6</b>${_t("text.0245")}</span><span><b>35</b>${_t("text.0315")}</span><span><b>${usedSlots.length}</b>${_t("text.0316")}</span><span><b>${plan.slots.length}</b>${_t("text.0317")}</span></div>
-    <div class="ex-products">${usedSlots.map((s) => {const p = s.product,n = plan.parts.filter((x) => x.slot === s.slot).length;return `<div class="ex-p"><i style="--c:${p.hex}"></i><span><b>${esc(p.brand)} · ${esc(p.series)} · ${esc(_label(p.name))}</b><small>${_t("text.0313", { v3: p.colorCode||p.skus?.[0]||'—', v4: n, v5: s.slot })}</small></span><a href="${_attr(p.productUrl||p.sourceUrl)}" target="_blank" rel="noreferrer">${_t("text.0314")}</a></div>`;}).join('')}</div>
+    <div class="ex-products">${usedSlots.map((s) => {const p = s.product,n = plan.parts.filter((x) => x.slot === s.slot).length;return `<div class="ex-p"><i style="--c:${p.hex}"></i><span><b>${esc(p.brand)} · ${esc(p.series)} · ${esc(_label(p.name))}</b><small>${_t('filament.slot',{code:p.colorCode||p.skus?.[0]||'—',count:n,slot:s.slot})}</small></span><a href="${_attr(p.productUrl||p.sourceUrl)}" target="_blank" rel="noreferrer">${_t("text.0314")}</a></div>`;}).join('')}</div>
     <details class="ex-parts"><summary>${_t("text.0318")}</summary><table><thead><tr><th>${_t("text.0319")}</th><th>${_t("text.0315")}</th><th>${_t("text.0243")}</th><th>${_t("text.0320")}</th></tr></thead><tbody>${plan.parts.map((p) => `<tr><td>${p.plate}</td><td>${p.id} ${esc(_label(p.name))}</td><td>${esc(productLabel(p.product))}</td><td>${p.slot}</td></tr>`).join('')}</tbody></table></details>
     <ul class="ex-notes">${plan.warnings.map((w) => `<li>${esc(_label(w))}</li>`).join('')}</ul>
     <div class="sheet-foot"><button class="ghost-btn" id="dl-bom">${_t("text.0321")}</button><button class="primary" id="dl-3mf">${_t("text.0322")}</button></div><p class="ex-status" id="ex-status"></p>`;
@@ -801,8 +802,8 @@ async function download3MF() {
 }
 function nearestBambu(hex, kind) {return catalog.products.filter((p) => brandId(p)==='bambu'&&compatibleProduct(kind==='TPU'?'TPU 90A':'PLA Basic',p)).map((p) => [p, deltaE(hex, p.hex)]).sort((x, y) => x[1] - y[1])[0][0];}
 function downloadBOM() {
-  const rows = [[_t("text.0326"), _t("text.0319"), _t("text.0327"), _t("text.0328"), _t("text.0329"), _t("text.0330"), _t("text.0331"), _t("text.0332"), _t("text.0333"), _t("text.0334"), _t("text.0335"), _t("text.0336"), _t("text.0337"), _t("text.0338")], ...plan.parts.map((p) => [p.id, p.plate, _label(p.name), p.originalName, p.product.series, p.product.brand, _label(p.product.name), p.product.colorCode, p.product.diameter, p.product.hex, p.slot, p.product.preset, p.product.productUrl, p.uuid])];
-  const csv = '﻿' + rows.map((r) => r.map((v) => '"' + String(v).replaceAll('"', '""') + '"').join(',')).join('\r\n'),a = document.createElement('a');a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));a.download = 'XGO-Duck-' + name + '-BOM.csv';a.click();$('#ex-status').textContent = _t("text.0339");
+  const rows=[[_t('text.0326'),_t('text.0319'),_t('text.0327'),_t('text.0328'),_t('text.0329'),_t('text.0330'),_t('filament.series'),_t('text.0331'),_t('text.0332'),'SKU',_t('filament.productId'),_t('text.0333'),_t('text.0334'),_t('filament.multiColours'),_t('text.0335'),_t('filament.profile'),_t('text.0337'),_t('text.0338')],...materialRows(plan,_label)];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csvText(rows)],{type:'text/csv;charset=utf-8'}));a.download = 'XGO-Duck-' + name + '-BOM.csv';a.click();$('#ex-status').textContent = _t("text.0339");
 }
 $$('dialog [data-close]').forEach((b) => b.onclick = () => b.closest('dialog').close());
 

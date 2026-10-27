@@ -18,3 +18,10 @@ test('soft parts keep their specified hardness across brands',()=>{
 test('unverified swatches and support materials are not printable part choices',()=>{
  for(const patch of [{hex:null},{selectable:false},{demo:true},{material:'SUPPORT'}])assert.equal(compatibleProduct('PLA Basic',{...product,...patch}),false);
 });
+test('BOM rows preserve series, missing codes, all SKUs and all published colours',async()=>{
+ const {materialRows,csvText}=await import('../frontend/lib/filaments.mjs');
+ const p={...product,colorCode:null,skus:['S1','S2'],colors:['#123456','#FEDCBA'],sourceUrl:'https://example.test/official'};
+ const rows=materialRows({parts:[{id:'part',plate:2,name:'Part',originalName:'part.stl',slot:5,uuid:'uuid',product:p}],slots:[{slot:5,profile:{name:'Generic PLA-CF'}}]});
+ assert.deepEqual(rows[0],['part',2,'Part','part.stl','PLA','Sample Maker','PLA-CF','Sample blue','','S1 | S2','sample-cf','','#123456','#123456 #FEDCBA',5,'Generic PLA-CF','https://example.test/official','uuid']);
+ assert.equal(csvText([['a"b',null]]),'\ufeff"a""b",""');
+});

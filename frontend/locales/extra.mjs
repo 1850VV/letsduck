@@ -29,3 +29,26 @@ const serverMessages={
  hi:['निर्यात की कतार व्यस्त है। थोड़ी देर बाद फिर कोशिश करें।','पृष्ठों की सीमा अमान्य है।']
 };
 for(const [code,[busy,pagination]]of Object.entries(serverMessages))Object.assign(extra[code],{'error.export.busy':busy,'error.request.pagination':pagination});
+const filamentLabels={
+ 'zh-Hans':['系列','搜索颜色、色号或 SKU','{count} 条配色 · 厂商官方色值','厂商 ↗','硬质部件'],
+ 'zh-Hant':['系列','搜尋顏色、色號或 SKU','{count} 條配色 · 廠商官方色值','廠商 ↗','硬質零件'],
+ en:['Series','Search colour, code or SKU','{count} colours · official manufacturer values','Manufacturer ↗','Rigid parts'],
+ ja:['シリーズ','色・色番号・SKU を検索','{count} 色 · メーカー公式値','メーカー ↗','硬質パーツ'],
+ ko:['시리즈','색상, 색상 코드 또는 SKU 검색','{count}개 색상 · 제조사 공식 색상값','제조사 ↗','경질 부품'],
+ fr:['Gamme','Chercher couleur, code ou SKU','{count} couleurs · valeurs officielles','Fabricant ↗','Pièces rigides'],
+ de:['Serie','Farbe, Farbcode oder SKU suchen','{count} Farben · offizielle Herstellerwerte','Hersteller ↗','Starre Teile'],
+ es:['Serie','Buscar color, código o SKU','{count} colores · valores oficiales','Fabricante ↗','Piezas rígidas'],
+ 'pt-BR':['Série','Buscar cor, código ou SKU','{count} cores · valores oficiais','Fabricante ↗','Peças rígidas'],
+ ru:['Серия','Поиск цвета, кода или SKU','{count} цветов · данные производителя','Производитель ↗','Жёсткие детали'],
+ ar:['السلسلة','البحث باللون أو الرمز أو SKU','{count} لون · قيم الشركة الرسمية','الشركة ↗','قطع صلبة'],
+ hi:['सीरीज़','रंग, कोड या SKU खोजें','{count} रंग · निर्माता के आधिकारिक मान','निर्माता ↗','कठोर भाग']
+};
+for(const [locale,labels]of Object.entries(filamentLabels))Object.assign(extra[locale],Object.fromEntries(['series','search','colours','source','rigid'].map((key,i)=>['filament.'+key,labels[i]])));
+const filamentExportLabels={
+ 'zh-Hans':['耗材编号','多色色值','打印预设'],'zh-Hant':['耗材編號','多色色值','列印預設'],en:['Product ID','All colour values','Print preset'],ja:['製品 ID','すべての色値','印刷プリセット'],ko:['제품 ID','전체 색상값','출력 프리셋'],fr:['Identifiant produit','Toutes les couleurs','Préréglage'],de:['Produkt-ID','Alle Farbwerte','Druckprofil'],es:['ID de producto','Todos los colores','Perfil de impresión'],'pt-BR':['ID do produto','Todas as cores','Perfil de impressão'],ru:['ID материала','Все значения цветов','Профиль печати'],ar:['معرف المنتج','جميع قيم الألوان','إعداد الطباعة'],hi:['उत्पाद ID','सभी रंग मान','प्रिंट प्रीसेट']
+};
+for(const [locale,labels]of Object.entries(filamentExportLabels))Object.assign(extra[locale],Object.fromEntries(['productId','multiColours','profile'].map((key,i)=>['filament.'+key,labels[i]])));
+const filamentSlot={
+ 'zh-Hans':'{code} · {count} 个零件 · 槽 {slot}','zh-Hant':'{code} · {count} 個零件 · 槽 {slot}',en:'{code} · {count} parts · slot {slot}',ja:'{code} · {count} パーツ · スロット {slot}',ko:'{code} · 부품 {count}개 · 슬롯 {slot}',fr:'{code} · {count} pièces · emplacement {slot}',de:'{code} · {count} Teile · Slot {slot}',es:'{code} · {count} piezas · ranura {slot}','pt-BR':'{code} · {count} peças · posição {slot}',ru:'{code} · {count} деталей · слот {slot}',ar:'{code} · {count} قطع · خانة {slot}',hi:'{code} · {count} भाग · स्लॉट {slot}'
+};
+for(const [locale,label]of Object.entries(filamentSlot))extra[locale]['filament.slot']=label;

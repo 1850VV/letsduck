@@ -10,3 +10,8 @@ export function compatibleProduct(material,product){
 export function brandId(product){return product.brandId||({'Bambu Lab':'bambu',eSUN:'esun',Polymaker:'polymaker',SUNLU:'sunlu'}[product.brand])||String(product.brand||'').toLowerCase().replace(/[^a-z\d]+/g,'-');}
 export function productLabel(product){return [product.brand,product.series,product.name,product.colorCode||product.skus?.[0]].filter(Boolean).join(' · ');}
 export function seriesProducts(products,brand,material,series=''){return [...products].filter(p=>brandId(p)===brand&&compatibleProduct(material,p)&&(!series||p.series===series));}
+
+export function materialRows(report,label=value=>value){
+ return report.parts.map(p=>{const v=p.product,profile=report.slots.find(s=>s.slot===p.slot)?.profile;return [p.id,p.plate,label(p.name),p.originalName,v.material,v.brand,v.series,v.name,v.colorCode||'',(v.skus||[]).join(' | '),v.id,v.diameter??'',v.hex,(v.colors||[v.hex]).join(' '),p.slot,profile?.status==='unavailable'?'':profile?.name||v.preset||'',v.productUrl||v.sourceUrl||'',p.uuid];});
+}
+export function csvText(rows){return '\ufeff'+rows.map(row=>row.map(value=>'"'+String(value??'').replaceAll('"','""')+'"').join(',')).join('\r\n');}
