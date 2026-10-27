@@ -27,6 +27,8 @@ __pycache__/
 *.pyc
 .venv/
 node_modules/
+dist/
+*.tsbuildinfo
 .playwright-cli/
 /output/
 /outputs/

@@ -23,6 +23,17 @@ jobs:
       DUCK_TEST_DATABASE_URL: mysql+pymysql://root:ci-test-password@127.0.0.1:3306/duck_test_ci?charset=utf8mb4
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked TypeScript workspace dependencies
+        run: npm ci
+      - name: Strict TypeScript workspace and isolated tooling contracts
+        run: |
+          npm run typecheck
+          npm run test:typescript
+          npm run probe:runtime
       - name: Personal edition with no third-party packages installed
         run: |
           python3 -I -m unittest discover -s tests -p test_personal.py -v
