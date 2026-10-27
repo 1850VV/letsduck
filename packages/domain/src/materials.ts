@@ -7,7 +7,7 @@ export function selectable(product: Partial<FilamentProduct>): boolean {
   return !truthy(product.demo) && product.selectable !== false && /^#[\p{Nd}a-f]{6}$/iu.test(string(product.hex || ''));
 }
 export function compatibleProduct(material: string, product: Partial<FilamentProduct> | null | undefined): boolean {
-  if (!product || !selectable(product) || product.role === 'support' || /support|支撑|支撐/i.test(product.series || '')) return false;
+  if (!product || !selectable(product) || product.role === 'support' || /support|支撑|支撐/iu.test(product.series || '')) return false;
   const family = product.material || (product.series || '').split(/[ -]/)[0] || '';
   return string(material).startsWith('TPU') ? family === 'TPU' && !!hardness(material) && hardness(product.hardness || product.series) === hardness(material) : rigid.has(family);
 }

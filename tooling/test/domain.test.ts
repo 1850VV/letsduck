@@ -15,6 +15,9 @@ const cases: { op: string; args: unknown[] }[] = [
   { op: 'validateDesign', args: [design, ['p']] },
   { op: 'validateDesign', args: [{ ...design, colors: { p: '#FFFFFF\n' } }, ['p']] },
   { op: 'compatibleProduct', args: ['PLA Basic', { ...product, hex: '#123456\n' }] },
+  ...[[], {}].map(value => ({ op: 'validateDesign', args: [{ ...design, finishes: { p: value } }, ['p']] })),
+  ...['\u001c12', '\u001d12', '\u001e12', '\u001f12', '12\u001c', '\u008512\u3000'].map(voiceSalt => ({ op: 'schemeValues', args: ['s', { name: 'n', design, voiceSalt }, ['p']] })),
+  { op: 'compatibleProduct', args: ['PLA Basic', { ...product, series: 'ſupport PLA' }] },
   ...[null, [], {}, { colors: {}, assignments: null }, { colors: { p: '#FFFFFF' }, assignments: {} }, { ...design, colors: { p: '#fff' } }, { ...design, colors: { p: 123 } }, { ...design, assignments: { p: 1 } }, { ...design, assignments: { p: '🦆'.repeat(81) } }, { ...design, finishes: ['basic'] }, { ...design, finishes: { p: 'gloss' } }].map(value => ({ op: 'validateDesign', args: [value, ['p']] })),
   ...[null, false, 0, '', []].map(finishes => ({ op: 'validateDesign', args: [{ ...design, finishes }, ['p']] })),
   { op: 'validateDesign', args: [{ ...design, assignments: { p: '🦆'.repeat(80) } }, ['p']] },
@@ -85,6 +88,49 @@ test('the shared error payload retains codes and parameters supplied by adapters
   const d = required();
   const error = Object.assign(new Error('offline'), { code: 'device.offline', params: { v0: 'board' } });
   assert.deepEqual(d.errorPayload(error), { error: 'offline', code: 'device.offline', params: { v0: 'board' } });
+});
+
+test('raw numeric JSON preserves Python text coercion and exact integer identity', () => {
+  const d = required();
+  const tokens = ['1.0', '1e16', '1e20', '1e21', '1e-5', '1e-7', '-0.0', '-0', '9007199254740993', '-9007199254740993', '[1.0,9007199254740993]', '{"n":1e16}'];
+  const raw = tokens.map(token => '{"name":' + token + ',"design":{"colors":{"p":"#FFFFFF"},"assignments":{"p":null}},"voiceSalt":9007199254740993}');
+  const python = process.env.PYTHON || (existsSync(resolve(root, '.venv/bin/python')) ? resolve(root, '.venv/bin/python') : 'python3');
+  const code = `import json,sys\nsys.path.insert(0,'backend')\nfrom rules import scheme_values\nfrom errors import payload\nout=[]\nfor raw in json.load(sys.stdin):\n try:\n  v=scheme_values('s',json.loads(raw),['p']);out.append({'value':{'name':v['name'],'voiceSalt':str(v['voiceSalt'])}})\n except Exception as e:out.append({'failure':payload(e)})\nprint(json.dumps(out))`;
+  const run = spawnSync(python, ['-I', '-c', code], { cwd: root, input: JSON.stringify(raw), encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(typeof d.parseWireJson, 'function', 'The numeric input boundary is missing');
+  const expected = JSON.parse(run.stdout);
+  for (const [index, source] of raw.entries()) {
+    const data: unknown = d.parseWireJson(source);
+    assert.ok(data && typeof data === 'object' && !Array.isArray(data));
+    let result: unknown;
+    try { const value = d.schemeValues('s', data, ['p']); result = { value: { name: value.name, voiceSalt: String(value.voiceSalt) } }; }
+    catch (error) { result = { failure: d.errorPayload(error) }; }
+    assert.deepEqual(result, expected[index], source);
+  }
+});
+
+test('integer parsing rejects Python strip-only control separators', () => {
+  const d = required();
+  for (const voiceSalt of ['\u001c12', '\u001d12', '\u001e12', '\u001f12', '12\u001c']) {
+    assert.throws(() => d.schemeValues('s', { name: 'n', design, voiceSalt }, ['p']), error => {
+      assert.equal(d.errorPayload(error).code, 'request.invalid');
+      assert.match(d.errorPayload(error).error, /invalid literal for int/); return true;
+    });
+  }
+});
+
+test('an already rounded native integer cannot silently become a stored voice identity', () => {
+  assert.throws(() => required().schemeValues('s', { name: 'n', design, voiceSalt: 9007199254740992 }, ['p']), /precision|parseWireJson/i);
+});
+
+test('nested malformed finishes preserve the generic TypeError category', () => {
+  const d = required();
+  for (const value of [[], {}]) assert.throws(() => d.validateDesign({ ...design, finishes: { p: value } }, ['p']), TypeError);
+});
+
+test('Unicode case folding excludes the same support products as Python', () => {
+  assert.equal(required().compatibleProduct('PLA Basic', { ...product, series: 'ſupport PLA' }), false);
 });
 
 test('shared device definitions exactly preserve current mapping and unresolved lead requirements', () => {

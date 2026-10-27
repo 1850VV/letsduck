@@ -1,10 +1,13 @@
 /** JSON-value conversions at the existing Python business-rule boundary. */
+import { JsonNumericValue, numericString, readJsonField } from './wire-json.js';
+
 export function truthy(value: unknown): boolean {
+  if (value instanceof JsonNumericValue) return value.value !== 0;
   if (Array.isArray(value)) return value.length > 0;
   if (value && typeof value === 'object') return Object.keys(value).length > 0;
   return Boolean(value);
 }
-export const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
+export const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof JsonNumericValue);
 export const strip = (value: string) => value.replace(/^[\t-\r\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\t-\r\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/gu, '');
 
 function repr(value: unknown): string {
@@ -21,20 +24,27 @@ function repr(value: unknown): string {
   }).join('') + quote;
 }
 export function string(value: unknown): string {
+  if (value instanceof JsonNumericValue) return numericString(value);
   if (value === null || value === undefined) return 'None';
   if (typeof value === 'boolean') return value ? 'True' : 'False';
   if (typeof value === 'number' && value !== 0 && Math.abs(value) < 0.0001) return value.toExponential().replace(/e([+-])(\d)$/, 'e$10$2');
-  if (Array.isArray(value)) return '[' + value.map(repr).join(', ') + ']';
-  if (record(value)) return '{' + Object.entries(value).map(([key, item]) => repr(key) + ': ' + repr(item)).join(', ') + '}';
+  if (Array.isArray(value)) return '[' + value.map((_item, index) => repr(readJsonField(value, String(index)))).join(', ') + ']';
+  if (record(value)) return '{' + Object.keys(value).map(key => repr(key) + ': ' + repr(readJsonField(value, key))).join(', ') + '}';
   return String(value);
 }
 export function integer(value: unknown): number | bigint {
+  const fromWire = value instanceof JsonNumericValue;
+  if (value instanceof JsonNumericValue) value = value.isInteger ? BigInt(value.source) : value.value;
   if (!truthy(value)) return 0;
   let result: bigint;
   if (typeof value === 'bigint') result = value;
   else if (typeof value === 'boolean') result = 1n;
-  else if (typeof value === 'number' && Number.isFinite(value)) result = BigInt(Math.trunc(value));
-  else if (typeof value === 'string' && /^[+-]?\p{Nd}(?:_?\p{Nd})*$/u.test(strip(value))) {
+  else if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error('cannot convert float infinity to integer');
+    if (!Number.isSafeInteger(Math.trunc(value)) && !fromWire) throw new Error('Numeric precision is unavailable; use parseWireJson at the input boundary');
+    result = BigInt(Math.trunc(value));
+  }
+  else if (typeof value === 'string' && !/[\u001c-\u001f]/u.test(value) && /^[+-]?\p{Nd}(?:_?\p{Nd})*$/u.test(strip(value))) {
     const digits = Array.from(strip(value).replaceAll('_', ''), char => {
       if (char === '+' || char === '-') return char;
       const point = char.codePointAt(0)!; let zero = point;

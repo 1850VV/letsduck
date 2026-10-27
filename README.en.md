@@ -107,6 +107,8 @@ The TypeScript workspace uses Node 24.20+ (24.x), with `packages/` and `tooling/
 
 `@letsduck/contracts` supplies JSON Schema, inferred types and device mappings. `@letsduck/domain` supplies design, scheme, filament compatibility and print-profile rules. Both packages work in browsers. Differential cases compare the shared rules with the current Python implementation; later migration batches connect the existing pages.
 
+Request adapters use `parseWireJson` to retain numeric source information before passing the decoded object to shared rules. Large integers remain `bigint`, preserving Python-style name conversion and `voiceSalt` without rounding them during ordinary JSON decoding.
+
 ```sh
 npm ci
 npm run build

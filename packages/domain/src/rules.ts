@@ -1,5 +1,6 @@
-import type { ApiError, Design, Finish, SchemeInput } from '@letsduck/contracts';
+import type { ApiError, Design, Finish } from '@letsduck/contracts';
 import { integer, record, string, strip, truthy } from './python-values.js';
+import { pythonType, readJsonField } from './wire-json.js';
 
 export class LocalizedError extends Error {
   constructor(message: string, readonly code = 'request.invalid', readonly params: Record<string, unknown> = {}) { super(message); }
@@ -27,6 +28,7 @@ export function validateDesign(input: unknown, partIds: Iterable<string> = []): 
   const rawFinishes = truthy(input.finishes) ? input.finishes : {};
   if (!record(rawFinishes)) throw new Invalid('质感格式不对', 'validation.3');
   for (const [id, value] of Object.entries(rawFinishes)) {
+    if (Array.isArray(value) || record(value)) throw new TypeError("unhashable type: '" + (Array.isArray(value) ? 'list' : 'dict') + "'");
     if (!finish(value)) throw new Invalid('质感格式不对', 'validation.3');
     if (colors.has(id)) finishes.set(id, value);
   }
@@ -37,7 +39,8 @@ export function text(value: unknown, limit: number, field: string, required = tr
   if (required && !result) throw new Invalid(field + '不能为空', 'validation.4', { v0: field });
   return Array.from(result).slice(0, limit).join('');
 }
-export function schemeValues(id: unknown, data: SchemeInput, partIds: Iterable<string> = []) {
+export function schemeValues(id: unknown, data: unknown, partIds: Iterable<string> = []) {
   if (typeof id !== 'string' || Array.from(id).length < 1 || Array.from(id).length > 64) throw new Invalid('方案编号不对', 'validation.9');
-  return { name: text(data.name, 40, '方案名称'), design: validateDesign(data.design, partIds), provenance: truthy(data.provenance) ? data.provenance : null, voiceSalt: integer(data.voiceSalt) };
+  if (!record(data)) throw new TypeError("'" + pythonType(data) + "' object has no attribute 'get'");
+  return { name: text(readJsonField(data, 'name'), 40, '方案名称'), design: validateDesign(data.design, partIds), provenance: truthy(data.provenance) ? data.provenance : null, voiceSalt: integer(readJsonField(data, 'voiceSalt')) };
 }
