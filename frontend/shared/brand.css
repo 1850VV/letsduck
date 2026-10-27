@@ -1,4 +1,4 @@
-/* 来做鸭 / letsduck: the one-stroke duck head with a paintbrush jaw, and the name in the system font.
+/* 来做鸭 / letsduck: the original MicroDuck full-body avatar and the name in the system font.
    Sizes and the wordmark's base style come from studio.css / gallery.css. */
 .brand{flex-shrink:0}
 .brand .wordmark small{text-transform:none;letter-spacing:.8px;font-size:10px}
