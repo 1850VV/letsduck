@@ -40,7 +40,10 @@ jobs:
           python3 -I -m unittest discover -s tests -p test_pack_geometry.py -v
           python3 -I -m compileall -q personal run.py frontend/stamp.py scripts/pack_geometry.py backend/rules.py backend/errors.py backend/exporter.py
       - name: Install pinned backend and test dependencies
-        run: python3 -m pip install -r requirements-dev.txt
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install -r requirements-dev.txt
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: Shared TypeScript contracts and Python database interoperability
         run: npm run test:typescript
       - name: Check publication boundary

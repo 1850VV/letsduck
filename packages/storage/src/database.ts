@@ -3,7 +3,9 @@ import { createPool, type Pool, type PoolConnection, type RowDataPacket } from '
 import { closeSync, existsSync, mkdirSync, openSync, realpathSync, statSync } from 'node:fs';
 import { dirname, resolve, basename, extname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { Duplex } from 'node:stream';
 import { safeInteger } from './json.js';
+import { acquireMysqlConnection, mysqlOperation } from './mysql-timeout.js';
 
 export type Cell = string | number | bigint | null;
 export type Row = Record<string, Cell>;
@@ -35,7 +37,7 @@ export function databaseTarget(target?: string): DatabaseTarget {
   }
   if (/^mysql(?:\+[^:]+)?:\/\//.test(target)) return { dialect: 'mysql', url: target.replace(/^mysql\+[^:]+:/, 'mysql:') };
   if (target === 'sqlite://' || target === ':memory:' || target === 'sqlite:///:memory:') return { dialect: 'sqlite', path: ':memory:' };
-  if (/^sqlite(?:\+[^:]+)?:\/\/\//.test(target)) target = target.replace(/^sqlite(?:\+[^:]+)?:\/\/\//, '');
+  if (/^sqlite(?:\+[^:]+)?:\/\/\//.test(target)) target = target.replace(/^sqlite(?:\+[^:]+)?:\/\/\//, '').split('?', 1)[0]!;
   else if (target.includes('://')) throw new Error('Only SQLite and MySQL are supported');
   return { dialect: 'sqlite', path: resolve(target) };
 }
@@ -99,11 +101,16 @@ function sqliteDatabase(path: string): Database {
     close() { closing = true; return closed ??= tail.then(() => { db.close(); }); },
   };
 }
+function disposeMysql(connection: PoolConnection) {
+  // mysql2.destroy() removes the pool entry but only half-closes its stream.
+  const stream: unknown = Reflect.get(connection.connection, 'stream');
+  connection.destroy(); if (stream instanceof Duplex) stream.destroy();
+}
 function mysqlConnection(connection: PoolConnection): Connection {
   return {
     dialect: 'mysql',
     async rows(sql, params = []) {
-      const [rows, fields] = await connection.execute<RowDataPacket[]>({ sql, timeout: 30_000 }, bind(params));
+      const [rows, fields] = await mysqlOperation(() => connection.execute<RowDataPacket[]>({ sql, timeout: 30_000 }, bind(params)), () => disposeMysql(connection));
       const integerFields = new Set(fields.filter(field => field.columnType === 8).map(field => field.name));
       return rows.map(row => Object.fromEntries(Object.entries(row).map(([key, value]: [string, unknown]) => {
         if (integerFields.has(key) && typeof value === 'string') return [key, safeInteger(BigInt(value))];
@@ -111,7 +118,7 @@ function mysqlConnection(connection: PoolConnection): Connection {
         throw new TypeError('Unexpected database value');
       })));
     },
-    async run(sql, params = []) { await connection.execute({ sql, timeout: 30_000 }, bind(params)); },
+    async run(sql, params = []) { await mysqlOperation(() => connection.execute({ sql, timeout: 30_000 }, bind(params)), () => disposeMysql(connection)); },
   };
 }
 function mysqlDatabase(url: string): Database {
@@ -122,11 +129,14 @@ function mysqlDatabase(url: string): Database {
     dialect: 'mysql',
     async transaction<T>(body: (connection: Connection) => Promise<T>) {
       if (closing) throw new Error('Database is closed');
-      const connection = await pool.getConnection();
+      const connection = await acquireMysqlConnection(() => pool.getConnection());
       try {
-        await connection.beginTransaction();
-        try { const result = await body(mysqlConnection(connection)); await connection.commit(); return result; }
-        catch (error) { await connection.rollback(); throw error; }
+        await mysqlOperation(() => connection.beginTransaction(), () => disposeMysql(connection));
+        try { const result = await body(mysqlConnection(connection)); await mysqlOperation(() => connection.commit(), () => disposeMysql(connection)); return result; }
+        catch (error) {
+          try { await mysqlOperation(() => connection.rollback(), () => disposeMysql(connection)); } catch { /* Preserve the original failure, including uncertain commit. */ }
+          throw error;
+        }
       } finally { connection.release(); }
     },
     async close() { closing = true; await pool.end(); },

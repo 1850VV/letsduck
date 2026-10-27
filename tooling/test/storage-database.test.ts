@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -51,4 +51,19 @@ test('database configuration and name identity retain existing paths and ASCII-o
   assert.equal(databaseTarget('mysql+pymysql://duck:example@localhost/duck_test_ci').dialect, 'mysql');
   assert.throws(() => databaseTarget('postgresql://localhost/db'), /SQLite|MySQL/);
   assert.equal(nameKey('ABCÄΣ🦆'), 'abcÄΣ🦆');
+});
+
+test('SQLite URL options reopen the existing database instead of splitting account writes', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'duck-storage-url-')), path = join(directory, 'existing.db');
+  try {
+    const original = await openDatabase(path);
+    try { await original.transaction(c => c.run('INSERT INTO users VALUES(?,?,?,?,?,?,?,?)', ['u-existing', 'Existing', '01'.repeat(16), '02'.repeat(32), '🦆', '#4d6bfe', 1, 'existing']), true); }
+    finally { await original.close(); }
+    const configured = await openDatabase('sqlite:///' + path + '?timeout=15');
+    try { assert.equal((await configured.transaction(c => c.rows('SELECT id FROM users')))[0]?.id, 'u-existing'); }
+    finally { await configured.close(); }
+    assert.equal(existsSync(path + '?timeout=15'), false);
+    assert.deepEqual(databaseTarget('sqlite:////tmp/a%20b#part.db?timeout=15'), { dialect: 'sqlite', path: '/tmp/a%20b#part.db' });
+    assert.deepEqual(databaseTarget(path + '?literal=true'), { dialect: 'sqlite', path: path + '?literal=true' });
+  } finally { rmSync(directory, { recursive: true, force: true }); }
 });
