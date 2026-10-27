@@ -103,7 +103,7 @@ docker compose up -d --build
 
 ## 开发与验证
 
-TypeScript 工作区使用 Node 24.20+（24 系列），由 `packages/` 与 `tooling/` 组成。现有 Python 运行入口和前端继续独立工作；新增工具不切换服务或迁移用户数据。
+TypeScript 工作区使用 Node 24.20+（24 系列），由 `packages/` 与 `tooling/` 组成。现有 Python 运行入口和前端继续独立工作；正常构建与测试不切换服务或迁移真实用户数据。
 
 `@letsduck/contracts` 提供 JSON Schema、由 schema 推导的类型和设备映射；`@letsduck/domain` 提供配色、方案、耗材兼容与打印预设规则。两个包均可用于浏览器。共享规则通过当前 Python 实现的差分用例验证；旧页面的接入按后续迁移批次完成。
 
@@ -120,9 +120,14 @@ npm run probe:runtime
 npm run verify:phase0
 npm run verify:phase1
 npm run verify:phase2
+npm run verify:phase3
 ```
 
 `verify:phase0` 执行新工作区检查、现有 Node/组装检查、README 的 Python 检查和公开发行扫描。Python 默认使用本仓库 `.venv`，也可用 `PYTHON` 指定解释器。`probe:runtime -- --electron /path/to/electron` 额外验证 Node 与 Electron 的 SQLite 互读回写；它不代替真实 MySQL、安装包或设备验收。
+
+`@letsduck/storage` 提供个人三表、服务器 SQLite/MySQL、账号会话与社区存储。测试使用临时 SQLite；设置 `DUCK_TEST_DATABASE_URL` 后，同一套合约也在专用 `duck_test_*` MySQL 库执行。TypeScript 测试文件按序运行，避免两个套件同时清理同一测试库。
+
+迁移命令 `npm run migrate:database -- SOURCE.db --backup COPY.db` 使用现有 `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` 配置选择目标。先保留只读源库的一致性备份，再核对全部原始字段；只接受空目标或未经修改的同一快照，不覆盖迁移后的新写入。直接使用此命令会写入配置的目标数据库，正常测试不使用个人或生产库。现有运行入口尚未切换到新存储。
 
 迁移前的行为与性能对照可在本地采集：
 

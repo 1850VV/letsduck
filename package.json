@@ -16,14 +16,16 @@
     "typecheck": "npm run build && tsc -p tooling/tsconfig.test.json --noEmit",
     "test": "npm run test:legacy && npm run test:typescript",
     "test:legacy": "node --test tests/*.mjs tests/assembly/*.test.mjs",
-    "test:typescript": "npm run build && tsx --test tooling/test/*.test.ts",
+    "test:typescript": "npm run build && tsx --test --test-concurrency=1 tooling/test/*.test.ts",
     "test:python": "tsx tooling/src/legacy-check.ts",
     "audit:publication": "tsx tooling/src/legacy-check.ts --publication",
     "probe:runtime": "tsx tooling/src/runtime-probe.ts",
     "baseline:capture": "tsx tooling/src/baseline.ts",
     "verify:phase0": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
     "verify:phase1": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
-    "verify:phase2": "npm run typecheck && npm test && npm run test:python && npm run audit:publication"
+    "verify:phase2": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
+    "verify:phase3": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
+    "migrate:database": "tsx tooling/src/migrate-database.ts"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",

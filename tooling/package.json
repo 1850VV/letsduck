@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@letsduck/contracts": "0.0.0"
+    "@letsduck/contracts": "0.0.0",
+    "@letsduck/storage": "0.0.0"
   },
   "devDependencies": {
     "@letsduck/domain": "0.0.0",

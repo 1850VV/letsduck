@@ -103,7 +103,7 @@ For public deployment, follow [deployment instructions](docs/deployment.md) for 
 
 ## Develop and verify
 
-The TypeScript workspace uses Node 24.20+ (24.x), with `packages/` and `tooling/`. Existing Python launchers and frontend remain independently usable. The new tools do not switch services or migrate user data.
+The TypeScript workspace uses Node 24.20+ (24.x), with `packages/` and `tooling/`. Existing Python launchers and frontend remain independently usable. Normal builds and tests do not switch services or migrate real user data.
 
 `@letsduck/contracts` supplies JSON Schema, inferred types and device mappings. `@letsduck/domain` supplies design, scheme, filament compatibility and print-profile rules. Both packages work in browsers. Differential cases compare the shared rules with the current Python implementation; later migration batches connect the existing pages.
 
@@ -120,9 +120,14 @@ npm run probe:runtime
 npm run verify:phase0
 npm run verify:phase1
 npm run verify:phase2
+npm run verify:phase3
 ```
 
 `verify:phase0` runs the new workspace checks, existing Node/assembly checks, the README Python checks and publication audit. Python defaults to this checkout's `.venv`; set `PYTHON` to override it. `probe:runtime -- --electron /path/to/electron` also checks SQLite interoperability between Node and Electron. It does not replace real MySQL, installed-app or hardware acceptance.
+
+`@letsduck/storage` provides the personal three-table adapter, server SQLite/MySQL, accounts, sessions and community storage. Tests use temporary SQLite files; with `DUCK_TEST_DATABASE_URL`, the same contracts also run against a disposable `duck_test_*` MySQL database. TypeScript test files run sequentially so suites cannot reset the same test database concurrently.
+
+`npm run migrate:database -- SOURCE.db --backup COPY.db` selects its destination from the existing `DUCK_DATABASE_URL` / `DUCK_DB` / `DUCK_DB_ENGINE` configuration. It retains a consistent read-only source backup and verifies every original field. It accepts only an empty target or an unchanged repeat snapshot, preserving writes made after migration. Running this command writes to the configured destination; normal tests use neither personal nor production databases. Existing launchers have not switched to the new storage.
 
 Capture the existing behavior and performance locally:
 
