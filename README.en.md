@@ -109,6 +109,8 @@ The TypeScript workspace uses Node 24.20+ (24.x), with `packages/` and `tooling/
 
 Request adapters use `parseWireJson` to retain numeric source information before passing the decoded object to shared rules. Large integers remain `bigint`, preserving Python-style name conversion and `voiceSalt` without rounding them during ordinary JSON decoding.
 
+`@letsduck/exporter` provides 3MF/BOM generation and multipart decoding. `ExportManager` defaults to one execution slot and two waiting slots. Cancelled requests retain their underlying job's capacity; `close()` drains accepted work before joining threads. Assets come from the caller's explicit local directory.
+
 ```sh
 npm ci
 npm run build
@@ -117,6 +119,7 @@ npm run test:typescript
 npm run probe:runtime
 npm run verify:phase0
 npm run verify:phase1
+npm run verify:phase2
 ```
 
 `verify:phase0` runs the new workspace checks, existing Node/assembly checks, the README Python checks and publication audit. Python defaults to this checkout's `.venv`; set `PYTHON` to override it. `probe:runtime -- --electron /path/to/electron` also checks SQLite interoperability between Node and Electron. It does not replace real MySQL, installed-app or hardware acceptance.
