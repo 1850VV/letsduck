@@ -17,6 +17,9 @@ async page=>{
  try{await waitFront('paint');}catch(error){await page.screenshot({path:'output/playwright/duck-carousel-integration/drag-failure.png'});throw Error('拖动应将来涂鸭转到C位；实际为 '+await front());}
  check('拖动换C位',await front()==='paint');check('拖动松手不打开模块',!(await page.locator('#module-window').isVisible()));
  await page.locator('[data-duck=paint]').click();check('C位进入涂装台',(await page.locator('#module-frame').getAttribute('src'))==='/paint');
+ const namesCovered=await page.evaluate(()=>[...document.querySelectorAll('#duck-labels button')].every(label=>{const r=label.getBoundingClientRect(),top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !top?.closest('#duck-labels');}));
+ if(!namesCovered)await page.screenshot({path:'output/playwright/duck-carousel-text/before.png'});
+ check('功能窗口覆盖首页名称，不留下旧文字',namesCovered);
  await page.locator('#close-module').click();check('关闭记录最近使用',await page.evaluate(()=>localStorage.getItem('letsduck.duck-hub.v1'))==='paint');
  await home();await waitFront('paint');check('刷新保留最近使用C位',await front()==='paint');
  await page.locator('[data-duck=debug]').click();await waitFront('debug');check('侧鸭点击只转到前面',!(await page.locator('#module-window').isVisible()));
