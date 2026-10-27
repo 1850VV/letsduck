@@ -47,6 +47,13 @@ test('share links round-trip, carry the name and reject other models or broken d
  assert.throws(()=>decodeLook(parts,products,look.replace(/\.[0-9a-z]{35}/,'.000')),/零件数量/);
  assert.throws(()=>encodeLook(parts,products,{...assignments,'P2-06':null}),/匹配实际耗材/);
 });
+test('cross-brand share links preserve exact product IDs with duplicate vendor colour codes',()=>{
+ const custom=new Map(products),one={id:'example-a',brand:'Example A',series:'PLA-CF',material:'PLA',name:'Sample A',colorCode:'1',hex:'#123456'},two={...one,id:'example-b',brand:'Example B',name:'Sample B',hex:'#654321'};
+ custom.set(one.id,one);custom.set(two.id,two);
+ const {assignments}=quickDesign(parts,products,themeSlots(products,THEMES[0]),'经典');assignments['P4-01']=one.id;assignments['P2-03']=two.id;
+ const encoded=encodeLook(parts,custom,assignments,'Real materials');
+ assert.ok(encoded.startsWith('v2.'));assert.deepEqual(decodeLook(parts,custom,encoded).assignments,assignments);
+});
 test('notes count filaments and warn about near-identical neighbours',()=>{
  const slots=themeSlots(products,THEMES[0]),{colors,assignments}=quickDesign(parts,products,slots,'经典');
  assert.equal(designNotes(colors,assignments).count,4);

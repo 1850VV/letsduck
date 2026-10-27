@@ -1,5 +1,6 @@
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // These regions describe this exact XGO Duck V2 project, not arbitrary imported meshes.
 import { sideParts } from './color-workflows.mjs';
+import {compatibleProduct} from './filaments.mjs';
 export const SOURCE = '731b5be439edd589d2c46330e4ed8c9bc3bd6d4ddcb7bebbc02026a6a740c58c';
 export let ZONES = [
 { id: 'head-shell', get name() {return _t("text.0561");}, get note() {return _t("text.0562");}, ids: ['P4-01', 'P2-01', 'P2-02'] },
@@ -22,7 +23,7 @@ export function schemePatch(parts, ids, locked, design, products) {
     if (!/^#[\da-f]{6}$/i.test(color)) throw Error(_t("text.0577"));
     const p = parts.find((p) => p.id === id),product = products.get(design.assignments?.[id]);
     colors[id] = color.toUpperCase();
-    assignments[id] = product?.series === p.material && product.hex.toUpperCase() === colors[id] ? product.id : null;
+    assignments[id] = compatibleProduct(p.material,product) && product.hex.toUpperCase() === colors[id] ? product.id : null;
   }
   return { colors, assignments };
 }

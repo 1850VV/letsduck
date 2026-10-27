@@ -1,3 +1,4 @@
+import {compatibleProduct} from './filaments.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // Shared selection rules keep every workflow on the same material-bound design.
 export const WORKFLOWS = { get project() {return _t("text.0578");}, get paint() {return _t("text.0579");}, get context() {return _t("text.0580");} };
 export function groupPalette(parts, colors, assignments) {
@@ -42,7 +43,7 @@ export function validDesign(value, parts, products) {
   for (const p of parts) {
     colors[p.id] = value.colors[p.id].toUpperCase();
     const product = products.get(value.assignments?.[p.id]);
-    assignments[p.id] = product?.series === p.material && product.hex.toUpperCase() === colors[p.id] ? product.id : null;
+    assignments[p.id] = compatibleProduct(p.material,product) && product.hex.toUpperCase() === colors[p.id] ? product.id : null;
   }
   return { colors, assignments };
 }
@@ -74,7 +75,7 @@ export function createWorkflowUI(api) {
       recent = Array.isArray(stored.recent) ? stored.recent.filter((id) => s.products.has(id)).slice(0, 10) : [];
       if (stored.held && /^#[\da-f]{6}$/i.test(stored.held.color) && s.parts.some((p) => p.material === stored.held.material)) {
         const product = s.products.get(stored.held.productId);
-        held = { color: stored.held.color.toUpperCase(), material: stored.held.material, productId: product?.series === stored.held.material && product.hex === stored.held.color.toUpperCase() ? product.id : null };
+        held = { color: stored.held.color.toUpperCase(), material: stored.held.material, productId: compatibleProduct(stored.held.material,product) && product.hex === stored.held.color.toUpperCase() ? product.id : null };
       }
     }
   } catch {restoreWarning = '自定义方案存储暂时无法读取。';}
@@ -131,7 +132,7 @@ export function createWorkflowUI(api) {
     if (!/^#[\da-f]{6}$/i.test(color)) {api.toast('请输入六位颜色值，例如 #4D6BFE');return;}
     const a = state(),product = a.products.get(productId),mat = material();
     if (!mat) return api.toast('请先选择零件或项目色组');
-    if (productId && product?.series !== mat) return api.toast('此耗材与当前材料不匹配');
+    if (productId && !compatibleProduct(mat,product)) return api.toast('此耗材与当前材料不匹配');
     if (workflow === 'paint') {
       const match = product || a.catalog.products.find((p) => p.series === mat && p.hex === color.toUpperCase());
       held = { color: color.toUpperCase(), material: mat, productId: match?.id || null };tool = 'paint';remember(held.productId);api.refresh();commit();api.toast('已拿起颜色，连续点击模型或零件列表即可上色');

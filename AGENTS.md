@@ -4,6 +4,7 @@ This public source repository is separate from any private deployment or origina
 
 - Preserve user changes. Stage owned paths explicitly, never broad-add an unreviewed folder.
 - UI changes require a reviewable prototype and approval of its version/scope before implementation. Do not repeat approval for an already accepted scope.
+- After UI changes, exercise a basic user journey through the real entry and container, including homepage iframes. Test native dropdown opening, mouse/keyboard selection, cancel/reopen and focus. Programmatic `selectOption()` or value changes do not prove those interactions. Run relevant browser checks from README and state any coverage gaps.
 - Run README checks appropriate to each change. Report technical checks separately from human visual/interaction acceptance.
 - Never force-add ignored model, catalog, schema, screenshot, archive or browser files. Original code licensing does not grant model redistribution rights.
 - README screenshots and GIFs live only in `docs/media/` (owner-approved 2026-10-23; they show the separately licensed model, not MIT). Keep each file at most 3 MB, use sample data only, and keep the publication audit passing.

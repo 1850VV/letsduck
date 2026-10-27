@@ -32,3 +32,8 @@ test('incomplete source theme fails before any patch can be committed',()=>{
  assert.throws(()=>schemePatch(parts,['P2-03','P4-01'],[],{colors,assignments:baseline.assignments},products));
  assert.equal(baseline.colors['P2-03'],'#0056B8');
 });
+test('applying a saved cross-brand design retains its product binding',()=>{
+ const product={id:'sample-cf',brand:'Sample',series:'PLA-CF',material:'PLA',hex:'#123456'};
+ const design={colors:{...baseline.colors,'P4-01':product.hex},assignments:{...baseline.assignments,'P4-01':product.id}};
+ assert.equal(schemePatch(parts,['P4-01'],[],design,new Map([...products,[product.id,product]])).assignments['P4-01'],product.id);
+});

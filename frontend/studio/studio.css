@@ -518,3 +518,8 @@ body[data-edition="personal"] .panel-foot.finish .save-mine{flex:1}
   .sw-replace,.sm-act{opacity:1}
   .chip-rep{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
 }
+.filament-series{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);margin:9px 0}.filament-series select{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;background:#f8faff;padding:7px 9px;color:var(--ink);font:inherit}.filament-search{display:flex;width:100%;margin:0 0 8px;border:1px solid var(--line);border-radius:8px;padding:0 9px}.filament-search input{min-width:0;width:100%;border:0;background:transparent;padding:7px;font-size:11px;outline:none}.filament-count{font-size:10px;color:var(--muted);margin:1px 0 9px}.pane-filament .brand-row button{flex:1}.hover-info a{font-size:10px;color:var(--blue);text-decoration:none;margin-left:auto;white-space:nowrap}
+
+.pane-filament .brand-row>button{flex:1 1 0;min-width:0;padding:6px 4px;font-size:10px;white-space:nowrap}.filament-series{margin:2px 0}.filament-search{margin-bottom:0}.filament-count{margin:0}
+
+@media(max-width:700px){.dock-body.fit .pane-filament .brand-row{display:flex!important;min-height:28px;flex-shrink:0}}

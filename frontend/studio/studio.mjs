@@ -1,3 +1,4 @@
+import {compatibleProduct,brandId,productLabel,seriesProducts,materialRows,csvText} from '../lib/filaments.mjs';
 import {hoverQueue} from '../shared/hover-queue.mjs';
 import { message as _message } from "../shared/i18n.mjs";import { escapeAttribute as _attr } from "../shared/i18n.mjs";import { bindTranslations, errorText, relativeTime } from '../shared/i18n.mjs';
 import { t as _t, label as _label, onLocale as _onLocale } from "../shared/i18n.mjs"; // 涂装台: one stage, three steps (style → refine → showcase), plus schemes, A/B compare, group replace, close-up, arrange, colour finder, plates check,
@@ -44,25 +45,19 @@ const ORIGINAL = { colors: Object.fromEntries(parts.map((p) => [p.id, p.color.to
 // Bambu Lab is the official colour-table snapshot. The other brands are placeholder swatches for
 // prototyping the flow only: names and hex values are NOT checked against any manufacturer, and none
 // of them offers the original TPU 90A, so soft pads stay Bambu or free colour.
-let DEMO_BRANDS = [
-{ id: 'esun', name: 'eSUN', series: 'PLA+', colors: [[_t("text.0001"), '#F3EFE2'], [_t("text.0002"), '#1D1D1F'], [_t("text.0003"), '#8B8F95'], [_t("text.0004"), '#D3262D'], [_t("text.0005"), '#F07A22'], [_t("text.0006"), '#F5D42C'], [_t("text.0007"), '#4CA848'], [_t("text.0008"), '#8ED3B4'], [_t("text.0009"), '#4DA2DA'], [_t("text.0010"), '#1F3E8C'], [_t("text.0011"), '#6A3E9E'], [_t("text.0012"), '#F1A2BC']] },
-{ id: 'polymaker', name: 'Polymaker', series: 'PolyTerra PLA', colors: [[_t("text.0013"), '#ECE8DF'], [_t("text.0014"), '#2A2A2C'], [_t("text.0015"), '#9C9A93'], [_t("text.0016"), '#B53A2F'], [_t("text.0017"), '#E0813D'], [_t("text.0018"), '#E9C65A'], [_t("text.0019"), '#4F7A4A'], [_t("text.0020"), '#7FA9C9'], [_t("text.0021"), '#2C3E66'], [_t("text.0022"), '#A893C4'], [_t("text.0023"), '#D88A97'], [_t("text.0024"), '#A26A42']] },
-{ id: 'sunlu', name: 'SUNLU', series: 'PLA', colors: [[_t("text.0025"), '#F7F7F5'], [_t("text.0026"), '#161616'], [_t("text.0027"), '#B7B9BC'], [_t("text.0028"), '#E0242B'], [_t("text.0029"), '#F68A1E'], [_t("text.0030"), '#FBD11B'], [_t("text.0031"), '#79C043'], [_t("text.0032"), '#1E9FD0'], [_t("text.0033"), '#2350B4'], [_t("text.0034"), '#7A3FB0'], [_t("text.0035"), '#F27AA6'], [_t("text.0036"), '#DDE6EA']] }];
-
-DEMO_BRANDS[1].finish = 'matte';
-for (const b of DEMO_BRANDS) b.colors.forEach(([n, hex], i) => products.set(`demo-${b.id}-${i}`, { id: `demo-${b.id}-${i}`, brand: b.name, series: b.series, material: 'PLA', get colorCode() {return _t("text.0037");}, get name() {return DEMO_BRANDS.find((x) => x.id === b.id).colors[i][0];}, hex, demo: true, finish: b.id === 'sunlu' && i === 11 ? 'translucent' : b.finish }));
-let BRANDS = [{ id: 'bambu', get short() {return _t("text.0038");} }, ...DEMO_BRANDS.map((b) => ({ id: b.id, short: b.name, demo: true }))];
+const BRANDS=[{id:'bambu',get short(){return _t('text.0038');}},{id:'esun',short:'eSUN'},{id:'polymaker',short:'Polymaker'},{id:'sunlu',short:'SUNLU'}].filter(b=>catalog.products.some(p=>brandId(p)===b.id));
+let filamentSeries='PLA Basic';
 const FIN_LABEL = { get basic() {return _t("text.0039");}, get matte() {return _t("text.0040");}, get silk() {return _t("text.0041");}, get translucent() {return _t("text.0042");}, get tpu() {return _t("text.0043");} };
 // A colour on a part is a "key": a product id, or 'hex:#RRGGBB[|finish]' for a free colour with no filament yet.
 const kindOf = (p) => p.material === 'TPU' || String(p.series).startsWith('TPU') ? 'TPU' : 'PLA',partKind = (part) => part.material.startsWith('TPU') ? 'TPU' : 'PLA';
 const isHex = (k) => typeof k === 'string' && k.startsWith('hex:');
 const hexFinish = (k) => isHex(k) && k.includes('|') ? k.split('|')[1] : null;
 const keyHex = (k) => isHex(k) ? k.slice(4, 11) : products.get(k)?.hex || '#000000';
-const finishOfProduct = (p) => p.alpha < 1 || p.finish === 'translucent' ? 'translucent' : kindOf(p) === 'TPU' ? 'tpu' : p.finish || 'basic';
+const finishOfProduct = (p) => p.alpha < 1 || p.finish === 'translucent' ? 'translucent' : kindOf(p) === 'TPU' ? 'tpu' : p.finish==='carbon'?'matte':['matte','silk'].includes(p.finish)?p.finish:'basic';
 const keyFinish = (k, partId) => isHex(k) ? hexFinish(k) || (partKind(partById.get(partId)) === 'TPU' ? 'tpu' : 'basic') : finishOfProduct(products.get(k));
 const keyName = (k) => isHex(k) ? _t("text.0044", { v0: keyHex(k) }) : products.get(k)?.name || k;
-const keySub = (k) => {if (isHex(k)) {const f = hexFinish(k);return _t("text.0045", { v0: f ? FIN_LABEL[f] + ' · ' : '' });}const p = products.get(k),f = finishOfProduct(p);return (p.demo ? _t("text.0046", { v0: p.brand, v1: p.series }) : p.series + ' · ' + p.colorCode) + (f === 'matte' || f === 'silk' || f === 'translucent' ? ' · ' + FIN_LABEL[f] : '');};
-const fits = (partId, k) => isHex(k) || products.has(k) && kindOf(products.get(k)) === partKind(partById.get(partId));
+const keySub = (k) => {if (isHex(k)) {const f = hexFinish(k);return _t("text.0045", { v0: f ? FIN_LABEL[f] + ' · ' : '' });}const p = products.get(k),f = finishOfProduct(p);return [p.brand,p.series,p.colorCode||p.skus?.[0]].filter(Boolean).join(' · ') + (f === 'matte' || f === 'silk' || f === 'translucent' ? ' · ' + FIN_LABEL[f] : '');};
+const fits = (partId, k) => isHex(k) || compatibleProduct(partById.get(partId).material,products.get(k));
 const ZONE_ORDER = ZONES.flatMap((z) => z.ids);
 const clone = (x) => structuredClone(x),same = (a, b) => JSON.stringify(a.assignments) === JSON.stringify(b.assignments) && JSON.stringify(a.colors) === JSON.stringify(b.colors) && JSON.stringify(a.finishes || {}) === JSON.stringify(b.finishes || {});
 
@@ -71,7 +66,8 @@ const KEY = personal ? 'dd-studio-personal' : 'dd-studio',read = (k) => {try {re
 let saved = {};try {saved = JSON.parse(read(KEY)) || {};} catch {}
 let defaultName = !saved.draft?.name;
 let design = saved.draft?.design || clone(ORIGINAL),name = saved.draft?.name || _t("text.0047"),provenance = saved.draft?.provenance || null;
-let schemes = Array.isArray(saved.schemes) ? saved.schemes : [],owner = saved.owner || null,activeId = saved.draft?.activeId || null,recent = saved.recent || [],locks = new Set(saved.locks || []),voiceSalt = saved.draft?.voiceSalt || 0;
+for(const part of parts)if(design.assignments[part.id]&&!products.has(design.assignments[part.id]))design.assignments[part.id]=null;
+let schemes = Array.isArray(saved.schemes) ? saved.schemes : [],owner = saved.owner || null,activeId = saved.draft?.activeId || null,recent = (saved.recent || []).filter(k=>isHex(k)||products.has(k)),locks = new Set(saved.locks || []),voiceSalt = saved.draft?.voiceSalt || 0;
 const baseline = () => schemes.find((s) => s.id === activeId)?.design || ORIGINAL;
 const dirty = () => {
   const stored = personal && schemes.find(s => s.id === activeId);
@@ -351,7 +347,7 @@ function setTool(t) {
 function clearBrushHover() {if (brushHover) {brushHover = null;view.setColors(design.colors);}}
 const brushTargets = (id) => (brushMirror ? paintTargets(parts, [id], true) : [id]).filter((x) => !locks.has(x) && fits(x, brush));
 const cursorFor = (hex) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='9' fill='${hex}' stroke='white' stroke-width='3'/><circle cx='14' cy='14' r='10.5' fill='none' stroke='#141c33' stroke-width='1.2'/></svg>`)}") 14 14, crosshair`;
-const brandList = (id, kind) => (id === 'bambu' ? catalog.products : [...products.values()].filter((p) => p.demo && p.brand === DEMO_BRANDS.find((b) => b.id === id)?.name)).filter((p) => kindOf(p) === kind);
+const brandList=(id,kind)=>seriesProducts(catalog.products,id,kind==='TPU'?'TPU 90A':'PLA Basic');
 // Step 2 colour dock. Static structure renders once per selection; painting only refreshes the live parts
 // (current colour, in-use chips, selected rings), so hover, focus and scroll never jump.
 // Step 2 fits one screen: a two-line header, the tabs, and a pane with no folds or dropdowns.
@@ -363,7 +359,7 @@ function panelStep2() {
   const head = tool === 'brush' ? `<div class="panel-head compact tight brush-head"><div class="sel-line"><h2>${_t("text.0151")}</h2><div class="cur ink slim" id="brush-bar">${
   inkBar()}</div><button class="exit-brush" data-set-tool="select" title="${_attr(_t("text.0152"))}">${_t("text.0153")}</button></div>
       <div class="brush-opts"><label class="pill-check"><input type="checkbox" id="brush-mirror" ${brushMirror ? 'checked' : ''}>${_t("text.0154")}</label><div class="mini-seg" role="group" aria-label="${_attr(_t("text.0155"))}">${['PLA', 'TPU'].map((k) => `<button data-brush-kind="${k}" class="${brushKind === k ? 'on' : ''}">${k === 'PLA' ? 'PLA' : _t("text.0043")}</button>`).join('')}</div></div></div>` : `<div class="panel-head compact tight"><div class="sel-line"><h2>${
-  esc(selectionLabel())}</h2><span class="kind-tag ${kind === 'TPU' ? 'tpu' : ''}">${kind === 'TPU' ? _t("text.0043") : 'PLA'}</span>${z.id === 'face' ? `<span class="info-dot" title="${_attr(_t("text.0156"))}">i</span>` : ''}</div>
+  esc(selectionLabel())}</h2><span class="kind-tag ${kind === 'TPU' ? 'tpu' : ''}">${kind === 'TPU' ? 'TPU 90A' : _t('filament.rigid')}</span>${z.id === 'face' ? `<span class="info-dot" title="${_attr(_t("text.0156"))}">i</span>` : ''}</div>
       <div class="scope" role="group" aria-label="${_attr(_t("text.0159"))}">${scopes.map(([k, l]) => `<button class="${sel.scope === k ? 'on' : ''}" data-scope="${k}">${l}</button>`).join('')}${sel.scope === 'one' && pairOf ? `<label class="pill-check" title="${_attr(_t("text.0157", { v0: esc(partById.get(pairOf).name) }))}"><input type="checkbox" id="mirror" ${sel.mirror ? 'checked' : ''}>${_t("text.0158")}</label>` : ''}</div></div>`;
   return head + dockHTML(finishes) + `<div class="panel-foot"><button class="primary" data-go="3">${_t("text.0160")}</button></div>`;
 }
@@ -375,7 +371,10 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
         <div class="strip"><span>${_t("text.0169")} <small${tool === 'brush' ? '' : ' class="hover-hint"'}>${tool === 'brush' ? _t("text.0161") : _t("text.0162")}</small></span><button class="link-btn" id="take-open" title="${_attr(_t("text.0170"))}">${_t("text.0171")}</button></div>
         <div class="chips one-line" id="inuse-row"></div>
         <div class="take-pop" id="take-pop" hidden></div>
-        <div class="brand-row" role="group" aria-label="${_attr(_t("text.0172"))}">${BRANDS.map((b) => `<button data-brand="${b.id}" class="${source === b.id ? 'on' : ''}" title="${_attr(b.demo ? _t("text.0163") : '')}">${b.short}${b.demo ? `<sup>${_t("text.0037")}</sup>` : ''}</button>`).join('')}<label class="mini-search"><span>⌕</span><input id="search" placeholder="${_attr(_t("text.0173"))}" value="${esc(search)}" autocomplete="off"></label></div>
+        <div class="brand-row" role="group" aria-label="${_attr(_t("text.0172"))}">${BRANDS.map(b=>`<button data-brand="${b.id}" class="${source===b.id?'on':''}">${b.short}</button>`).join('')}</div>
+        <div id="series-slot"></div>
+        <label class="mini-search filament-search"><span>⌕</span><input id="search" placeholder="${_attr(_t('filament.search'))}" value="${esc(search)}" autocomplete="off"></label>
+        <div class="filament-count" id="filament-count"></div>
         <div class="grid" id="lib-grid" role="listbox" aria-label="${_attr(_t("text.0167"))}"></div>
         <div class="hover-info static" id="hover-info" aria-live="polite"></div>
       </section>
@@ -391,20 +390,24 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
       </section>
     </div>
   </div>`;}
-const matchSearch = (p) => !search || (p.name + p.colorCode + (p.nameEn || '') + (p.brand || '')).toLowerCase().includes(search.toLowerCase());
+const matchSearch = (p) => !search || [p.name,p.colorCode,p.nameEn,p.brand,p.series,...(p.skus||[])].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase());
 function buildGrid() {
-  const g = $('#lib-grid');if (!g) return;const list = brandList(source, gridKind()).filter(matchSearch);
-  g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex}" aria-label="${_attr(esc(p.name))} ${_attr(esc(p.colorCode))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
+  const g=$('#lib-grid');if(!g)return;const all=brandList(source,gridKind()),series=[...new Set(all.map(p=>p.series))];if(!series.includes(filamentSeries))filamentSeries=series[0]||'';
+  if($('#filament-series')?.dataset.seriesScope!==source+':'+gridKind())$('#series-slot').innerHTML=`<label class="filament-series"><span>${_t('filament.series')}</span><select id="filament-series" data-series-scope="${source+':'+gridKind()}" aria-label="${_attr(_t('filament.series'))}" ${series.length?'':'disabled'}>${series.map(s=>`<option value="${_attr(s)}" ${s===filamentSeries?'selected':''}>${esc(s)}</option>`).join('')}</select></label>`;
+  $$('[data-brand]').forEach(button=>button.classList.toggle('on',button.dataset.brand===source));
+  const list=all.filter(p=>p.series===filamentSeries).filter(matchSearch);$('#filament-count').textContent=_t('filament.colours',{count:list.length});
+  g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex};${p.colors?.length>1?'background:linear-gradient(135deg,'+p.colors.join(',')+')':''}" aria-label="${_attr(productLabel(p))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
   search ? _t("text.0184") : _t("text.0185")}</p>`;
   markGrid();
 }
 function markGrid() {const keys = new Set(tool === 'brush' ? [brush] : targetIds().map(keyOf)),one = keys.size === 1 ? [...keys][0] : null;$$('#lib-grid .dot').forEach((d) => d.classList.toggle('on', d.dataset.key === one));}
 const chip = (k, { count, on } = {}) => `<button class="chip ${on ? 'on' : ''} fin-${isHex(k) ? hexFinish(k) || 'basic' : finishOfProduct(products.get(k))}" data-key="${k}" style="--c:${keyHex(k)}" aria-label="${_attr(esc(keyName(k)))}">${count ? `<em>${count}</em>` : ''}</button>`;
+function productLink(k){const p=products.get(k),url=p?.productUrl||p?.sourceUrl;return url?`<a href="${_attr(url)}" target="_blank" rel="noreferrer">${_t('filament.source')}</a>`:'';}
 function hoverInfo(k) {
   const el = $('#hover-info');if (!el) return;
-  if (k) {el.innerHTML = `<i style="--c:${keyHex(k)}"></i><span><b>${esc(keyName(k))}</b><small>${esc(keySub(k))}</small></span><kbd>${_t("text.0186")}</kbd>`;el.classList.add('live');return;}
+  if (k) {el.innerHTML = `<i style="--c:${keyHex(k)}"></i><span><b>${esc(keyName(k))}</b><small>${esc(keySub(k))}</small></span>${productLink(k)}<kbd>${_t("text.0186")}</kbd>`;el.classList.add('live');return;}
   const keys = tool === 'brush' ? [brush] : [...new Set(targetIds().map(keyOf))];el.classList.remove('live');
-  el.innerHTML = keys.length === 1 && keys[0] ? `<i style="--c:${keyHex(keys[0])}"></i><span><b>${tool === 'brush' ? _t("text.0187") : _t("text.0188")}${esc(keyName(keys[0]))}</b><small>${esc(keySub(keys[0]))}${targetIds().some((id) => locks.has(id)) && tool !== 'brush' ? _t("text.0189") : ''}</small></span><kbd class="hover-hint">${_t("text.0190")}</kbd>` : `<span class="muted">${_t("text.0191", { v0: keys.length })}</span>`;
+  el.innerHTML = keys.length === 1 && keys[0] ? `<i style="--c:${keyHex(keys[0])}"></i><span><b>${tool === 'brush' ? _t("text.0187") : _t("text.0188")}${esc(keyName(keys[0]))}</b><small>${esc(keySub(keys[0]))}${targetIds().some((id) => locks.has(id)) && tool !== 'brush' ? _t("text.0189") : ''}</small></span>${productLink(keys[0])}<kbd class="hover-hint">${_t("text.0190")}</kbd>` : `<span class="muted">${_t("text.0191", { v0: keys.length })}</span>`;
 }
 function updateStep2() {
   const ids = targetIds(),keys = [...new Set(ids.map(keyOf))],one = tool === 'brush' ? brush : keys.length === 1 ? keys[0] : null,kind = gridKind();
@@ -437,7 +440,7 @@ function plateCheck() {
 }
 // Step 3: four short tabs (姿势 · 动作 · 分享 · 打印), each fits one screen; save / publish stay at the bottom.
 function panelStep3() {
-  const notes = designNotes(design.colors, design.assignments),list = used(),slotsNeeded = new Set([...Object.values(ORIGINAL.assignments), ...parts.map((p) => keyOf(p.id))]).size,code = lookCode({ ...design, name }, parts, products),okCode = code.startsWith('v1.');
+  const notes = designNotes(design.colors, design.assignments),list = used(),slotsNeeded = new Set([...Object.values(ORIGINAL.assignments), ...parts.map((p) => keyOf(p.id))]).size,code = lookCode({ ...design, name }, parts, products),okCode = /^v[12]\./.test(code);
   const pending = parts.filter((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo).length;
   const plates = [1, 2, 3, 4, 5, 6].map((n) => {const ps = parts.filter((p) => p.plate === n),ks = [...new Set(ps.map((p) => keyOf(p.id)))],tpu = ps[0].material === 'TPU 90A',warn = tpu && ks.length > 1 ? _t("text.0205") : !tpu && ks.length > 4 ? _t("text.0206") : '';return `<div class="plate ${warn ? 'warn' : ''}" title="${_attr(warn || _t("text.0207", { v0: ps.length, v1: ks.length }))}"><b>${_t("text.0208", { v2: n })}</b><span>${ks.map((k) => `<i style="--c:${keyHex(k)}"></i>`).join('')}</span><small>${_t("text.0209", { v4: ks.length, v5: tpu ? ' · TPU' : '' })}</small></div>`;}).join('');
   return `<div class="panel-head compact tight"><div class="sel-line"><h2>${_t(personal ? 'personal.show' : "text.0221")}</h2><span class="kind-tag">${_t("text.0222", { v0: notes.count, v1: notes.warnings.length ? ' · ⚠' : '' })}</span></div>${notes.warnings.length ? `<p class="lead warn-lead">⚠ ${esc(notes.warnings[0])}</p>` : ''}</div>
@@ -514,7 +517,7 @@ const lum = (hex) => {const n = parseInt(hex.slice(1), 16),f = (v) => {v /= 255;
 // so anyone who brings in the same colours hears the same duck.
 let voiceKey = '',voiceDesc = '';
 async function updateVoice() {
-  const code = lookCode({ ...design, name: '' }, parts, products, false),key = (code.startsWith('v1.') ? code : 'colors:' + parts.map((p) => keyOf(p.id)).join(',')) + (voiceSalt ? '#' + voiceSalt : '');if (key === voiceKey) return;voiceKey = key;
+  const code = lookCode({ ...design, name: '' }, parts, products, false),key = (/^v[12]\./.test(code) ? code : 'colors:' + parts.map((p) => keyOf(p.id)).join(',')) + (voiceSalt ? '#' + voiceSalt : '');if (key === voiceKey) return;voiceKey = key;
   const seed = await seedFromText(key);if (key !== voiceKey) return;actions.seed = seed;voiceDesc = describeVoice(seed);const el = $('#voice-desc');if (el) el.textContent = voiceDesc + ' · #' + seed.toString(16).padStart(8, '0');
 }
 function renderAll(lite = false) {renderHeader();renderSteps();renderRail();if (lite && step === 2 && $('#cdock')) updateStep2();else if (lite && step === 1) renderStarts();else renderPanel();renderStage();renderCompare();renderMenu();$('#undo').disabled = !undo.length;$('#redo').disabled = !redo.length;updateVoice();}
@@ -587,6 +590,7 @@ $('#panel').addEventListener('change', (e) => {
   if (e.target.id === 'hue' && (freeAuto || tool === 'brush')) commitFree();
   if (e.target.id === 'free-hex' && /^#?[\da-f]{6}$/i.test(e.target.value.trim()) && freeAuto) commitFree();
 });
+$('#panel').addEventListener('change',e=>{if(e.target.id==='filament-series'){filamentSeries=e.target.value;buildGrid();}});
 $('#panel').addEventListener('input', (e) => {
   if (e.target.id === 'search') {search = e.target.value;buildGrid();}
   if (e.target.id === 'hue') {freeHsv = { ...freeHsv, h: +e.target.value };setFree(hsvToHex(freeHsv.h, freeHsv.s, freeHsv.v), { hsv: freeHsv });}
@@ -761,7 +765,7 @@ document.addEventListener('click', (e) => {if (!e.target.closest('#bgs')) $('#bg
 let plan = null;
 async function openExport() {
   const dlg = $('#export-dialog'),body = $('#export-body');body.innerHTML = `<p class="muted">${_t("text.0306")}</p>`;if (!dlg.open) dlg.showModal();
-  // 3MF export only knows the Bambu catalogue: free colours and illustrative brands are matched first.
+  // Only unbound target colours need matching; real catalogue identities pass through unchanged.
   const pending = parts.filter((p) => !design.assignments[p.id] || products.get(design.assignments[p.id])?.demo);
   if (pending.length) {
     const keys = [...new Set(pending.map((p) => keyOf(p.id)))];
@@ -775,8 +779,8 @@ async function openExport() {
   try {
     plan = await api('POST', '/plan', { source_sha256: model.source_sha256, name, assignments: design.assignments });const usedSlots = plan.slots.filter((s) => s.used);
     body.innerHTML = `<div class="ex-stats"><span><b>6</b>${_t("text.0245")}</span><span><b>35</b>${_t("text.0315")}</span><span><b>${usedSlots.length}</b>${_t("text.0316")}</span><span><b>${plan.slots.length}</b>${_t("text.0317")}</span></div>
-    <div class="ex-products">${usedSlots.map((s) => {const p = s.product,n = plan.parts.filter((x) => x.slot === s.slot).length;return `<div class="ex-p"><i style="--c:${p.hex}"></i><span><b>${p.series} · ${esc(_label(p.name))}</b><small>${_t("text.0313", { v3: p.colorCode, v4: n, v5: s.slot })}</small></span><a href="${p.productUrl}" target="_blank" rel="noreferrer">${_t("text.0314")}</a></div>`;}).join('')}</div>
-    <details class="ex-parts"><summary>${_t("text.0318")}</summary><table><thead><tr><th>${_t("text.0319")}</th><th>${_t("text.0315")}</th><th>${_t("text.0243")}</th><th>${_t("text.0320")}</th></tr></thead><tbody>${plan.parts.map((p) => `<tr><td>${p.plate}</td><td>${p.id} ${esc(_label(p.name))}</td><td>${esc(_label(p.product.name))} ${p.product.colorCode}</td><td>${p.slot}</td></tr>`).join('')}</tbody></table></details>
+    <div class="ex-products">${usedSlots.map((s) => {const p = s.product,n = plan.parts.filter((x) => x.slot === s.slot).length;return `<div class="ex-p"><i style="--c:${p.hex}"></i><span><b>${esc(p.brand)} · ${esc(p.series)} · ${esc(_label(p.name))}</b><small>${_t('filament.slot',{code:p.colorCode||p.skus?.[0]||'—',count:n,slot:s.slot})}</small></span><a href="${_attr(p.productUrl||p.sourceUrl)}" target="_blank" rel="noreferrer">${_t("text.0314")}</a></div>`;}).join('')}</div>
+    <details class="ex-parts"><summary>${_t("text.0318")}</summary><table><thead><tr><th>${_t("text.0319")}</th><th>${_t("text.0315")}</th><th>${_t("text.0243")}</th><th>${_t("text.0320")}</th></tr></thead><tbody>${plan.parts.map((p) => `<tr><td>${p.plate}</td><td>${p.id} ${esc(_label(p.name))}</td><td>${esc(productLabel(p.product))}</td><td>${p.slot}</td></tr>`).join('')}</tbody></table></details>
     <ul class="ex-notes">${plan.warnings.map((w) => `<li>${esc(_label(w))}</li>`).join('')}</ul>
     <div class="sheet-foot"><button class="ghost-btn" id="dl-bom">${_t("text.0321")}</button><button class="primary" id="dl-3mf">${_t("text.0322")}</button></div><p class="ex-status" id="ex-status"></p>`;
     $('#dl-bom').onclick = downloadBOM;$('#dl-3mf').onclick = download3MF;
@@ -796,10 +800,10 @@ async function download3MF() {
   } catch (error) {status.textContent = error.message;} finally
   {btn.disabled = false;}
 }
-function nearestBambu(hex, kind) {return catalog.products.filter((p) => kindOf(p) === kind).map((p) => [p, deltaE(hex, p.hex)]).sort((x, y) => x[1] - y[1])[0][0];}
+function nearestBambu(hex, kind) {return catalog.products.filter((p) => brandId(p)==='bambu'&&compatibleProduct(kind==='TPU'?'TPU 90A':'PLA Basic',p)).map((p) => [p, deltaE(hex, p.hex)]).sort((x, y) => x[1] - y[1])[0][0];}
 function downloadBOM() {
-  const rows = [[_t("text.0326"), _t("text.0319"), _t("text.0327"), _t("text.0328"), _t("text.0329"), _t("text.0330"), _t("text.0331"), _t("text.0332"), _t("text.0333"), _t("text.0334"), _t("text.0335"), _t("text.0336"), _t("text.0337"), _t("text.0338")], ...plan.parts.map((p) => [p.id, p.plate, _label(p.name), p.originalName, p.product.series, p.product.brand, _label(p.product.name), p.product.colorCode, p.product.diameter, p.product.hex, p.slot, p.product.preset, p.product.productUrl, p.uuid])];
-  const csv = '﻿' + rows.map((r) => r.map((v) => '"' + String(v).replaceAll('"', '""') + '"').join(',')).join('\r\n'),a = document.createElement('a');a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));a.download = 'XGO-Duck-' + name + '-BOM.csv';a.click();$('#ex-status').textContent = _t("text.0339");
+  const rows=[[_t('text.0326'),_t('text.0319'),_t('text.0327'),_t('text.0328'),_t('text.0329'),_t('text.0330'),_t('filament.series'),_t('text.0331'),_t('text.0332'),'SKU',_t('filament.productId'),_t('text.0333'),_t('text.0334'),_t('filament.multiColours'),_t('text.0335'),_t('filament.profile'),_t('text.0337'),_t('text.0338')],...materialRows(plan,_label)];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csvText(rows)],{type:'text/csv;charset=utf-8'}));a.download = 'XGO-Duck-' + name + '-BOM.csv';a.click();$('#ex-status').textContent = _t("text.0339");
 }
 $$('dialog [data-close]').forEach((b) => b.onclick = () => b.closest('dialog').close());
 
@@ -913,7 +917,7 @@ const coachDone = () => {$('#coach').hidden = true;try {localStorage.setItem(COA
 $('#coach-go').onclick = coachDone;
 $('#coach-login').hidden = personal || !!account.user;$('#coach-login').onclick = () => {coachDone();requireLogin('').catch(() => {});};
 renderAll();
-window.studioProto = { view, actions, get state() {return { step, sel, tool, brush, name, activeId, dirty: dirty(), schemes: schemes.length, locks: [...locks], undo: undo.length, layout: view.layout, sideOn, focused, splitOn, compareId, replaceFrom, colors: design.colors, provenance };} };_onLocale(() => {DEMO_BRANDS = [{ id: 'esun', name: 'eSUN', series: 'PLA+', colors: [[_t("text.0001"), '#F3EFE2'], [_t("text.0002"), '#1D1D1F'], [_t("text.0003"), '#8B8F95'], [_t("text.0004"), '#D3262D'], [_t("text.0005"), '#F07A22'], [_t("text.0006"), '#F5D42C'], [_t("text.0007"), '#4CA848'], [_t("text.0008"), '#8ED3B4'], [_t("text.0009"), '#4DA2DA'], [_t("text.0010"), '#1F3E8C'], [_t("text.0011"), '#6A3E9E'], [_t("text.0012"), '#F1A2BC']] }, { id: 'polymaker', name: 'Polymaker', series: 'PolyTerra PLA', colors: [[_t("text.0013"), '#ECE8DF'], [_t("text.0014"), '#2A2A2C'], [_t("text.0015"), '#9C9A93'], [_t("text.0016"), '#B53A2F'], [_t("text.0017"), '#E0813D'], [_t("text.0018"), '#E9C65A'], [_t("text.0019"), '#4F7A4A'], [_t("text.0020"), '#7FA9C9'], [_t("text.0021"), '#2C3E66'], [_t("text.0022"), '#A893C4'], [_t("text.0023"), '#D88A97'], [_t("text.0024"), '#A26A42']] }, { id: 'sunlu', name: 'SUNLU', series: 'PLA', colors: [[_t("text.0025"), '#F7F7F5'], [_t("text.0026"), '#161616'], [_t("text.0027"), '#B7B9BC'], [_t("text.0028"), '#E0242B'], [_t("text.0029"), '#F68A1E'], [_t("text.0030"), '#FBD11B'], [_t("text.0031"), '#79C043'], [_t("text.0032"), '#1E9FD0'], [_t("text.0033"), '#2350B4'], [_t("text.0034"), '#7A3FB0'], [_t("text.0035"), '#F27AA6'], [_t("text.0036"), '#DDE6EA']] }];BRANDS = [{ id: 'bambu', get short() {return _t("text.0038");} }, ...DEMO_BRANDS.map((b) => ({ id: b.id, short: b.name, demo: true }))];CLASSICS = CLASSICS.map(([id, , d], i) => [id, i ? THEMES[[1, 2, 6][i - 1]].name : _t("text.0117"), d]);POSE_SLIDERS = [[_t("text.0283"), 'jaw', _t("text.0284"), 0, 28, '°'], [_t("text.0283"), 'headPitch', _t("text.0285"), -30, 50, '°'], [_t("text.0283"), 'headYaw', _t("text.0286"), -45, 45, '°'], [_t("text.0283"), 'headRoll', _t("text.0287"), -15, 15, '°'], [_t("text.0283"), 'neck', _t("text.0288"), -20, 80, '°'], [_t("text.0289"), 'crouch', _t("text.0290"), 0, 100, '%'], [_t("text.0289"), 'trunk', _t("text.0291"), -15, 25, '°'], [_t("text.0292"), 'legL', _t("text.0293"), 0, 100, '%'], [_t("text.0292"), 'legR', _t("text.0294"), 0, 100, '%']];MOVE_POSES = [[_t("text.0284"), '😮', 1], [_t("text.0295"), '👇', 2], [_t("text.0293"), '🦵', 4], [_t("text.0287"), '🤔', 5]];POSE_PRESETS = [[_t("text.0296"), {}], [_t("text.0297"), { jaw: 24, headPitch: -20 }], [_t("text.0295"), { neck: 45, headPitch: 35 }], [_t("text.0298"), { crouch: 100, trunk: -15, neck: -8 }], [_t("text.0293"), { legL: 70, headRoll: 6 }], [_t("text.0299"), { headRoll: 12, headYaw: 20, jaw: 8 }]];});
+window.studioProto = { view, actions, get state() {return { step, sel, tool, brush, name, activeId, dirty: dirty(), schemes: schemes.length, locks: [...locks], undo: undo.length, layout: view.layout, sideOn, focused, splitOn, compareId, replaceFrom, colors: design.colors, provenance };} };_onLocale(() => {CLASSICS = CLASSICS.map(([id, , d], i) => [id, i ? THEMES[[1, 2, 6][i - 1]].name : _t("text.0117"), d]);POSE_SLIDERS = [[_t("text.0283"), 'jaw', _t("text.0284"), 0, 28, '°'], [_t("text.0283"), 'headPitch', _t("text.0285"), -30, 50, '°'], [_t("text.0283"), 'headYaw', _t("text.0286"), -45, 45, '°'], [_t("text.0283"), 'headRoll', _t("text.0287"), -15, 15, '°'], [_t("text.0283"), 'neck', _t("text.0288"), -20, 80, '°'], [_t("text.0289"), 'crouch', _t("text.0290"), 0, 100, '%'], [_t("text.0289"), 'trunk', _t("text.0291"), -15, 25, '°'], [_t("text.0292"), 'legL', _t("text.0293"), 0, 100, '%'], [_t("text.0292"), 'legR', _t("text.0294"), 0, 100, '%']];MOVE_POSES = [[_t("text.0284"), '😮', 1], [_t("text.0295"), '👇', 2], [_t("text.0293"), '🦵', 4], [_t("text.0287"), '🤔', 5]];POSE_PRESETS = [[_t("text.0296"), {}], [_t("text.0297"), { jaw: 24, headPitch: -20 }], [_t("text.0295"), { neck: 45, headPitch: 35 }], [_t("text.0298"), { crouch: 100, trunk: -15, neck: -8 }], [_t("text.0293"), { legL: 70, headRoll: 6 }], [_t("text.0299"), { headRoll: 12, headYaw: 20, jaw: 8 }]];});
 
 _onLocale(() => {
   const active = document.activeElement,focusId = active?.id;

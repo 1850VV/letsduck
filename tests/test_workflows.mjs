@@ -8,6 +8,11 @@ const {products:entries}=JSON.parse(readFileSync(new URL('assets/catalog.json',r
 const products=new Map(entries.map(p=>[p.id,p]));
 const colors=Object.fromEntries(parts.map(p=>[p.id,p.color]));
 const assignments=Object.fromEntries(parts.map(p=>[p.id,entries.find(x=>x.series===p.material&&x.hex===p.color)?.id]));
+test('reopening a real cross-brand colour keeps its exact product ID',()=>{
+ const product={id:'sample-cf',brand:'Sample',series:'PLA-CF',material:'PLA',hex:'#123456'};
+ const custom=new Map([...products,[product.id,product]]),design={colors:{...colors,'P4-01':product.hex},assignments:{...assignments,'P4-01':product.id}};
+ assert.equal(validDesign(design,parts,custom).assignments['P4-01'],product.id);
+});
 test('baseline palette keeps PLA black and TPU black in distinct groups',()=>{
  const groups=groupPalette(parts,colors,assignments);
  assert.equal(groups.length,4);assert.equal(groups.filter(g=>g.color==='#000000').length,2);

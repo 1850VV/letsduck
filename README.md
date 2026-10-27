@@ -122,6 +122,14 @@ node --test tests/*.mjs tests/assembly/*.test.mjs
 
 完整测试需要本地资产和开发依赖。真实 MySQL 回归还需设置 `DUCK_TEST_DATABASE_URL`，库名必须以 `duck_test_` 开头；未配置时相关测试跳过。[公开 CI](.github/workflows/check.yml) 使用合成数据和 MySQL，不持有受限模型。它不能代替真实模型导出、浏览器交互或实物验收。
 
+来涂鸭基础交互回归从首页功能窗口进入，使用真实点击和键盘测试系列下拉框与相邻涂装操作；只读运行，不写入个人数据库或设备。需模型资产、Playwright 及匹配的托管 Chromium：
+
+```sh
+node tests/browser/paint-basic-ui.mjs --url http://127.0.0.1:8876 --output output/playwright/paint-basic-ui
+```
+
+无本地 Node 依赖时，可用 `PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs` 指定已有 Playwright。脚本保护点击时控件及部位范围不被破坏；macOS 系统菜单的鼠标选项、键盘确认/取消需补原生操作取证，不用程序化选值替代。浏览器窄屏模拟不代替实机触控验收。
+
 调试鸭和首页浏览器回归使用 `tests/debug_browser_fixture.py` 的假运行端和临时数据库，再执行 `tests/duck_debug_browser.js` 与 `tests/home_carousel_browser.js`。这些检查需要本地组装资产；不要把自动化检查连到真实设备。
 
 首页语言菜单另有独立只读回归，可复用上述 8896 隔离夹具。需要本地 Playwright、匹配的托管 Chromium 和模型资产：

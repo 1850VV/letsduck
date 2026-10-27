@@ -44,3 +44,13 @@ python3 scripts/import_assembly_assets.py /path/to/authorized/assembly/assets
 After importing the local assets, run `npm ci && npm run pack:positions` on a build machine with Node.js. This generates local-only `geometry.positions.bin` and precompressed variants. Package them alongside the existing assets; do not commit them. The installed application still needs only Python. If the pack or Worker is unavailable, the browser uses the original DDG1 path.
 
 The display pack retains DDG1's 16-bit coordinates, all triangles, and 64-bit print matrices. It does not remove the original source's existing quantization error. Normals are generated in a Worker. The accepted shared export uses the same downloaded pack, computes print normals lazily in a Worker, and reuses the view renderer and geometry. The legacy pack remains packaged as a compatibility fallback; a successful shared export does not fetch it. The source 3MF still remains on the server.
+
+## 可选的真实耗材色库
+
+在原有五个文件旁放置 `filament-catalog.json`，导入器会同时复制它；原 `catalog.json` 的 36 个编号、色值和预设优先保留。可选扩展记录品牌、系列、官方色号或 SKU、全部多色色值和来源链接。没有官方 HEX 的条目保留在待补充记录中，不提供选色。来涂鸭通过 `/api/catalog` 读取合并结果。没有扩展时仍可使用原色库。
+
+`filament-profiles.json` 是可选的本地官方打印预设快照，结构为 `{"profiles":{"preset name":{"name":"…","compatibleP1P":true,"sourceUrl":"…","settings":{…}}}}`；`settings` 已展开上游继承关系。导出优先选对应品牌和系列，其次选同类通用材料预设。原 36 色及 TPU 90A 的源项目参数保持兼容。耗材清单保留完整身份与预设来源，3MF 同时填写原生品牌、材料类型、自定义系列色号名称和多色色值。缺少材料预设时仍可导出清单，3MF 会说明缺少的系列，不套用 PLA 参数。
+
+扩展色库和打印预设属于本地资产，不随公开源码发布。它们不代表机型、喷嘴或实际打印已经验证；导出的项目仍需在切片软件中核对并重新切片。
+
+隔离界面验证：先运行 `python3 tests/debug_browser_fixture.py`，另一个终端运行 `npm ci` 和 `node tests/filament_browser.js`。验证使用 8896 端口的临时数据库和模拟控制器，保存混合品牌方案并下载实际清单与 3MF，不连接真实舵机。需要已导入的模型和已确认 v1 色库。
