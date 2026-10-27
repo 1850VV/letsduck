@@ -107,7 +107,7 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}){
    if(view==='robot'&&!chosenId&&!connected)return;
    if(view==='robot'&&active.size>5&&!chosenId)return;
    let p=obj.position.clone();
-   if(view==='robot'){const box=new THREE.Box3().setFromObject(obj);p=box.getCenter(new THREE.Vector3());p.x+=id<20?-32:34;p.y+=id===12?21:id===13?-1:id===14?-15:10;}
+   if(view==='robot'){const box=new THREE.Box3().setFromObject(obj);p=box.getCenter(new THREE.Vector3());p.x+=p.x<0?-32:34;const joint=id<30?id%10:-1;p.y+=joint===2?21:joint===3?-1:joint===4?-15:10;}
    else p.add(new THREE.Vector3(0,31,6));
    const el=addLabel('ID '+id+(connected?' · 在线':''),p,'model-label',id);el.classList.toggle('online',connected);el.classList.toggle('selected',chosenId);
   };

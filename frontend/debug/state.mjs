@@ -1,7 +1,8 @@
 // Addressed devices use server readbacks; a bus address is not a physical serial number.
-export const IDS=[10,11,12,13,14,20,21,22,23,24,30,31,32,33,34];
-export const ROLES=['右髋旋转','右髋侧摆','右腿上端','右腿中部','右脚踝','左髋旋转','左髋侧摆','左腿上端','左腿中部','左脚踝','脖子下端','脖子上端','头部旋转','头部关节','鸭嘴开合'];
-export const ACTORS=['t_motor10','t_motor11','r_upperMotor','r_lowerMotor','motor','t_motor20','t_motor21','l_upperMotor','l_lowerMotor','l_motor','h_motor30','h_motor31','h_motor32','h_motor33','h_mouthMotor'];
+import {SERVO_BINDINGS} from '../shared/servo-map.mjs';
+export const IDS=SERVO_BINDINGS.map(binding=>binding.id);
+export const ROLES=SERVO_BINDINGS.map(binding=>binding.role);
+export const ACTORS=SERVO_BINDINGS.map(binding=>binding.actorId);
 export const role=id=>ROLES[IDS.indexOf(id)]??'未分配安装位';
 export function createState(){return {devices:IDS.map(id=>({uid:'servo-'+id,id,kp:null,kd:null,pos:null,online:false,held:false,jogReady:false})),boards:{arduino:{connected:false},expansion:{connected:false}},selectedBoard:null,selected:'servo-12',view:'robot',mode:'single',batch:[],busy:false,draft:null,message:'正在读取控制器状态…',status:{},transport:'usb'};}
 export function mergeStatus(s,data){
