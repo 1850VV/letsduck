@@ -21,12 +21,14 @@
     "audit:publication": "tsx tooling/src/legacy-check.ts --publication",
     "probe:runtime": "tsx tooling/src/runtime-probe.ts",
     "baseline:capture": "tsx tooling/src/baseline.ts",
-    "verify:phase0": "npm run typecheck && npm test && npm run test:python && npm run audit:publication"
+    "verify:phase0": "npm run typecheck && npm test && npm run test:python && npm run audit:publication",
+    "verify:phase1": "npm run typecheck && npm test && npm run test:python && npm run audit:publication"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",
     "@types/node": "24.19.2",
     "@types/pngjs": "6.0.5",
+    "esbuild": "0.28.2",
     "fastify": "5.12.7",
     "fflate": "0.8.3",
     "meshoptimizer": "1.0.1",

@@ -1,4 +1,4 @@
 {
   "files": [],
-  "references": [{ "path": "packages/contracts" }, { "path": "tooling" }]
+  "references": [{ "path": "packages/contracts" }, { "path": "packages/domain" }, { "path": "tooling" }]
 }
