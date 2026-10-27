@@ -6,14 +6,14 @@ import {resolveServoMap, servosForStep} from '../frontend/assemble/servo-map.mjs
 
 const data=JSON.parse(readFileSync(new URL('../frontend/assemble/servo-map.json',import.meta.url)));
 
-test('ID14 selects its real ankle actor and the original first ankle lesson',()=>{
+test('ID14 selects the PDF left ankle and its matching lesson',()=>{
  const map=resolveServoMap(data,{actors:ACTORS,steps:STEPS});
  const ankle=map.byId.get(14);
- assert.equal(ankle.actorId,'motor');
- assert.equal(STEPS[ankle.stepIndex].id,'r-prepare');
+ assert.equal(ankle.actorId,'l_motor');
+ assert.equal(STEPS[ankle.stepIndex].id,'l-prepare');
  assert.ok(servosForStep(map,ankle.stepIndex).some(b=>b.id===14));
- assert.equal(map.byId.get(24).actorId,'l_motor');
- assert.equal(STEPS[map.byId.get(24).stepIndex].id,'l-prepare');
+ assert.equal(map.byId.get(24).actorId,'motor');
+ assert.equal(STEPS[map.byId.get(24).stepIndex].id,'r-prepare');
 });
 
 test('all fifteen slots navigate to distinct real servos without promoting candidate mappings',()=>{
