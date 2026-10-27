@@ -167,6 +167,14 @@ node --test tests/*.mjs tests/assembly/*.test.mjs
 
 真实 MySQL 回归：设置 `DUCK_TEST_DATABASE_URL`（库名必须以 `duck_test_` 开头），否则相关测试跳过。CI 同时提供 MySQL。CI 不持有模型资产，不能替代真实模型、导出和浏览器验收。
 
+首页语言菜单有单独的只读浏览器回归，需要本地 Playwright、其匹配的托管 Chromium、模型资产和已经运行的个人版服务：
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node tests/browser/home-language-menu.mjs --url http://127.0.0.1:8876 --output output/playwright/home-language-menu
+```
+
+若本仓库的 Node 环境能直接导入 `playwright`，可省略 `PLAYWRIGHT_MODULE`。脚本使用临时浏览器配置并阻止 HTTP 写入，检查首页入口位置、菜单边界与裁切、实际点击、键盘退出、语言记忆及运行错误；包含桌面、响应断点、窄屏和现有 RTL 语言。默认使用无界面 Chromium 和软件 WebGL，避免系统鼠标干扰；`--headed` 可查看过程。结果及截图写入指定目录。此专项不代替其他页面、真实浏览器缩放或人工视觉验收。
+
 导出默认同时执行 1 个任务，最多等待 2 个；超过容量返回 `503` 和 `Retry-After`。可用 `DUCK_EXPORT_WORKERS` / `DUCK_EXPORT_QUEUE` 调整。
 
 ## 文档
