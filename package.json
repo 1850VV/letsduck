@@ -37,7 +37,12 @@
     "test:web": "tsx tooling/src/test-web.ts",
     "test:historical": "tsx tooling/src/historical-replay.ts",
     "audit:typescript": "tsx tooling/src/typescript-audit.ts",
-    "verify:phase6": "npm run typecheck && npm run test:web -- --require-assets && npm run test:typescript && npm run audit:typescript && npm run audit:publication"
+    "verify:phase6": "npm run typecheck && npm run test:web -- --require-assets && npm run test:typescript && npm run audit:typescript && npm run audit:publication",
+    "prepack:positions": "npm run build:core",
+    "prepack:geometry": "npm run build:core",
+    "preimport:assets": "npm run build:core",
+    "preimport:assembly": "npm run build:core",
+    "prebaseline:capture": "npm run build:core"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",

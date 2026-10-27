@@ -136,3 +136,42 @@ for(const signal of ['SIGINT','SIGTERM'] as const)test(`${signal} closes the act
   assert.equal(existsSync(owned.temporaryDirectory),false);assert.equal(existsSync(join(dir,'evidence/baseline.json')),false);
  }finally{if(child.exitCode===null&&child.signalCode===null){child.kill('SIGKILL');await exited;}if(owned){try{process.kill(owned.servicePid,'SIGINT');}catch{}rmSync(owned.temporaryDirectory,{recursive:true,force:true});}rmSync(dir,{recursive:true,force:true});}
 });
+
+// Exercise the real worker boundary with the production dist directory layout.
+test('Node baseline enables complete assembly assets from the repository manifest with frontend/dist',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'letsduck-baseline-assembly-')),assets=join(dir,'assets'),frontend=join(dir,'frontend/dist'),database=join(dir,'personal.db');
+ mkdirSync(join(assets,'assembly'),{recursive:true});mkdirSync(join(frontend,'assemble'),{recursive:true});mkdirSync(join(dir,'scripts'));
+ const payload=Buffer.from('{"fixture":"reviewed assembly"}');writeFileSync(join(assets,'assembly/full-assembly.json'),payload);writeFileSync(join(assets,'assembly/not-reviewed.json'),'private fixture');writeFileSync(join(frontend,'assemble/index.html'),'<!doctype html><title>Assembly fixture</title>');
+ writeFileSync(join(dir,'scripts/assembly-assets.json'),JSON.stringify({files:{'full-assembly.json':{bytes:payload.length,sha256:createHash('sha256').update(payload).digest('hex')}}}));
+ mkdirSync(join(dir,'packages/host/src'),{recursive:true});writeFileSync(join(dir,'packages/host/src/index.ts'),'export {startHost,loadAssemblyManifest} from '+JSON.stringify(new URL('../../packages/host/src/index.ts',import.meta.url).href)+';\n');symlinkSync(join(root,'node_modules'),join(dir,'node_modules'),'dir');
+ const child=spawn(process.execPath,['--import','tsx',join(root,'tooling/src/baseline.ts')],{cwd:dir,stdio:['ignore','pipe','pipe'],env:{...process.env,DUCK_BASELINE_WORKER:'node',DUCK_BASELINE_REPOSITORY:dir,DUCK_BASELINE_FRONTEND:frontend,DUCK_ASSETS:assets,DUCK_PERSONAL_DB:database,DUCK_DB:join(dir,'absent-legacy.db')}});
+ let stderr='';child.stderr.on('data',(data:Buffer)=>{stderr+=data.toString();});
+ let url:string|undefined;
+ try{
+  url=await new Promise<string>((done,reject)=>{let output='';const timer=setTimeout(()=>reject(Error('Owned baseline host startup timeout: '+stderr)),15000);child.stdout.on('data',(data:Buffer)=>{output+=data.toString();const found=output.match(/http:\/\/127\.0\.0\.1:\d+\//);if(found){clearTimeout(timer);done(found[0]);}});child.once('exit',code=>{clearTimeout(timer);reject(Error('Owned host exited '+code+': '+stderr));});child.once('error',error=>{clearTimeout(timer);reject(error);});});
+  assert.notEqual(new URL(url).port,'8876');const site:unknown=await(await fetch(url+'api/site')).json();assert.ok(site&&typeof site==='object'&&'assembly'in site);assert.equal(site.assembly,true);
+  const assembly=await fetch(url+'assemble/assets/full-assembly.json');assert.equal(assembly.status,200);assert.deepEqual(Buffer.from(await assembly.arrayBuffer()),payload);
+  assert.equal((await fetch(url+'assemble/assets/not-reviewed.json')).status,404);
+ }finally{
+  if(child.exitCode===null&&child.signalCode===null){const exited=once(child,'exit');child.kill('SIGINT');await exited;}
+  assert.throws(()=>process.kill(child.pid!,0),{code:'ESRCH'});if(url)await assert.rejects(fetch(url));rmSync(dir,{recursive:true,force:true});
+ }
+});
+
+test('baseline records modified Node inputs and nested untracked files while excluding ignored data',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'letsduck-baseline-source-state-')),assets=join(dir,'assets'),output=join(dir,'evidence');mkdirSync(assets);
+ const git=(...args:string[])=>{const result=spawnSync('git',args,{cwd:dir,encoding:'utf8'});assert.equal(result.status,0,result.stderr);return result.stdout;};
+ try{
+  mkdirSync(join(dir,'packages/host/src'),{recursive:true});mkdirSync(join(dir,'apps/local/src'),{recursive:true});mkdirSync(join(dir,'tooling/src'),{recursive:true});
+  writeFileSync(join(dir,'packages/host/src/index.ts'),'export {startHost,loadAssemblyManifest} from '+JSON.stringify(new URL('../../packages/host/src/index.ts',import.meta.url).href)+';\n');
+  for(const file of ['packages/host/src/input.ts','apps/local/src/input.ts','tooling/src/input.ts'])writeFileSync(join(dir,file),'// committed fixture\n');
+  writeFileSync(join(dir,'.gitignore'),'assets/\nevidence/\nnode_modules/\nignored/\n');symlinkSync(join(root,'node_modules'),join(dir,'node_modules'),'dir');
+  git('init','--quiet');git('config','user.name','Baseline fixture');git('config','user.email','baseline@example.invalid');git('add','.');git('commit','--quiet','-m','baseline input fixture');
+  for(const file of ['packages/host/src/input.ts','apps/local/src/input.ts','tooling/src/input.ts'])writeFileSync(join(dir,file),'// changed fixture\n');
+  mkdirSync(join(dir,'new/nested'),{recursive:true});writeFileSync(join(dir,'new/nested/a.ts'),'// new input\n');writeFileSync(join(dir,'new/nested/b.ts'),'// second new input\n');mkdirSync(join(dir,'ignored'));writeFileSync(join(dir,'ignored/private.db'),'ignored fixture');git('config','status.showUntrackedFiles','no');
+  const run=spawnSync(process.execPath,['--import','tsx',join(root,'tooling/src/baseline.ts'),'--repository',dir,'--assets',assets,'--output',output,'--save-samples','0','--export-samples','0'],{cwd:root,encoding:'utf8',timeout:30000});assert.equal(run.status,0,run.stderr);
+  const result:unknown=JSON.parse(readFileSync(join(output,'baseline.json'),'utf8'));assert.ok(result&&typeof result==='object'&&'sourceChanges'in result&&typeof result.sourceChanges==='string');
+  const lines=result.sourceChanges.split('\n');for(const file of ['packages/host/src/input.ts','apps/local/src/input.ts','tooling/src/input.ts'])assert.ok(lines.includes(' M '+file),file+' modification missing from source evidence');
+  for(const file of ['new/nested/a.ts','new/nested/b.ts'])assert.ok(lines.includes('?? '+file),file+' untracked input missing');assert.equal(result.sourceChanges.includes('ignored/'),false);
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});

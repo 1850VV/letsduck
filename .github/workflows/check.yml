@@ -34,16 +34,16 @@ jobs:
           cache: npm
       - name: Install locked Node workspace dependencies
         run: npm ci
-      - name: Install owned managed-browser and native nginx test dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends nginx
-          PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium
       - name: Strict TypeScript, runtime compatibility and language boundaries
         run: |
           npm run typecheck
           npm run probe:runtime
           npm run audit:typescript
+      - name: Install owned managed-browser and native nginx test dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends nginx
+          PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install --with-deps chromium
       - name: Node contracts, real MySQL, browser lifecycle and source-only web checks
         run: npm test
       - name: Build and exercise Node server and Vite nginx images

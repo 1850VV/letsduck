@@ -11,7 +11,7 @@ import { parseArgs } from 'node:util';
 import { PNG } from 'pngjs';
 import { chromium, type Browser } from 'playwright';
 import type { SiteConfig } from '@letsduck/contracts';
-import type { HostOptions } from '@letsduck/host';
+import { loadAssemblyManifest, type HostOptions } from '@letsduck/host';
 import type { DuckRuntime } from '@letsduck/devices';
 import { jsonParse,jsonStringify } from '@letsduck/storage';
 import {prepareHistoricalSource} from './historical-source.js';
@@ -41,7 +41,7 @@ function command(binary: string, args: string[]) {
   const result = spawnSync(binary, args, { cwd: root, encoding: 'utf8' });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${binary} exited ${result.status}: ${result.stderr}`);
-  return result.stdout.trim();
+  return result.stdout.trimEnd();
 }
 function summary(samples: number[]) {
   if (!samples.length) return null;
@@ -197,7 +197,7 @@ try {
   const rss = process.platform === 'win32' ? null : Number(command('ps', ['-o', 'rss=', '-p', String(child.pid)]));
   const result = {
     schema: 'letsduck-baseline/1', capturedAt: new Date().toISOString(), sourceCommit: commit,
-    sourceChanges: historical?'':command('git', ['status', '--porcelain', '--', 'backend', 'personal', 'frontend']),
+    sourceChanges: historical?'':command('git', ['status', '--porcelain', '--untracked-files=all']),
     engine:{kind:engine,language:engine==='node'?'typescript':'python',sourceCommit:commit,...(historical?{historicalDirectory:historical.root}:{}),reference:historical?'immutable Git archive':'working tree'},
     environment: { node: process.version, python: pythonVersion, platform: platform(), arch: arch(), cpu: cpus()[0]?.model, memoryBytes: totalmem() },
     isolation: { database: 'temporary', temporaryDirectory, servicePid: child.pid, hardware: 'not_contacted' },
@@ -233,7 +233,8 @@ async function serveNodeBaseline(){
  const runtime:DuckRuntime={serial:null,port:null,async connect(){throw new Error('Hardware disabled in baseline');},async request(){throw new Error('Hardware disabled in baseline');},async halt(){throw new Error('Hardware disabled in baseline');},async close(){}};
  const module:unknown=await import(pathToFileURL(join(root,'packages/host/src/index.ts')).href),start=object(module).startHost;
  if(typeof start!=='function')throw new Error('Node local host factory unavailable');
- const options:HostOptions={assets,frontend,database,legacy,runtime,host:'127.0.0.1',port:0},value:unknown=await start(options),host=object(value),url=host.url,close=host.close;
+ const assemblyManifest=loadAssemblyManifest(join(root,'scripts/assembly-assets.json'));
+ const options:HostOptions={assets,frontend,database,legacy,runtime,host:'127.0.0.1',port:0,...(assemblyManifest===undefined?{}:{assemblyManifest})},value:unknown=await start(options),host=object(value),url=host.url,close=host.close;
  if(typeof url!=='string'||typeof close!=='function')throw new Error('Node local host did not return a listener');
  let stopping:Promise<void>|undefined;const stop=()=>{stopping??=(async()=>{await close();})();void stopping.catch(error=>{console.error(error);process.exitCode=1;});};
  process.once('SIGINT',stop);process.once('SIGTERM',stop);console.log(url);
