@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
 import {APP_ORIGIN,externalURL,localPermission,localURL,proxyURL} from '../src/navigation.js';
 import {desktopPaths} from '../src/paths.js';
 import {parseDesktopState,parseHostReply,parseHostRequest,trustedFrame} from '../src/ipc.js';
@@ -38,15 +38,16 @@ test('network-path duck URLs cannot replace the backend authority or receive tru
 });
 
 test('packaged runtime paths use app/resources roots and preserve explicit overrides',()=>{
- const packaged=desktopPaths({packaged:true,moduleDirectory:'/ignored',appPath:'/app',resourcesPath:'/resources',appData:'/profile',env:{}});
- assert.equal(packaged.host,join('/app','apps/desktop/dist/host.js'));
- assert.equal(packaged.preload,join('/app','apps/desktop/dist/preload.cjs'));
- assert.equal(packaged.frontend,join('/resources','runtime/frontend'));
- assert.equal(packaged.assets,join('/resources','runtime/assets'));
- assert.equal(packaged.userData,join('/profile','letsduck'));
+ const app=resolve('/app'),resources=resolve('/resources'),profile=resolve('/profile'),owned=resolve('/owned');
+ const packaged=desktopPaths({packaged:true,moduleDirectory:resolve('/ignored'),appPath:app,resourcesPath:resources,appData:profile,env:{}});
+ assert.equal(packaged.host,join(app,'apps/desktop/dist/host.js'));
+ assert.equal(packaged.preload,join(app,'apps/desktop/dist/preload.cjs'));
+ assert.equal(packaged.frontend,join(resources,'runtime/frontend'));
+ assert.equal(packaged.assets,join(resources,'runtime/assets'));
+ assert.equal(packaged.userData,join(profile,'letsduck'));
  assert.equal('database' in packaged,false,'Database default remains shared DoodleDuck location');
- const dev=desktopPaths({packaged:false,moduleDirectory:'/repo/apps/desktop/dist',appPath:'/unused',resourcesPath:'/unused',appData:'/profile',env:{DUCK_ASSETS:'/owned/assets',DUCK_FRONTEND:'/owned/web',DUCK_ASSEMBLY_MANIFEST:'/owned/media.json',DUCK_DESKTOP_DATA:'/owned/profile'}});
- assert.equal(dev.assets,'/owned/assets');assert.equal(dev.frontend,'/owned/web');assert.equal(dev.assemblyManifest,'/owned/media.json');assert.equal(dev.userData,'/owned/profile');
+ const dev=desktopPaths({packaged:false,moduleDirectory:resolve('/repo/apps/desktop/dist'),appPath:resolve('/unused'),resourcesPath:resolve('/unused'),appData:profile,env:{DUCK_ASSETS:join(owned,'assets'),DUCK_FRONTEND:join(owned,'web'),DUCK_ASSEMBLY_MANIFEST:join(owned,'media.json'),DUCK_DESKTOP_DATA:join(owned,'profile')}});
+ assert.equal(dev.assets,join(owned,'assets'));assert.equal(dev.frontend,join(owned,'web'));assert.equal(dev.assemblyManifest,join(owned,'media.json'));assert.equal(dev.userData,join(owned,'profile'));
 });
 
 test('IPC validates host messages, update DTOs and the exact trusted main frame',()=>{
