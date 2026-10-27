@@ -122,7 +122,7 @@ Capture the existing behavior and performance locally:
 npm run baseline:capture -- --assets /path/to/authorized/assets --output output/baseline --browser
 ```
 
-The tool starts its own legacy personal service with a temporary database, measuring 30 saves and 10 real-model exports by default. `--browser` uses the matching Playwright-managed Chromium and blocks browser hardware requests. Evidence includes local environment and separately licensed asset information; keep it in the ignored local output directory. It accepts no existing service URL and never uses the user's personal database. Without models, it captures only the available behavior and cannot establish export acceptance.
+The tool starts its own legacy personal service with a temporary database, measuring 30 saves and 10 real-model exports by default. `--browser` uses the matching Playwright-managed Chromium and blocks browser hardware requests. It retains an actual exported 3MF, its request, and digests of decoded ZIP entries and original compressed records. Evidence includes local environment and separately licensed asset information; keep it in the ignored local output directory. It accepts no existing service URL and never uses the user's personal database. Without models, it captures only the available behavior and cannot establish export acceptance.
 
 The frontend uses native ES modules and needs no build step for development. Run the personal edition with `python3 run.py`. Server development requires Python 3.11+:
 

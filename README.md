@@ -122,7 +122,7 @@ npm run verify:phase0
 npm run baseline:capture -- --assets /path/to/authorized/assets --output output/baseline --browser
 ```
 
-工具启动独立的旧版个人服务并使用临时数据库，默认采样 30 次保存和 10 次真实导出；`--browser` 使用匹配的 Playwright 托管 Chromium。浏览器设备请求被拦截，不接真实 USB。结果含本机环境和独立授权资产信息，仅保存在忽略的本地目录。此命令不接受现有服务地址，不使用原个人数据库；没有模型时只采集可用部分，不能作为真实导出验收。
+工具启动独立的旧版个人服务并使用临时数据库，默认采样 30 次保存和 10 次真实导出；`--browser` 使用匹配的 Playwright 托管 Chromium。浏览器设备请求被拦截，不接真实 USB。结果包括实际导出的 3MF、请求参数、ZIP 条目内容与原压缩记录的摘要。结果含本机环境和独立授权资产信息，仅保存在忽略的本地目录。此命令不接受现有服务地址，不使用原个人数据库；没有模型时只采集可用部分，不能作为真实导出验收。
 
 前端为原生 ES 模块，无需构建即可开发。个人版执行 `python3 run.py`。服务器版开发使用 Python 3.11+：
 

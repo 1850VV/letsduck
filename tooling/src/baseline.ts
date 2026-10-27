@@ -10,6 +10,7 @@ import { parseArgs } from 'node:util';
 import { PNG } from 'pngjs';
 import { chromium, type Browser } from 'playwright';
 import type { SiteConfig } from '@letsduck/contracts';
+import { describeExport } from './zip-evidence.js';
 
 const { values } = parseArgs({ options: {
   repository: { type: 'string' }, assets: { type: 'string' }, output: { type: 'string' }, python: { type: 'string' },
@@ -48,6 +49,25 @@ async function stop(child: ChildProcess) {
 const sha = (data: Uint8Array) => createHash('sha256').update(data).digest('hex');
 const temporaryDirectory = await mkdtemp(join(tmpdir(), 'letsduck-baseline-'));
 let child: ChildProcess | undefined, browser: Browser | undefined;
+let browserAcquisition: Promise<Browser> | undefined;
+let cleanupPromise: Promise<void> | undefined;
+const cleanup = () => cleanupPromise ??= (async () => {
+  try {
+    const ownedBrowser = browser ?? await browserAcquisition;
+    if (ownedBrowser?.isConnected()) await ownedBrowser.close();
+  }
+  finally {
+    try { if (child) await stop(child); }
+    finally { await rm(temporaryDirectory, { recursive: true, force: true }); }
+  }
+})();
+const cancellation = new AbortController();
+const cancel = (code: number) => {
+  cancellation.abort();
+  void cleanup().then(() => process.exit(code), error => { console.error(error); process.exit(1); });
+};
+const interrupt = () => cancel(130), terminate = () => cancel(143);
+process.once('SIGINT', interrupt); process.once('SIGTERM', terminate);
 try {
   const pythonVersion = command(python, ['--version']);
   const commit = command('git', ['rev-parse', 'HEAD']);
@@ -65,8 +85,9 @@ try {
     child!.once('exit', code => finish(undefined, new Error(`Legacy service exited ${code}: ${log}`)));
   });
   if (new URL(url).port === '8876') throw new Error('Baseline must not use the stable service port');
+  console.log(JSON.stringify({ status: 'collecting', servicePid: child.pid, temporaryDirectory }));
   const request = async (path: string, method = 'GET', body?: unknown) => {
-    const response = await fetch(url + path, { method, ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), redirect: 'manual' });
+    const response = await fetch(url + path, { method, ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), redirect: 'manual', signal: cancellation.signal });
     const bytes = Buffer.from(await response.arrayBuffer()), text = bytes.toString();
     let data: unknown;
     try { data = JSON.parse(text); } catch { data = { bytes: bytes.length, sha256: sha(bytes) }; }
@@ -100,13 +121,19 @@ try {
     saves.push(performance.now() - start);
   }
   let plan: unknown = null;
+  let exportContent: Buffer | undefined;
+  let exportEvidence: (ReturnType<typeof describeExport> & { file: string; requestFile: string; status: number; headers: Record<string, string> }) | null = null;
   if (payload && exportSamples) {
     plan = await request('/api/plan', 'POST', payload);
     // One warmup is separate from measured samples.
     for (let index = -1; index < exportSamples; index++) {
-      const start = performance.now(), response = await fetch(url + '/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const start = performance.now(), response = await fetch(url + '/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: cancellation.signal });
       if (!response.ok) throw new Error('Export benchmark failed: ' + await response.text());
-      await response.arrayBuffer(); if (index >= 0) exports.push(performance.now() - start);
+      const content = Buffer.from(await response.arrayBuffer()); if (index >= 0) exports.push(performance.now() - start);
+      if (index === -1) {
+        exportContent = content;
+        exportEvidence = { ...describeExport(content), file: 'export.3mf', requestFile: 'export-request.json', status: response.status, headers: Object.fromEntries(response.headers) };
+      }
     }
   }
   const deleted = await request('/api/schemes/baseline', 'DELETE'), afterDelete = await request('/api/schemes');
@@ -116,7 +143,9 @@ try {
   }
   let browserResult: unknown = { status: 'not_requested' };
   if (values.browser) {
-    browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+    cancellation.signal.throwIfAborted();
+    browserAcquisition = chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+    browser = await browserAcquisition;
     const inspector = await browser.newBrowserCDPSession();
     const processes: { processInfo: { id: number; type: string }[] } = await inspector.send('SystemInfo.getProcessInfo');
     await inspector.detach();
@@ -151,16 +180,18 @@ try {
     environment: { node: process.version, python: pythonVersion, platform: platform(), arch: arch(), cpu: cpus()[0]?.model, memoryBytes: totalmem() },
     isolation: { database: 'temporary', temporaryDirectory, servicePid: child.pid, hardware: 'not_contacted' },
     site: configuration, assets: assetDigests, responses: { health, site, catalog, saved, list, deleted, afterDelete, plan },
-    timings: { saveMs: summary(saves), exportMs: summary(exports), serviceRssKiB: rss, scope: 'same original assignments and transparent 512px PNG previews; export warmed once' }, browser: browserResult,
+    timings: { saveMs: summary(saves), exportMs: summary(exports), serviceRssKiB: rss, scope: 'same original assignments and transparent 512px PNG previews; export warmed once' }, browser: browserResult, export: exportEvidence,
   };
   // Close everything before successful evidence is written.
-  await stop(child); child = undefined;
-  await rm(temporaryDirectory, { recursive: true, force: true });
+  await cleanup(); child = undefined;
   await mkdir(output, { recursive: true });
+  if (exportContent) {
+    await writeFile(join(output, 'export.3mf'), exportContent);
+    await writeFile(join(output, 'export-request.json'), JSON.stringify(payload, null, 2) + '\n');
+  }
   await writeFile(join(output, 'baseline.json'), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify({ status: 'captured', sourceCommit: commit, saveSamples: saves.length, exportSamples: exports.length, browser: values.browser }));
 } finally {
-  if (browser) await browser.close();
-  if (child) await stop(child);
-  await rm(temporaryDirectory, { recursive: true, force: true });
+  await cleanup();
+  process.removeListener('SIGINT', interrupt); process.removeListener('SIGTERM', terminate);
 }
