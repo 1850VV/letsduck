@@ -30,6 +30,14 @@ class AssetImportTests(unittest.TestCase):
             self.assertEqual(original,{p.name:p.read_bytes() for p in src.iterdir()})
             module.import_assets(src,dst) # identical import is safe to repeat
 
+    def test_optional_catalogue_and_profiles_are_copied_with_the_pack(self):
+        module=self.importer()
+        with tempfile.TemporaryDirectory() as tmp:
+            src=Path(tmp)/'source';dst=Path(tmp)/'target';self.fixture(src)
+            for name,data in [('filament-catalog.json',{'products':[]}),('filament-profiles.json',{'profiles':{}})]:
+                (src/name).write_text(json.dumps(data))
+            module.import_assets(src,dst)
+            for name in ['filament-catalog.json','filament-profiles.json']:self.assertEqual((src/name).read_bytes(),(dst/name).read_bytes())
     def test_missing_pack_fails_before_writing(self):
         module=self.importer()
         with tempfile.TemporaryDirectory()as tmp:

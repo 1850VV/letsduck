@@ -3,6 +3,7 @@ import argparse, hashlib, json, shutil, tempfile, zipfile
 from pathlib import Path
 
 FILES=('source.3mf','geometry.bin','model.json','catalog.json','export-schema.json')
+OPTIONAL_FILES=('filament-catalog.json','filament-profiles.json')
 ROOT=Path(__file__).resolve().parents[1]
 
 def import_assets(source,target):
@@ -22,15 +23,19 @@ def import_assets(source,target):
     if not isinstance(schema.get('filamentChunks'),dict) or not isinstance(schema.get('variantKeys'),list):
         raise ValueError('Invalid export schema')
     if not (source/'geometry.bin').stat().st_size:raise ValueError('Empty geometry')
+    files=FILES+tuple(name for name in OPTIONAL_FILES if (source/name).is_file())
+    for name in files:
+        if (source/name).is_symlink():raise ValueError('Local asset cannot be a symlink: '+name)
+        if name in OPTIONAL_FILES:json.loads((source/name).read_text())
     # Validate all destinations before writing any file; never replace a different pack.
-    for name in FILES:
+    for name in files:
         dest=target/name
         if dest.exists() and (dest.is_symlink() or dest.read_bytes()!=(source/name).read_bytes()):
             raise FileExistsError('Different local asset already exists: '+name)
     target.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(dir=target) as tmp:
-        for name in FILES:shutil.copyfile(source/name,Path(tmp)/name)
-        for name in FILES:
+        for name in files:shutil.copyfile(source/name,Path(tmp)/name)
+        for name in files:
             if not (target/name).exists():(Path(tmp)/name).replace(target/name)
     return digest
 
@@ -41,7 +46,7 @@ def main():
     args=parser.parse_args()
     try:digest=import_assets(args.source,args.target)
     except (ValueError,OSError,zipfile.BadZipFile) as error:parser.exit(1,str(error)+'\n')
-    print('Imported five local-only assets. Source SHA-256: '+digest)
+    print('Imported local-only assets (five required, plus any optional catalogue and presets). Source SHA-256: '+digest)
     print('These assets retain their own terms; do not force-add them to Git.')
     # The browser downloads the smaller geometry.pack.bin when present and falls back to geometry.bin.
     from pack_geometry import write_pack

@@ -67,7 +67,7 @@ let saved = {};try {saved = JSON.parse(read(KEY)) || {};} catch {}
 let defaultName = !saved.draft?.name;
 let design = saved.draft?.design || clone(ORIGINAL),name = saved.draft?.name || _t("text.0047"),provenance = saved.draft?.provenance || null;
 for(const part of parts)if(design.assignments[part.id]&&!products.has(design.assignments[part.id]))design.assignments[part.id]=null;
-let schemes = Array.isArray(saved.schemes) ? saved.schemes : [],owner = saved.owner || null,activeId = saved.draft?.activeId || null,recent = saved.recent || [],locks = new Set(saved.locks || []),voiceSalt = saved.draft?.voiceSalt || 0;
+let schemes = Array.isArray(saved.schemes) ? saved.schemes : [],owner = saved.owner || null,activeId = saved.draft?.activeId || null,recent = (saved.recent || []).filter(k=>isHex(k)||products.has(k)),locks = new Set(saved.locks || []),voiceSalt = saved.draft?.voiceSalt || 0;
 const baseline = () => schemes.find((s) => s.id === activeId)?.design || ORIGINAL;
 const dirty = () => {
   const stored = personal && schemes.find(s => s.id === activeId);
@@ -393,7 +393,7 @@ function dockHTML(finishes) {return `<div class="cdock" id="cdock" data-tab="${d
 const matchSearch = (p) => !search || [p.name,p.colorCode,p.nameEn,p.brand,p.series,...(p.skus||[])].filter(Boolean).join(' ').toLowerCase().includes(search.toLowerCase());
 function buildGrid() {
   const g=$('#lib-grid');if(!g)return;const all=brandList(source,gridKind()),series=[...new Set(all.map(p=>p.series))];if(!series.includes(filamentSeries))filamentSeries=series[0]||'';
-  $('#series-slot').innerHTML=`<label class="filament-series"><span>系列</span><select id="filament-series" aria-label="耗材系列">${series.map(s=>`<option value="${_attr(s)}" ${s===filamentSeries?'selected':''}>${esc(s)}</option>`).join('')}</select></label>`;
+  if($('#filament-series')?.dataset.scope!==source+':'+gridKind())$('#series-slot').innerHTML=`<label class="filament-series"><span>系列</span><select id="filament-series" data-scope="${source+':'+gridKind()}" aria-label="耗材系列" ${series.length?'':'disabled'}>${series.map(s=>`<option value="${_attr(s)}" ${s===filamentSeries?'selected':''}>${esc(s)}</option>`).join('')}</select></label>`;
   const list=all.filter(p=>p.series===filamentSeries).filter(matchSearch);$('#filament-count').textContent=list.length+' 条配色 · 厂商官方色值';
   g.innerHTML = list.length ? list.map((p) => {const f = finishOfProduct(p);return `<button class="dot fin-${f}" role="option" data-key="${p.id}" style="--c:${p.hex};${p.colors?.length>1?'background:linear-gradient(135deg,'+p.colors.join(',')+')':''}" aria-label="${_attr(productLabel(p))}">${f === 'translucent' ? `<b>${_t("text.0183")}</b>` : ''}</button>`;}).join('') : `<p class="tip">${
   search ? _t("text.0184") : _t("text.0185")}</p>`;

@@ -12,6 +12,25 @@ def payload():
     image=png()
     return dict(source_sha256=e.MODEL['source_sha256'],assignments={p['id']:next(x['id'] for x in e.PRODUCTS.values() if x['series']==p['material'] and x['hex']==p['color']) for p in e.PARTS.values()},thumbnails={name:image for name in ['cover']+[f'{k}{i}' for k in ['plate','top'] for i in range(1,7)]})
 class ExportTests(unittest.TestCase):
+    def test_real_brand_native_metadata_and_generic_parameters_survive_export(self):
+        from unittest.mock import patch
+        sample={'id':'sample-petg','brand':'Example','series':'PETG+','material':'PETG','name':'Two colours','colorCode':'A7','hex':'#123456','colors':['#123456','#FEDCBA'],'finish':'basic','sourceUrl':'https://example.test/colour'}
+        profile={'name':'Generic PETG @BBL P1P','compatibleP1P':True,'sourceUrl':'https://example.test/profile','settings':{'filament_type':['PETG'],'nozzle_temperature':['247']}}
+        with patch.dict(e.PRODUCTS,{sample['id']:sample}),patch.dict(e.PROFILE_DATA,{'profiles':{profile['name']:profile}},clear=True):
+            p=payload();p['assignments']['P2-03']=sample['id'];result,report=e.export_3mf(p)
+            z=zipfile.ZipFile(io.BytesIO(result));config=json.loads(z.read('Metadata/project_settings.config'));slot=next(s for s in report['slots'] if s['product']['id']==sample['id']);i=slot['slot']-1
+            self.assertEqual(config['filament_vendor'][i],'Example');self.assertEqual(config['filament_type'][i],'PETG')
+            self.assertIn('PETG+',config['filament_settings_id'][i]);self.assertIn('A7',config['filament_settings_id'][i])
+            self.assertEqual(config['filament_multi_colour'][i],'#123456 #FEDCBA');self.assertEqual(config['nozzle_temperature'][-2:],['247','247'])
+            self.assertEqual(slot['profile']['status'],'official-generic');self.assertEqual(report['parts'][next(j for j,r in enumerate(report['parts']) if r['id']=='P2-03')]['product'],sample)
+            self.assertTrue(all(z.read(n)==e.SOURCE_ZIP.read(n) for n in z.namelist() if n.startswith('3D/')))
+    def test_missing_profile_allows_truthful_bom_but_rejects_unconfigured_3mf(self):
+        from unittest.mock import patch
+        sample={'id':'sample-peek','brand':'Example','series':'PEEK','material':'PEEK','name':'Natural','hex':'#123456'}
+        with patch.dict(e.PRODUCTS,{sample['id']:sample}),patch.dict(e.PROFILE_DATA,{'profiles':{}},clear=True):
+            p=payload();p['assignments']['P2-03']=sample['id'];report=e.plan(p)
+            self.assertEqual(report['slots'][-1]['profile']['status'],'unavailable')
+            with self.assertRaisesRegex(e.InvalidDesign,'PEEK'):e.export_3mf(p)
     def test_baseline_preserves_all_geometry_and_process_settings(self):
         result,report=e.export_3mf(payload());z=zipfile.ZipFile(io.BytesIO(result))
         self.assertEqual(len(report['slots']),4)

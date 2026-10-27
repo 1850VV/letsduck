@@ -1,6 +1,6 @@
 """XGO Duck V2 adapter. Byte-preserve every mesh; edit only material assignments.
 Bambu Studio 02.08.02.61 configuration layout, fixed to the reviewed source SHA.
-No slicing, automatic profile replacement, hardware connection, or MCP.
+No slicing, hardware connection, or MCP. Presets come from local official snapshots.
 """
 from pathlib import Path
 from datetime import datetime, timezone
@@ -9,12 +9,16 @@ import xml.etree.ElementTree as ET
 
 import os
 from zip_reuse import repack_zip
+from filaments import load_catalog, compatible_product
+from material_profiles import load_profiles, resolve_profile
 
 ROOT = Path(__file__).resolve().parent
 # Separately licensed local asset pack; mounted in Docker, ../assets during development.
 ASSETS = Path(os.environ.get('DUCK_ASSETS', ROOT.parent / 'assets'))
 MODEL = json.loads((ASSETS / 'model.json').read_text())
-CATALOG = json.loads((ASSETS / 'catalog.json').read_text())
+LEGACY_PRODUCTS={p['id'] for p in json.loads((ASSETS/'catalog.json').read_text())['products']}
+CATALOG=load_catalog(ASSETS)
+PROFILE_DATA=load_profiles(ASSETS)
 SCHEMA = json.loads((ASSETS / 'export-schema.json').read_text())
 PRODUCTS = {p['id']: p for p in CATALOG['products']}
 PARTS = {p['id']: p for p in MODEL['parts']}
@@ -43,7 +47,7 @@ def plan(payload):
         product = PRODUCTS.get(product_id) if isinstance(product_id, str) else None
         if not product:
             raise InvalidDesign(f'{part_id} 尚未选择实际耗材；目标色不能直接作为产品导出。', code='export.25', params={'v0': part_id})
-        if product['series'] != part['material']:
+        if not compatible_product(part['material'],product):
             raise InvalidDesign(f'{part_id} 必须保持 {part["material"]}，不能替换材料或硬度。', code='export.26', params={'v0': part_id, 'v1': part["material"]})
         if product_id not in palette:
             palette.append(product_id)
@@ -61,9 +65,13 @@ def plan(payload):
             mixed.append(plate)
     if 1 in mixed:
         warnings.insert(0, '板 1 含多种 TPU 颜色；这些软料不能通过 AMS 自动换色，需由商家拆分任务或另行安排换料。当前项目保留原摆放。')
+    new_products=[PRODUCTS[p] for p in palette if p not in LEGACY_PRODUCTS]
+    if new_products:warnings.append('新增耗材使用厂商或通用官方预设；TPU 90A 沿用源项目参数。切片前须核对机型、喷嘴及耗材参数，未进行实物打印验证。')
     if any(p != 1 for p in mixed):
         warnings.append('部分 PLA 板包含多色，需要匹配实际 AMS / 换料方案并检查擦料塔。')
-    return dict(schema='duck-studio-materials/2', name=str(payload.get('name', '我的方案'))[:100], createdAt=datetime.now(timezone.utc).isoformat(), source_sha256=MODEL['source_sha256'], sourceFile='XGO_duckV2.3mf', catalogue={k: CATALOG[k] for k in ['version','sourceUrl','sourceSha256','scope']}, sourceBambuVersion='02.08.02.61', plateCount=6, objectCount=25, partCount=35, slots=[dict(slot=i+1, sourceTemplateSlot=(i+1 if i < 4 else (4 if PRODUCTS[p]['material']=='TPU' else 1)), product=PRODUCTS[p], used=any(r['product']['id']==p for r in rows)) for i,p in enumerate(palette)], parts=rows, mixedColorPlates=mixed, warnings=warnings)
+    unavailable=[p for p in new_products if resolve_profile(p,PROFILE_DATA)['status']=='unavailable']
+    if unavailable:warnings.append('以下材料暂无匹配打印预设，可导出耗材清单；3MF 需补齐预设：'+', '.join(p['brand']+' '+p['series'] for p in unavailable))
+    return dict(schema='duck-studio-materials/2', name=str(payload.get('name', '我的方案'))[:100], createdAt=datetime.now(timezone.utc).isoformat(), source_sha256=MODEL['source_sha256'], sourceFile='XGO_duckV2.3mf', catalogue={k: CATALOG[k] for k in ['version','sourceUrl','sourceSha256','scope','extension'] if k in CATALOG}, sourceBambuVersion='02.08.02.61', plateCount=6, objectCount=25, partCount=35, slots=[dict(slot=i+1, sourceTemplateSlot=(i+1 if i < 4 else (4 if PRODUCTS[p]['material']=='TPU' else 1)), product=PRODUCTS[p], profile={k:v for k,v in resolve_profile(PRODUCTS[p],PROFILE_DATA).items() if k!='settings'} if p not in LEGACY_PRODUCTS else {'status':'source-template','name':CONFIG['filament_settings_id'][i if i<4 else (3 if PRODUCTS[p]['material']=='TPU' else 0)]}, used=any(r['product']['id']==p for r in rows)) for i,p in enumerate(palette)], parts=rows, mixedColorPlates=mixed, warnings=warnings)
 
 def remap_config(report):
     out = copy.deepcopy(CONFIG)
@@ -78,6 +86,26 @@ def remap_config(report):
     out['filament_self_index'] = [str(i+1) for i,t in enumerate(templates) for _ in range(SCHEMA['filamentChunks']['filament_extruder_variant'][t])]
     for key in ['filament_colour', 'filament_multi_colour']:
         out[key] = [s['product']['hex'] for s in report['slots']]
+    # Native slot fields matter to the slicer, in addition to the complete product BOM.
+    for index,slot in enumerate(report['slots']):
+        product=slot['product']
+        if product['id'] in LEGACY_PRODUCTS:continue
+        profile=resolve_profile(product,PROFILE_DATA)
+        for key,sizes in SCHEMA['filamentChunks'].items():
+            values=profile['settings'].get(key)
+            size=sizes[templates[index]]
+            if not isinstance(values,list) or not values:continue
+            if len(values)==1:values=values*size
+            if len(values)!=size:continue
+            offset=sum(sizes[t] for t in templates[:index]);out[key][offset:offset+size]=values
+        label=' · '.join(str(v) for v in [product['brand'],product['series'],product['name'],product.get('colorCode') or (product.get('skus') or [None])[0]] if v)
+        out['filament_vendor'][index]=product['brand']
+        out['filament_type'][index]=profile['type']
+        out['filament_ids'][index]=product.get('familyId') if product.get('brand')=='Bambu Lab' and product.get('familyId') else 'DUCK-'+hashlib.sha256(product['id'].encode()).hexdigest()[:12]
+        out['filament_settings_id'][index]=label
+        out['filament_colour'][index]=product['hex']
+        out['filament_multi_colour'][index]=' '.join(product.get('colors') or [product['hex']])
+        if 'filament_colour_type' in out:out['filament_colour_type'][index]='2' if len(product.get('colors') or [])>1 else '1'
     # These are the only mixed print/filament/printer arrays present in this source.
     for key in ['different_settings_to_system','inherits_group','compatible_machine_expression_group']:
         if key in CONFIG:
@@ -87,6 +115,12 @@ def remap_config(report):
     if 'compatible_process_expression_group' in CONFIG:
         old = CONFIG['compatible_process_expression_group']; assert len(old)==4
         out['compatible_process_expression_group'] = [old[t] for t in templates]
+    for i,slot in enumerate(report['slots']):
+        if slot['product']['id'] not in LEGACY_PRODUCTS:
+            profile=resolve_profile(slot['product'],PROFILE_DATA)
+            if profile['status'].startswith('official-'):
+                if 'inherits_group' in out:out['inherits_group'][i+1]=profile['name']
+                if 'different_settings_to_system' in out:out['different_settings_to_system'][i+1]='filament_vendor;filament_type;filament_ids;filament_settings_id;filament_colour;filament_multi_colour'
     old = CONFIG['flush_volumes_matrix']
     # Avoid zero purge between different new colors copied from the same template.
     # This is a conservative placeholder, never a claim of calibrated purge volume.
@@ -162,6 +196,8 @@ def verify_result(result, report, expected_config):
 
 def export_3mf(payload):
     report = plan(payload)
+    unresolved=[s for s in report['slots'] if s['used'] and s['profile']['status']=='unavailable']
+    if unresolved:raise InvalidDesign('暂无法导出 3MF：尚无匹配打印预设（'+', '.join(s['product']['brand']+' '+s['product']['series'] for s in unresolved)+'）。可先导出耗材清单。')
     config = remap_config(report)
     replacements = {'Metadata/project_settings.config':json.dumps(config,ensure_ascii=False,indent=4).encode(), 'Metadata/model_settings.config':remap_objects(report)}
     thumbs=payload.get('thumbnails')
@@ -175,7 +211,7 @@ def export_3mf(payload):
     for name in SOURCE_ZIP.namelist():
         if name.startswith('Auxiliaries/.thumbnails/') and name.endswith('.png'):replacements[name]=cover
     report['previewNote']='板图与封面由当前网格和已选耗材重新渲染。Auxiliaries 中原作者的 Model/Profile Pictures 属于历史参考，未改写。拾取 ID 图保留原版。'
-    report['preservationNote']='原始 4 槽保留，新颜色追加同材料模板；材质、硬度、流量、温度等参数按原槽复制。产品识别信息写入本清单。'
+    report['preservationNote']='原始 4 槽与原 36 色预设保留。新增真实耗材写入原生品牌、材料类型、系列与色号，并使用匹配的本地官方预设；TPU 90A 沿用源项目参数。完整产品身份与预设来源保存在本清单。'
     content_types=SOURCE_ZIP.read('[Content_Types].xml').decode().replace('</Types>',' <Override PartName="/Metadata/duck_studio_materials.json" ContentType="application/json"/>\n</Types>')
     replacements['[Content_Types].xml']=content_types.encode()
     def pack():

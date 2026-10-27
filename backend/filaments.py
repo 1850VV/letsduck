@@ -31,6 +31,6 @@ def load_catalog(assets):
     for product in extra['products']:
         if not selectable(product):pending.append(product)
         elif product['id'] not in known:known[product['id']]=product
-    return {**base,'version':extra['version'],'checkedAt':extra.get('checkedAt'),
+    return {**base,**{k:extra[k] for k in ['version','scope','summary'] if k in extra},'checkedAt':extra.get('checkedAt'),
             'products':list(known.values()),'pendingProducts':pending,
             'extension':{k:extra[k] for k in ['version','checkedAt','scope','summary'] if k in extra}}
