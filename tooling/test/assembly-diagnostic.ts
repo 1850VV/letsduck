@@ -8,7 +8,10 @@ import {dirname,join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {gzipSync} from 'node:zlib';
 
-const revision='d5c38e4fa890a4eca40d8857317ac463163b46c3',digits=9;
+// Independently measured old MJS on macOS/Linux: near-gimbal Euler asin
+// amplifies 2.22e-16 at its input to 1.09e-8 rad. Seven decimals preserve
+// sub-micron positions while keeping structure/strings/integers exact.
+const revision='d5c38e4fa890a4eca40d8857317ac463163b46c3',digits=7,quantum=1e-7;
 const repository=resolve(process.argv[2]??'.');
 const reference=await mkdtemp(join(process.env.RUNNER_TEMP??tmpdir(),'duck-assembly-reference-'));
 const sha=(text:string)=>createHash('sha256').update(text).digest('hex');
@@ -50,14 +53,14 @@ try{
   if(a!==b)record(a,b);
  }
  compare(JSON.parse(oldRaw)as unknown,JSON.parse(currentRaw)as unknown);
- const report={reference:{revision,entry:'frontend/assemble/hardware-state.mjs'},current:{entry:'frontend/assemble/hardware-state.ts'},runtime:{platform:process.platform,arch:process.arch,node:process.version,v8:process.versions.v8,execArgv:process.execArgv},canonical:{decimalPlaces:digits,maxQuantum:1e-9,old:sha(oldPortable),current:sha(currentPortable)},raw:{old:sha(oldRaw),current:sha(currentRaw)},counts:{old:counts(old),current:counts(current)},differences:{structuralCount,firstStructural:structural,numericCount,maximumAbsolute,maximum,firstNumeric:numeric}};
+ const report={reference:{revision,entry:'frontend/assemble/hardware-state.mjs'},current:{entry:'frontend/assemble/hardware-state.ts'},runtime:{platform:process.platform,arch:process.arch,node:process.version,v8:process.versions.v8,execArgv:process.execArgv},canonical:{decimalPlaces:digits,maxQuantum:quantum,old:sha(oldPortable),current:sha(currentPortable)},raw:{old:sha(oldRaw),current:sha(currentRaw)},counts:{old:counts(old),current:counts(current)},differences:{structuralCount,firstStructural:structural,numericCount,maximumAbsolute,maximum,firstNumeric:numeric}};
  console.log(JSON.stringify(report,null,2));
  const output=process.env.DUCK_ASSEMBLY_DIAGNOSTIC_OUTPUT;
  if(output){await mkdir(dirname(resolve(output)),{recursive:true});await writeFile(output,JSON.stringify(report,null,2)+'\n');await writeFile(output+'.old.json.gz',gzipSync(oldRaw));await writeFile(output+'.current.json.gz',gzipSync(currentRaw));}
  assert.deepEqual(counts(old),{steps:111,actors:275,snapshots:444});
  assert.deepEqual(counts(current),counts(old));
  assert.equal(structuralCount,0,'Legacy/current structure, order, strings and enums differ');
- assert.equal(sha(oldPortable),'6152562e860561ca6470b57b88b34b16b3f537909d251eb0ceecaa90c02ad01e','Independent legacy portable golden changed');
+ assert.equal(sha(oldPortable),'c1df395ad72e025a59cd0a1fce7d0292ecd775c43ef18908cc9c6e1a46be538b','Independent legacy portable golden changed');
  assert.equal(sha(currentPortable),sha(oldPortable),'Legacy/current portable poses differ');
- assert.ok(maximumAbsolute<=1e-9,'A numeric change exceeds the documented quantum');
+ assert.ok(maximumAbsolute<=quantum,'A numeric change exceeds the documented quantum');
 }finally{await rm(reference,{recursive:true,force:true});assert.equal(await import('node:fs').then(fs=>fs.existsSync(reference)),false);console.log(JSON.stringify({temporaryReferenceRemoved:true}));}
