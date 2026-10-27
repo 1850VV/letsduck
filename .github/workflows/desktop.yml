@@ -34,6 +34,9 @@ jobs:
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      # PR builds skip even ad-hoc signing unless enabled; re-seal the packaged macOS bundle.
+      CSC_NAME: '-'
+      CSC_FOR_PULL_REQUEST: 'true'
       DUCK_BUILD_ARCH: ${{ matrix.arch }}
       DUCK_RELEASE_VERSION: '0.1.0-beta.4'
       DUCK_PACKAGE_WITHOUT_ASSETS: '1'
@@ -58,7 +61,7 @@ jobs:
         run: npx tsx --test tooling/test/local-cli.test.ts
       - name: Actual Electron protocol, startup, utility lifecycle and retained profile
         run: node --import tsx apps/desktop/test/shell.browser.ts
-      - name: Build an offline unsigned source-only installer
+      - name: Build an offline source-only installer
         run: npm run package:desktop -- ${{ matrix.target }}
       - name: Install the candidate and check the synthetic subset
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts --synthetic
