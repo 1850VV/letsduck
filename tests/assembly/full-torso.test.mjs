@@ -32,13 +32,13 @@ test('torso exports importable, contiguous chapters for 08:16–12:48 with at mo
     assert.ok(chapter.id.startsWith('torso-'));
     assert.equal(chapter.start, cursor);
     assert.ok(chapter.end - chapter.start + 1 <= 9);
-    assert.equal(chapter.sourceStart, torso.STEPS[chapter.start].sourceStart);
-    assert.equal(chapter.sourceEnd, torso.STEPS[chapter.end].sourceEnd);
+    const actions=torso.STEPS.slice(chapter.start,chapter.end+1);
+    assert.equal(chapter.sourceStart, Math.min(...actions.map(s=>s.sourceStart)));
+    assert.equal(chapter.sourceEnd, Math.max(...actions.map(s=>s.sourceEnd)));
     for (let i = chapter.start; i <= chapter.end; i++) {
       const s = torso.STEPS[i];
       assert.equal(s.chapter, chapter.id);
       assert.ok(s.sourceEnd > s.sourceStart);
-      if (i) assert.equal(torso.STEPS[i - 1].sourceEnd, s.sourceStart);
       for (const key of ['short', 'title', 'text', 'check', 'caption']) assert.equal(typeof s[key], 'string');
       assert.ok(s.duration > 0);
       assert.equal(s.camera.length, 3);
@@ -47,6 +47,8 @@ test('torso exports importable, contiguous chapters for 08:16–12:48 with at mo
     cursor = chapter.end + 1;
   }
   assert.equal(cursor, torso.STEPS.length);
+  const clips=[...torso.STEPS].sort((a,b)=>a.sourceStart-b.sourceStart);
+  for(let i=1;i<clips.length;i++)assert.equal(clips[i-1].sourceEnd,clips[i].sourceStart,'all original source actions remain covered after matching PDF sides');
 });
 
 // Catches swapping the source link names for yaw/roll motors or re-registering a real mesh.
