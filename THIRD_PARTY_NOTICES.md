@@ -31,7 +31,7 @@ The screenshots and animated clips in `docs/media/` (used by the README) show re
 
 ## Project mark
 
-The 来做鸭 / letsduck mark (`frontend/shared/brand/logo.svg`, drawn inline by `frontend/shared/brand.mjs`) is original project artwork under this repository's MIT licence: a duck head in one stroke whose jaw is a paintbrush. The name is set in the visitor's system font; no font files are shipped. The earlier avatar image (2026-10-23, an AI-generated adaptation of Pollen Robotics' MicroDuck head illustration) and its vector wordmarks were removed from the current tree.
+The 来做鸭 / letsduck mark (`frontend/shared/brand/logo.svg`, drawn inline by `frontend/shared/brand.mjs`) embeds the original white-and-orange MicroDuck full-body product render by Pollen Robotics, sourced from the [MicroDuck website](https://pollen-robotics.com/microduck/) ([original PNG](https://pollen-robotics.com/assets/microduck/moves-portrait-alpha/posters/walk.png)). The PNG bytes are unchanged; the SVG viewport fits the complete robot into the existing avatar background. This third-party artwork is excluded from this repository's MIT licence; its copyright and applicable upstream terms remain with their respective owners. Use of this reference does not imply endorsement or trademark permission. The project name uses the visitor's system font; no font files are shipped.
 
 ## meshoptimizer 1.0.1
 
