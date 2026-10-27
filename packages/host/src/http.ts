@@ -1,14 +1,14 @@
 import { isIP } from 'node:net';
 import type { IncomingMessage } from 'node:http';
 import Fastify, { LogController } from 'fastify';
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { DebugError, SetupError, validatedUpdates } from '@letsduck/devices';
 import { Invalid, errorPayload, isJsonObject, parseWireJson, readJsonField } from '@letsduck/domain';
 import { ExportBodyError, ExportBusy, decodeJsonBytes, parseMultipart } from '@letsduck/exporter';
 import { htmlError, personalStatic, sendBody } from './static.js';
 import { jsonStringify } from '@letsduck/storage';
-import type { PersonalHttpOptions } from './http-types.js';
-export type { AssemblyManifest, HostExporter, HttpDuckDebug, HttpServoSetup, PersonalHttpOptions } from './http-types.js';
+import type { PersonalHttpOptions, PersonalHttpServer } from './http-types.js';
+export type { AssemblyManifest, HostExporter, HttpDuckDebug, HttpServoSetup, PersonalHttpOptions, PersonalHttpServer } from './http-types.js';
 
 const maxBody = 8_000_000;
 const contentTypes = new WeakMap<FastifyRequest, string | undefined>();
@@ -53,7 +53,6 @@ async function readBytes(request: FastifyRequest): Promise<Buffer> {
   for await (const chunk of request.raw) {
     const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
     const take = bytes.subarray(0, count - read); chunks.push(take); read += take.length;
-    if (read >= count) break;
   }
   return Buffer.concat(chunks, read);
 }
@@ -72,7 +71,7 @@ async function readExport(request: FastifyRequest): Promise<Record<string, unkno
 }
 
 /** Construct a listener-free personal adapter. The caller owns storage, workers and devices. */
-export function createPersonalHttp(options: PersonalHttpOptions): FastifyInstance {
+export function createPersonalHttp(options: PersonalHttpOptions): PersonalHttpServer {
   const originalUrls = new WeakMap<IncomingMessage, string>();
   const app = Fastify({ rewriteUrl(request) { originalUrls.set(request, request.url ?? '/'); return '/'; }, logger: { level: 'warn' }, logController: new LogController({ disableRequestLogging: true }), exposeHeadRoutes: false, trustProxy: false, routerOptions: { ignoreTrailingSlash: false, maxParamLength: 4096 },
     clientErrorHandler(error, socket) {
@@ -86,6 +85,8 @@ export function createPersonalHttp(options: PersonalHttpOptions): FastifyInstanc
       socket.end(Buffer.concat([Buffer.from(`HTTP/1.1 ${status} ${tooLarge ? 'Request Entity Too Large' : 'Bad Request'}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: ${bytes.length}\r\nCache-Control: ${path.startsWith('/api/') ? 'no-store' : 'no-cache'}\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n`), bytes]));
     },
   });
+  const requests = new Set<Promise<unknown>>();
+  const waitRequests = async () => { while (requests.size) await Promise.allSettled([...requests]); };
   const files = personalStatic(options);
   const needExporter = (catalog = false) => { if (!options.exporter?.available) throw new Invalid(catalog ? '耗材色表未加载' : '没有加载模型资产，暂时不能导出', catalog ? 'validation.29' : 'validation.31'); return options.exporter; };
   async function api(request: FastifyRequest, path: string): Promise<unknown> {
@@ -128,10 +129,11 @@ export function createPersonalHttp(options: PersonalHttpOptions): FastifyInstanc
       const exporter = needExporter();
       const cancellation = new AbortController();
       const abort = () => cancellation.abort();
+      const socket = request.raw.socket;
       request.raw.once('aborted', abort);
-      request.raw.socket.once('close', abort);
+      socket?.once('close', abort);
       try { return path === '/api/plan' ? await exporter.run('plan', await readJson(request), cancellation.signal) : await exporter.run('export', await readExport(request), cancellation.signal); }
-      finally { request.raw.off('aborted', abort); request.raw.socket.off('close', abort); }
+      finally { request.raw.off('aborted', abort); socket?.off('close', abort); }
     }
     throw new Reply(404, notFound);
   }
@@ -167,6 +169,17 @@ export function createPersonalHttp(options: PersonalHttpOptions): FastifyInstanc
     return payload;
   });
   app.addContentTypeParser('*', (_request, _payload, done) => { done(null, undefined); });
-  app.all('/*', dispatch);
-  return app;
+  app.all('/*', (request, reply) => {
+    const delivered = new Promise<void>(resolve => {
+      const response = reply.raw;
+      const done = () => { response.off('finish', done); response.off('close', done); resolve(); };
+      if (response.writableFinished || response.destroyed) done();
+      else { response.once('finish', done); response.once('close', done); }
+    });
+    const task = dispatch(request, reply), settled = Promise.allSettled([task, delivered]);
+    requests.add(settled);
+    void settled.then(() => requests.delete(settled));
+    return task;
+  });
+  return Object.assign(app, { waitRequests });
 }

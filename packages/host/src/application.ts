@@ -4,14 +4,13 @@ import type { DuckRuntime } from '@letsduck/devices';
 import { ExportManager } from '@letsduck/exporter';
 import { PersonalStore } from '@letsduck/storage';
 import { pythonInteger, pythonStrip } from '@letsduck/domain';
-import type { FastifyInstance } from 'fastify';
 import { createPersonalHttp } from './http.js';
-import type { HostExporter } from './http-types.js';
+import type { HostExporter, PersonalHttpServer } from './http-types.js';
 
 interface HostAssets { partIds: string[]; exporter: HostExporter }
 interface HostDevices { setup: ServoSetup; debug: DuckDebug }
 declare module '@deepseek-ai/cordis' {
-  interface Context { duckExports: ExportManager; duckAssets: HostAssets; duckStore: PersonalStore; duckDevices: HostDevices; duckHttp: FastifyInstance }
+  interface Context { duckExports: ExportManager; duckAssets: HostAssets; duckStore: PersonalStore; duckDevices: HostDevices; duckHttp: PersonalHttpServer }
 }
 export interface HostOptions {
   assets: string;
@@ -38,16 +37,18 @@ export async function startHost(options: HostOptions) {
   const host = options.host ?? '127.0.0.1', port = options.port ?? 0, search = options.search ?? 20;
   if (!Number.isInteger(port) || port < 0 || port > 65535 || !Number.isInteger(search) || search < 1) throw new RangeError('Invalid local listening port or search count');
   const root = new Context();
-  let exports: ExportManager | undefined, store: PersonalStore | undefined, devices: HostDevices | undefined, http: FastifyInstance | undefined;
+  let exports: ExportManager | undefined, store: PersonalStore | undefined, devices: HostDevices | undefined, http: PersonalHttpServer | undefined;
   let closing = false, drained: Promise<void> | undefined, stopped: Promise<void> | undefined;
   const drain = () => drained ??= (async () => {
     closing = true;
     const errors: unknown[] = [];
     const attempt = async (operation: () => unknown) => { try { await operation(); } catch (error) { errors.push(error); } };
-    const requests = http ? http.close().catch(error => { errors.push(error); }) : Promise.resolve();
     await attempt(() => devices?.debug.stopBackground());
     await attempt(() => devices?.setup.stopBackground());
-    await requests;
+    // TCP close alone does not await handlers after a client disconnects.
+    await attempt(() => http?.waitRequests());
+    // Fastify closes pipelined sockets during close(); finish accepted work first.
+    await attempt(() => http?.close());
     await attempt(() => exports?.close());
     await attempt(() => devices?.debug.close());
     await attempt(() => devices?.setup.close());
@@ -86,10 +87,6 @@ export async function startHost(options: HostOptions) {
       const server = http = createPersonalHttp({ assets: options.assets, frontend: options.frontend, store: ctx.duckStore, setup: ctx.duckDevices.setup, debug: ctx.duckDevices.debug, exporter: ctx.duckAssets.exporter, listenHost: host, ...(options.uiOrigin === undefined ? {} : { uiOrigin: options.uiOrigin }) });
       server.addHook('onRequest', async (_request, reply) => {
         if (closing) return reply.code(503).type('application/json; charset=utf-8').send({ error: '服务正在关闭，请稍后重试', code: 'request.failed', params: {} });
-      });
-      server.addHook('onResponse', async request => {
-        // A response completed after close() must not start another 72s keep-alive.
-        if (closing && request.raw.socket.writable && !request.raw.socket.writableEnded) request.raw.socket.end();
       });
       for (let attempt = 0; attempt < (port === 0 ? 1 : search); attempt++) {
         try { await server.listen({ host: host === '' ? '0.0.0.0' : host, port: port === 0 ? 0 : port + attempt }); break; }

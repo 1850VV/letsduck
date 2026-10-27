@@ -1,5 +1,7 @@
 import type { ExportManager } from '@letsduck/exporter';
 import type { PersonalStore } from '@letsduck/storage';
+import type { FastifyInstance } from 'fastify';
+export type PersonalHttpServer = FastifyInstance & { waitRequests(): Promise<void> };
 
 type Awaitable<T> = T | Promise<T>;
 /** Only the HTTP-facing surface is required; hardware ownership stays in the application. */

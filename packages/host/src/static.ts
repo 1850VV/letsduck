@@ -5,10 +5,10 @@ import { dirname, extname, join, posix, resolve } from 'node:path';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { jsonStringify } from '@letsduck/storage';
 import type { AssemblyManifest, PersonalHttpOptions } from './http-types.js';
+import { frontendMime } from './mime.js';
 
 const publicAssets = new Set(['model.json', 'catalog.json', 'geometry.bin', 'geometry.pack.bin', 'geometry.positions.bin', 'export-schema.json']);
 const kinds: Readonly<Record<string, string>> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.txt': 'text/plain; charset=utf-8', '.bin': 'application/octet-stream', '.glb': 'model/gltf-binary', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg' };
-const frontendKinds: Readonly<Record<string, string>> = { '.htm': 'text/html', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff': 'font/woff', '.woff2': 'font/woff2', '.wasm': 'application/wasm', '.py': 'text/x-python', '.conf': 'text/plain', '.pdf': 'application/pdf', '.webmanifest': 'application/manifest+json' };
 const missingAsset = { error: '资产不存在', code: 'request.asset_missing', params: {} };
 
 export function sendBody(request: FastifyRequest, reply: FastifyReply, status: number, data: unknown, contentType = 'application/json; charset=utf-8', headers: Record<string, string> = {}): FastifyReply {
@@ -28,7 +28,7 @@ export function htmlError(request: FastifyRequest, reply: FastifyReply, status: 
   return sendBody(request, reply, status, Buffer.from(body), 'text/html;charset=utf-8');
 }
 async function fileStat(path: string): Promise<Stats | null> { try { return await stat(path); } catch (error) { if (error instanceof Error && 'code' in error && ['ENOENT', 'ENOTDIR'].includes(String(error.code))) return null; throw error; } }
-function mime(path: string, frontend = false): string { const suffix = extname(path); return kinds[suffix] ?? (frontend ? kinds[suffix.toLowerCase()] ?? frontendKinds[suffix.toLowerCase()] : undefined) ?? 'application/octet-stream'; }
+function mime(path: string, frontend = false): string { const suffix = extname(path); return kinds[suffix] ?? (frontend ? kinds[suffix.toLowerCase()] ?? frontendMime(suffix) : undefined) ?? 'application/octet-stream'; }
 function stamp(info: Stats): string { return new Date(Math.floor(info.mtimeMs / 1000) * 1000).toUTCString(); }
 function loadManifest(frontend: string): AssemblyManifest | undefined {
   try {
