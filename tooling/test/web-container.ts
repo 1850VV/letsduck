@@ -63,7 +63,7 @@ async function checkProxy(url:string){
  const health=await json(url,'/api/health'),site=await json(url,'/api/site');assert.equal(health.version,'3.1.0');assert.equal(site.edition,'server');
  const name=`web${randomBytes(5).toString('hex')}`,session=await json(url,'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,password:'temporary-web-CI-fixture'})});assert.equal(typeof session.token,'string');assert.ok(record(session.user));assert.equal(session.user.name,name);
  const authorization={Authorization:'Bearer '+String(session.token)},me=await json(url,'/api/me',{headers:authorization});assert.equal(me.id,session.user.id);assert.equal(me.name,name);
- const scheme=await json(url,'/api/schemes/container-fixture',{method:'PUT',headers:{...authorization,'Content-Type':'application/json'},body:JSON.stringify({name:'Owned nginx proxy scheme',design:{colors:Object.fromEntries(Array.from({length:35},(_,i)=>['p'+i,'#FFFFFF'])),assignments:{},finishes:{}}})});assert.equal(scheme.name,'Owned nginx proxy scheme');
+ const scheme=await json(url,'/api/schemes/container-fixture',{method:'PUT',headers:{...authorization,'Content-Type':'application/json'},body:JSON.stringify({name:'Owned nginx proxy scheme',design:{colors:Object.fromEntries(Array.from({length:35},(_,i)=>['p'+i,'#FFFFFF'])),assignments:Object.fromEntries(Array.from({length:35},(_,i)=>['p'+i,null])),finishes:{}}})});assert.equal(scheme.name,'Owned nginx proxy scheme');
  assert.equal((await request(url,'/api/duck-debug/status')).status,404);
  console.log('PASS unchanged nginx /api proxy reaches owned Node server: health/site, JSON POST registration, bearer GET /me, authenticated PUT scheme and no hardware API');
 }
