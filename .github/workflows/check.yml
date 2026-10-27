@@ -56,3 +56,18 @@ jobs:
         run: npm run audit:publication
       - name: State the validation boundary
         run: echo "Licensed-model browser, manufacturing, native-control and physical-device checks require their separate local acceptance evidence."
+
+  assembly-diagnostic:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[diagnose-assembly]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+          cache: npm
+      - run: npm ci
+      - name: Compare fixed legacy and current assembly on Linux
+        run: npx tsx tooling/test/assembly-diagnostic.ts .
