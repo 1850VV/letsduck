@@ -4,14 +4,15 @@
 
 | 版本 | 代码 | 启动 | 数据库 |
 | --- | --- | --- | --- |
-| 个人使用版 | `apps/local/`、共享 TypeScript packages | 双击 `启动来做鸭.command` / `启动来做鸭.bat`，或 `npm run start:local` | 本机 SQLite 文件 |
+| 个人使用版 | 原启动器使用 `personal/`；可选 Node 入口为 `apps/local/` | 双击 Python 启动器，或 `npm run start:local` | 本机 SQLite 文件 |
 | 服务器版 | `apps/server/`、共享 TypeScript packages | `docker compose up -d --build` | MySQL 8.4（`mysql-data` 卷） |
 
-两者共用 `frontend/`，以及 `packages/domain`（校验）、`packages/exporter`（3MF 导出）和 `packages/storage`（数据访问）。前端读 `/api/site` 的 `edition` 决定是否显示登录、配色广场和发布。运行都需要自行合法持有完整资产包，见 `local-assets.md`。
+两个 Node 入口共用 `frontend/`，以及 `packages/domain`（校验）、`packages/exporter`（3MF 导出）和 `packages/storage`（数据访问）。前端读 `/api/site` 的 `edition` 决定是否显示登录、配色广场和发布。运行都需要自行合法持有完整资产包，见 `local-assets.md`。
 
 ## 个人使用版
 
-- 运行环境为 Node.js 24.20+、24.x；启动器会检查环境并准备 workspace。详细安装与资产步骤见 README。个人版和服务器版的 Node 运行入口都不需要 Python。旧 Python 源码与回归测试暂时保留，用作迁移比对和回退验证。
+- 双击 `启动来做鸭.command` / `.bat` 目前仍检查 Python 3.9+ 并运行 `run.py`，只用标准库。双击启动器将在后续批次迁移。
+- 可选 Node 入口使用 Node.js 24.20+、24.x：先 `npm ci && npm run build`，再 `node apps/local/dist/main.js` 或 `npm run start:local`。Node 运行入口不需要 Python；现有 Python 实现和回归测试用于迁移比对和回退验证。
 - 只监听 `127.0.0.1`，默认端口 8876，被占用时依次尝试后面 20 个端口。`--host`、`--port`、`--no-open` 可调整。
 - 方案文件：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，Linux `~/.local/share/doodleduck/personal.db`，或环境变量 `DUCK_PERSONAL_DB`。它不在应用文件夹里，升级时解压新版本覆盖即可。备份：关闭来做鸭后复制这个文件。
 - 接口：`/api/health`、`/api/site`、`/api/catalog`、`/api/schemes`（无需登录）、`/api/plan`、`/api/export`；账号、作品和评分接口返回 404，`/gallery/` 跳回首页。错误格式和校验码与服务器版相同。

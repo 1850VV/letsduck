@@ -94,3 +94,16 @@ test('server concurrency control rejects overload without starting another datab
     release(); const finished = await accepted; assert.equal(finished.status, 200); assert.equal(finished.body, '[]');
   } finally { release(); await app.waitRequests(); await app.close(); await f.close(); }
 });
+
+test('multipart HEAD calculates its length without allocating the selected file contents', async () => {
+  const f = await fixture();
+  try {
+    const { open } = await import('node:fs/promises'); const file = await open(join(f.root, 'video.mp4'), 'w');
+    try { await file.truncate(64 * 1024 * 1024); } finally { await file.close(); }
+    const before = process.memoryUsage().arrayBuffers;
+    const response = await f.app.inject({ method: 'HEAD', url: '/video.mp4', headers: { range: 'bytes=0-33554431,33554433-' } });
+    const allocated = process.memoryUsage().arrayBuffers - before;
+    assert.equal(response.statusCode, 206); assert.equal(response.body, ''); assert.equal(Number(response.headers['content-length']), 67109102);
+    assert.ok(allocated < 8 * 1024 * 1024, 'HEAD should not allocate selected payload bytes: ' + allocated);
+  } finally { await f.close(); }
+});

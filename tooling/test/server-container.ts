@@ -132,7 +132,7 @@ async function checkPermissions(server: RunningServer) {
 assert.equal(process.getuid(),10001);assert.equal(process.versions.node.split('.')[0],'24');
 for(const executable of ['python','python3','adb'])assert.equal(spawnSync(executable,['--version']).error?.code,'ENOENT',executable);
 fs.writeFileSync('/data/permission-probe','temporary');assert.equal(fs.readFileSync('/data/permission-probe','utf8'),'temporary');fs.unlinkSync('/data/permission-probe');
-for(const directory of ['/app','/assets'])assert.throws(()=>fs.writeFileSync(directory+'/permission-probe','forbidden'),error=>['EACCES','EROFS'].includes(String((error as NodeJS.ErrnoException).code)));
+for(const directory of ['/app','/assets'])assert.throws(()=>fs.writeFileSync(directory+'/permission-probe','forbidden'),error=>['EACCES','EROFS'].includes(String(error.code)));
 for(const path of ['/app/.ryugi','/app/.env','/app/backend/server.py','/app/assets/source.3mf','/app/node_modules/tsx','/app/node_modules/typescript'])assert.equal(fs.existsSync(path),false,path);`;
   await docker('exec', server.name, 'node', '--input-type=module', '-e', code);
   await docker('exec', server.name, 'node', 'tooling/dist/migrate-database.js', '--help');

@@ -187,6 +187,11 @@ def collect(server, root, scenario, custom_404=False, fake_export=False, with_st
             for name, path in [('missing', '/absent'), ('empty-directory', '/empty/'),
                                ('asset-blocked', '/assets/source.3mf')]:
                 request('custom-404-' + name, 'GET', path)
+            for method in ('GET', 'HEAD'):
+                for suffix, headers in [('range', {'range': 'bytes=0-1'}),
+                                        ('etag', {'if-none-match': '*'}),
+                                        ('modified', {'if-modified-since': 'Fri, 01 Jan 2100 00:00:00 GMT'})]:
+                    request('custom-404-' + method.lower() + '-' + suffix, method, '/missing', headers=headers)
             return output
 
         paths = [('/', 'root'), ('/home.html', 'home'), ('/gallery', 'gallery-redirect'),
@@ -258,6 +263,12 @@ def collect(server, root, scenario, custom_404=False, fake_export=False, with_st
                   ('huge-start', 'bytes=999999999999999999999999-'),
                   ('huge-suffix', 'bytes=-999999999999999999999999')]
         for name, value in ranges:
+            request('range-' + name, 'GET', '/file.txt', headers={'range': value})
+        for name, value in [('spaced-unit', ' bytes = 0-1'),
+                            ('empty-fragment', 'bytes=0-1,,4-5'),
+                            ('ignored-fragment', 'bytes=nonsense,0-1'),
+                            ('signed-fragment', 'bytes=+0-+1'),
+                            ('too-many', 'bytes=' + ','.join(['0-1'] * 101))]:
             request('range-' + name, 'GET', '/file.txt', headers={'range': value})
         request('head-range', 'HEAD', '/file.txt', headers={'range': 'bytes=2-5'})
         request('range-with-modified', 'GET', '/file.txt',
