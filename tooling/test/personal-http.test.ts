@@ -118,7 +118,11 @@ test('static aliases, readiness gate, allowlists, directory and method errors ma
   const f = await fixture();
   try {
     assert.equal((await f.app.inject('/?q=1')).body, 'HOME'); assert.equal((await f.app.inject('/paint')).body, 'PAINT'); assert.equal((await f.app.inject('/module.mjs')).headers['content-type'], 'text/javascript');
-    for (const [path, kind] of [['/settings.conf', 'text/plain'], ['/file.py', 'text/x-python'], ['/page.HTM', 'text/html']]) assert.equal((await f.app.inject(path!)).headers['content-type'], kind);
+    const configuration = await f.app.inject('/settings.conf');
+    assert.equal(configuration.statusCode, 200); assert.equal(configuration.body, 'fixture');
+    // Exact .conf MIME comes from the platform; the Python HTTP differential checks it.
+    assert.ok(configuration.headers['content-type']);
+    for (const [path, kind] of [['/file.py', 'text/x-python'], ['/page.HTM', 'text/html']]) assert.equal((await f.app.inject(path!)).headers['content-type'], kind);
     for (const method of ['GET', 'HEAD'] as const) { const result = await f.app.inject({ method, url: '/paint/?q=1' }); assert.equal(result.statusCode, 308); assert.equal(result.headers.location, '/paint'); assert.equal(result.body, ''); }
     for (const url of ['/gallery', '/gallery/', '/gallery/a']) { const result = await f.app.inject(url); assert.equal(result.statusCode, 303); assert.equal(result.headers.location, '/'); }
     for (const url of ['/assemble', '/assemble/', '/assemble/index.html///']) { const result = await f.app.inject(url); assert.equal(result.statusCode, 303); assert.equal(result.headers.location, '/debug/?from=assemble'); }
