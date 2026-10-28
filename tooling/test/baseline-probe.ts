@@ -5,7 +5,8 @@ export interface ModelSignature{key:string;ids:string[]}
 export interface ProbeConfig{selector:string;models:ModelSignature[];copies:number;lineup?:boolean}
 interface HomePart{id:string;positionOffset:number;indexOffset:number;vertexCount:number;indexCount:number}
 export function homeSignatures(parts:HomePart[],binary:Uint8Array,expected:string[]):ModelSignature[]{const signatures=new Map<string,string[]>();for(const id of expected){const part=parts.find(part=>part.id===id);if(!part)throw Error('Missing expected home part '+id);const{positionOffset,indexOffset,vertexCount,indexCount}=part;if(![positionOffset,indexOffset,vertexCount,indexCount].every(value=>Number.isSafeInteger(value)&&value>=0)||positionOffset+vertexCount*12>binary.length||indexOffset+indexCount*4>binary.length)throw Error('Invalid home geometry bounds');const key=bufferKey(binary.subarray(positionOffset,positionOffset+vertexCount*12))+'/'+bufferKey(binary.subarray(indexOffset,indexOffset+indexCount*4));signatures.set(key,[...(signatures.get(key)??[]),id]);}return[...signatures].map(([key,ids])=>({key,ids}));}
-export interface ProbeState{drawn:string[];firstModelMs:number;usableMs:number;opaquePixels:number;readbackMs:number;frameTimes:number[];errors:string[];interactionChanged:boolean;sampling:boolean;copies:number;initialTransform:string;lastTransform:string;uploadHashMs:number;drawCalls:number;inputMs:number;trustedPointer:boolean;renderer:string;uniformHashMs:number;drawObserverMs:number}
+export interface InteractionProof{movement:number;movementMs:number;eventAckMs:number;frameMs:number;dx:number;preInputControl:string;preMoveControl:string;frameControl:string;preMoveTransform:string;frameTransform:string}
+export interface ProbeState{drawn:string[];firstModelMs:number;usableMs:number;opaquePixels:number;readbackMs:number;frameTimes:number[];errors:string[];interactionChanged:boolean;sampling:boolean;copies:number;initialTransform:string;lastTransform:string;uploadHashMs:number;drawCalls:number;inputMs:number;trustedPointer:boolean;renderer:string;uniformHashMs:number;drawObserverMs:number;interactionProof:InteractionProof|null}
 declare global{interface Window{__baselineVisual:ProbeState}}
 export async function calibrate(page:Page,url:string,selector:string,expected:string[],copies:number,home?:{parts:HomePart[];binary:Uint8Array}):Promise<ProbeConfig>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(String(error)));page.on('response',response=>{if(response.status()>=400&&!/\/api\/(duck-debug|servo-setup|servo-preparation)/.test(response.url()))errors.push(response.status()+' '+new URL(response.url()).pathname);});
@@ -27,8 +28,17 @@ export async function calibrate(page:Page,url:string,selector:string,expected:st
  return{selector,models,copies,lineup:true};
 }
 function install(config:ProbeConfig){
- const state:ProbeState={drawn:[],firstModelMs:-1,usableMs:-1,opaquePixels:0,readbackMs:0,frameTimes:[],errors:[],interactionChanged:false,sampling:false,copies:config.copies,initialTransform:'',lastTransform:'',uploadHashMs:0,drawCalls:0,inputMs:-1,trustedPointer:false,renderer:'',uniformHashMs:0,drawObserverMs:0};window.__baselineVisual=state;
- document.addEventListener('pointerdown',event=>{if(event.isTrusted&&event.target instanceof Element&&(event.target.matches(config.selector)||event.target.closest('.duck-stage'))){state.trustedPointer=true;state.inputMs=performance.now();}},true);
+ const state:ProbeState={drawn:[],firstModelMs:-1,usableMs:-1,opaquePixels:0,readbackMs:0,frameTimes:[],errors:[],interactionChanged:false,sampling:false,copies:config.copies,initialTransform:'',lastTransform:'',uploadHashMs:0,drawCalls:0,inputMs:-1,trustedPointer:false,renderer:'',uniformHashMs:0,drawObserverMs:0,interactionProof:null};window.__baselineVisual=state;
+ interface Control{ack:boolean;placement:string;turns:number[]}
+ function control():Control{
+  if(config.lineup){const canvas=document.querySelector<HTMLCanvasElement>(config.selector),groups=window.studioProto?.view.stage.layer.children??[];return{ack:canvas?.style.cursor==='grabbing'&&window.studioProto?.state.step===1,placement:'',turns:groups.map(group=>group.children[0]?.rotation.y??NaN)};}
+  const stage=document.querySelector<HTMLElement>('.duck-stage');return{ack:!!stage?.classList.contains('dragging')&&stage.dataset.settled==='false',placement:JSON.stringify([...document.querySelectorAll<HTMLElement>('[data-duck]')].map(element=>[element.dataset.duck,element.style.opacity,element.style.zIndex])),turns:[]};
+ }
+ let lastCompleteTransform='',sequence=0,input:{id:number;x:number;control:Control}|undefined,movement:{sequence:number;x:number;ms:number;control:Control;transform:string;ackMs:number}|undefined;
+ document.addEventListener('pointerdown',event=>{if(event.isTrusted&&event.button===0&&event.isPrimary&&event.target instanceof Element&&(event.target.matches(config.selector)||event.target.closest('.duck-stage'))){state.trustedPointer=true;state.inputMs=performance.now();input={id:event.pointerId,x:event.clientX,control:control()};movement=undefined;}},true);
+ document.addEventListener('pointermove',event=>{if(!event.isTrusted||!input||event.pointerId!==input.id||!(event.buttons&1)||Math.abs(event.clientX-input.x)<=6||event.clientX===(movement?.x??input.x))return;movement={sequence:++sequence,x:event.clientX,ms:performance.now(),control:control(),transform:lastCompleteTransform,ackMs:-1};},true);
+ document.addEventListener('pointermove',event=>{if(!event.isTrusted||!input||!movement||event.pointerId!==input.id||event.clientX!==movement.x)return;const after=control();if(after.ack&&(config.lineup||(after.placement!==movement.control.placement&&after.placement!==input.control.placement)))movement.ackMs=performance.now();});
+ const release=()=>{input=undefined;movement=undefined;};document.addEventListener('pointerup',release);document.addEventListener('pointercancel',release);
  const models=new Map(config.models.map(value=>[value.key,value.ids])),buffers=new WeakMap<WebGLBuffer,string>(),programs=new WeakMap<WebGLProgram,number>(),uniforms=new WeakMap<WebGLUniformLocation,string>();
  interface Vertex{element:WebGLBuffer|null;attributes:Map<number,WebGLBuffer>}
  const vaos=new Map<WebGLVertexArrayObject|null,Vertex>();let vao:WebGLVertexArrayObject|null=null,array:WebGLBuffer|null=null,program:WebGLProgram|null=null,framebuffer:WebGLFramebuffer|null=null,transform='',context:WebGL2RenderingContext|undefined;
@@ -59,7 +69,15 @@ function install(config:ProbeConfig){
    if(state.opaquePixels<64)state.errors.push('Complete model draw has no foreground pixels');
   }
   const sized=!config.lineup||(window.studioProto?.view.stage.layer.children.length===4&&window.studioProto.view.stage.layer.children.every(group=>group.visible&&group.scale.x>=.9));
-  if(state.sampling&&state.trustedPointer&&sized){if(state.frameTimes.at(-1)!==time)state.frameTimes.push(time);if(state.lastTransform!==state.initialTransform){state.interactionChanged=true;if(state.usableMs<0)state.usableMs=performance.now();}}
+  const current=control(),move=movement,down=input;let response=false;
+  if(move&&down&&move.ackMs>=0&&current.ack){
+   if(config.lineup){const direction=Math.sign(move.x-down.x);response=current.turns.length===4&&down.control.turns.length===4&&move.control.turns.length===4&&current.turns.filter((angle,index)=>{const start=down.control.turns[index],before=move.control.turns[index];return start!==undefined&&before!==undefined&&(angle-start)*direction>1e-5&&(angle-before)*direction>1e-5;}).length>=3;}
+   else response=current.placement!==down.control.placement&&current.placement!==move.control.placement;
+  }
+  // The business response and GPU change must belong to this trusted movement,
+  // in this frame. Entrance/hover changes since the loading frame cannot qualify.
+  if(state.sampling&&state.trustedPointer&&sized&&response&&move&&down&&state.lastTransform!==move.transform){if(state.frameTimes.at(-1)!==time)state.frameTimes.push(time);state.interactionChanged=true;if(state.usableMs<0){state.usableMs=performance.now();state.interactionProof={movement:move.sequence,movementMs:move.ms,eventAckMs:move.ackMs,frameMs:state.usableMs,dx:move.x-down.x,preInputControl:JSON.stringify(down.control),preMoveControl:JSON.stringify(move.control),frameControl:JSON.stringify(current),preMoveTransform:move.transform,frameTransform:state.lastTransform};}}
+  lastCompleteTransform=state.lastTransform;
  });
 }
-export async function installVisualProbe(page:Page,config:ProbeConfig){await page.addInitScript({content:'globalThis.__name=fn=>fn;('+install.toString()+')('+JSON.stringify(config)+');'});}
+export async function installVisualProbe(page:{addInitScript(script:{content:string}):Promise<unknown>},config:ProbeConfig){await page.addInitScript({content:'globalThis.__name=fn=>fn;('+install.toString()+')('+JSON.stringify(config)+');'});}

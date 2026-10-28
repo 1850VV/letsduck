@@ -157,6 +157,8 @@ npm run baseline:compare -- --revision FULL_OLD_COMMIT --python /path/to/legacy/
 
 `--pilot`只跑一轮试跑，写入`pilot.json`并标明采样预算未完成，不能作为正式验收。测量使用有窗口的managed Chromium与默认GPU，资源采样需要POSIX `ps`；设备路由在对照中隔离，扫描/停止及实机性能须单独验收。
 
+每次运行须使用新的空输出目录，工具拒绝复用非空目录并保留旧证据。交互时间戳要求该次可信移动的业务响应及完整模型帧；宿主启动单独统计并纳入暂停清单。采样完成与性能通过分别报告，须检查`threshold`、`pauseItems`和`timingPause`，不能只看命令成功退出。
+
 常规构建、测试与工具不需要 Python。独立旧 Python 结果已冻结为合成 oracle。显式历史回放可用 `npm run test:historical -- --list` 查看范围，再以 `--python /path/to/legacy/python` 选择解释器；它从固定旧 Git 提交提取只读参考，所有数据和服务都在自有临时目录中。`baseline:capture -- --engine historical ...` 单独采集旧引擎，结果明确标注。浅克隆须先取得参考提交，历史模式不作为正常运行依赖。
 
 组装姿态的跨平台诊断可显式运行 `npx tsx tooling/test/assembly-diagnostic.ts .`。它用 Node 比较固定历史 MJS 与当前 TS 的完整姿态、顺序和数值，并清理临时参考；不需要 Python，也不进入普通测试。
