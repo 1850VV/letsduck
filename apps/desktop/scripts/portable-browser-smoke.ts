@@ -63,7 +63,7 @@ $node=Get-Process -Id $NodePid;$root=Get-Process -Id $RootPid
 # Open process handles before signaling so the real exit codes remain observable.
 $null=$node.Handle;$null=$root.Handle
 [void][DuckConsole]::FreeConsole()
-if(![DuckConsole]::AttachConsole([uint]$RootPid)){throw ('AttachConsole failed: '+[Runtime.InteropServices.Marshal]::GetLastWin32Error())}
+if(![DuckConsole]::AttachConsole([System.UInt32]$RootPid)){throw ('AttachConsole failed: '+[Runtime.InteropServices.Marshal]::GetLastWin32Error())}
 [void][DuckConsole]::SetConsoleCtrlHandler([IntPtr]::Zero,$true)
 if(![DuckConsole]::GenerateConsoleCtrlEvent(0,0)){throw 'Owned console Ctrl+C failed'}
 if(!$node.WaitForExit(20000)){throw 'Bundled Node did not drain on actual console Ctrl+C'}

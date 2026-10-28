@@ -76,7 +76,7 @@ if($Action -eq 'click'){[DuckNative]::Click([int]$X,[int]$Y)}
 if($Action -eq 'key'){
  $name=$Key -replace '^(Shift\+|Alt\+)','';$keys=@{Tab=9;Enter=13;Escape=27;Space=32;Home=36;End=35;ArrowUp=38;ArrowDown=40}
  if(!$keys.ContainsKey($name)){throw 'Unsupported native key'}
- [DuckNative]::Key([ushort]$keys[$name],$Key.StartsWith('Shift+'),$Key.StartsWith('Alt+'))
+ [DuckNative]::Key([System.UInt16]$keys[$name],$Key.StartsWith('Shift+'),$Key.StartsWith('Alt+'))
 }
 if($Action -eq 'capture'){
  $bounds=[System.Windows.Forms.SystemInformation]::VirtualScreen
@@ -91,7 +91,7 @@ if(![DuckNative]::ClientToScreen($handle,[ref]$point)){throw 'Cannot map owned w
 $inputDesktop=[DuckNative]::OpenInputDesktop(0,$false,0x0100)
 $inputAvailable=$inputDesktop -ne [IntPtr]::Zero
 if($inputAvailable){[void][DuckNative]::CloseDesktop($inputDesktop)}
-$owned=[uint[]]@(($OwnedPids -split ',')|ForEach-Object{[uint]$_})
+$owned=[System.UInt32[]]@(($OwnedPids -split ',')|ForEach-Object{[System.UInt32]$_})
 @{foreground=[DuckNative]::GetForegroundWindow().ToInt64().ToString();client=@{x=$point.X;y=$point.Y;width=$r.Right-$r.Left;height=$r.Bottom-$r.Top};windows=@([DuckNative]::Windows($owned));inputDesktopAvailable=$inputAvailable;sessionId=[System.Diagnostics.Process]::GetCurrentProcess().SessionId;screen=@{width=[System.Windows.Forms.SystemInformation]::VirtualScreen.Width;height=[System.Windows.Forms.SystemInformation]::VirtualScreen.Height}}|ConvertTo-Json -Depth 7 -Compress
 `;
 type NativeWindow={handle:string;pid:number;className:string;left:number;top:number;right:number;bottom:number};
