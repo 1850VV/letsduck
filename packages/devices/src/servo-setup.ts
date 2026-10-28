@@ -285,8 +285,10 @@ export class ServoSetup {
     } finally { this.writeRequested = false; }
   }
   async queue(input: unknown): Promise<SetupSnapshot> {
-    const target = validId(input); this.allowed();
-    if (this.phase !== 'working' && !this.configureRunning) throw new SetupError(deviceMessage('device.setup.024'));
+    const target = input === null ? null : validId(input); this.allowed();
+    // Editing the next target never resumes or retargets the current operation.
+    if (target === null) { this.queuedTarget = null; return this.snapshot(); }
+    if (this.phase !== 'working' && this.phase !== 'paused' && !this.configureRunning) throw new SetupError(deviceMessage('device.setup.024'));
     if (this.store.servoRecords(this.board).some(r => equal(r.id, target))) throw new SetupError(deviceMessage('device.setup.025'));
     this.queuedTarget = target; return this.snapshot();
   }

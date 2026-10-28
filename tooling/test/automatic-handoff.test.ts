@@ -67,3 +67,28 @@ test('policy to automatic handoff unloads before writes and returns current gain
   assert.deepEqual(runtime.calls.filter(call => ['reset_mid', 'set_gains', 'set_id'].includes(String(call.body?.action))), writes);
   assert.equal(runtime.halted, 0); assert.equal(runtime.closed, 0);
 });
+
+test('paused next-target edits preserve progress without hardware discovery', async t => {
+  const { runtime, setup, post } = await fixture(t);
+  await setup.pause();
+  const before = setup.snapshot();
+  const queued = await post('/api/servo-setup/queue', { id: 20 });
+  assert.equal(queued.statusCode, 200, 'paused automatic flow can select its next target');
+  assert.equal(queued.json().queuedTarget, 20);
+  assert.equal(queued.json().phase, 'paused'); assert.equal(queued.json().running, false);
+  assert.equal(queued.json().activeTarget, before.activeTarget); assert.deepEqual(queued.json().records, before.records);
+  assert.deepEqual(runtime.calls, []);
+});
+
+test('removing a queued next target never retargets the paused current operation', async t => {
+  const { runtime, setup, post } = await fixture(t);
+  await setup.start(12); await setup.queue(20); await setup.pause();
+  const before = setup.snapshot(); assert.equal(before.queuedTarget, 20);
+  const removed = await post('/api/servo-setup/queue', { id: null });
+  assert.equal(removed.statusCode, 200, 'the approved remove-next action clears only the queue');
+  assert.equal(removed.json().queuedTarget, null);
+  assert.equal(removed.json().phase, 'paused'); assert.equal(removed.json().running, false);
+  assert.equal(removed.json().activeTarget, before.activeTarget);
+  assert.deepEqual(removed.json().records, before.records);
+  assert.deepEqual(runtime.calls, []); assert.equal(runtime.halted, 0); assert.equal(runtime.closed, 0);
+});
