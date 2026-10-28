@@ -54,13 +54,16 @@ export class DuckDebug {
   private scanTask: Promise<void> | undefined;
   private stopped = false;
   private closing: Promise<void> | undefined;
+  private guideSession: string | null = null;
+  private guideHeartbeatAt = 0;
+  private guideGeneration = 0;
   private readonly timing: DeviceTiming;
   constructor(readonly store: DeviceStore, readonly setup: DebugSetupBridge, timing: Partial<DeviceTiming> = {}) {
     this.runtime = setup.runtime; this.timing = deviceTiming(timing);
   }
   private async connect(): Promise<string> {
     const board = await this.runtime.connect();
-    if (this.board && this.board !== board) { this.readbacks.clear(); this.held.clear(); this.pendingReadback.clear(); }
+    if (this.board && this.board !== board) { this.readbacks.clear(); this.held.clear(); this.pendingReadback.clear(); this.guideSession = null; }
     this.board = board; return board;
   }
   private async request(method: 'GET' | 'POST', path: string, body?: JsonRecord): Promise<JsonRecord> {
@@ -204,11 +207,116 @@ export class DuckDebug {
     } catch (error) { if (!(error instanceof DebugError)) throw error; throw new DebugError(error.message + '；已停止，请重新扫描并复核当前编号', { completed, remaining: pending }); }
     return { ok: true, completed };
   }
+  private guideReply(reply: JsonRecord): JsonRecord {
+    if (reply.supported !== true || !equal(value(reply, 'version'), 1)) throw new DebugError('运行端坐姿向导版本不支持，请升级匹配的运行端');
+    const raw = (key: string): number[] | null => {
+      const item = reply[key];
+      if (item === null) return null;
+      if (!Array.isArray(item) || item.length !== IDS.length) throw new DebugError('向导的15路位置反馈不完整');
+      return item.map((_part, index) => integer(readJsonField(item, String(index)), 0, 4095, '向导位置反馈'));
+    };
+    const age = (key: string) => reply[key] === null ? null : number(value(reply, key), 0, Number.MAX_SAFE_INTEGER, '向导反馈年龄');
+    if (!Array.isArray(reply.ids) || !equal(reply.ids, IDS)) throw new DebugError('向导关节编号顺序不匹配');
+    if (typeof reply.active !== 'boolean' || typeof reply.paused !== 'boolean' || typeof reply.imu_ok !== 'boolean'
+      || typeof reply.state !== 'string' || !(reply.session_id === null || typeof reply.session_id === 'string' && reply.session_id.length > 0)) throw new DebugError('向导状态回显不完整');
+    return { ...wireCopy(reply), board: this.board, actual_raw: raw('actual_raw'), target_raw: raw('target_raw'),
+      feedback_age_ms: age('feedback_age_ms'), raw_age_ms: age('raw_age_ms'),
+      raw_mask: integer(value(reply, 'raw_mask'), 0, 0x7fff, '向导反馈掩码'),
+      sample_seq: integer(value(reply, 'sample_seq'), 0, 0xffffffff, '向导采样序号'),
+      command_seq: integer(value(reply, 'command_seq'), 0, 0xffffffff, '向导命令序号'),
+      acknowledged_seq: integer(value(reply, 'acknowledged_seq'), 0, 0xffffffff, '向导回显序号') };
+  }
+  private async guideStatus(): Promise<JsonRecord> {
+    const status = await this.request('GET', '/api/status');
+    if (!equal(value(status, 'guide_version'), 1)) return { ok: true, supported: false, version: 0, active: false, state: 'unavailable', board: this.board, error: '当前运行端不支持坐姿向导，请升级匹配的运行端' };
+    const reply = this.guideReply(await this.request('GET', '/api/guide/status'));
+    if (this.guideSession && (!reply.active || reply.session_id !== this.guideSession)) { this.guideSession = null; this.owned = false; }
+    return { ...reply, runtime_mode: status.mode };
+  }
+  private guideReady(status: JsonRecord): number[] {
+    if (status.supported !== true) throw new DebugError('当前运行端不支持坐姿向导，请升级匹配的运行端');
+    if (!['feedback_age_ms', 'raw_age_ms'].every(key => typeof status[key] === 'number' && Number.isFinite(status[key]) && status[key] >= 0 && status[key] < 150)) throw new DebugError('向导反馈已过期，请重新读取控制器');
+    if (status.imu_ok !== true) throw new DebugError('向导需要新鲜的 IMU 反馈');
+    if (status.raw_mask !== 0x7fff || !Array.isArray(status.actual_raw) || status.actual_raw.length !== IDS.length) throw new DebugError('向导需要完整的15路舵机反馈');
+    return status.actual_raw as number[];
+  }
+  private guideCanHold(status: JsonRecord): void {
+    this.guideReady(status);
+    if (this.calibrating || ['calibrate', 'servo_debug'].includes(String(status.runtime_mode))) throw new DebugError('请先退出中位校准或舵机设置，再开始向导');
+    if (status.active) throw new DebugError('向导已经由一个会话保持，请先释放');
+    if (!['off', 'shadow'].includes(String(status.runtime_mode)) || status.enabled === true) throw new DebugError('请先全部卸载并退出当前控制模式，再开始向导');
+  }
+  private async guideAction(action: string, body: JsonRecord): Promise<JsonRecord> {
+    const generation = this.guideGeneration;
+    if (action === 'guide-hold') {
+      await this.setup.io.run(async () => { this.guideCanHold(await this.guideStatus()); });
+      await this.claim();
+    }
+    return this.setup.io.run(async () => {
+      if (this.stopped) throw new DebugError('调试窗口已停止');
+      if (action === 'guide-hold' && generation !== this.guideGeneration) { this.owned = false; throw new DebugError('窗口已离开，已取消尚未开始的向导保持'); }
+      if (action !== 'guide-hold' && (!this.owned || !this.guideSession || body.session_id !== this.guideSession)) throw new DebugError('向导控制会话已失效，请重新保持');
+      const requestedSession = this.guideSession;
+      if (action !== 'guide-hold' && action !== 'guide-release' && this.timing.monotonic() - this.guideHeartbeatAt >= 1000) throw new DebugError('向导心跳已过期，请释放后重新保持');
+      const status = await this.guideStatus();
+      if (status.supported !== true) throw new DebugError('当前运行端不支持坐姿向导，请升级匹配的运行端');
+      if (action === 'guide-release' && !status.active) { this.guideSession = null; this.owned = false; return status; }
+      if (action !== 'guide-hold' && (!status.active || status.session_id !== requestedSession)) throw new DebugError('向导控制会话已失效，请重新保持');
+      if (action === 'guide-hold') this.guideCanHold(status);
+      if (action !== 'guide-release') {
+        const actual = this.guideReady(status);
+        if (action === 'guide-step' && status.state === 'moving') throw new DebugError('前一小步尚未到达，请先暂停或等待实际反馈');
+        if (action === 'guide-step') for (const step of body.deltas as { id: number; delta: number }[]) {
+          const target = actual[IDS.indexOf(step.id)]! + step.delta;
+          if (target < 0 || target > 4095) throw new DebugError('向导小步目标超出编码器范围');
+        }
+      }
+      const payload = action === 'guide-hold' ? {} : { session_id: requestedSession, ...(action === 'guide-step' ? { deltas: body.deltas } : {}) };
+      const reply = this.guideReply(await this.request('POST', '/api/guide/' + action.slice(6), payload));
+      if (action === 'guide-release') {
+        if (reply.active !== false || reply.session_id !== null) throw new DebugError('运行端未确认释放向导');
+        this.guideSession = null; this.owned = false;
+      } else {
+        if (reply.active !== true || typeof reply.session_id !== 'string' || action !== 'guide-hold' && reply.session_id !== requestedSession) throw new DebugError('向导控制会话回显不匹配');
+        this.guideReady(reply);
+        if (action === 'guide-hold') {
+          if (reply.arming !== false || reply.enabled !== true) throw new DebugError('MCU 尚未确认向导保持');
+          this.guideSession = reply.session_id; this.calibrating = false; this.held.clear();
+        }
+        if (action === 'guide-hold' || action === 'guide-heartbeat') this.guideHeartbeatAt = this.timing.monotonic();
+      }
+      return reply;
+    });
+  }
+  private async releaseGuide(): Promise<JsonRecord> {
+    const session = this.guideSession;
+    if (!session) return { ok: true };
+    const status = await this.guideStatus();
+    if (status.supported !== true) throw new DebugError('当前运行端不支持坐姿向导，请使用全部卸载');
+    if (!status.active) return status;
+    if (status.session_id !== session) throw new DebugError('向导控制会话已变更，未改动其他会话');
+    const reply = this.guideReply(await this.request('POST', '/api/guide/release', { session_id: session }));
+    if (reply.active !== false || reply.session_id !== null) throw new DebugError('运行端未确认释放向导');
+    this.guideSession = null; this.owned = false; this.calibrating = false; this.held.clear();
+    return reply;
+  }
   private validate(body: JsonRecord): { action: string; body: JsonRecord } {
     const a = body.action;
-    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave'];
+    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave', 'guide-status', 'guide-hold', 'guide-step', 'guide-pause', 'guide-release', 'guide-heartbeat'];
     if (typeof a !== 'string' || !allowed.includes(a)) throw new DebugError('未知调试操作');
     const b = wireCopy(body);
+    if (['guide-step', 'guide-pause', 'guide-release', 'guide-heartbeat'].includes(a) && (typeof b.session_id !== 'string' || !b.session_id)) throw new DebugError('缺少向导控制会话');
+    if (a === 'guide-step') {
+      if (!Array.isArray(b.deltas) || b.deltas.length < 1 || b.deltas.length > IDS.length) throw new DebugError('向导小步格式不对');
+      b.deltas = b.deltas.map(step => {
+        if (!object(step)) throw new DebugError('向导小步格式不对');
+        const id = integer(value(step, 'id'), 0, 253, '向导编号'), delta = integer(value(step, 'delta'), -10, 10, '向导步幅');
+        if (!IDS.includes(id) || id === 34 || !delta) throw new DebugError('向导需要已有参照的14个关节编号和非零小步');
+        return { id, delta };
+      });
+      const deltas = b.deltas as { id: number }[];
+      if (new Set(deltas.map(step => step.id)).size !== deltas.length) throw new DebugError('向导小步编号重复');
+    }
     if (['read', 'inspect', 'parameters', 'jog', 'move', 'torque-off', 'reset-mid', 'cal-center'].includes(a)) b.id = integer(b.id, 0, 253, '编号');
     if (a === 'parameters') { b.new_id = integer(b.new_id, 0, 253, '新编号'); for (const key of ['kp', 'kd']) b[key] = integer(b[key], 0, 255, key); }
     if (a === 'move') b.target = integer(b.target, 0, 4095, '目标位置');
@@ -245,9 +353,16 @@ export class DuckDebug {
     const { action: a, body: b } = this.validate(body);
     if (a === 'scan-stop') { this.scanStopped = true; return { ok: true }; }
     if (this.stopped) throw new DebugError('调试窗口已停止');
+    if (a === 'guide-status') return this.setup.io.run(() => this.guideStatus());
+    if (a.startsWith('guide-')) {
+      if (this.scan.active) throw new DebugError('请先停止扫描');
+      return this.guideAction(a, b);
+    }
     if (a === 'release' || a === 'leave') {
+      this.guideGeneration++;
       this.scanStopped = true; if (a === 'release') await this.claim();
       return this.setup.io.run(async () => {
+        if (this.guideSession) return this.releaseGuide();
         let result: JsonRecord;
         if (a === 'release') result = await this.request('POST', '/api/mode', { mode: 'off' });
         else if (!this.owned) return { ok: true };
@@ -259,11 +374,13 @@ export class DuckDebug {
         this.calibrating = false; this.held.clear(); this.owned = false; return result;
       });
     }
+    if (this.guideSession) throw new DebugError('请先释放坐姿向导；中位写入与其他控制不能同时执行');
     if (this.scan.active) throw new DebugError('请先停止扫描');
     if (!['command', 'cal-heartbeat', 'inspect'].includes(a)) await this.claim();
     return this.setup.io.run(async () => {
       if (this.scan.active) throw new DebugError('请先停止扫描');
       if (this.stopped) throw new DebugError('调试窗口已停止');
+      if (this.guideSession) throw new DebugError('请先释放坐姿向导；中位写入与其他控制不能同时执行');
       if (a === 'inspect') {
         if (!this.owned || (await this.request('GET', '/api/status')).mode !== 'servo_debug') throw new DebugError('单舵机读取已暂停');
         return { ok: true, readback: await this.read(Number(b.id), false) };
@@ -350,8 +467,9 @@ export class DuckDebug {
     finally { this.scan.stopped = this.scanStopped; this.scan.active = false; }
   }
   stopBackground(): Promise<void> {
+    this.guideGeneration++;
     this.stopped = true; this.scanStopped = true;
-    return this.closing ??= (async () => { await this.scanTask; })();
+    return this.closing ??= (async () => { await this.scanTask; if (this.guideSession) await this.setup.io.run(() => this.releaseGuide()); })();
   }
   close(): Promise<void> { return this.stopBackground(); }
 }

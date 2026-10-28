@@ -11,6 +11,7 @@ import {isJsonObject,parseWireJson} from '@letsduck/domain';
 import {createPersonalHttp} from '../../packages/host/src/http.js';
 import type {AssemblyManifest,HostExporter} from '../../packages/host/src/http-types.js';
 import {Firmware} from '../../tooling/test/duck-debug-fixture.js';
+import {BrowserGuide} from './guide-firmware.js';
 
 const root=resolve(import.meta.dirname,'../..');
 export class DisconnectedRuntime implements DuckRuntime {
@@ -22,14 +23,24 @@ export class DisconnectedRuntime implements DuckRuntime {
 }
 export class BrowserFirmware extends Firmware {
  offline=false;
- constructor(){super();this.restore();}
+ private guide:BrowserGuide|null=null;
+ constructor(private readonly options:{guide?:boolean;now?:()=>number}={}){super();this.restore();}
  restore():void{
-  const fresh=new Firmware();this.calls=[];this.motors=fresh.motors;this.state=fresh.state;delete this.state.servo_scan_version;
+  const fresh=new Firmware(this.options.guide?IDS:undefined);this.calls=[];this.motors=fresh.motors;this.state=fresh.state;delete this.state.servo_scan_version;
   Object.assign(this.state,{angles:Array.from({length:15},(_,i)=>i),targets:Array.from({length:15},(_,i)=>i+15)});
   this.fail=null;this.wrong=false;this.offline=false;this.pingDelay=8;
+  this.guide=this.options.guide?new BrowserGuide(this,this.options.now??(()=>performance.now())):null;
+  if(this.guide)this.state.guide_version=1;
  }
+ guideStatus():Record<string,unknown>|null{return this.guide?.status()??null;}
  override async request(method:'GET'|'POST',path:string,body?:unknown):Promise<unknown>{
   if(this.offline)throw Error('隔离测试控制器已断开');
+  this.guide?.advance();
+  if(path.startsWith('/api/guide/')&&this.guide){
+   this.calls.push({method,path,body:isJsonObject(body)?structuredClone(body):undefined});
+   return parseWireJson(JSON.stringify(method==='GET'&&path==='/api/guide/status'?this.guide.status():this.guide.request(path,body)));
+  }
+  if(method==='POST'&&this.guide?.active)throw Error('release guide before other fixture control');
   if(method==='GET'&&path==='/servo.html')return super.request('GET','/api/status');
   if(method==='POST'&&['/api/action-scale','/api/filter','/api/imu-filter'].includes(path)&&isJsonObject(body)){
    const roller=this.state.roller,profile=isJsonObject(roller)&&roller.enabled?roller:this.state.deployment;
@@ -40,10 +51,10 @@ export class BrowserFirmware extends Firmware {
   return super.request(method,path,body);
  }
 }
-export interface FixtureOptions {mode:'debug'|'preparation';database?:string;confirmedLeads?:boolean;assets?:string;frontend?:string}
+export interface FixtureOptions {mode:'debug'|'preparation';guide?:boolean;database?:string;confirmedLeads?:boolean;assets?:string;frontend?:string}
 export async function createBrowserFixture(options:FixtureOptions){
  const directory=await mkdtemp(join(tmpdir(),'duck-browser-'));
- const runtime=options.mode==='debug'?new BrowserFirmware():new DisconnectedRuntime();
+ const runtime=options.mode==='debug'?new BrowserFirmware({guide:options.guide??false}):new DisconnectedRuntime();
  let manager:ExportManager|undefined,store:PersonalStore|undefined,setup:ServoSetup|undefined,debug:DuckDebug|undefined;
  let app:ReturnType<typeof createPersonalHttp>|undefined,closing:Promise<void>|undefined,stopping=false;
  const close=()=>closing??=(async()=>{
@@ -86,9 +97,9 @@ export async function createBrowserFixture(options:FixtureOptions){
    if(request.method==='POST'&&path==='/api/fixture/offline'){runtime.offline=Boolean((await body()).offline);return reply.send({ok:true});}
    if(request.method==='POST'&&path==='/api/fixture/reset'){
     await device.action({action:'scan-stop'});const deadline=Date.now()+5000;while(device.scan.active){if(Date.now()>deadline)throw Error('Fixture scan did not stop');await delay(1);}
-    runtime.restore();device.readbacks.clear();device.pendingReadback.clear();device.held.clear();device.owned=false;device.calibrating=false;device.scan={active:false,checked:0,total:254,found:[],stopped:false,error:''};storage.db.exec('DELETE FROM servo_setup');seed();return reply.send({ok:true});
+    runtime.restore();if(options.guide)await device.action({action:'guide-status'});device.readbacks.clear();device.pendingReadback.clear();device.held.clear();device.owned=false;device.calibrating=false;device.scan={active:false,checked:0,total:254,found:[],stopped:false,error:''};storage.db.exec('DELETE FROM servo_setup');seed();return reply.send({ok:true});
    }
-   if(request.method==='GET'&&path==='/api/fixture')return reply.type('application/json').send(jsonStringify({isolated:true,hardware:false,calls:runtime.calls.map(call=>[call.method,call.path,call.body??null]),motors:Object.fromEntries(runtime.motors)}));
+   if(request.method==='GET'&&['/api/fixture','/api/fixture/state'].includes(path??''))return reply.type('application/json').send(jsonStringify({isolated:true,hardware:false,calls:runtime.calls.map(call=>[call.method,call.path,call.body??null]),motors:Object.fromEntries(runtime.motors),guide:runtime.guideStatus()}));
   });
   await service.listen({host:'127.0.0.1',port:0});const address=service.server.address();if(!address||typeof address==='string')throw Error('Fixture listener missing');
   return {url:`http://127.0.0.1:${address.port}`,catalog,app:service,store:storage,setup,debug,runtime,directory,close};
