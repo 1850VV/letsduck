@@ -2,9 +2,9 @@
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile,writeFile,stat} from 'node:fs/promises';
 import {freemem,totalmem} from 'node:os';
-import {join} from 'node:path';
+import {dirname,join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import type {Locator,Page} from 'playwright';
 import {required} from './check-support.js';
@@ -16,8 +16,9 @@ export type NativeDesktop={inputDesktopAvailable:boolean;sessionId:number;screen
 export type NativeState=NativeDesktop&{foregroundWindow:{handle:string;pid:number;className:string;title:string};activation:unknown;foreground:string;root:NativeWindow;contentHandle:string;client:Rectangle;windows:NativeWindow[]};
 type NativeTarget={window:string;ownedPids:number[];chromiumBrowserPid?:number};
 type Check=(name:string,passed:boolean,detail?:unknown)=>void;
+export type NativeCommandRunner=(executable:string,args:string[],options:{timeout:number;maxBuffer:number})=>Promise<{stdout:string;stderr:string}>;
 
-const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0,[string]$DiagnosticPath,[int]$HoldMilliseconds=0)
+const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0,[string]$DiagnosticPath,[int]$HoldMilliseconds=0,[string]$NativeAssembly)
 $ErrorActionPreference='Stop'
 $nativeStarted=[DateTime]::UtcNow
 function Write-NativeProgress([string]$stage) {
@@ -27,8 +28,13 @@ function Write-NativeProgress([string]$stage) {
 }
 Write-NativeProgress 'powershell-started'
 Add-Type -AssemblyName System.Windows.Forms
+Write-NativeProgress 'forms-loaded'
 Add-Type -AssemblyName System.Drawing
-Add-Type -TypeDefinition @'
+Write-NativeProgress 'drawing-loaded'
+if($Action -eq 'prepare'){
+ if(Test-Path -LiteralPath $NativeAssembly){throw 'Refusing to overwrite an existing owned native helper assembly'}
+ Write-NativeProgress 'compiling-native-types'
+ $definition=@'
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
@@ -83,7 +89,14 @@ public class DuckNative {
  public static void Key(ushort key,bool shift,bool alt){var keys=new List<INPUT>();if(shift)keys.Add(Keyboard(16,false));if(alt)keys.Add(Keyboard(18,false));keys.Add(Keyboard(key,false));keys.Add(Keyboard(key,true));if(alt)keys.Add(Keyboard(18,true));if(shift)keys.Add(Keyboard(16,true));Send(keys.ToArray());}
 }
 '@
-Write-NativeProgress 'types-ready'
+ Add-Type -TypeDefinition $definition -OutputAssembly $NativeAssembly -OutputType Library
+ Write-NativeProgress 'native-types-ready'
+ @{action='prepare';assembly=$NativeAssembly}|ConvertTo-Json -Compress
+ exit
+}
+Write-NativeProgress 'loading-native-types'
+Add-Type -Path $NativeAssembly
+Write-NativeProgress 'native-types-ready'
 [void][DuckNative]::SetProcessDPIAware()
 $inputDesktop=[DuckNative]::OpenInputDesktop(0,$false,0x0100)
 $inputAvailable=$inputDesktop -ne [IntPtr]::Zero
@@ -177,21 +190,35 @@ export async function observeNativeClick(target:Locator){return target.evaluate(
  return{selectorId:element.id,connected:element.isConnected,localRect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},localHitMatches:!!hit&&(hit===element||element.contains(hit)),point:{x,y},frames,topViewport:{width:current.innerWidth,height:current.innerHeight}};
 });}
 
-export function windowsNativeInput(options:{script:string;output:string;page:()=>Page;target:()=>Promise<NativeTarget>;evidence:unknown[];check:Check}){
- const run=promisify(execFile),{check}=options;
- const diagnosticPath=join(options.output,'native-helper-progress.json');
+export function windowsNativeInput(options:{script:string;output:string;page:()=>Page;target:()=>Promise<NativeTarget>;evidence:unknown[];check:Check;run?:NativeCommandRunner}){
+ const run:NativeCommandRunner=options.run??promisify(execFile),{check}=options;
+ const diagnosticPath=join(options.output,'native-helper-progress.json'),nativeAssembly=join(dirname(options.script),'native-input.dll');
  async function helperProgress():Promise<unknown>{try{return JSON.parse(await readFile(diagnosticPath,'utf8'));}catch(error){return{unavailable:true,error:String(error)};}}
- let browserWindow:{pid:number;handle:string}|undefined;
- async function execute(action:string,target:NativeTarget,extra:string[]=[]):Promise<NativeState>{
+ let browserWindow:{pid:number;handle:string}|undefined,preparation:Promise<void>|undefined,prepared=false;
+ async function command(action:string,target:NativeTarget,extra:string[]=[]){
   const browserPid=target.chromiumBrowserPid||0,hwnd=target.window||(browserWindow?.pid===browserPid?browserWindow.handle:'');
   await writeFile(diagnosticPath,'');const startedAtUtc=new Date().toISOString(),started=performance.now(),memoryBefore={freeBytes:freemem(),totalBytes:totalmem()};
-  const answer=await run(windowsPowerShell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',options.script,'-Action',action,'-Window',hwnd,'-OwnedPids',target.ownedPids.join(','),'-BrowserPid',String(browserPid),'-DiagnosticPath',diagnosticPath,...extra],{timeout:30_000,maxBuffer:1024*1024}).catch(async(error:unknown)=>{
+  const answer=await run(windowsPowerShell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',options.script,'-Action',action,'-Window',hwnd,'-OwnedPids',target.ownedPids.join(','),'-BrowserPid',String(browserPid),'-DiagnosticPath',diagnosticPath,'-NativeAssembly',nativeAssembly,...extra],{timeout:30_000,maxBuffer:1024*1024}).catch(async(error:unknown)=>{
    const child=error as {code?:unknown;signal?:unknown;killed?:unknown;stdout?:unknown;stderr?:unknown};
    const diagnostic={action,extra,target,error:String(error),startedAtUtc,elapsedMs:performance.now()-started,memoryBefore,memoryAfter:{freeBytes:freemem(),totalBytes:totalmem()},processError:{code:child.code??null,signal:child.signal??null,killed:child.killed??null,stdout:child.stdout??null,stderr:child.stderr??null},progress:await helperProgress()};
    options.evidence.push(diagnostic);console.error(JSON.stringify({kind:'native-helper-failure',...diagnostic}));throw error;
   });
+  return{answer,execution:{startedAtUtc,elapsedMs:performance.now()-started,memoryBefore,memoryAfter:{freeBytes:freemem(),totalBytes:totalmem()},progress:await helperProgress()}};
+ }
+ async function prepareOwned(){
+  await writeFile(options.script,nativeScript);
+  const {answer,execution}=await command('prepare',{window:'',ownedPids:[]}),receipt:unknown=JSON.parse(answer.stdout.trim());
+  assert.ok(receipt&&typeof receipt==='object'&&Reflect.get(receipt,'action')==='prepare'&&Reflect.get(receipt,'assembly')===nativeAssembly,'Compiler must confirm the exact owned assembly');
+  const artifact=await stat(nativeAssembly);assert.ok(artifact.isFile()&&artifact.size>0,'Owned native helper assembly was not created');
+  options.evidence.push({action:'prepare',assembly:nativeAssembly,bytes:artifact.size,execution});prepared=true;
+ }
+ function prepare(){return preparation??=prepareOwned();}
+ async function execute(action:string,target:NativeTarget,extra:string[]=[]):Promise<NativeState>{
+  assert.ok(prepared,'Native input helper must be prepared before any action');
+  const {answer,execution}=await command(action,target,extra);
   const state=JSON.parse(answer.stdout.trim()) as NativeState;
-  options.evidence.push({action,extra,state,execution:{startedAtUtc,elapsedMs:performance.now()-started,memoryBefore,memoryAfter:{freeBytes:freemem(),totalBytes:totalmem()},progress:await helperProgress()}});assert.equal(state.inputDesktopAvailable,true,'The runner must expose an unlocked input desktop');assert.ok(state.sessionId>0,'An interactive Windows session is required');
+  options.evidence.push({action,extra,state,execution});assert.equal(state.inputDesktopAvailable,true,'The runner must expose an unlocked input desktop');assert.ok(state.sessionId>0,'An interactive Windows session is required');
+  const browserPid=target.chromiumBrowserPid||0;
   if(action!=='desktop'){
    if(browserPid)browserWindow={pid:browserPid,handle:state.root.handle};
    const viewport=await options.page().evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio})),{client,screen,root}=state,scale=viewport.devicePixelRatio;
@@ -261,5 +288,5 @@ async function menuJourney(select:Locator,label:string){
  check(label+' Space reopens and Escape retains focus',(await observe(select)).focused);
  return{initial,afterMouse,afterKeyboard,escapePreview,afterCancel,changedSelectionCovered:initial.options.length>1};
 }
- return{prepare:()=>writeFile(options.script,nativeScript),desktop,native,click,hold,key,capture,menuJourney};
+ return{prepare,desktop,native,click,hold,key,capture,menuJourney};
 }
