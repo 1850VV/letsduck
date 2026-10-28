@@ -158,6 +158,20 @@ $foreground=[DuckNative]::Foreground()
 @{foreground=$foreground.handle;foregroundWindow=$foreground;activation=$activation;root=$root;contentHandle=$content.ToInt64().ToString();client=@{x=$point.X;y=$point.Y;width=$r.Right-$r.Left;height=$r.Bottom-$r.Top};windows=@([DuckNative]::Windows($owned));inputDesktopAvailable=$inputAvailable;sessionId=$sessionId;screen=$screen;workArea=$work}|ConvertTo-Json -Depth 7 -Compress
 `;
 
+export async function observeNativeClick(target:Locator){return target.evaluate(element=>{
+ const rect=element.getBoundingClientRect(),hit=document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2);
+ let x=rect.x+rect.width/2,y=rect.y+rect.height/2,current:Window=window;
+ const frames:Array<{x:number;y:number;width:number;height:number;clientWidth:number;clientHeight:number;unscaled:boolean;hitMatches:boolean}>=[];
+ while(current!==current.top){
+  const host=current.frameElement as HTMLIFrameElement|null;if(!host)throw new Error('Native click requires observable same-origin iframe geometry');
+  const frame=host.getBoundingClientRect();x+=frame.x+host.clientLeft;y+=frame.y+host.clientTop;
+  const parentHit=current.parent.document.elementFromPoint(x,y);
+  frames.push({x:frame.x,y:frame.y,width:frame.width,height:frame.height,clientWidth:host.clientWidth,clientHeight:host.clientHeight,unscaled:Math.abs(frame.width-host.offsetWidth)<=1&&Math.abs(frame.height-host.offsetHeight)<=1&&host.clientWidth===current.innerWidth&&host.clientHeight===current.innerHeight,hitMatches:parentHit===host});
+  current=current.parent;
+ }
+ return{selectorId:element.id,connected:element.isConnected,localRect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},localHitMatches:!!hit&&(hit===element||element.contains(hit)),point:{x,y},frames,topViewport:{width:current.innerWidth,height:current.innerHeight}};
+});}
+
 export function windowsNativeInput(options:{script:string;output:string;page:()=>Page;target:()=>Promise<NativeTarget>;evidence:unknown[];check:Check}){
  const run=promisify(execFile),{check}=options;
  const diagnosticPath=join(options.output,'native-helper-progress.json');
@@ -187,9 +201,11 @@ export function windowsNativeInput(options:{script:string;output:string;page:()=
  async function desktop():Promise<NativeDesktop>{return execute('desktop',{window:'',ownedPids:[]});}
  async function click(target:Locator){
   await target.evaluate(element=>element.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'}));
-  const box=required(await target.boundingBox()),state=await native('inspect'),viewport=await options.page().evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio}));
-  assert.ok(box.width>0&&box.height>0&&box.x+box.width/2>=0&&box.y+box.height/2>=0&&box.x+box.width/2<viewport.width&&box.y+box.height/2<viewport.height,'Native click target center must be inside the observed viewport '+JSON.stringify({box,viewport}));
-  await native('click',['-X',String(Math.round(state.client.x+(box.x+box.width/2)*viewport.devicePixelRatio)),'-Y',String(Math.round(state.client.y+(box.y+box.height/2)*viewport.devicePixelRatio))]);
+  const geometry=await observeNativeClick(target);options.evidence.push({action:'dom-click-geometry',selector:target.toString(),geometry,atUtc:new Date().toISOString()});
+  assert.ok(geometry.connected&&geometry.localRect.width>0&&geometry.localRect.height>0&&geometry.localHitMatches&&geometry.frames.every(frame=>frame.unscaled&&frame.hitMatches),'Native click requires a connected, hit-tested target and observed unscaled iframe chain '+JSON.stringify(geometry));
+  const state=await native('inspect'),viewport=await options.page().evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio}));
+  assert.ok(geometry.topViewport.width===viewport.width&&geometry.topViewport.height===viewport.height&&geometry.point.x>=0&&geometry.point.y>=0&&geometry.point.x<viewport.width&&geometry.point.y<viewport.height,'Native click target center must be inside the observed viewport '+JSON.stringify({geometry,viewport}));
+  await native('click',['-X',String(Math.round(state.client.x+geometry.point.x*viewport.devicePixelRatio)),'-Y',String(Math.round(state.client.y+geometry.point.y*viewport.devicePixelRatio))]);
  }
  async function key(value:string){await native('key',['-Key',value]);}
  async function capture(name:string){await native('capture',['-Output',join(options.output,name+'.png')]);}
