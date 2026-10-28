@@ -25,6 +25,8 @@ npm run package:desktop -- --win --x64
 
 构建在 `apps/desktop/build/` 暂存生产依赖、同一 Web 产物与授权素材，安装器输出到 `apps/desktop/release/`。`DUCK_DISTRIBUTABLE_ASSETS` 可指定打包素材目录。暂存不修改源素材，也不复制符号链接。设置 `DUCK_PACKAGE_WITHOUT_ASSETS=1` 可构建不含模型的源码候选；它不能完成模型操作。
 
+安装包必须由上述暂存流程构建，不接受绕过目标校验的 `--prepackaged`（含 `--pd`）模式。显式架构参数优先于 `DUCK_BUILD_ARCH`，实际打包目标须与版本、输出目录和更新源一致。
+
 默认无更新源，不发起更新轮询。更新代码只在用户点击后下载；安装等待当前保存、导出和下载。发行者可配置 `DUCK_UPDATE_URL` 或 `DUCK_UPDATE_REPOSITORY`，以及 `DUCK_RELEASE_VERSION`；地址仅接受不含凭据、查询参数和片段的 HTTPS。Mac 自动安装渠道要求发行签名，不能用 ad-hoc 候选替代签名、公证和真实 A→B 验收。打包命令使用 `--publish never`，不会发布 Release。
 
 ## 随附 Node 的浏览器包
