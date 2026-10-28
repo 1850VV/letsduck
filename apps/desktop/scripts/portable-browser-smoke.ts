@@ -34,9 +34,11 @@ async function processesExited(owned:Iterable<number>){const remaining=()=>[...o
 async function ps(command:string,env:NodeJS.ProcessEnv={},timeout=30_000){return run(powershell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-Command',command],{env:{...process.env,...env},timeout,maxBuffer:1024*1024});}
 async function launch(){
  const stdout=join(owned,'stdout-'+launches.length+'.log'),stderr=join(owned,'stderr-'+launches.length+'.log');
- // Start-Process without -NoNewWindow gives this BAT a private console. Redirect inside the BAT.
- const started=await ps(`$p=Start-Process -FilePath $env:ComSpec -ArgumentList @('/d','/c',('"'+$env:DUCK_PORTABLE_WRAPPER+'"')) -WorkingDirectory $env:DUCK_PORTABLE_OWNED -WindowStyle Normal -PassThru; @{pid=$p.Id}|ConvertTo-Json -Compress`,{PATH:'',NODE_OPTIONS:'',NODE_PATH:'',DUCK_PORTABLE_WRAPPER:wrapper,DUCK_PORTABLE_OWNED:owned,DUCK_PORTABLE_LAUNCHER:launcher,DUCK_PORTABLE_PORT:port,DUCK_PORTABLE_STDOUT:stdout,DUCK_PORTABLE_STDERR:stderr,DUCK_PERSONAL_DB:database,DUCK_DB:join(owned,'absent-legacy.db'),DUCK_ADB:adb});
- const rootPid=(JSON.parse(started.stdout.trim()) as {pid:number}).pid;
+ // The isolated runner's inherited Ctrl+C ignore flag was reproduced by the builtin-only canary.
+ // Reset only this fresh launch helper before it creates the private BAT console.
+ const started=await ps(`$ErrorActionPreference='Stop'; Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public class DuckLaunch{[DllImport("kernel32.dll",SetLastError=true)]public static extern bool SetConsoleCtrlHandler(IntPtr routine,bool add);}'; if(![DuckLaunch]::SetConsoleCtrlHandler([IntPtr]::Zero,$false)){throw 'Cannot restore Ctrl+C handling in this owned launch helper'}; $p=Start-Process -FilePath $env:ComSpec -ArgumentList @('/d','/c',('"'+$env:DUCK_PORTABLE_WRAPPER+'"')) -WorkingDirectory $env:DUCK_PORTABLE_OWNED -WindowStyle Normal -PassThru; @{pid=$p.Id;launchHelperPID=$PID;parentIgnoreReset=$true}|ConvertTo-Json -Compress`,{PATH:'',NODE_OPTIONS:'',NODE_PATH:'',DUCK_PORTABLE_WRAPPER:wrapper,DUCK_PORTABLE_OWNED:owned,DUCK_PORTABLE_LAUNCHER:launcher,DUCK_PORTABLE_PORT:port,DUCK_PORTABLE_STDOUT:stdout,DUCK_PORTABLE_STDERR:stderr,DUCK_PERSONAL_DB:database,DUCK_DB:join(owned,'absent-legacy.db'),DUCK_ADB:adb});
+ const launchReceipt=JSON.parse(started.stdout.trim()) as {pid:number;launchHelperPID:number;parentIgnoreReset:boolean};
+ assert.equal(launchReceipt.parentIgnoreReset,true);const rootPid=launchReceipt.pid;
  live={rootPid,nodePid:0,url:'',stdoutPath:stdout,stderrPath:stderr};launches.push(live);pids.add(rootPid);
  let log='',error='';const deadline=Date.now()+30_000;
  while(Date.now()<deadline){log=await readFile(stdout,'utf8').catch(()=>'');error=await readFile(stderr,'utf8').catch(()=>'');const match=log.match(/http:\/\/127\.0\.0\.1:\d+/);if(match){live.url=match[0];break;}await delay(50);}
@@ -46,7 +48,7 @@ async function launch(){
  const children=(JSON.parse(processInfo.stdout.trim()) as {children:Array<{ProcessId:number;ExecutablePath:string;CommandLine:string}>}).children;
  assert.equal(children.length,1,'One exact bundled Node must be a child of the actual BAT console');live.nodePid=children[0]!.ProcessId;pids.add(live.nodePid);
  const health:unknown=await fetch(live.url+'/api/health').then(response=>response.json());
- check('real BAT starts the bundled Node with empty PATH',true,{rootPid,nodePid:live.nodePid,binary,health,stdout:log,stderr:error});
+ check('real BAT starts the bundled Node with empty PATH',true,{rootPid,nodePid:live.nodePid,binary,health,launchReceipt,stdout:log,stderr:error});
  return live.url;
 }
 const stopScript=String.raw`param([int]$RootPid,[int]$NodePid,[string]$EvidencePath)

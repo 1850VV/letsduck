@@ -12,7 +12,7 @@ export const windowsPowerShell=join(process.env.SystemRoot||'C:\\Windows','Syste
 export type NativeWindow={handle:string;pid:number;className:string;left:number;top:number;right:number;bottom:number};
 type Rectangle={x:number;y:number;width:number;height:number};
 export type NativeDesktop={inputDesktopAvailable:boolean;sessionId:number;screen:Rectangle;workArea:Rectangle};
-export type NativeState=NativeDesktop&{foreground:string;root:NativeWindow;contentHandle:string;client:Rectangle;windows:NativeWindow[]};
+export type NativeState=NativeDesktop&{foregroundWindow:{handle:string;pid:number;className:string;title:string};activation:unknown;foreground:string;root:NativeWindow;contentHandle:string;client:Rectangle;windows:NativeWindow[]};
 type NativeTarget={window:string;ownedPids:number[];chromiumBrowserPid?:number};
 type Check=(name:string,passed:boolean,detail?:unknown)=>void;
 
@@ -37,6 +37,10 @@ public class DuckNative {
  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h,int command);
  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+ [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern int GetWindowTextW(IntPtr h,StringBuilder text,int max);
+ [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(POINT point);
+ [DllImport("user32.dll")] public static extern IntPtr GetAncestor(IntPtr h,uint flags);
+ [DllImport("user32.dll",CharSet=CharSet.Unicode,SetLastError=true)] public static extern IntPtr SendMessageTimeoutW(IntPtr h,uint message,UIntPtr wParam,IntPtr lParam,uint flags,uint timeout,out UIntPtr result);
  [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h,out RECT r);
  [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h,ref POINT p);
  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h,out RECT r);
@@ -49,6 +53,18 @@ public class DuckNative {
  [DllImport("user32.dll",SetLastError=true)] public static extern uint SendInput(uint count,INPUT[] inputs,int size);
  [DllImport("user32.dll")] public static extern IntPtr OpenInputDesktop(uint flags,bool inherit,uint access);
  [DllImport("user32.dll")] public static extern bool CloseDesktop(IntPtr desktop);
+ public class ForegroundInfo {public string handle;public uint pid;public string className;public string title;}
+ public static ForegroundInfo Foreground() {var h=GetForegroundWindow();uint pid;GetWindowThreadProcessId(h,out pid);var cls=new StringBuilder(256);var title=new StringBuilder(1024);GetClassName(h,cls,cls.Capacity);GetWindowTextW(h,title,title.Capacity);return new ForegroundInfo{handle=h.ToInt64().ToString(),pid=pid,className=cls.ToString(),title=title.ToString()};}
+ public class CaptionPoint {public int x;public int y;public int hitTest;public int examined;public string window;public string ancestor;}
+ static int CaptionHitTest(IntPtr root,int x,int y) {UIntPtr result;int coordinates=unchecked((int)(((uint)y&0xffffu)<<16|((uint)x&0xffffu)));if(SendMessageTimeoutW(root,0x0084,UIntPtr.Zero,new IntPtr(coordinates),2,200,out result)==IntPtr.Zero)throw new Exception("Owned WM_NCHITTEST failed or timed out: "+Marshal.GetLastWin32Error());return unchecked((int)result.ToUInt64());}
+ public static CaptionPoint VisibleCaption(IntPtr root,int screenLeft,int screenTop,int screenRight,int screenBottom) {
+  RECT r;if(!IsWindowVisible(root)||!GetWindowRect(root,out r))return null;
+  int examined=0,left=Math.Max(r.Left,screenLeft),top=Math.Max(r.Top,screenTop),right=Math.Min(r.Right,screenRight),bottom=Math.Min(r.Bottom,screenBottom);
+  // Sample the observed root, never an assumed browser-toolbar offset. Only HTCAPTION is eligible.
+  for(int y=top+2;y<bottom;y+=4)for(int x=left+4;x<right;x+=8){examined++;var under=WindowFromPoint(new POINT{X=x,Y=y});var ancestor=GetAncestor(under,2);if(under==IntPtr.Zero||ancestor!=root)continue;int hit=CaptionHitTest(root,x,y);if(hit==2)return new CaptionPoint{x=x,y=y,hitTest=hit,examined=examined,window=under.ToInt64().ToString(),ancestor=ancestor.ToInt64().ToString()};}
+  return null;
+ }
+ public static void ClickCaption(IntPtr root,CaptionPoint point) {var under=WindowFromPoint(new POINT{X=point.x,Y=point.y});if(under==IntPtr.Zero||GetAncestor(under,2)!=root||CaptionHitTest(root,point.x,point.y)!=2)throw new Exception("Owned visible HTCAPTION changed before physical click");Click(point.x,point.y);}
  public class WindowInfo {public string handle;public uint pid;public string className;public int left;public int top;public int right;public int bottom;}
  public static WindowInfo[] Renderers(IntPtr root,uint[] owned) {var found=new List<WindowInfo>();EnumChildWindows(root,(h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);var s=new StringBuilder(256);GetClassName(h,s,256);if(Array.IndexOf(owned,pid)>=0&&IsWindowVisible(h)&&s.ToString()=="Chrome_RenderWidgetHostHWND"){RECT r;GetClientRect(h,out r);POINT point=new POINT();if(!ClientToScreen(h,ref point))throw new Exception("Cannot map renderer client to desktop");if(r.Right>r.Left&&r.Bottom>r.Top)found.Add(new WindowInfo{handle=h.ToInt64().ToString(),pid=pid,className=s.ToString(),left=point.X,top=point.Y,right=point.X+r.Right-r.Left,bottom=point.Y+r.Bottom-r.Top});}return true;},IntPtr.Zero);return found.ToArray();}
  public static WindowInfo[] Windows(uint[] owned) {var found=new List<WindowInfo>();EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);if(Array.IndexOf(owned,pid)>=0&&IsWindowVisible(h)){RECT r;GetWindowRect(h,out r);var s=new StringBuilder(256);GetClassName(h,s,256);found.Add(new WindowInfo{handle=h.ToInt64().ToString(),pid=pid,className=s.ToString(),left=r.Left,top=r.Top,right=r.Right,bottom=r.Bottom});}return true;},IntPtr.Zero);return found.ToArray();}
@@ -87,7 +103,28 @@ if($BrowserPid -gt 0){
  $renderer=$children[0]
 }
 $handle=[IntPtr]::new([long]$root.handle)
-if($Action -eq 'activate'){[void][DuckNative]::ShowWindow($handle,9);[void][DuckNative]::SetForegroundWindow($handle);Start-Sleep -Milliseconds 150}
+$activation=$null
+if($Action -eq 'activate'){
+ $activation=@{before=[DuckNative]::Foreground();showWindowResult=$null;setForegroundResult=$null;normal=$null;captionPoint=$null;after=$null}
+ $activation.showWindowResult=[DuckNative]::ShowWindow($handle,9)
+ $activation.setForegroundResult=[DuckNative]::SetForegroundWindow($handle)
+ Start-Sleep -Milliseconds 150
+ $activation.normal=[DuckNative]::Foreground()
+ if($activation.normal.handle -ne $root.handle){
+  try{
+   # The observed renderer top bounds the non-content area; never scan the 3D canvas for a caption.
+   $activation.captionPoint=[DuckNative]::VisibleCaption($handle,$bounds.Left,$bounds.Top,$bounds.Right,[Math]::Min($bounds.Bottom,$renderer.top))
+   if(!$activation.captionPoint){throw 'No verified visible owned HTCAPTION point is available'}
+   [DuckNative]::ClickCaption($handle,$activation.captionPoint)
+   Start-Sleep -Milliseconds 150
+  }catch{
+   $activation.after=[DuckNative]::Foreground()
+   throw ('native activation not_verified: '+$_.Exception.Message+'; '+(@{root=$root;activation=$activation}|ConvertTo-Json -Depth 7 -Compress))
+  }
+ }
+ $activation.after=[DuckNative]::Foreground()
+ if($activation.after.handle -ne $root.handle){throw ('native activation not_verified: physical owned caption click did not activate exact root; '+(@{root=$root;activation=$activation}|ConvertTo-Json -Depth 7 -Compress))}
+}
 if($Action -eq 'click'){[DuckNative]::Click([int]$X,[int]$Y)}
 if($Action -eq 'key'){
  $name=$Key -replace '^(Shift\+|Alt\+)','';$keys=@{Tab=9;Enter=13;Escape=27;Space=32;Home=36;End=35;ArrowUp=38;ArrowDown=40}
@@ -106,7 +143,8 @@ $content=$handle
 if($renderer){$content=[IntPtr]::new([long]$renderer.handle)}
 if(![DuckNative]::GetClientRect($content,[ref]$r)){throw 'Cannot observe owned content client rect'}
 if(![DuckNative]::ClientToScreen($content,[ref]$point)){throw 'Cannot map owned content to desktop'}
-@{foreground=[DuckNative]::GetForegroundWindow().ToInt64().ToString();root=$root;contentHandle=$content.ToInt64().ToString();client=@{x=$point.X;y=$point.Y;width=$r.Right-$r.Left;height=$r.Bottom-$r.Top};windows=@([DuckNative]::Windows($owned));inputDesktopAvailable=$inputAvailable;sessionId=$sessionId;screen=$screen;workArea=$work}|ConvertTo-Json -Depth 7 -Compress
+$foreground=[DuckNative]::Foreground()
+@{foreground=$foreground.handle;foregroundWindow=$foreground;activation=$activation;root=$root;contentHandle=$content.ToInt64().ToString();client=@{x=$point.X;y=$point.Y;width=$r.Right-$r.Left;height=$r.Bottom-$r.Top};windows=@([DuckNative]::Windows($owned));inputDesktopAvailable=$inputAvailable;sessionId=$sessionId;screen=$screen;workArea=$work}|ConvertTo-Json -Depth 7 -Compress
 `;
 
 export function windowsNativeInput(options:{script:string;output:string;page:()=>Page;target:()=>Promise<NativeTarget>;evidence:unknown[];check:Check}){
@@ -124,6 +162,7 @@ export function windowsNativeInput(options:{script:string;output:string;page:()=
    assert.ok(scale>0&&Math.abs(client.width-viewport.width*scale)<=1&&Math.abs(client.height-viewport.height*scale)<=1,'native renderer mapping not_verified: renderer client must match actual innerWidth/innerHeight at devicePixelRatio '+JSON.stringify({viewport,client}));
    assert.ok(root.left>=screen.x&&root.top>=screen.y&&root.right<=screen.x+screen.width&&root.bottom<=screen.y+screen.height&&client.x>=root.left&&client.y>=root.top&&client.x+client.width<=root.right&&client.y+client.height<=root.bottom,'native renderer mapping not_verified: owned main window and renderer must fit the observed desktop '+JSON.stringify({root,client,screen}));
   }
+  if(action==='activate')assert.equal(state.foreground,state.root.handle,'The exact owned root must be foreground after native activation '+JSON.stringify({root:state.root,foreground:state.foregroundWindow,activation:state.activation}));
   return state;
  }
  async function native(action:string,extra:string[]=[]){return execute(action,await options.target(),extra);}
