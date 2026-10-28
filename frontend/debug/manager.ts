@@ -9,37 +9,38 @@ import {applyBrand} from '../shared/brand.js';
 import {IDS,role,createState,mergeStatus,online,selected,duplicate,parameterErrors,legPlan,mappingError,mappingNotice} from './state.js';
 import {createScene} from './scene.js';
 import {readNumberingReadiness,updateNumberingReadiness} from '../shared/numbering-readiness.js';
+import {createAutomaticNumbering} from './automatic.js';
 import {createDeviceTools} from './device-tools.js';
 applyBrand();
 if(new URLSearchParams(location.search).has('embedded'))document.body.dataset.embedded='true';
 function readView(value:string|undefined):DebugView {if(value==='robot'||value==='tray'||value==='circuit')return value;throw displayError('未知调试视图');}
-const state=createState();let step=1,scene:ReturnType<typeof createScene>|undefined,deviceTools:ReturnType<typeof createDeviceTools>,polling=false,signature='';
+const state=createState();let step=1,scene:ReturnType<typeof createScene>|undefined,deviceTools:ReturnType<typeof createDeviceTools>,automatic:ReturnType<typeof createAutomaticNumbering>,polling=false,signature='';
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>query<T>('#'+id),number=(input:HTMLInputElement)=>input.value.trim()===''?NaN:Number(input.value);
 function say(message:DebugNotice,error=false){state.message=message;$('feedback').textContent=String(message);$('feedback').classList.toggle('error',error);}
-const canEdit=(d:Device|undefined)=>!!d?.online&&!duplicate(state,d.id)&&!state.busy;
+const canEdit=(d:Device|undefined)=>!!d?.online&&!duplicate(state,d.id)&&!state.busy&&!automatic?.active;
 const boardNames={arduino:'Arduino UNO Q',get expansion(){return dt('舵机扩展板');}};
-function chooseBoard(id:string|undefined){if(id!=='arduino'&&id!=='expansion')return;if(state.busy)return;deviceTools?.selectDevice('board');state.selectedBoard=id;state.mode='single';state.draft=null;render();}
-function choose(id:number){if(state.busy)return;const d=state.devices.find(d=>d.id===id);if(!d)return;deviceTools?.selectDevice('servo');state.selectedBoard=null;state.selected=d.uid;state.mode='single';state.draft=null;render();}
+function chooseBoard(id:string|undefined){if(id!=='arduino'&&id!=='expansion')return;if(state.busy||automatic?.active)return;deviceTools?.selectDevice('board');state.selectedBoard=id;state.mode='single';state.draft=null;render();}
+function choose(id:number){if(state.busy)return;const d=state.devices.find(d=>d.id===id);if(!d)return;if(automatic?.active){automatic.choose(id);return;}deviceTools?.selectDevice('servo');state.selectedBoard=null;state.selected=d.uid;state.mode='single';state.draft=null;render();}
 export async function api(action:string,values:Record<string,unknown>={}){
  const r=await fetch('/api/duck-debug/action',{method:'POST',headers:{'Content-Type':'application/json'},body:jsonStringify({action,...values})});
  const data=await parseResponseJson(r);if(!isRecord(data))throw displayError("控制器返回格式异常");if(!r.ok)throw Object.assign(Error(typeof data.error==='string'?data.error:dt("操作未完成")),{details:data,code:data.code,params:data.params,messageCode:data.messageCode,messageParams:data.messageParams});return data;
 }
 async function run(action:string,values:Record<string,unknown>={},message:DebugNotice=dm("操作完成"),after?:(data:Record<string,unknown>)=>void){
- if(state.busy)return;
+ if(state.busy||automatic?.active)return;
  state.busy=true;state.message=dm("正在执行并等待读回…");render();
  try{const data=await api(action,values);after?.(data);await poll(true);say(message);return data;}
  catch(error){await poll(true);say(debugFailure(error),true);return null;}
  finally{state.busy=false;state.draft=null;render();}
 }
 function slots(){
- const active=new Set(online(state).map(d=>d.id)),d=selected(state),progress=readNumberingReadiness();
- setLocalizedHTML($('board-slots'),(Object.entries(boardNames) as [keyof typeof boardNames,string][]).map(([id,name])=>{const live=state.boards[id].connected;return `<button class="board-slot ${live?'online':''} ${state.selectedBoard===id?'selected':''}" data-board-slot="${id}" aria-label="${escapeAttribute(dt('选择 {name}，{status}',{name,status:live?dt('已连接'):dt('未确认')}))}" aria-pressed="${state.selectedBoard===id}" ${state.busy?'disabled':''}><i class="dot ${live?'green':''}"></i><strong>${name}</strong><small>${live?dt("已连接"):dt("未确认")}</small></button>`;}).join(''));
- setLocalizedHTML($('slots'),([[dt("左腿"),IDS.slice(0,5)],[dt("右腿"),IDS.slice(5,10)],[dt("头颈与鸭嘴"),IDS.slice(10)]] as const).map(([title,ids])=>`<div><div class="slot-group-title"><span>${title}</span><span>${ids[0]}–${ids.at(-1)}</span></div><div class="slot-row">${ids.map(id=>`<button class="slot ${active.has(id)?'online':''} ${!state.selectedBoard&&d?.id===id?'selected':''} ${duplicate(state,id)?'conflict':''}" data-slot="${id}" data-online="${active.has(id)}" aria-label="${escapeAttribute(dt('选择 ID{id}，{role}，{status}',{id:String(id),role:role(id),status:active.has(id)?dt('在线'):dt('离线')}))}" aria-pressed="${!state.selectedBoard&&d?.id===id}" ${state.busy?'disabled':''}>${id}<i class="slot-dot"></i>${progress.verifiedIds.includes(id)?`<span class="slot-verified" aria-label="${escapeAttribute(dt("编号已验证"))}">✓</span>`:''}</button>`).join('')}</div></div>`).join(''));
+ const active=new Set(online(state).map(d=>d.id)),d=selected(state),progress=automatic?.active?{verifiedIds:[...automatic.verified],ready:automatic.verified.size===15}:readNumberingReadiness();
+ setLocalizedHTML($('board-slots'),(Object.entries(boardNames) as [keyof typeof boardNames,string][]).map(([id,name])=>{const live=state.boards[id].connected;return `<button class="board-slot ${live?'online':''} ${state.selectedBoard===id?'selected':''}" data-board-slot="${id}" aria-label="${escapeAttribute(dt('选择 {name}，{status}',{name,status:live?dt('已连接'):dt('未确认')}))}" aria-pressed="${state.selectedBoard===id}" ${state.busy||automatic?.active?'disabled':''}><i class="dot ${live?'green':''}"></i><strong>${name}</strong><small>${live?dt("已连接"):dt("未确认")}</small></button>`;}).join(''));
+ setLocalizedHTML($('slots'),([[dt("左腿"),IDS.slice(0,5)],[dt("右腿"),IDS.slice(5,10)],[dt("头颈与鸭嘴"),IDS.slice(10)]] as const).map(([title,ids])=>`<div><div class="slot-group-title"><span>${title}</span><span>${ids[0]}–${ids.at(-1)}</span></div><div class="slot-row">${ids.map(id=>`<button class="slot ${active.has(id)?'online':''} ${!state.selectedBoard&&d?.id===id?'selected':''} ${duplicate(state,id)?'conflict':''} ${automatic?.active&&automatic.queuedTarget===id?'auto-queued':''}" data-slot="${id}" data-online="${active.has(id)}" aria-label="${escapeAttribute(dt('选择 ID{id}，{role}，{status}',{id:String(id),role:role(id),status:active.has(id)?dt('在线'):dt('离线')}))}" aria-pressed="${!state.selectedBoard&&d?.id===id}" ${state.busy?'disabled':''}>${id}<i class="slot-dot"></i>${progress.verifiedIds.includes(id)?`<span class="slot-verified" aria-label="${escapeAttribute(dt("编号已验证"))}">✓</span>`:''}</button>`).join('')}</div></div>`).join(''));
  const extra=state.devices.filter(d=>!IDS.includes(d.id));$('extra-devices').hidden=!extra.length;
  setLocalizedHTML($('extra-devices'),extra.length?dt('其他在线')+' '+extra.map(d=>`<button data-slot="${d.id}">ID ${d.id} · ${d.online?dt("在线"):dt("最近扫描")}</button>`).join(''):'');
  $('slot-count').textContent=dt("{count} 个编号在线 / 15 个固定盘位",{count:active.size});
  $('numbering-progress').textContent=dt("编号已验证 {count}/15 · {status}",{count:progress.verifiedIds.length,status:progress.ready?dt('组装鸭已解锁'):dt('完成后解锁组装鸭')});
- $<HTMLButtonElement>('verify-online').disabled=state.busy||!online(state).length;
+ $<HTMLButtonElement>('verify-online').disabled=state.busy||!online(state).length||automatic?.active;
 }
 function panelBoard(){const id=required(state.selectedBoard),live=state.boards[id].connected;
  const upstream=id==='arduino'?(state.transport==='lan'?dt("Mac · 网络"):'Mac · USB'):'Arduino UNO Q';
@@ -65,7 +66,7 @@ function validateForm(){
  for(const key of ['id','kp','kd']){$('error-'+key).textContent=errors[key]??'';$<HTMLInputElement>('edit-'+key).classList.toggle('invalid',!!errors[key]);}
  $<HTMLButtonElement>('write-parameters').disabled=state.busy||Object.keys(errors).length>0;return {values,errors};
 }
-function openBatch(mode:'swap'|'custom'){if(state.busy)return;state.selectedBoard=null;state.mode=mode;state.draft=null;state.batch=mode==='swap'?legPlan(state):online(state).map(d=>({uid:d.uid,from:d.id,to:d.id}));render();}
+function openBatch(mode:'swap'|'custom'){if(state.busy||automatic?.active)return;state.selectedBoard=null;state.mode=mode;state.draft=null;state.batch=mode==='swap'?legPlan(state):online(state).map(d=>({uid:d.uid,from:d.id,to:d.id}));render();}
 function panelBatch(){
  const error=mappingError(state,state.batch),changes=state.batch.filter(p=>p.to!==p.from).length;
  setLocalizedHTML($('panel'),`<button class="back-link" data-action="back" ${state.busy?'disabled':''}>${dt("← 返回所选舵机")}</button><h2>${state.mode==='swap'?dt("左右腿互换"):dt("自定义改号")}</h2><p class="batch-intro">${dt('只修改当前在线的 {count} 只。中位和 KP/KD 保持不变。',{count:state.batch.length})}</p>
@@ -82,7 +83,7 @@ function render(){
  for(const el of document.querySelectorAll<HTMLElement>('[data-view]'))el.setAttribute('aria-pressed',String(el.dataset.view===state.view));
  $('stage-caption').textContent=state.view==='robot'?dt("按编号对应安装位"):state.view==='tray'?dt("十五只舵机 · 固定编号位置"):dt("逻辑连接示意 · 不是实物串联顺序");
  $('stage-help').textContent=state.view==='circuit'?dt("USB → UNO Q → 扩展板 → 舵机总线 · 供电另接电池"):dt("拖动旋转 · 滚轮缩放 · 点舵机查看参数");
- $<HTMLButtonElement>('release-all').disabled=!state.boards.arduino.connected;$<HTMLButtonElement>('batch-swap').disabled=state.busy||!n;$<HTMLButtonElement>('batch-custom').disabled=state.busy||!n;
+ $<HTMLButtonElement>('release-all').disabled=!state.boards.arduino.connected||automatic?.active&&state.busy;$<HTMLButtonElement>('batch-swap').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('batch-custom').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('verify-online').disabled=state.busy||automatic?.active;
  slots();if(!deviceTools?.renderPanel()){state.selectedBoard?panelBoard():state.mode==='single'?panelSingle():panelBatch();}
  if(isRefreshingCopy())scene?.refreshCopy();else scene?.update(state);deviceTools?.afterRender();say(state.message,isRefreshingCopy()&&$('feedback').classList.contains('error'));
 }
@@ -131,7 +132,9 @@ $<HTMLButtonElement>('verify-online').onclick=()=>{deviceTools.stopControl();run
 $<HTMLButtonElement>('release-all').onclick=()=>{deviceTools.emergency();};
 $('reset-camera').onclick=()=>scene?.fit();query<HTMLAnchorElement>('.brand').href='/';
 bindTranslations();
-deviceTools=createDeviceTools({getState:()=>state,render,say,canEdit,api,poll,run});render();
+automatic=createAutomaticNumbering({api,busy:()=>state.busy,setBusy(value){state.busy=value;},select(id){state.selected='servo-'+id;state.selectedBoard=null;state.draft=null;},render,poll:()=>poll(true)});
+const automaticTab=document.createElement('button');automaticTab.type='button';automaticTab.dataset.workbench='automatic';automaticTab.textContent=dt('自动编号');query<HTMLElement>('.work-tabs [data-workbench=servo]').after(automaticTab);
+deviceTools=createDeviceTools({getState:()=>state,render,say,canEdit,api,poll,run,automatic});render();
 scene=createScene({host:$('viewport'),labelsHost:$('labels'),onSelect:choose,onBoardSelect:chooseBoard});scene.update(state);
 scene.ready.then(()=>{$('loading').hidden=true;document.body.dataset.modelReady='true';render();}).catch(error=>{$('loading').textContent=dt("模型未加载，请检查组装素材");document.body.dataset.modelReady='failed';console.error(error);});
 const inspectTimer=setInterval(()=>{const d=selected(state);if(!document.hidden&&!state.busy&&!state.scan?.active&&deviceTools.canInspect()&&d?.parametersLive&&!IDS.includes(d.id))api('inspect',{id:d.id}).catch(()=>{});},750);
