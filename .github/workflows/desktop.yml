@@ -102,6 +102,10 @@ jobs:
         run: |
           PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
           node --import tsx apps/desktop/scripts/portable-browser-smoke.ts
+      - name: Preserve technical acceptance and cleanup results in the job log
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        run: |
+          node --input-type=module -e 'import{existsSync,readFileSync}from"node:fs";for(const file of ["output/desktop-installed-smoke/result.json","output/desktop-installed-smoke/failure.json","output/desktop-installed-smoke/functional/result.json","output/desktop-installed-smoke/functional/failure-details.json","output/desktop-installed-smoke/functional/cleanup.json","output/windows-native-input/result.json","output/windows-native-input/cleanup.json","output/windows-portable-browser/result.json"]){if(existsSync(file))console.log(JSON.stringify({file,receipt:JSON.parse(readFileSync(file,"utf8"))}));}'
       - name: Source and publication boundary
         run: |
           npm run audit:typescript
