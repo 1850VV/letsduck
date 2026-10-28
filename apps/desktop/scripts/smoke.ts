@@ -57,7 +57,9 @@ async function personalJourney(page: Page): Promise<Record<string, boolean>> {
   assert.equal(await page.locator('#auth-dialog').count(), 0);
   assert.equal(await page.locator('.top-actions a[href*=gallery]').isVisible(), false);
   await resizeJourney(page, { width: 390, height: 900 });
+  await page.locator('.ph-more').waitFor({ state: 'visible' });
   if (await page.locator('#import-code').isHidden()) await page.locator('.ph-more').click();
+  await page.locator('#import-code').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#import-code').isVisible(), true);
   await page.locator('header.top').click({ position: { x: 2, y: 2 } });
   assert.equal(await page.locator('.ph-more').getAttribute('aria-expanded'), 'false');
@@ -189,8 +191,18 @@ try {
   assert.deepEqual(errors, []);
   result = { identity, renderer, versions, synthetic, scope: synthetic ? 'actual candidate protocol/save/profile/relaunch/offline only' : 'actual candidate licensed UI journey; simulated assembly prerequisite', material, stableOriginPersistence: true, viewports, errors };
 } catch (error) {
-    await writeFile(join(output, 'failure-details.json'), JSON.stringify({ synthetic, stage, error: failure(error), viewports, errors }, null, 2));
-  const page = application?.windows()[0]; if (page) await page.screenshot({ path: join(output, 'failure.png'), timeout: 5000 }).catch(() => {});
+  const page = application?.windows()[0];
+  const controls = await page?.evaluate(() => ({
+    width: innerWidth, height: innerHeight, phone: document.body.classList.contains('phone'),
+    controls: ['.ph-more', '.ph-menu', '#import-code'].map(selector => {
+      const element = document.querySelector(selector);
+      if (!(element instanceof HTMLElement)) return { selector, missing: true };
+      const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
+      return { selector, connected: element.isConnected, hidden: element.hidden, expanded: element.getAttribute('aria-expanded'), display: style.display, visibility: style.visibility, x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    }),
+  })).catch(error => ({ unavailable: failure(error) }));
+  await writeFile(join(output, 'failure-details.json'), JSON.stringify({ synthetic, stage, error: failure(error), viewports, controls, errors }, null, 2));
+  if (page) await page.screenshot({ path: join(output, 'failure.png'), timeout: 5000 }).catch(() => {});
   throw error;
 } finally {
   milestone('final-trace-stop');

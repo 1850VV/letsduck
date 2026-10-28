@@ -83,7 +83,9 @@ jobs:
         if: github.event_name != 'workflow_dispatch' || !inputs.full_software_acceptance
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts --synthetic
       - name: Install the candidate and check the full-model journey
+        id: installed_full
         if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        continue-on-error: true
         timeout-minutes: 10
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts
       - name: Windows native mouse, keyboard and clipboard
@@ -130,11 +132,14 @@ jobs:
             } catch (error) { console.error(JSON.stringify({ file, error: String(error) })); process.exitCode = 1; }
           }
           JS
-      - name: Require both independent Windows software checks to pass
-        if: always() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+      - name: Require every independent software check to pass
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
         run: |
-          test "${{ steps.native_input.outcome }}" = success
-          test "${{ steps.portable_browser.outcome }}" = success
+          test "${{ steps.installed_full.outcome }}" = success
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            test "${{ steps.native_input.outcome }}" = success
+            test "${{ steps.portable_browser.outcome }}" = success
+          fi
       - name: Source and publication boundary
         run: |
           npm run audit:typescript
