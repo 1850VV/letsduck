@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {writeFile} from 'node:fs/promises';
+import {readFile,writeFile} from 'node:fs/promises';
+import {freemem,totalmem} from 'node:os';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import type {Locator,Page} from 'playwright';
@@ -16,8 +17,15 @@ export type NativeState=NativeDesktop&{foregroundWindow:{handle:string;pid:numbe
 type NativeTarget={window:string;ownedPids:number[];chromiumBrowserPid?:number};
 type Check=(name:string,passed:boolean,detail?:unknown)=>void;
 
-const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0)
+const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0,[string]$DiagnosticPath)
 $ErrorActionPreference='Stop'
+$nativeStarted=[DateTime]::UtcNow
+function Write-NativeProgress([string]$stage) {
+ $self=[System.Diagnostics.Process]::GetCurrentProcess();$self.Refresh()
+ $progress=@{stage=$stage;action=$Action;helperPID=$PID;atUtc=[DateTime]::UtcNow.ToString('o');elapsedMs=([DateTime]::UtcNow-$nativeStarted).TotalMilliseconds;workingSetBytes=$self.WorkingSet64;privateBytes=$self.PrivateMemorySize64;cpuSeconds=$self.TotalProcessorTime.TotalSeconds}
+ [System.IO.File]::WriteAllText($DiagnosticPath,($progress|ConvertTo-Json -Compress),[System.Text.UTF8Encoding]::new($false))
+}
+Write-NativeProgress 'powershell-started'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @'
@@ -74,6 +82,7 @@ public class DuckNative {
  public static void Key(ushort key,bool shift,bool alt){var keys=new List<INPUT>();if(shift)keys.Add(Keyboard(16,false));if(alt)keys.Add(Keyboard(18,false));keys.Add(Keyboard(key,false));keys.Add(Keyboard(key,true));if(alt)keys.Add(Keyboard(18,true));if(shift)keys.Add(Keyboard(16,true));Send(keys.ToArray());}
 }
 '@
+Write-NativeProgress 'types-ready'
 [void][DuckNative]::SetProcessDPIAware()
 $inputDesktop=[DuckNative]::OpenInputDesktop(0,$false,0x0100)
 $inputAvailable=$inputDesktop -ne [IntPtr]::Zero
@@ -103,6 +112,7 @@ if($BrowserPid -gt 0){
  $renderer=$children[0]
 }
 $handle=[IntPtr]::new([long]$root.handle)
+Write-NativeProgress 'owned-renderer-mapped'
 $activation=$null
 if($Action -eq 'activate'){
  $activation=@{before=[DuckNative]::Foreground();showWindowResult=$null;setForegroundResult=$null;normal=$null;captionPoint=$null;after=$null}
@@ -137,6 +147,7 @@ if($Action -eq 'capture'){
  $graphics=[System.Drawing.Graphics]::FromImage($image)
  try{$graphics.CopyFromScreen($bounds.Left,$bounds.Top,0,0,$bounds.Size);$image.Save($Output,[System.Drawing.Imaging.ImageFormat]::Png)}finally{$graphics.Dispose();$image.Dispose()}
 }
+Write-NativeProgress 'action-complete'
 Start-Sleep -Milliseconds 120
 $r=New-Object DuckNative+RECT;$point=New-Object DuckNative+POINT
 $content=$handle
@@ -149,12 +160,19 @@ $foreground=[DuckNative]::Foreground()
 
 export function windowsNativeInput(options:{script:string;output:string;page:()=>Page;target:()=>Promise<NativeTarget>;evidence:unknown[];check:Check}){
  const run=promisify(execFile),{check}=options;
+ const diagnosticPath=join(options.output,'native-helper-progress.json');
+ async function helperProgress():Promise<unknown>{try{return JSON.parse(await readFile(diagnosticPath,'utf8'));}catch(error){return{unavailable:true,error:String(error)};}}
  let browserWindow:{pid:number;handle:string}|undefined;
  async function execute(action:string,target:NativeTarget,extra:string[]=[]):Promise<NativeState>{
   const browserPid=target.chromiumBrowserPid||0,hwnd=target.window||(browserWindow?.pid===browserPid?browserWindow.handle:'');
-  const answer=await run(windowsPowerShell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',options.script,'-Action',action,'-Window',hwnd,'-OwnedPids',target.ownedPids.join(','),'-BrowserPid',String(browserPid),...extra],{timeout:30_000,maxBuffer:1024*1024}).catch(error=>{options.evidence.push({action,extra,target,error:String(error)});throw error;});
+  await writeFile(diagnosticPath,'');const startedAtUtc=new Date().toISOString(),started=performance.now(),memoryBefore={freeBytes:freemem(),totalBytes:totalmem()};
+  const answer=await run(windowsPowerShell,['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',options.script,'-Action',action,'-Window',hwnd,'-OwnedPids',target.ownedPids.join(','),'-BrowserPid',String(browserPid),'-DiagnosticPath',diagnosticPath,...extra],{timeout:30_000,maxBuffer:1024*1024}).catch(async(error:unknown)=>{
+   const child=error as {code?:unknown;signal?:unknown;killed?:unknown;stdout?:unknown;stderr?:unknown};
+   const diagnostic={action,extra,target,error:String(error),startedAtUtc,elapsedMs:performance.now()-started,memoryBefore,memoryAfter:{freeBytes:freemem(),totalBytes:totalmem()},processError:{code:child.code??null,signal:child.signal??null,killed:child.killed??null,stdout:child.stdout??null,stderr:child.stderr??null},progress:await helperProgress()};
+   options.evidence.push(diagnostic);console.error(JSON.stringify({kind:'native-helper-failure',...diagnostic}));throw error;
+  });
   const state=JSON.parse(answer.stdout.trim()) as NativeState;
-  options.evidence.push({action,extra,state});assert.equal(state.inputDesktopAvailable,true,'The runner must expose an unlocked input desktop');assert.ok(state.sessionId>0,'An interactive Windows session is required');
+  options.evidence.push({action,extra,state,execution:{startedAtUtc,elapsedMs:performance.now()-started,memoryBefore,memoryAfter:{freeBytes:freemem(),totalBytes:totalmem()},progress:await helperProgress()}});assert.equal(state.inputDesktopAvailable,true,'The runner must expose an unlocked input desktop');assert.ok(state.sessionId>0,'An interactive Windows session is required');
   if(action!=='desktop'){
    if(browserPid)browserWindow={pid:browserPid,handle:state.root.handle};
    const viewport=await options.page().evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio})),{client,screen,root}=state,scale=viewport.devicePixelRatio;

@@ -137,8 +137,8 @@ async function open(url:string){
  check('owned managed Chromium is foreground with a validated renderer HWND',active.foreground===active.root.handle,{browserPid:active.root.pid,hwnd:active.root.handle,rendererHwnd:active.contentHandle,viewport,client:active.client,desktop,windowSize});effectiveViewports.push({url,viewport,client:active.client,window:active.root,desktop});return page;
 }
 async function closeBrowser(){if(context){const browser=required(context.browser());const ownedBrowser=await browserPids(browser);for(const pid of ownedBrowser)pids.add(pid);await context.close();context=undefined;await processesExited(ownedBrowser);}}
-type State={name:string;dirty:boolean;colors:Record<string,string>;step:number};
-async function state(frame:Frame){return frame.evaluate(()=>{const proto=Reflect.get(window,'studioProto') as {state:State}|undefined;if(!proto)throw new Error('Production studio is not ready');return{name:proto.state.name,dirty:proto.state.dirty,colors:proto.state.colors,step:proto.state.step};});}
+type State={name:string;dirty:boolean;colors:Record<string,string>;step:number;activeId:string|null};
+async function state(frame:Frame){return frame.evaluate(()=>{const proto=Reflect.get(window,'studioProto') as {state:State}|undefined;if(!proto)throw new Error('Production studio is not ready');return{name:proto.state.name,dirty:proto.state.dirty,colors:proto.state.colors,step:proto.state.step,activeId:proto.state.activeId};});}
 async function physicalClick(target:Locator){
  await target.waitFor({state:'visible'});const handle=required(await target.elementHandle());
  try{await handle.waitForElementState('enabled');}finally{await handle.dispose();}
@@ -150,6 +150,15 @@ async function physicalClick(target:Locator){
  await input.click(target);events.push({kind:'nativeClickCompleted',selector,atUtc:new Date().toISOString()});
 }
 async function download(frame:Frame,selector:string,name:string){const pending=required(page).waitForEvent('download',{timeout:120_000});await physicalClick(frame.locator(selector));const item=await pending;await item.saveAs(join(output,name));assert.equal(await item.failure(),null);return readFile(join(output,name));}
+async function saveScheme(frame:Frame,name:string,origin:string){
+ const pending=required(page).waitForResponse(response=>{const address=new URL(response.url());return address.origin===origin&&/^\/api\/schemes\/[^/]+$/.test(address.pathname)&&response.request().method()==='PUT';});
+ await physicalClick(frame.locator('#sm-save'));const response=await pending;assert.equal(response.ok(),true,'The actual SQLite save request must succeed: '+response.status());
+ await frame.waitForFunction(name=>{const value=Reflect.get(window,'studioProto') as {state:State};return value.state.name===name&&!value.state.dirty&&!!value.state.activeId;},name);
+ const saved=await state(frame),readback=await fetch(origin+'/api/schemes');assert.equal(readback.ok,true);
+ const rows=await readback.json() as Array<{id:string;name:string;design:{colors:Record<string,string>}}>,row=required(rows.find(item=>item.id===saved.activeId));
+ check('portable SQLite save completes and reads back',row.name===name&&JSON.stringify(row.design.colors)===JSON.stringify(saved.colors),{activeId:saved.activeId,status:response.status(),name:row.name});
+ return saved;
+}
 try{
  const archiveBytes=await readFile(archive);artifactIdentity.bytes=archiveBytes.length;artifactIdentity.sha256=sha(archiveBytes);await writeFile(join(output,'identity.json'),JSON.stringify(artifactIdentity));console.log(JSON.stringify(artifactIdentity));
  await input.prepare();await writeFile(adb,'Invalid PE sentinel; this test must never contact real ADB.');
@@ -168,10 +177,10 @@ try{
  await input.click(page!.locator('#close-x'));check('portable native close returns to homepage',!await page!.locator('#module-window').isVisible());await input.click(paint);await page!.locator('#module-frame').waitFor({state:'visible'});await page!.frameLocator('#module-frame').locator('#steps').waitFor();
  frame=required(page!.frames().find(frame=>frame.url()===url+'/paint'));await frame.waitForFunction(()=>!!Reflect.get(window,'studioProto'));check('portable native homepage module reopens actual paint iframe',frame.url()===url+'/paint');await input.capture('portable-native-home-reopened');
  nativeCoverage={status:'partial',entry:'actual homepage paint iframe; Win32 SendInput',assetScope,filamentSeries:series,formalMultiBrandSeries:assetScope.filamentCatalog&&assetScope.filamentProfiles&&series.changedSelectionCovered?'covered for displayed options':'not_run: historical authorized archive has a single displayed filament series or lacks current extra catalog/profile files',visualApproval:'native popup HWND observations and private desktop captures; no human visual approval'};
- const name='Windows portable '+Date.now();await physicalClick(frame.locator('#scheme-btn'));await frame.locator('#sm-name').fill(name);await physicalClick(frame.locator('#sm-save'));await frame.waitForFunction(name=>{const value=Reflect.get(window,'studioProto') as {state:State};return value.state.name===name&&!value.state.dirty;},name);
+ const name='Windows portable '+Date.now();await physicalClick(frame.locator('#scheme-btn'));await frame.locator('#sm-name').fill(name);await saveScheme(frame,name,new URL(url).origin);
  const savedColors=(await state(frame)).colors;
  if(await frame.locator('#sm-name').isHidden())await physicalClick(frame.locator('#scheme-btn'));await frame.locator('#sm-name').fill(name+'-failed');await context!.route('**/api/schemes/**',route=>route.request().method()==='PUT'?route.fulfill({status:503,contentType:'application/json',body:'{"error":"test","code":"server.failed","params":{}}'}):route.continue());await physicalClick(frame.locator('#sm-save'));await frame.waitForFunction(()=>document.querySelector('#toast')?.textContent?.includes('未能保存'));check('failed portable save retains the draft',(await state(frame)).dirty);
- const rows=await fetch(url+'/api/schemes').then(response=>response.json()) as Array<{name:string}>;check('failed save does not replace SQLite scheme',rows.some(row=>row.name===name)&&!rows.some(row=>row.name===name+'-failed'));await context!.unroute('**/api/schemes/**');await frame.locator('#sm-name').fill(name);await physicalClick(frame.locator('#sm-save'));await frame.waitForFunction(()=>!(Reflect.get(window,'studioProto') as {state:State}).state.dirty);
+ const rows=await fetch(url+'/api/schemes').then(response=>response.json()) as Array<{name:string}>;check('failed save does not replace SQLite scheme',rows.some(row=>row.name===name)&&!rows.some(row=>row.name===name+'-failed'));await context!.unroute('**/api/schemes/**');await frame.locator('#sm-name').fill(name);await saveScheme(frame,name,new URL(url).origin);
  await physicalClick(frame.locator('[data-step="3"]').first());await physicalClick(frame.locator('[data-ptab="print"]'));await physicalClick(frame.locator('#export2'));const bytes=await download(frame,'#dl-3mf','ui-export.3mf'),zip=new ZipArchive(bytes),source=new ZipArchive(await readFile(join(folder,'runtime/assets/source.3mf')));
  const geometry=[...source.entries.keys()].filter(name=>name.startsWith('3D/'));check('portable download preserves the source manufacturing records',geometry.length===27&&geometry.every(name=>source.entries.get(name)!.local.equals(zip.entries.get(name)?.local||Buffer.alloc(0))));
  const manufacturing=JSON.parse(zip.read('Metadata/duck_studio_materials.json').toString('utf8')) as {validation:{status:string;partCount:number;plateCount:number}};check('portable export validates35parts6plates',manufacturing.validation.status==='passed'&&manufacturing.validation.partCount===35&&manufacturing.validation.plateCount===6,manufacturing.validation);
