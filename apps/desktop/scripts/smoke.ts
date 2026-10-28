@@ -19,6 +19,8 @@ await mkdir(output, { recursive: true });
 const scope = await desktopScope('letsduck-electron-');
 const errors: string[] = [];
 const viewports: unknown[] = [];
+let stage = 'initializing';
+function milestone(value: string): void { stage = value; console.log('Desktop journey stage:', value); }
 let application: ElectronApplication | undefined;
 let result: Record<string, unknown> | undefined;
 
@@ -48,6 +50,7 @@ async function downloadFile(page: Page, selector: string): Promise<Buffer> {
   return readFile(download.path);
 }
 async function personalJourney(page: Page): Promise<Record<string, boolean>> {
+  milestone('personal-save');
   await chooseLocale(page, 'zh-Hans');
   const site: unknown = jsonParse(await page.evaluate(async () => (await fetch('/api/site')).text()));
   assert.ok(object(site) && site.edition === 'personal');
@@ -67,6 +70,7 @@ async function personalJourney(page: Page): Promise<Record<string, boolean>> {
   console.log('Locale after clearing test browser storage:', await page.evaluate(() => document.documentElement.lang));
   // Clearing browser storage also clears the selected locale; keep the toast assertion explicit.
   await chooseLocale(page, 'zh-Hans');
+  milestone('failed-save-preservation');
   await page.locator('#scheme-btn').click(); await page.locator('#sm-name').fill(name + '-未写入');
   // Custom-scheme requests bypass Playwright route(); intercept only the failing save in this renderer.
   await page.evaluate(() => {
@@ -85,6 +89,7 @@ async function personalJourney(page: Page): Promise<Record<string, boolean>> {
     assert.equal(rows.some((row: unknown) => object(row) && row.name === name + '-未写入'), false);
   } finally { await page.evaluate(() => { const original = window.desktopSmokeFetch; if (original) window.fetch = original; delete window.desktopSmokeFetch; }); }
   await page.locator('#sm-name').fill(name); await page.locator('#sm-save').click(); await waitStudio(page, state => !state.dirty);
+  milestone('code-import');
   await page.locator('#steps [data-step="3"]').click(); await page.locator('[data-ptab="share"]').click();
   assert.equal(await page.locator('#publish').count(), 0);
   const code = required(await page.locator('.code-box code').textContent()); assert.ok(code.startsWith('v1.'));
@@ -107,10 +112,12 @@ async function syntheticJourney(page: Page): Promise<string> {
   return page.evaluate(async () => (await fetch('/api/schemes')).text());
 }
 try {
+  milestone('launch');
   application = await scope.launch(); let page = await application.firstWindow(); page.on('pageerror', error => errors.push(String(error)));
   await application.context().tracing.start({ screenshots: true, snapshots: true });
   const identity = await application.evaluate(({ app }) => ({ version: app.getVersion(), packaged: app.isPackaged, arch: process.arch }));
   const renderer = process.env.DUCK_TEST_ANGLE === 'swiftshader' ? 'swiftshader' : 'default';
+  milestone('gpu-diagnostics');
   const graphics = await application.evaluate(async ({ app }) => {
     const features = app.getGPUFeatureStatus();
     try { return { status: 'available', features, info: await app.getGPUInfo('basic') }; }
@@ -121,6 +128,7 @@ try {
     }
   });
   await writeFile(join(output, 'environment.json'), JSON.stringify({ identity, renderer, graphics }, null, 2));
+  milestone('page-ready');
   if (process.env.DUCK_EXPECTED_VERSION) assert.equal(identity.version, process.env.DUCK_EXPECTED_VERSION);
   if (process.env.DUCK_BUILD_ARCH) assert.equal(identity.arch, process.env.DUCK_BUILD_ARCH);
   await page.waitForURL('duck://app/');
@@ -136,32 +144,40 @@ try {
     const clipboard = await page.evaluate(async () => ({ write: (await navigator.permissions.query({ name: 'clipboard-write' as PermissionName })).state, read: (await navigator.permissions.query({ name: 'clipboard-read' as PermissionName })).state }));
     assert.equal(clipboard.write, 'granted'); assert.equal(clipboard.read, 'denied');
     const personal = await personalJourney(page);
+    milestone('manufacturing-downloads');
     await resizeJourney(page, { width: 1280, height: 800 });
     await page.locator('button[data-step="1"]').first().click(); await page.locator('[data-start="original"]').click(); await page.locator('button[data-step="3"]').first().click();
     await page.locator('[data-ptab="print"]').click(); await page.locator('#export2').click();
     const archive = await downloadFile(page, '#dl-3mf'); assert.equal(archive.readUInt32LE(0), 0x04034b50); await writeFile(join(output, 'ui-export.3mf'), archive);
     const bom = await downloadFile(page, '#dl-bom'); assert.equal(bom.toString('utf8').split('\r\n').length, 36); await writeFile(join(output, 'ui-bom.csv'), bom);
     await page.locator('#export-dialog [data-close]').click(); await page.locator('[data-ptab="share"]').click(); await page.locator('#open-poster').click();
+    milestone('poster-download');
     const poster = await downloadFile(page, '#poster-save'); assert.equal(poster.subarray(0, 8).toString('hex'), '89504e470d0a1a0a'); assert.ok(poster.length > 100000);
     await writeFile(join(output, 'ui-poster.png'), poster); await page.locator('#poster-close').click(); await page.screenshot({ path: join(output, 'paint.png') });
     material = { status: 'passed', personal, exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard };
   }
   await page.evaluate(() => localStorage.setItem('desktop-smoke', 'retained'));
   const versions = await application.evaluate(() => process.versions);
-  await application.context().tracing.stop({ path: join(output, 'first-session.zip') }); await scope.close(application);
+  milestone('first-trace-stop');
+  await application.context().tracing.stop({ path: join(output, 'first-session.zip') });
+  milestone('first-application-close'); await scope.close(application);
+  milestone('profile-relaunch');
   application = await scope.launch(); page = await application.firstWindow(); page.on('pageerror', error => errors.push(String(error))); await page.waitForURL('duck://app/');
   await application.context().tracing.start({ screenshots: true, snapshots: true });
   assert.equal(await page.evaluate(() => localStorage.getItem('desktop-smoke')), 'retained');
   if (synthetic) assert.equal(await page.evaluate(async () => (await fetch('/api/schemes')).text()), schemes);
   else {
+    milestone('assembly-gate');
     await page.goto('duck://app/assemble/'); await page.waitForURL('duck://app/debug/?from=assemble');
     await application.context().tracing.stop({ path: join(output, 'gate-session.zip') });
-    await scope.close(application);
+    milestone('gate-application-close'); await scope.close(application);
     // This explicit test fixture is not evidence of physical numbering or readiness.
     seedSimulatedAssembly(required(scope.env.DUCK_PERSONAL_DB));
+    milestone('assembly-relaunch');
     application = await scope.launch(); page = await application.firstWindow(); page.on('pageerror', error => errors.push(String(error))); await page.waitForURL('duck://app/');
     await application.context().tracing.start({ screenshots: true, snapshots: true });
     await page.goto('duck://app/assemble/'); await page.waitForFunction(assemblyReady, undefined, { timeout: 60_000 }); await page.screenshot({ path: join(output, 'assemble.png') });
+    milestone('video-playback');
     await page.locator('#reference-toggle').click();
     await page.waitForFunction(() => { const video = document.querySelector('#reference-video'); return video instanceof HTMLVideoElement && video.videoWidth > 0 && !video.paused && video.currentTime > 1; }, null, { timeout: 30_000 });
     await page.locator('#reference-video').evaluate(video => { if (!(video instanceof HTMLVideoElement)) throw new Error('Expected video'); video.currentTime = 10; });
@@ -173,12 +189,14 @@ try {
   assert.deepEqual(errors, []);
   result = { identity, renderer, versions, synthetic, scope: synthetic ? 'actual candidate protocol/save/profile/relaunch/offline only' : 'actual candidate licensed UI journey; simulated assembly prerequisite', material, stableOriginPersistence: true, viewports, errors };
 } catch (error) {
-    await writeFile(join(output, 'failure-details.json'), JSON.stringify({ synthetic, error: failure(error), viewports, errors }, null, 2));
+    await writeFile(join(output, 'failure-details.json'), JSON.stringify({ synthetic, stage, error: failure(error), viewports, errors }, null, 2));
   const page = application?.windows()[0]; if (page) await page.screenshot({ path: join(output, 'failure.png'), timeout: 5000 }).catch(() => {});
   throw error;
 } finally {
+  milestone('final-trace-stop');
   if (application) await application.context().tracing.stop({ path: join(output, 'last-session.zip') }).catch(() => {});
   let cleaned = false;
+  milestone('owned-process-cleanup');
   try { await scope.dispose(); cleaned = true; }
   finally { await writeFile(join(output, 'cleanup.json'), JSON.stringify({ ownedProcessesExited: cleaned, temporaryDataRemoved: cleaned, fakeAdb: scope.adbEvidence(), ownedPids: [...scope.pids] }, null, 2)); }
 }

@@ -84,6 +84,7 @@ jobs:
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts --synthetic
       - name: Install the candidate and check the full-model journey
         if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        timeout-minutes: 10
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts
       - name: Windows native mouse, keyboard and clipboard
         if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
