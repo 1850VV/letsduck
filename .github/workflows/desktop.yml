@@ -85,6 +85,9 @@ jobs:
       - name: Install the candidate and check the full-model journey
         if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts
+      - name: Windows native mouse, keyboard and clipboard
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        run: node --import tsx apps/desktop/scripts/native-input-smoke.ts
       - name: Download and verify the matching official Node runtime
         run: npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
       - name: Build the portable browser archive
@@ -94,6 +97,11 @@ jobs:
           else
             npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
           fi
+      - name: Windows portable launch, full-model UI and console shutdown
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        run: |
+          PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
+          node --import tsx apps/desktop/scripts/portable-browser-smoke.ts
       - name: Source and publication boundary
         run: |
           npm run audit:typescript

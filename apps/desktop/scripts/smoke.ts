@@ -18,8 +18,20 @@ const output = resolve(process.env.DUCK_TEST_OUTPUT || join(root, 'output/deskto
 await mkdir(output, { recursive: true });
 const scope = await desktopScope('letsduck-electron-');
 const errors: string[] = [];
+const viewports: unknown[] = [];
 let application: ElectronApplication | undefined;
 let result: Record<string, unknown> | undefined;
+
+async function resizeJourney(page: Page, requested: { width: number; height: number }): Promise<void> {
+  const fitted = await required(application).evaluate(({ BrowserWindow, screen }, requested) => {
+    const window = BrowserWindow.getAllWindows()[0]; if (!window) throw new Error('Missing desktop window');
+    const bounds = window.getBounds(), content = window.getContentBounds(), workArea = screen.getDisplayMatching(bounds).workArea;
+    return { requested, workArea, width: Math.min(requested.width, workArea.width - (bounds.width - content.width)), height: Math.min(requested.height, workArea.height - (bounds.height - content.height)) };
+  }, requested);
+  assert.ok(fitted.width >= Math.min(requested.width, 800) && fitted.height >= 600, 'Display must fit the supported test viewport: ' + JSON.stringify(fitted));
+  viewports.push(fitted); console.log('Desktop journey viewport:', JSON.stringify(fitted));
+  await resizeWindow(required(application), page, { width: fitted.width, height: fitted.height });
+}
 
 async function downloadFile(page: Page, selector: string): Promise<Buffer> {
   const app = required(application);
@@ -41,17 +53,20 @@ async function personalJourney(page: Page): Promise<Record<string, boolean>> {
   assert.ok(object(site) && site.edition === 'personal');
   assert.equal(await page.locator('#auth-dialog').count(), 0);
   assert.equal(await page.locator('.top-actions a[href*=gallery]').isVisible(), false);
-  await resizeWindow(required(application), page, { width: 390, height: 900 });
+  await resizeJourney(page, { width: 390, height: 900 });
   if (await page.locator('#import-code').isHidden()) await page.locator('.ph-more').click();
   assert.equal(await page.locator('#import-code').isVisible(), true);
   await page.locator('header.top').click({ position: { x: 2, y: 2 } });
   assert.equal(await page.locator('.ph-more').getAttribute('aria-expanded'), 'false');
-  await resizeWindow(required(application), page, { width: 1280, height: 900 });
+  await resizeJourney(page, { width: 1280, height: 900 });
   const name = '个人版回归-' + Date.now();
   await page.locator('#scheme-btn').click(); await page.locator('#sm-name').fill(name); await page.locator('#sm-save').click();
   await waitStudio(page, state => state.name === name && !state.dirty);
   await page.evaluate(() => localStorage.clear()); await page.reload();
   await waitStudio(page, state => state.name === name);
+  console.log('Locale after clearing test browser storage:', await page.evaluate(() => document.documentElement.lang));
+  // Clearing browser storage also clears the selected locale; keep the toast assertion explicit.
+  await chooseLocale(page, 'zh-Hans');
   await page.locator('#scheme-btn').click(); await page.locator('#sm-name').fill(name + '-未写入');
   // Custom-scheme requests bypass Playwright route(); intercept only the failing save in this renderer.
   await page.evaluate(() => {
@@ -121,7 +136,7 @@ try {
     const clipboard = await page.evaluate(async () => ({ write: (await navigator.permissions.query({ name: 'clipboard-write' as PermissionName })).state, read: (await navigator.permissions.query({ name: 'clipboard-read' as PermissionName })).state }));
     assert.equal(clipboard.write, 'granted'); assert.equal(clipboard.read, 'denied');
     const personal = await personalJourney(page);
-    await resizeWindow(application, page, { width: 1280, height: 800 });
+    await resizeJourney(page, { width: 1280, height: 800 });
     await page.locator('button[data-step="1"]').first().click(); await page.locator('[data-start="original"]').click(); await page.locator('button[data-step="3"]').first().click();
     await page.locator('[data-ptab="print"]').click(); await page.locator('#export2').click();
     const archive = await downloadFile(page, '#dl-3mf'); assert.equal(archive.readUInt32LE(0), 0x04034b50); await writeFile(join(output, 'ui-export.3mf'), archive);
@@ -156,9 +171,9 @@ try {
     material = { ...material, video, initialAssemblyGate303: true, assemblyNumberingPrerequisite: '15 explicitly simulated ledger records; physical readiness not tested' };
   }
   assert.deepEqual(errors, []);
-  result = { identity, renderer, versions, synthetic, scope: synthetic ? 'actual candidate protocol/save/profile/relaunch/offline only' : 'actual candidate licensed UI journey; simulated assembly prerequisite', material, stableOriginPersistence: true, errors };
+  result = { identity, renderer, versions, synthetic, scope: synthetic ? 'actual candidate protocol/save/profile/relaunch/offline only' : 'actual candidate licensed UI journey; simulated assembly prerequisite', material, stableOriginPersistence: true, viewports, errors };
 } catch (error) {
-  await writeFile(join(output, 'failure-details.json'), JSON.stringify({ synthetic, error: failure(error), errors }, null, 2));
+    await writeFile(join(output, 'failure-details.json'), JSON.stringify({ synthetic, error: failure(error), viewports, errors }, null, 2));
   const page = application?.windows()[0]; if (page) await page.screenshot({ path: join(output, 'failure.png'), timeout: 5000 }).catch(() => {});
   throw error;
 } finally {
