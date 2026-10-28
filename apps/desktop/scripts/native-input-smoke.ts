@@ -65,7 +65,16 @@ try{
  const series=await menuJourney(frame.locator('#filament-series'),'filament-series');
  // A historical authorized asset pack can have only one series. Never inject extra options.
  const coverage={assetScope,filamentSeries:series,formalMultiBrandSeries:assetScope.filamentCatalog&&series.changedSelectionCovered?'covered for displayed options':'not_run: authorized historical archive lacks current extra filament files or multiple series'};
- await app.evaluate(async({clipboard,ClipboardItem})=>{const copied=[];for(const item of await clipboard.read()){const types:Record<string,Blob|Electron.ClipboardBookmark>={};for(const type of item.types)types[type]=await item.getType(type);copied.push(new ClipboardItem(types));}Reflect.set(globalThis,'duckNativeClipboardBackup',copied);await clipboard.writeText('duck-native-clipboard-marker');});clipboardSaved=true;
+ const clipboardBackup=await app.evaluate(async({clipboard,ClipboardItem})=>{
+  const copied=[];let emptyItems=0;
+  for(const item of await clipboard.read()){
+   if(!item.types.length){emptyItems++;continue;}
+   const types:Record<string,Blob|Electron.ClipboardBookmark>={};for(const type of item.types)types[type]=await item.getType(type);
+   copied.push(new ClipboardItem(types));
+  }
+  Reflect.set(globalThis,'duckNativeClipboardBackup',copied);return{formats:copied.flatMap(item=>item.types),emptyItems};
+ });clipboardSaved=true;events.push({kind:'clipboardBackup',scope:'Electron ClipboardItem MIME formats',...clipboardBackup});
+ await app.evaluate(async({clipboard})=>clipboard.writeText('duck-native-clipboard-marker'));
  await click(frame.locator('[data-step="3"]').first());await click(frame.locator('[data-ptab="share"]'));
  const textCode=required(await frame.locator('.code-box code').textContent());assert.ok(textCode.startsWith('v1.'),'The real share panel has an exportable code');await click(frame.locator('#copy-code'));
  let copiedCode='';for(let i=0;i<30;i++){copiedCode=await app.evaluate(async({clipboard})=>clipboard.readText());if(copiedCode===textCode)break;await delay(100);}
@@ -90,7 +99,15 @@ try{
  result={status:'passed',artifactIdentity,installer:{path:installer,bytes:artifactIdentity.bytes,sha256:artifactIdentity.sha256},identity,assemblyPrerequisite:'15 explicitly simulated records in owned temporary SQLite; no hardware verification',defaultGpu:true,sourceCommit:process.env.GITHUB_SHA||null,coverage,settings,clipboard:{text:{displaySelector:'.code-box code',buttonSelector:'#copy-code',expected:textCode,actual:copiedCode},formats:clip?.formats,bytes:png.length,width:clip?.width,height:clip?.height,sha256:sha(png)},checks,events,physicalDevices:'not_run: explicit invalid DUCK_ADB sentinel and temporary DB/profile',visualAcceptance:'automated native input and captured screens; no human visual approval'};
 }catch(error){result={status:'failed',artifactIdentity,error:failure(error),checks,events};console.log(JSON.stringify(artifactIdentity));process.exitCode=1;if(hwnd)await capture('failure-native').catch(()=>{});console.error(failure(error));}
 finally{
- if(app&&clipboardSaved)try{await app.evaluate(async({clipboard})=>{const copied=Reflect.get(globalThis,'duckNativeClipboardBackup') as Electron.ClipboardItem[];if(copied.length)await clipboard.write(copied);else clipboard.clear();});clipboardRestored=true;}catch(error){events.push({kind:'clipboardRestore',error:String(error)});result={...result,status:'failed',clipboardRestoreError:failure(error)};process.exitCode=1;}
+ if(app&&clipboardSaved)try{
+  const restored=await app.evaluate(async({clipboard})=>{
+   const copied=Reflect.get(globalThis,'duckNativeClipboardBackup') as Electron.ClipboardItem[];
+   if(copied.length)await clipboard.write(copied);else clipboard.clear();
+   const expected=copied.flatMap(item=>item.types).sort(),actual=(await clipboard.read()).flatMap(item=>item.types).sort();
+   if(JSON.stringify(expected)!==JSON.stringify(actual))throw new Error('Restored clipboard MIME formats differ: '+JSON.stringify({expected,actual}));
+   return{expected,actual,scope:'Electron ClipboardItem MIME formats'};
+  });events.push({kind:'clipboardRestore',...restored});clipboardRestored=true;
+ }catch(error){events.push({kind:'clipboardRestore',error:String(error)});result={...result,status:'failed',clipboardRestoreError:failure(error)};process.exitCode=1;}
  let cleaned=false;try{await scope.dispose();cleaned=true;}catch(error){result={...result,status:'failed',cleanupError:failure(error)};process.exitCode=1;throw error;}finally{if(installationCleanup.some(item=>item.forcedPids.length>0)){result={...result,status:'failed',forcedOwnedProcessTermination:installationCleanup};process.exitCode=1;}await writeFile(join(output,'identity.json'),JSON.stringify(artifactIdentity));await writeFile(join(output,'native-evidence.json'),JSON.stringify(nativeEvidence,null,2));await writeFile(join(output,'cleanup.json'),JSON.stringify({ownedProcessesExited:cleaned,temporaryInstallationRemoved:cleaned,temporaryDataRemoved:cleaned,clipboardRestored,installationCleanup,ownedPids:[...scope.pids],fakeAdb:scope.adbEvidence()},null,2));await writeFile(join(output,'result.json'),JSON.stringify(result,null,2));}
 }
 console.log(JSON.stringify(result));

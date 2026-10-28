@@ -11,10 +11,15 @@ on:
         description: 'Check full-model installers using the existing asset bundle; do not publish'
         type: boolean
         default: false
+      console_signal_diagnostic:
+        description: 'Run only the isolated Windows console SIGINT transport diagnostic'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   candidate:
+    if: ${{ !inputs.console_signal_diagnostic }}
     strategy:
       fail-fast: false
       matrix:
@@ -151,3 +156,26 @@ jobs:
           else
             echo "Source-only installers and portable archives exclude licensed models. Synthetic installation checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."
           fi
+  console_signal:
+    if: github.event_name == 'workflow_dispatch' && inputs.console_signal_diagnostic
+    runs-on: windows-2025
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+      - name: Observe actual console SIGINT and owned parent comparison
+        run: node apps/desktop/scripts/windows-console-canary.ts
+      - name: Preserve compact transport and cleanup evidence
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,existsSync} from 'node:fs';
+          const file='output/windows-console-canary/result.json';
+          if(existsSync(file)) console.log(JSON.stringify({file,receipt:JSON.parse(readFileSync(file,'utf8'))}));
+          else process.exitCode=1;
+          JS
