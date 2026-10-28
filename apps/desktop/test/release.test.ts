@@ -12,9 +12,9 @@ function publishConfig(value: unknown): ReleaseConfig['publish'] {
   if (channel !== undefined && typeof channel !== 'string') throw new TypeError('Invalid publish channel shape');
   return { url: value.url, ...(channel === undefined ? {} : { channel }) };
 }
-function config(env: Record<string, string> = {}, target = '--win'): ReleaseConfig {
-  const raw: unknown = JSON.parse(execFileSync(process.execPath, ['-e', `const c = require('./dist-config/electron-builder.cjs'); console.log(JSON.stringify({ publish: c.publish, version: c.extraMetadata?.version }));`, '--', target], {
-    cwd: desktop, encoding: 'utf8', env: { ...process.env, CSC_NAME: '', CSC_LINK: '', DUCK_UPDATE_BASE: '', DUCK_UPDATE_URL: '', DUCK_UPDATE_REPOSITORY: '', DUCK_RELEASE_VERSION: '', DUCK_BUILD_ARCH: 'x64', ...env }, stdio: ['ignore', 'pipe', 'pipe'],
+function config(env: Record<string, string> = {}, target = '--win', flags:string[]=[]): ReleaseConfig {
+  const raw: unknown = JSON.parse(execFileSync(process.execPath, ['-e', `const c = require('./dist-config/electron-builder.cjs'); console.log(JSON.stringify({ publish: c.publish, version: c.extraMetadata?.version }));`, '--', target,...flags], {
+    cwd: desktop, encoding: 'utf8', env: { ...process.env, CSC_NAME: '', CSC_LINK: '', DUCK_UPDATE_BASE: '', DUCK_UPDATE_URL: '', DUCK_UPDATE_REPOSITORY: '', DUCK_RELEASE_VERSION: '', DUCK_BUILD_ARCH: target==='--mac'?'arm64':'x64', ...env }, stdio: ['ignore', 'pipe', 'pipe'],
   }));
   if (typeof raw !== 'object' || raw === null || !('publish' in raw)) throw new TypeError('Missing publish configuration');
   const publish = publishConfig(raw.publish);
@@ -50,4 +50,23 @@ test('ordinary development packages remain offline; an explicit feed takes prece
   assert.equal(config().publish, null);
   const c = config({ DUCK_UPDATE_URL: 'https://downloads.example.com/beta/', DUCK_UPDATE_REPOSITORY: '1850VV/letsduck-releases' });
   assert.equal(c.publish?.url, 'https://downloads.example.com/beta/');
+});
+
+test('retired Intel Mac installer is refused even without an update feed',()=>{
+  assert.throws(()=>config({DUCK_BUILD_ARCH:'x64'},'--mac'),/Only Windows x64 and macOS arm64/);
+});
+
+test('actual packer target must match the configured Apple Silicon release identity',()=>{
+  for(const[platform,arch]of[['darwin','x64'],['darwin','universal'],['win32','x64']]) assert.throws(()=>execFileSync(process.execPath,['-e',`const c=require('./dist-config/electron-builder.cjs');const {Arch}=require('electron-builder');Promise.resolve(c.beforePack?.({electronPlatformName:${JSON.stringify(platform)},arch:Arch[${JSON.stringify(arch)}]})).catch(e=>{console.error(e.message);process.exitCode=1});`,'--','--mac'],{cwd:desktop,encoding:'utf8',env:{...process.env,DUCK_BUILD_ARCH:'arm64',DUCK_UPDATE_BASE:'',DUCK_UPDATE_URL:'',DUCK_UPDATE_REPOSITORY:'',CSC_NAME:'',CSC_LINK:''},stdio:['ignore','pipe','pipe']}),/Only Windows x64 and macOS arm64/);
+});
+
+test('prepackaged CLI and its alias cannot bypass project target validation',()=>{
+  for(const args of [['--prepackaged','owned-unused.app'],['--pd','owned-unused.app'],['--prepackaged=owned-unused.app'],['--pd=owned-unused.app']]){
+    assert.throws(()=>config({DUCK_BUILD_ARCH:'arm64'},'--mac',['--x64',...args]),/Prepackaged.*target validation/);
+  }
+});
+
+test('explicit maintained CLI architecture determines the release feed instead of stale build environment',()=>{
+  const c=config({DUCK_BUILD_ARCH:'x64',DUCK_RELEASE_VERSION:'1.0.0',DUCK_UPDATE_BASE:'https://example.com/releases',CSC_NAME:'Developer ID Application: Test'},'--mac',['--arm64']);
+  assert.equal(c.publish?.url,'https://example.com/releases/stable/darwin/arm64/');
 });

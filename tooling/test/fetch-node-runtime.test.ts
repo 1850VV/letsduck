@@ -22,6 +22,15 @@ const fixtureFetch = (hash = checksum): typeof fetch => async input => {
   return new Response(bytes);
 };
 
+test('retired Intel Mac runtime is refused before download or destination creation', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'duck-node-retired-'));
+  let requests = 0;
+  try {
+    await assert.rejects(fetchNodeRuntime({platform:'darwin',arch:'x64',target:join(root,'runtime'),fetcher:async input=>{requests++;return fixtureFetch()(input);}}), /Only Windows x64 and macOS arm64/);
+    assert.equal(requests,0);assert.deepEqual(await readdir(root),[]);
+  } finally { await rm(root,{recursive:true,force:true}); }
+});
+
 test('official Node archive checksum precedes extraction; only binary and license enter the portable runtime', async () => {
   const root = await mkdtemp(join(tmpdir(), 'duck-node-fetch-'));
   try {
