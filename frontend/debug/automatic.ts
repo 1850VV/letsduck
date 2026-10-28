@@ -41,6 +41,7 @@ export function createAutomaticNumbering(options:Options){
    if(action==='start'){
     // Release drains manual scan/control, turns output off and revokes Debug ownership.
     await options.api('release');
+    if(!active)return;
     const target=state.activeTarget??state.currentId??selectedId;
     await call('start',status().verified.has(target)?{}:{targetId:target});
    }else if(action==='stop'){
@@ -77,6 +78,6 @@ export function createAutomaticNumbering(options:Options){
   return true;
  }
  document.body.addEventListener('click',event=>{const button=event.target instanceof Element?event.target.closest<HTMLButtonElement>('[data-auto-action]'):null;if(active&&button&&!button.disabled)void action(button.dataset.autoAction!);});
- window.addEventListener('pagehide',()=>{if(!active)return;active=false;clearTimeout(timer);navigator.sendBeacon('/api/servo-setup/pause',new Blob(['{}'],{type:'application/json'}));},{once:true});
+ window.addEventListener('pagehide',()=>{if(!active)return;active=false;clearTimeout(timer);void fetch('/api/servo-setup/pause',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',keepalive:true}).catch(()=>{});},{once:true});
  return {enter,leave,choose,renderPanel,release:()=>action('stop'),get active(){return active;},get verified(){return status().verified;},get queuedTarget(){return state.queuedTarget;}};
 }

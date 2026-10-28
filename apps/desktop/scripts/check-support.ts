@@ -25,7 +25,7 @@ export function seedSimulatedAssembly(path: string): void {
   const store = new PersonalStore({ path });
   try {
     for (const { id } of servoMap.bindings) store.saveServoRecord('desktop-smoke-simulated-board', {
-      id, state: 'verified', mapVersion: servoMap.version, profile: { kp: 10, kd: 2 }, readback: { ok: true, target_id: id, kp: 10, kd: 2 },
+      id, sourceId: id, oldIdAbsent: true, midEvidence: 'existing', state: 'verified', mapVersion: servoMap.version, profile: { kp: 10, kd: 2 }, readback: { ok: true, target_id: id, kp: 10, kd: 2 },
       verifiedAt: '2026-01-01T00:00:00+00:00', testFixture: 'simulated desktop UI prerequisite; no hardware',
     });
   } finally { store.close(); }

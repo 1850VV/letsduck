@@ -68,6 +68,13 @@ try{
  });
  assert.equal(saved.status,200,saved.body);assert.match(saved.body,/9007199254740993/);
  assert.equal(await application!.evaluate(async({net})=>{const response=await net.fetch('duck://app/api/servo-setup/start',{method:'POST',headers:{origin:'https://evil.test','content-type':'application/json'},body:'not-json'});return response.status;}),403);
+ const automatic=await page.evaluate(async()=>{const response=await fetch('/api/servo-setup/state');const body:unknown=await response.json();return {status:response.status,cache:response.headers.get('cache-control'),body};});
+ assert.equal(automatic.status,200);assert.equal(automatic.cache,'no-store');
+ assert.ok(object(automatic.body));
+ assert.equal(automatic.body.phase,'idle');assert.equal(automatic.body.profile,null);assert.deepEqual(automatic.body.records,[]);
+ await page.evaluate(()=>window.addEventListener('pagehide',()=>{void fetch('/api/servo-setup/pause',{method:'POST',headers:{'content-type':'application/json'},body:'{}',keepalive:true}).catch(()=>{});},{once:true}));
+ await page.goto('duck://app/?after-automatic-exit');
+ await page.waitForFunction(async()=>{const value:unknown=await(await fetch('/api/servo-setup/state')).json();return value!==null&&typeof value==='object'&&'phase'in value&&value.phase==='paused';});
  // The malformed body cannot start hardware even if a transport changes headers.
  const url=await application!.evaluate(({app})=>app.getAppMetrics().filter(item=>item.name==='LetsDuck shared host').length);
  assert.equal(url,1,'Exactly one shared utility host');
@@ -101,6 +108,7 @@ try{
  assert.match(await page.evaluate(async()=>await(await fetch('/api/schemes')).text()),/9007199254740993/);
  assert.deepEqual(errors,[]);
  await application!.close();application=undefined;
+ assert.deepEqual(errors,[],'no late renderer error during native close');
  const db=new DatabaseSync(database,{readOnly:true});try{const statement=db.prepare('SELECT voice_salt FROM schemes WHERE id=?');statement.setReadBigInts(true);assert.equal(statement.get('owned')?.voice_salt,9007199254740993n);}finally{db.close();}
  assert.equal(existsSync(adbLog),false,'Shell verification did not request even the owned fake ADB');
  const executable:unknown=require('electron');assert.ok(typeof executable==='string');

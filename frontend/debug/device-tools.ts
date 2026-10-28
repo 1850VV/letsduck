@@ -125,7 +125,7 @@ export function createDeviceTools({getState,render,say,canEdit,api,poll,run,auto
   c.motion=c.motion.map((v,i)=>.3*v+.7*required(c.target[i]));if(c.target.every(v=>v===0))c.motion=[0,0,0];sending=true;
   try{await api('command',{twist:c.motion,head:c.head,mouth:c.mouth});c.sent++;}catch(error){stopControl();say(debugFailure(error),true);}finally{sending=false;updateLive();}
  },50);
- function beaconLeave(){if(armed||calOwned||servoOwned){zeroLocal();navigator.sendBeacon('/api/duck-debug/action',new Blob([jsonStringify({action:'leave'})],{type:'application/json'}));stopControl();calOwned=false;servoOwned=false;}}
+ function beaconLeave(){if(armed||calOwned||servoOwned){zeroLocal();void fetch('/api/duck-debug/action',{method:'POST',headers:{'Content-Type':'application/json'},body:jsonStringify({action:'leave'}),keepalive:true}).catch(()=>{});stopControl();calOwned=false;servoOwned=false;}}
  window.addEventListener('blur',()=>{zero();if(calOwned)leaveOwned().then(()=>{poll(true);render();});});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)beaconLeave();});
  window.addEventListener('pagehide',()=>{beaconLeave();stopped=true;clearInterval(timer);},{once:true});

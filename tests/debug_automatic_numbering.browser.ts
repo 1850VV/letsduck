@@ -20,7 +20,8 @@ test('automatic numbering hands off manual control, queues explicitly, resumes a
  runtime.halt=async()=>{runtime.halted++;runtime.offline=true;};
  let unblock:()=>void=()=>{},blocked=false,writeNumber=0;
  runtime.before=async(_method,_path,body)=>{if(body&&typeof body==='object'&&'action'in body&&body.action==='set_gains'){writeNumber++;blocked=true;await new Promise<void>(resolve=>{unblock=resolve;});blocked=false;}};
- const browser=await launchBrowser({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},locale:'zh-CN'}),page=await context.newPage(),errors:string[]=[],requests:{path:string;body:string}[]=[];
+ const video=process.env.DUCK_AUTO_VIDEO;
+ const browser=await launchBrowser({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},locale:'zh-CN',...(video?{recordVideo:{dir:video,size:{width:1440,height:1000}}}:{})}),page=await context.newPage(),errors:string[]=[],requests:{path:string;body:string}[]=[];
  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(request.url().includes('/api/'))requests.push({path:new URL(request.url()).pathname,body:request.postData()??''});});
  const evidence=process.env.DUCK_AUTO_EVIDENCE;if(evidence)await mkdir(evidence,{recursive:true});
  try{
