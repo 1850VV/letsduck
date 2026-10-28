@@ -11,6 +11,11 @@ on:
         description: 'Check full-model installers using the existing asset bundle; do not publish'
         type: boolean
         default: false
+      windows_scope:
+        description: 'Run all candidates, or one Windows software check in its own VM'
+        type: choice
+        options: [all, native, portable]
+        default: all
       console_signal_diagnostic:
         description: 'Run only the isolated Windows console SIGINT transport diagnostic'
         type: boolean
@@ -24,18 +29,11 @@ permissions:
 jobs:
   candidate:
     if: ${{ !inputs.console_signal_diagnostic && !inputs.native_select_diagnostic }}
+    name: ${{ inputs.windows_scope && inputs.windows_scope != 'all' && format('Windows {0} software acceptance', inputs.windows_scope) || format('candidate ({0}, {1}, {2}, {3})', matrix.os, matrix.platform, matrix.arch, matrix.target) }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: windows-2025
-            platform: win32
-            arch: x64
-            target: '--win --x64'
-          - os: macos-15
-            platform: darwin
-            arch: arm64
-            target: '--mac --arm64'
+        include: ${{ fromJSON(inputs.windows_scope && inputs.windows_scope != 'all' && '[{"os":"windows-2025","platform":"win32","arch":"x64","target":"--win --x64"}]' || '[{"os":"windows-2025","platform":"win32","arch":"x64","target":"--win --x64"},{"os":"macos-15","platform":"darwin","arch":"arm64","target":"--mac --arm64"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     defaults:
@@ -58,6 +56,11 @@ jobs:
         with:
           node-version: '24.20.0'
           cache: npm
+      - name: Validate the selected acceptance scope
+        env:
+          DUCK_QA_SCOPE: ${{ inputs.windows_scope || 'all' }}
+          DUCK_QA_FULL: ${{ inputs.full_software_acceptance }}
+        run: node -e 'const scope=process.env.DUCK_QA_SCOPE;if(!["all","native","portable"].includes(scope)||scope!=="all"&&process.env.DUCK_QA_FULL!=="true")throw new Error("Windows subsets require full_software_acceptance");'
       - run: npm ci
       - name: Prepare the existing full-model acceptance bundle
         if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
@@ -87,28 +90,31 @@ jobs:
       - name: Actual Electron protocol, startup, utility lifecycle and retained profile
         run: node --import tsx apps/desktop/test/shell.browser.ts
       - name: Build the offline installer
+        if: inputs.windows_scope != 'portable'
         run: npm run package:desktop -- ${{ matrix.target }}
       - name: Install the candidate and check the synthetic subset
         if: github.event_name != 'workflow_dispatch' || !inputs.full_software_acceptance
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts --synthetic
       - name: Install the candidate and check the full-model journey
         id: installed_full
-        if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance && (inputs.windows_scope == '' || inputs.windows_scope == 'all')
         continue-on-error: true
         timeout-minutes: 10
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts
       - name: Windows native mouse, keyboard and clipboard
         id: native_input
-        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance && inputs.windows_scope != 'portable'
         continue-on-error: true
         run: node --import tsx apps/desktop/scripts/native-input-smoke.ts
       - name: Download and verify the matching official Node runtime
+        if: inputs.windows_scope != 'native'
         run: |
           if ! npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime; then
             test ! -e output/node-runtime
             npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
           fi
       - name: Build the portable browser archive
+        if: inputs.windows_scope != 'native'
         run: |
           if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
             npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --assets "$DUCK_DISTRIBUTABLE_ASSETS" --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
@@ -117,7 +123,7 @@ jobs:
           fi
       - name: Windows portable launch, full-model UI and console shutdown
         id: portable_browser
-        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance && inputs.windows_scope != 'native'
         run: |
           PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
           node --import tsx apps/desktop/scripts/portable-browser-smoke.ts
@@ -145,13 +151,19 @@ jobs:
             } catch (error) { console.error(JSON.stringify({ file, error: String(error) })); process.exitCode = 1; }
           }
           JS
-      - name: Require every independent software check to pass
+      - name: Require the selected independent software checks to pass
         if: always() && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        env:
+          DUCK_QA_SCOPE: ${{ inputs.windows_scope || 'all' }}
+          DUCK_QA_INSTALLED: ${{ steps.installed_full.outcome }}
+          DUCK_QA_NATIVE: ${{ steps.native_input.outcome }}
+          DUCK_QA_PORTABLE: ${{ steps.portable_browser.outcome }}
         run: |
-          test "${{ steps.installed_full.outcome }}" = success
+          node -e 'console.log(JSON.stringify({kind:"software-outcomes",scope:process.env.DUCK_QA_SCOPE,installed:process.env.DUCK_QA_INSTALLED,native:process.env.DUCK_QA_NATIVE,portable:process.env.DUCK_QA_PORTABLE}))'
+          if [[ "$DUCK_QA_SCOPE" == all ]]; then test "$DUCK_QA_INSTALLED" = success; fi
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            test "${{ steps.native_input.outcome }}" = success
-            test "${{ steps.portable_browser.outcome }}" = success
+            if [[ "$DUCK_QA_SCOPE" != portable ]]; then test "$DUCK_QA_NATIVE" = success; fi
+            if [[ "$DUCK_QA_SCOPE" != native ]]; then test "$DUCK_QA_PORTABLE" = success; fi
           fi
       - name: Source and publication boundary
         run: |

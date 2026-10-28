@@ -206,14 +206,19 @@ async function menuJourney(select:Locator,label:string){
  check(label+' Enter closes the actual native popup',!(await native('inspect')).windows.some(item=>item.handle===keyboardPopup.handle));
  check(label+' Down and Enter select through native input',afterKeyboard.value===expected&&afterKeyboard.focused&&(initial.options.length===1||afterKeyboard.value!==afterMouse.value),{afterKeyboard,mouseValue:afterMouse.value,changedSelectionCovered:initial.options.length>1});
  if(afterKeyboard.lessonPlaybackRate!==null)check(label+' keyboard change updates the actual lesson clock',afterKeyboard.lessonPlaybackRate===Number(afterKeyboard.value),{selected:afterKeyboard.value,actualRate:afterKeyboard.lessonPlaybackRate});
- const beforeCancel=await native('inspect');await click(select);const cancelling=await popup(beforeCancel);await key(keyboardIndex===initial.options.length-1?'ArrowUp':'ArrowDown');await key('Escape');const afterCancel=await observe(select);
+ const beforeCancel=await native('inspect');await click(select);const cancelling=await popup(beforeCancel);
+ const escapeIndex=initial.options.length===1?0:keyboardIndex===initial.options.length-1?keyboardIndex-1:keyboardIndex+1;
+ await key(keyboardIndex===initial.options.length-1?'ArrowUp':'ArrowDown');const escapePreview=await observe(select);
+ check(label+' native popup remains open after arrow navigation',(await native('inspect')).windows.some(item=>item.handle===cancelling.handle));
+ await key('Escape');const afterCancel=await observe(select);
  check(label+' Escape closes the actual native popup',!(await native('inspect')).windows.some(item=>item.handle===cancelling.handle));
- check(label+' Escape cancels the pending selection and returns focus',afterCancel.value===afterKeyboard.value&&afterCancel.focused,afterCancel);
- if(afterCancel.lessonPlaybackRate!==null)check(label+' Escape retains the actual lesson clock rate',afterCancel.lessonPlaybackRate===afterKeyboard.lessonPlaybackRate,{afterKeyboard:afterKeyboard.lessonPlaybackRate,afterEscape:afterCancel.lessonPlaybackRate});
+ // Plain HTML fixtures in both pinned Windows engines commit the highlighted option on Escape.
+ check(label+' Escape commits the native highlighted option and returns focus',afterCancel.value===initial.options[escapeIndex]!.value&&afterCancel.focused,{escapePreview,afterEscape:afterCancel,expected:initial.options[escapeIndex]!.value});
+ if(afterCancel.lessonPlaybackRate!==null)check(label+' Escape selection matches the actual lesson clock rate',afterCancel.lessonPlaybackRate===Number(afterCancel.value),{selected:afterCancel.value,actualRate:afterCancel.lessonPlaybackRate});
  await key('Tab');check(label+' Tab moves focus away',!(await observe(select)).focused);await key('Shift+Tab');check(label+' reverse Tab restores select focus',(await observe(select)).focused);
  const beforeSpace=await native('inspect');await key('Space');await popup(beforeSpace);await capture(label+'-space-reopen');await key('Escape');
  check(label+' Space reopens and Escape retains focus',(await observe(select)).focused);
- return{initial,afterMouse,afterKeyboard,afterCancel,changedSelectionCovered:initial.options.length>1};
+ return{initial,afterMouse,afterKeyboard,escapePreview,afterCancel,changedSelectionCovered:initial.options.length>1};
 }
  return{prepare:()=>writeFile(options.script,nativeScript),desktop,native,click,key,capture,menuJourney};
 }
