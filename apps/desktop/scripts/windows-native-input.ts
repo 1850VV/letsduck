@@ -17,7 +17,7 @@ export type NativeState=NativeDesktop&{foregroundWindow:{handle:string;pid:numbe
 type NativeTarget={window:string;ownedPids:number[];chromiumBrowserPid?:number};
 type Check=(name:string,passed:boolean,detail?:unknown)=>void;
 
-const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0,[string]$DiagnosticPath)
+const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0,[string]$DiagnosticPath,[int]$HoldMilliseconds=0)
 $ErrorActionPreference='Stop'
 $nativeStarted=[DateTime]::UtcNow
 function Write-NativeProgress([string]$stage) {
@@ -78,6 +78,7 @@ public class DuckNative {
  public static WindowInfo[] Windows(uint[] owned) {var found=new List<WindowInfo>();EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);if(Array.IndexOf(owned,pid)>=0&&IsWindowVisible(h)){RECT r;GetWindowRect(h,out r);var s=new StringBuilder(256);GetClassName(h,s,256);found.Add(new WindowInfo{handle=h.ToInt64().ToString(),pid=pid,className=s.ToString(),left=r.Left,top=r.Top,right=r.Right,bottom=r.Bottom});}return true;},IntPtr.Zero);return found.ToArray();}
  static void Send(INPUT[] values) {if(SendInput((uint)values.Length,values,Marshal.SizeOf(typeof(INPUT)))!=values.Length)throw new Exception("SendInput rejected: "+Marshal.GetLastWin32Error());}
  public static void Click(int x,int y) {if(!SetCursorPos(x,y))throw new Exception("SetCursorPos failed");Send(new[]{new INPUT{type=0,data=new UNION{mouse=new MOUSEINPUT{dwFlags=2}}},new INPUT{type=0,data=new UNION{mouse=new MOUSEINPUT{dwFlags=4}}}});}
+ public static void Hold(int x,int y,int milliseconds) {if(!SetCursorPos(x,y))throw new Exception("SetCursorPos failed");Send(new[]{new INPUT{type=0,data=new UNION{mouse=new MOUSEINPUT{dwFlags=2}}}});try{System.Threading.Thread.Sleep(milliseconds);}finally{Send(new[]{new INPUT{type=0,data=new UNION{mouse=new MOUSEINPUT{dwFlags=4}}}});}}
  static INPUT Keyboard(ushort key,bool up){return new INPUT{type=1,data=new UNION{key=new KEYBDINPUT{wVk=key,dwFlags=up?2u:0u}}};}
  public static void Key(ushort key,bool shift,bool alt){var keys=new List<INPUT>();if(shift)keys.Add(Keyboard(16,false));if(alt)keys.Add(Keyboard(18,false));keys.Add(Keyboard(key,false));keys.Add(Keyboard(key,true));if(alt)keys.Add(Keyboard(18,true));if(shift)keys.Add(Keyboard(16,true));Send(keys.ToArray());}
 }
@@ -136,6 +137,10 @@ if($Action -eq 'activate'){
  if($activation.after.handle -ne $root.handle){throw ('native activation not_verified: physical owned caption click did not activate exact root; '+(@{root=$root;activation=$activation}|ConvertTo-Json -Depth 7 -Compress))}
 }
 if($Action -eq 'click'){[DuckNative]::Click([int]$X,[int]$Y)}
+if($Action -eq 'hold'){
+ if($HoldMilliseconds -lt 1 -or $HoldMilliseconds -gt 10000){throw 'Native hold duration must be between 1 and 10000 milliseconds'}
+ [DuckNative]::Hold([int]$X,[int]$Y,$HoldMilliseconds)
+}
 if($Action -eq 'key'){
  $name=$Key -replace '^(Shift\+|Alt\+)','';$keys=@{Tab=9;Enter=13;Escape=27;Space=32;Home=36;End=35;ArrowUp=38;ArrowDown=40}
  if(!$keys.ContainsKey($name)){throw 'Unsupported native key'}
@@ -199,14 +204,16 @@ export function windowsNativeInput(options:{script:string;output:string;page:()=
  }
  async function native(action:string,extra:string[]=[]){return execute(action,await options.target(),extra);}
  async function desktop():Promise<NativeDesktop>{return execute('desktop',{window:'',ownedPids:[]});}
- async function click(target:Locator){
+ async function pointer(target:Locator,milliseconds=0){
   await target.evaluate(element=>element.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'}));
   const geometry=await observeNativeClick(target);options.evidence.push({action:'dom-click-geometry',selector:target.toString(),geometry,atUtc:new Date().toISOString()});
   assert.ok(geometry.connected&&geometry.localRect.width>0&&geometry.localRect.height>0&&geometry.localHitMatches&&geometry.frames.every(frame=>frame.unscaled&&frame.hitMatches),'Native click requires a connected, hit-tested target and observed unscaled iframe chain '+JSON.stringify(geometry));
   const state=await native('inspect'),viewport=await options.page().evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio}));
   assert.ok(geometry.topViewport.width===viewport.width&&geometry.topViewport.height===viewport.height&&geometry.point.x>=0&&geometry.point.y>=0&&geometry.point.x<viewport.width&&geometry.point.y<viewport.height,'Native click target center must be inside the observed viewport '+JSON.stringify({geometry,viewport}));
-  await native('click',['-X',String(Math.round(state.client.x+geometry.point.x*viewport.devicePixelRatio)),'-Y',String(Math.round(state.client.y+geometry.point.y*viewport.devicePixelRatio))]);
+  await native(milliseconds?'hold':'click',['-X',String(Math.round(state.client.x+geometry.point.x*viewport.devicePixelRatio)),'-Y',String(Math.round(state.client.y+geometry.point.y*viewport.devicePixelRatio)),...(milliseconds?['-HoldMilliseconds',String(milliseconds)]:[])]);
  }
+ async function click(target:Locator){await pointer(target);}
+ async function hold(target:Locator,milliseconds:number){assert.ok(Number.isInteger(milliseconds)&&milliseconds>=1&&milliseconds<=10_000,'Native hold duration must be between 1 and 10000 milliseconds');await pointer(target,milliseconds);}
  async function key(value:string){await native('key',['-Key',value]);}
  async function capture(name:string){await native('capture',['-Output',join(options.output,name+'.png')]);}
 async function observe(select:Locator){return select.evaluate(element=>{
@@ -254,5 +261,5 @@ async function menuJourney(select:Locator,label:string){
  check(label+' Space reopens and Escape retains focus',(await observe(select)).focused);
  return{initial,afterMouse,afterKeyboard,escapePreview,afterCancel,changedSelectionCovered:initial.options.length>1};
 }
- return{prepare:()=>writeFile(options.script,nativeScript),desktop,native,click,key,capture,menuJourney};
+ return{prepare:()=>writeFile(options.script,nativeScript),desktop,native,click,hold,key,capture,menuJourney};
 }

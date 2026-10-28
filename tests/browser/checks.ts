@@ -6,7 +6,9 @@ export function failure(error:unknown):string{return error instanceof Error?erro
 export interface Check {name:string;pass:boolean;detail?:unknown}
 export interface Receipt {checks:Check[];errors:string[];consoleErrors:string[];failedRequests:{url:string;error:string|undefined}[];httpErrors:{url:string;status:number}[];writes:{method:string;url:string}[];failure?:string;browserClosed?:boolean}
 export function receipt():Receipt{return {checks:[],errors:[],consoleErrors:[],failedRequests:[],httpErrors:[],writes:[]};}
-export async function preparePage(page:Page):Promise<void>{
+/** Existing module checks model a returning user; onboarding checks opt into firstUse. */
+export async function preparePage(page:Page,options:{firstUse?:boolean}={}):Promise<void>{
+ if(!options.firstUse)await page.addInitScript(()=>localStorage.setItem('letsduck.experimental-access.v1',JSON.stringify({debug:true,assemble:true})));
  await page.addInitScript(()=>{
   window.__browserChecks={
    input(value:Element):HTMLInputElement{if(!(value instanceof HTMLInputElement))throw Error('Expected input');return value;},

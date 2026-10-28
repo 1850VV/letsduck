@@ -6,6 +6,7 @@ import { parseArgs } from 'node:util';
 import type { ElectronApplication, Page } from 'playwright';
 import { jsonParse } from '@letsduck/storage';
 import { root, desktopScope, failure, object, required, resizeWindow, studioState, waitStudio, updateState, chooseLocale, seedSimulatedAssembly, assemblyReady } from './check-support.js';
+import { experimentalAccessState, prepareExperimentalAccessFixture } from './experimental-access-check.js';
 
 type NativeDownload = { state: string; path: string };
 declare global {
@@ -158,6 +159,9 @@ try {
     await writeFile(join(output, 'ui-poster.png'), poster); await page.locator('#poster-close').click(); await page.screenshot({ path: join(output, 'paint.png') });
     material = { status: 'passed', personal, exportBytes: archive.length, bomParts: 35, posterBytes: poster.length, clipboard };
   }
+  // This functional smoke uses an acknowledged-user fixture. The Windows native-input
+  // journeys independently cover first-use holds through the actual homepage.
+  if (!synthetic) await prepareExperimentalAccessFixture(page);
   await page.evaluate(() => localStorage.setItem('desktop-smoke', 'retained'));
   const versions = await application.evaluate(() => process.versions);
   milestone('first-trace-stop');
@@ -170,6 +174,7 @@ try {
   if (synthetic) assert.equal(await page.evaluate(async () => (await fetch('/api/schemes')).text()), schemes);
   else {
     milestone('assembly-gate');
+    assert.deepEqual(await experimentalAccessState(page), { debug: true, assemble: true });
     await page.goto('duck://app/assemble/'); await page.waitForURL('duck://app/debug/?from=assemble');
     await application.context().tracing.stop({ path: join(output, 'gate-session.zip') });
     milestone('gate-application-close'); await scope.close(application);
@@ -186,7 +191,7 @@ try {
     await page.waitForFunction(() => { const video = document.querySelector('#reference-video'); return video instanceof HTMLVideoElement && video.currentTime > 11; });
     const video = await page.locator('#reference-video').evaluate(video => { if (!(video instanceof HTMLVideoElement)) throw new Error('Expected video'); return { width: video.videoWidth, duration: video.duration, playedAndSought: true }; });
     await page.screenshot({ path: join(output, 'video.png') }); await page.locator('#reference-close').click();
-    material = { ...material, video, initialAssemblyGate303: true, assemblyNumberingPrerequisite: '15 explicitly simulated ledger records; physical readiness not tested' };
+    material = { ...material, video, initialAssemblyGate303: true, experimentalAccess: 'explicit returning-user localStorage fixture; no first-use input acceptance claimed', assemblyNumberingPrerequisite: '15 explicitly simulated ledger records; physical readiness not tested' };
   }
   assert.deepEqual(errors, []);
   result = { identity, renderer, versions, synthetic, scope: synthetic ? 'actual candidate protocol/save/profile/relaunch/offline only' : 'actual candidate licensed UI journey; simulated assembly prerequisite', material, stableOriginPersistence: true, viewports, errors };

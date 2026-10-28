@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import type { UpdateState } from '../src/updates.js';
 import type { Page } from 'playwright';
 import { root, desktopScope, failure, required, resizeWindow, studioState, chooseLocale, seedSimulatedAssembly, updateState } from './check-support.js';
+import { prepareExperimentalAccessFixture } from './experimental-access-check.js';
 
 declare global { var desktopSmokeCommands: string[] | undefined }
 const output = resolve(process.env.DUCK_TEST_OUTPUT || join(root, 'output/desktop-updates'));
@@ -18,6 +19,8 @@ try {
   const application = await scope.launch({ dir: join(output, 'video'), size: { width: 1280, height: 860 } });
   const page = await application.firstWindow(); currentPage = page; page.on('pageerror', error => errors.push(String(error)));
   await page.waitForURL('duck://app/'); await page.waitForFunction(() => document.querySelector('#letsduck-update')?.shadowRoot);
+  // Update-panel layout is a returning-user fixture; first-use native input has its own journeys.
+  await prepareExperimentalAccessFixture(page);
   const currentVersion = await application.evaluate(({ app }) => app.getVersion());
   assert.equal((await updateState(page)).currentVersion, currentVersion);
   await application.evaluate(({ ipcMain }) => {
@@ -69,7 +72,7 @@ try {
   for (const [route, name] of [['/', 'home'], ['/paint', 'paint'], ['/assemble/', 'assemble']] as const) {
     await page.goto('duck://app' + route); await page.waitForFunction(() => document.querySelector('#letsduck-update')?.shadowRoot?.querySelector('button:not([hidden])'));
     if (name === 'paint') await studioState(page);
-    if (name === 'assemble') await page.waitForFunction(() => document.querySelector('canvas'));
+    if (name === 'assemble') { await page.waitForURL('duck://app/assemble/'); await page.waitForFunction(() => document.querySelector('canvas')); }
     for (const width of [1280, 1024, 800]) {
       await resizeWindow(application, page, { width, height: 800 }); await send({ phase: 'available', version: '99.0.0' });
       await panel.getByRole('button', { name: '有新版本待更新', exact: true }).waitFor(); await screenshot(name + '-' + width); await layout(name + '-' + width);
@@ -86,7 +89,7 @@ try {
   }
   const commands = await application.evaluate(() => globalThis.desktopSmokeCommands);
   assert.deepEqual(commands, ['download', 'download', 'check', 'install']); assert.deepEqual(errors, []);
-  result = { currentVersion, simulatedStates: ['idle', 'checking', 'available', 'downloading', 'error', 'ready', 'waiting', 'installing'], commands, layouts, errors, actualInstallation: false, assemblyPrerequisite: 'explicitly simulated owned ledger; hardware not tested' };
+  result = { currentVersion, simulatedStates: ['idle', 'checking', 'available', 'downloading', 'error', 'ready', 'waiting', 'installing'], commands, layouts, errors, actualInstallation: false, experimentalAccess: 'explicit returning-user localStorage fixture; no first-use input acceptance claimed', assemblyPrerequisite: 'explicitly simulated owned ledger; hardware not tested' };
 } catch (error) {
   await writeFile(join(output, 'failure.json'), JSON.stringify({ error: failure(error), errors, layouts, url: currentPage?.url() }, null, 2));
   if (currentPage) { await writeFile(join(output, 'failure-dom.html'), await currentPage.content().catch(() => 'DOM unavailable')); await currentPage.screenshot({ path: join(output, 'failure.png'), timeout: 5000 }).catch(() => {}); }
