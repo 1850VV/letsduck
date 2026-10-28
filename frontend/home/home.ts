@@ -7,6 +7,7 @@ import {readDraft} from '../shared/draft.js';
 import {completePoses,assemblyActors,actorQuaternion} from '../debug/poses.js';
 import {createCarousel} from './carousel.js';
 import {loadEdition} from '../shared/edition.js';
+import {t,onLocale} from '../shared/i18n.js';
 import {ExperimentalAccess,accessStorage,ACCESS_KEY} from './experimental-access.js';
 import {createExperimentalUI} from './experimental-ui.js';
 import {parseResponseJson} from '../shared/json.js';
@@ -27,7 +28,7 @@ const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});renderer.set
 scene.add(new THREE.HemisphereLight(0xffffff,0xa7b4cc,2.7));const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(-250,550,400);scene.add(key);const fill=new THREE.DirectionalLight(0xffffff,1.8);fill.position.set(300,250,-250);scene.add(fill);
 const models=new Map<string,THREE.Group>(),buttons=new Map<string,HTMLButtonElement>(),placements=new Map<string,Vec3>(),stage=document.querySelector<HTMLElement>('.duck-stage')!;let pending=false;
 for(const e of entries){const b=document.createElement('button');b.className='duck-choice';b.dataset.duck=e.id;b.innerHTML=`<strong>${e.name}<span class="go">↗</span></strong><small>${e.caption}</small>`;$('duck-labels').append(b);buttons.set(e.id,b);}
-const experiment=createExperimentalUI({stage,access,pick:hitAt,focus:()=>focus,enabled:()=>ready&&!opened,refresh:()=>{refreshAccess();void refreshHomeStatus();}});
+const experiment=createExperimentalUI({stage,access,pick:hitAt,focus:()=>focus,name:id=>entries.find(e=>e.id===id)!.name,enabled:()=>ready&&!opened,refresh:()=>{refreshAccess();void refreshHomeStatus();}});
 carousel=createCarousel({stage,ids:entries.map(e=>e.id),initial:focus,enabled:()=>ready&&!opened,pick:hitAt,render:positionModels,activate:open});
 function invalidate(){if(pending||document.hidden)return;pending=true;requestAnimationFrame(()=>{pending=false;if(!opened){renderer.render(scene,camera);layoutLabels();}});}
 function resize(){const r=host.getBoundingClientRect();if(!r.width||!r.height)return;renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;
@@ -39,11 +40,11 @@ function positionModels(angle=carousel.angle,current=focus){
   const a=(index-1)*Math.PI*2/3+angle,z=Math.cos(a),position:Vec3=[Math.sin(a)*radius,0,z*radius],obj=models.get(e.id),front=e.id===focus;
   if(obj){obj.position.fromArray(position);obj.scale.setScalar(.9+.1*z);obj.rotation.y=(e.id==='paint'?.35:e.id==='assemble'?-.35:.1)+Math.sin(a)*.12;}
   placements.set(e.id,position);const b=buttons.get(e.id)!;b.classList.toggle('front',front);b.setAttribute('data-c-position',String(front));b.style.opacity=String(.64+.36*(z+1)/2);b.style.zIndex=String(Math.round((z+1)*100));
-  b.setAttribute('aria-label',access.edition==='server'&&e.id==='debug'?'调试鸭仅本地客户端可用':access.locked(e.id)?e.name+'未解锁，长按2秒体验':front?'进入'+e.name:'将'+e.name+'转到前面');
+  b.setAttribute('aria-label',access.edition==='server'&&e.id==='debug'?t('beta.debugLabel'):access.locked(e.id)?t('beta.lockedLabel',{name:e.name}):front?'进入'+e.name:'将'+e.name+'转到前面');
  }
  experiment.position();$('remember-status').textContent=lastUsed?`最近使用 · ${entries.find(e=>e.id===lastUsed)!.name}`:'首次使用 · 默认从调试鸭开始';invalidate();
 }
-function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const obj=models.get(e.id),p=new THREE.Vector3(0,-9,e.id==='debug'?175:95);if(obj){obj.updateMatrixWorld(true);p.applyMatrix4(obj.matrixWorld);}else p.add(new THREE.Vector3(...placements.get(e.id)!));p.project(camera);const b=buttons.get(e.id)!;b.hidden=!ready||p.z>1;b.style.left=(p.x*.5+.5)*host.clientWidth+'px';b.style.top=Math.min((-p.y*.5+.5)*host.clientHeight,host.clientHeight-b.offsetHeight-12)+'px';}}
+function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const obj=models.get(e.id),p=new THREE.Vector3(0,-9,e.id==='debug'?175:95);if(obj){obj.updateMatrixWorld(true);p.applyMatrix4(obj.matrixWorld);}else p.add(new THREE.Vector3(...placements.get(e.id)!));p.project(camera);const b=buttons.get(e.id)!;b.hidden=!ready||p.z>1;b.style.left=(p.x*.5+.5)*host.clientWidth+'px';b.style.top=Math.min((-p.y*.5+.5)*host.clientHeight,host.clientHeight-b.offsetHeight-12)+'px';}experiment.position();}
 function persist(id:string){if(!valid(id))return;try{localStorage.setItem(KEY,id);}catch{}lastUsed=id;}
 function open(id:string){if(!ready||!valid(id)||experiment.suppressed)return;if(access.locked(id)){experiment.show(id);return;}if(id==='assemble'&&!readNumberingReadiness().ready){id='debug';carousel.jump(id);if(access.locked(id)){experiment.show(id);return;}}experiment.hide();carousel.jump(id);opened=id;persist(id);positionModels();
  $('module-title').textContent=entries.find(e=>e.id===id)!.name;
@@ -134,9 +135,9 @@ async function init(){
   const rim=new THREE.Mesh(new THREE.RingGeometry(86,87,70),new THREE.MeshBasicMaterial({color:e.color,transparent:true,opacity:.17,side:THREE.DoubleSide}));rim.rotation.x=-Math.PI/2;rim.position.y=-3.5;root.add(rim);
   addAccessory(root,e.id);
  }
- ready=true;refreshAccess();$('home-loading').hidden=true;document.body.dataset.homeReady='true';positionModels();resize();const requested=new URLSearchParams(location.search).get('unlock');if(requested&&access.locked(requested)){carousel.jump(requested);experiment.show(requested);}
+ ready=true;refreshAccess();$('home-loading').hidden=true;document.body.dataset.homeReady='true';positionModels();resize();showRequestedHint();
 }
-positionModels();init().catch(e=>{$('home-loading').textContent='组装模型未加载，仍可选择功能';ready=true;document.body.dataset.homeReady='true';resize();layoutLabels();console.error(e);});
+positionModels();init().catch(e=>{$('home-loading').textContent='组装模型未加载，仍可选择功能';ready=true;document.body.dataset.homeReady='true';resize();layoutLabels();showRequestedHint();console.error(e);});
 
 function updatePaint(){const draft=readDraft();for(const child of models.get('paint')?.children??[]){const id:unknown=child.userData.partId;if(typeof id!=='string'||!id||!(child instanceof THREE.Mesh)||!(child.material instanceof THREE.MeshStandardMaterial))continue;const value=draft?.colors[assemblyActors[id]?.sourceId??''];if(/^#[0-9a-f]{6}$/i.test(value??''))child.material.color.set(value!);}const small=buttons.get('paint')?.querySelector('small');if(small)small.textContent=draft?.name?'继续涂装 · '+draft.name:'配色 · 涂装 · 导出';invalidate();}
 window.addEventListener('storage',updatePaint);
@@ -155,7 +156,7 @@ const originalTints=new WeakMap<THREE.Material,OriginalTint>();
 function refreshAccess(){
  for(const id of ['debug','assemble'] as const){
   const locked=access.locked(id),b=buttons.get(id)!;b.classList.toggle('beta-locked',locked);b.dataset.betaLocked=String(locked);b.dataset.betaPermanent=String(id==='debug'&&access.edition==='server');
-  b.querySelector('small')!.textContent=id==='debug'&&access.edition==='server'?'仅本地客户端可用':locked?'内测 · 长按解锁':id==='debug'?'舵机 · 参数 · 连接':readNumberingReadiness().ready?'取件 · 3D组装教程':`编号已验证 ${readNumberingReadiness().verifiedIds.length}/15 · 前往调试鸭`;
+  b.querySelector('small')!.textContent=id==='debug'&&access.edition==='server'?t('beta.localOnly'):locked?t('beta.badge'):id==='debug'?'舵机 · 参数 · 连接':readNumberingReadiness().ready?'取件 · 3D组装教程':`编号已验证 ${readNumberingReadiness().verifiedIds.length}/15 · 前往调试鸭`;
   b.querySelector('.go')!.innerHTML=locked?'<svg width="12" height="14" viewBox="0 0 16 18" fill="none" aria-hidden="true"><rect x="3" y="8" width="10" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8V5a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>':'↗';
   models.get(id)?.traverse(obj=>{if(!(obj instanceof THREE.Mesh))return;for(const m of Array.isArray(obj.material)?obj.material:[obj.material]){
    if(!(m instanceof THREE.MeshStandardMaterial||m instanceof THREE.MeshBasicMaterial))continue;
@@ -169,3 +170,6 @@ function refreshAccess(){
 window.addEventListener('storage',e=>{if(e.key===ACCESS_KEY){access.reload();refreshAccess();}});
 
 updateReadiness(readNumberingReadiness());
+
+function showRequestedHint(){const requested=new URLSearchParams(location.search).get('unlock');if(requested&&valid(requested)&&access.locked(requested)){carousel.jump(requested);experiment.show(requested);}}
+onLocale(refreshAccess);

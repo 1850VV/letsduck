@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import type {Page} from 'playwright';
-import {preparePage,browserUrl} from './browser/checks.js';
+import {preparePage,browserUrl,chooseLocale} from './browser/checks.js';
 import {ACCESS_KEY} from '../frontend/home/experimental-access.js';
 import {mkdir} from 'node:fs/promises';
 
@@ -27,7 +27,7 @@ export default async(page:Page)=>{
  await home();check('refresh retains only the unlocked duck',await button('debug').getAttribute('data-beta-locked')==='false'&&await button('assemble').getAttribute('data-beta-locked')==='true');
  await page.goto(base+'/assemble/');await page.waitForURL('**/home.html?unlock=assemble');await page.waitForSelector('body[data-home-ready=true]');check('locked direct assembly returns to homepage hint',await tip.isVisible());
  await button('assemble').press('Space');check('keyboard short press remains locked',await button('assemble').getAttribute('data-beta-locked')==='true');
- await hold('assemble');await page.locator('#tip-close').click();await button('assemble').click();await page.frameLocator('#module-frame').locator('#playback-rate select').waitFor();check('assembly opens real iframe after unlock and numbering',true);await page.locator('#close-module').click();
+ await hold('assemble');await page.locator('#tip-close').click();await button('assemble').click();await page.frameLocator('#module-frame').locator('#playback-rate select').waitFor();await page.frame({url:base+'/assemble/'})!.waitForFunction(()=>document.documentElement.dataset.ready==='true',undefined,{timeout:60000});check('assembly opens real iframe after unlock and numbering',true);await page.locator('#close-module').click();
  await page.route('**/api/duck-debug/numbering',async r=>{const response=await r.fetch(),data=await response.json();data.ready=false;data.verifiedIds=[];data.missingIds=data.expectedIds;await r.fulfill({response,json:data});});
  await page.route('**/api/duck-debug/status',async r=>{const response=await r.fetch(),data=await response.json();data.numbering.ready=false;data.numbering.verifiedIds=[];data.numbering.missingIds=data.numbering.expectedIds;await r.fulfill({response,json:data});});
  await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck=assemble]')?.dataset.numberingReady==='false');await button('assemble').click();await page.frameLocator('#module-frame').locator('#scan-servos').waitFor();check('unlocked assembly still obeys missing-numbering redirect',true);await page.locator('#close-module').click();
@@ -40,6 +40,7 @@ export default async(page:Page)=>{
  await page.screenshot({path:'output/home-experimental/server-disabled.png'});
  await page.setViewportSize({width:390,height:844});await home();await button('debug').click();await front('debug');await button('debug').click();const bounds=await tip.boundingBox();check('narrow hint stays within viewport',!!bounds&&bounds.x>=0&&bounds.x+bounds.width<=390&&bounds.y>=0&&bounds.y+bounds.height<=844);await page.screenshot({path:'output/home-experimental/narrow.png'});
  await page.locator('.duck-stage').press('Escape');check('Escape dismisses hint',await tip.isHidden());
+ for(const locale of ['en','de','ru','ar','hi','ja','ko','fr','es','pt-BR','zh-Hant','zh-Hans']){await chooseLocale(page,locale);await button('debug').click();const r=await tip.boundingBox();check(locale+' compact translated hint fits narrow viewport',!!r&&r.x>=0&&r.x+r.width<=390&&r.y>=0&&r.y+r.height<=844&&r.width<=225);}
  check('no device writes from entry gestures',writes.length===0);check('no page errors',errors.length===0);
  return {pass:true,checks,errors,writes};
 };

@@ -7,7 +7,7 @@ export default async(page:Page)=>{
  page.on('request',request=>{if(request.url().includes('/api/duck-debug/'))debugRequests.push(request.url());});
  await page.goto(base+'/debug/');await page.waitForURL('**/home.html?unlock=debug');
  await page.waitForSelector('body[data-home-ready=true]');
- const debug=page.locator('[data-duck=debug]');assert.equal(await debug.getAttribute('data-beta-permanent'),'true');assert.equal(await debug.getAttribute('data-beta-locked'),'true');
+ assert.match(await page.locator('#beta-tip').innerText(),/仅本地客户端可用/);const debug=page.locator('[data-duck=debug]');assert.equal(await debug.getAttribute('data-beta-permanent'),'true');assert.equal(await debug.getAttribute('data-beta-locked'),'true');
  await debug.click();assert.match(await page.locator('#beta-tip').innerText(),/仅本地客户端可用/);
  assert.equal((await page.request.get(base+'/api/duck-debug/status')).status(),404);
  assert.deepEqual(debugRequests,[]);

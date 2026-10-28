@@ -21,7 +21,7 @@ try{
  await duck('assemble').focus();await page.keyboard.down('Space');
  try{await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck=assemble]')?.dataset.betaLocked==='false',undefined,{timeout:4000});}finally{await page.keyboard.up('Space');}
  assert(await page.locator('#module-window').isHidden());checks.push('keyboard hold unlocks assembly without entering');
- await page.locator('#tip-close').click();await duck('assemble').click();await page.frameLocator('#module-frame').locator('#playback-rate select').waitFor();checks.push('numbered fixture enters real assembly iframe');await page.locator('#close-module').click();
+ await page.locator('#tip-close').click();await duck('assemble').click();await page.frameLocator('#module-frame').locator('#playback-rate select').waitFor();await required(page.frames().find(f=>f.url()==='duck://app/assemble/')).waitForFunction(()=>document.documentElement.dataset.ready==='true',undefined,{timeout:60000});checks.push('numbered fixture enters real assembly iframe');await page.locator('#close-module').click();
  await page.screenshot({path:join(output,'unlocked.png')});await scope.close(app);
  app=await scope.launch();page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));await page.waitForSelector('body[data-home-ready=true]');
  assert.equal(await duck('debug').getAttribute('data-beta-locked'),'false');assert.equal(await duck('assemble').getAttribute('data-beta-locked'),'false');checks.push('actual application restart preserves both acknowledgements');
