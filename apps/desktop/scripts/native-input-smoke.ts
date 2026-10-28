@@ -6,8 +6,9 @@ import {mkdir,readFile,writeFile,stat} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
-import type {ElectronApplication,Locator,Page} from 'playwright';
-import {root,desktop,desktopScope,failure,resizeWindow,required} from './check-support.js';
+import type {ElectronApplication,Page} from 'playwright';
+import {root,desktop,desktopScope,failure,resizeWindow,required,seedSimulatedAssembly,assemblyReady} from './check-support.js';
+import {windowsNativeInput,windowsPowerShell} from './windows-native-input.js';
 
 assert.equal(process.platform,'win32','This native acceptance requires Windows');
 assert.equal(process.arch,'x64');
@@ -18,133 +19,31 @@ const installer=resolve(values.installer||process.env.DUCK_NATIVE_INSTALLER||joi
 const output=resolve(process.env.DUCK_TEST_OUTPUT||join(root,'output/windows-native-input'));
 await mkdir(output,{recursive:true});
 const scope=await desktopScope('letsduck-win-native-'),run=promisify(execFile),sha=(bytes:Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
+const artifactIdentity:{path:string;bytes:number|null;sha256:string|null;sourceCommit:string|null}={path:installer,bytes:null,sha256:null,sourceCommit:process.env.GITHUB_SHA||null};
 const installation=join(scope.temporary,'app'),executable=join(installation,'letsduck.exe'),script=join(scope.temporary,'native-input.ps1');
 const events:unknown[]=[],checks:Array<{name:string;passed:boolean;detail:unknown}>=[],nativeEvidence:unknown[]=[];
 let app:ElectronApplication|undefined,page:Page|undefined,hwnd='',clipboardSaved=false,clipboardRestored=false,result:Record<string,unknown>|undefined;
 const installationCleanup:Array<{forcedPids:number[];remainingPids:number[]}>=[];
 async function stopOwned():Promise<void>{
- const stopped=await run('powershell.exe',['-NoProfile','-NonInteractive','-Command',String.raw`Get-Process | Where-Object { $_.Path -eq $env:DUCK_INSTALLED_EXE } | ForEach-Object { if ($_.MainWindowHandle -ne 0) { [void]$_.CloseMainWindow(); [void]$_.WaitForExit(10000) } }; $forced=@(Get-Process | Where-Object { $_.Path -eq $env:DUCK_INSTALLED_EXE } | Select-Object -ExpandProperty Id); $forced | ForEach-Object { Stop-Process -Id $_ -Force }; @{forcedPids=@($forced);remainingPids=@(Get-Process | Where-Object { $_.Path -eq $env:DUCK_INSTALLED_EXE } | Select-Object -ExpandProperty Id)} | ConvertTo-Json -Compress`],{env:{...scope.env,DUCK_INSTALLED_EXE:executable},timeout:60_000});
+ const stopped=await run(windowsPowerShell,['-NoProfile','-NonInteractive','-Command',String.raw`Get-Process | Where-Object { $_.Path -eq $env:DUCK_INSTALLED_EXE } | ForEach-Object { if ($_.MainWindowHandle -ne 0) { [void]$_.CloseMainWindow(); [void]$_.WaitForExit(10000) } }; $forced=@(Get-Process | Where-Object { $_.Path -eq $env:DUCK_INSTALLED_EXE } | Select-Object -ExpandProperty Id); $forced | ForEach-Object { Stop-Process -Id $_ -Force }; @{forcedPids=@($forced);remainingPids=@(Get-Process | Where-Object { $_.Path -eq $env:DUCK_INSTALLED_EXE } | Select-Object -ExpandProperty Id)} | ConvertTo-Json -Compress`],{env:{...scope.env,DUCK_INSTALLED_EXE:executable},timeout:60_000});
  const receipt=JSON.parse(stopped.stdout.trim()) as {forcedPids:number[];remainingPids:number[]};installationCleanup.push(receipt);assert.deepEqual(receipt.remainingPids,[],'Exact owned installed executable processes exited');
 }
 scope.addCleanup(stopOwned);
 
-// The helper observes only windows owned by this test. It never dispatches DOM events.
-const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids)
-$ErrorActionPreference='Stop'
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
-Add-Type -TypeDefinition @'
-using System;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Collections.Generic;
-public class DuckNative {
- [StructLayout(LayoutKind.Sequential)] public struct POINT {public int X;public int Y;}
- [StructLayout(LayoutKind.Sequential)] public struct RECT {public int Left;public int Top;public int Right;public int Bottom;}
- [StructLayout(LayoutKind.Sequential)] public struct MOUSEINPUT {public int dx;public int dy;public uint mouseData;public uint dwFlags;public uint time;public UIntPtr extra;}
- [StructLayout(LayoutKind.Sequential)] public struct KEYBDINPUT {public ushort wVk;public ushort wScan;public uint dwFlags;public uint time;public UIntPtr extra;}
- [StructLayout(LayoutKind.Explicit)] public struct UNION {[FieldOffset(0)]public MOUSEINPUT mouse;[FieldOffset(0)]public KEYBDINPUT key;}
- [StructLayout(LayoutKind.Sequential)] public struct INPUT {public uint type;public UNION data;}
- public delegate bool EnumProc(IntPtr h,IntPtr p);
- [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
- [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
- [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h,int command);
- [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
- [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h,out RECT r);
- [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h,ref POINT p);
- [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h,out RECT r);
- [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
- [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc callback,IntPtr p);
- [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h,out uint pid);
- [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr h,StringBuilder s,int max);
- [DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y);
- [DllImport("user32.dll",SetLastError=true)] public static extern uint SendInput(uint count,INPUT[] inputs,int size);
- [DllImport("user32.dll")] public static extern IntPtr OpenInputDesktop(uint flags,bool inherit,uint access);
- [DllImport("user32.dll")] public static extern bool CloseDesktop(IntPtr desktop);
- public class WindowInfo {public string handle;public uint pid;public string className;public int left;public int top;public int right;public int bottom;}
- public static WindowInfo[] Windows(uint[] owned) {var found=new List<WindowInfo>();EnumWindows((h,p)=>{uint pid;GetWindowThreadProcessId(h,out pid);if(Array.IndexOf(owned,pid)>=0&&IsWindowVisible(h)){RECT r;GetWindowRect(h,out r);var s=new StringBuilder(256);GetClassName(h,s,256);found.Add(new WindowInfo{handle=h.ToInt64().ToString(),pid=pid,className=s.ToString(),left=r.Left,top=r.Top,right=r.Right,bottom=r.Bottom});}return true;},IntPtr.Zero);return found.ToArray();}
- static void Send(INPUT[] values) {if(SendInput((uint)values.Length,values,Marshal.SizeOf(typeof(INPUT)))!=values.Length)throw new Exception("SendInput rejected: "+Marshal.GetLastWin32Error());}
- public static void Click(int x,int y) {if(!SetCursorPos(x,y))throw new Exception("SetCursorPos failed");Send(new[]{new INPUT{type=0,data=new UNION{mouse=new MOUSEINPUT{dwFlags=2}}},new INPUT{type=0,data=new UNION{mouse=new MOUSEINPUT{dwFlags=4}}}});}
- static INPUT Keyboard(ushort key,bool up){return new INPUT{type=1,data=new UNION{key=new KEYBDINPUT{wVk=key,dwFlags=up?2u:0u}}};}
- public static void Key(ushort key,bool shift,bool alt){var keys=new List<INPUT>();if(shift)keys.Add(Keyboard(16,false));if(alt)keys.Add(Keyboard(18,false));keys.Add(Keyboard(key,false));keys.Add(Keyboard(key,true));if(alt)keys.Add(Keyboard(18,true));if(shift)keys.Add(Keyboard(16,true));Send(keys.ToArray());}
-}
-'@
-[void][DuckNative]::SetProcessDPIAware()
-$handle=[IntPtr]::new([long]$Window)
-if($Action -eq 'activate'){[void][DuckNative]::ShowWindow($handle,9);[void][DuckNative]::SetForegroundWindow($handle);Start-Sleep -Milliseconds 150}
-if($Action -eq 'click'){[DuckNative]::Click([int]$X,[int]$Y)}
-if($Action -eq 'key'){
- $name=$Key -replace '^(Shift\+|Alt\+)','';$keys=@{Tab=9;Enter=13;Escape=27;Space=32;Home=36;End=35;ArrowUp=38;ArrowDown=40}
- if(!$keys.ContainsKey($name)){throw 'Unsupported native key'}
- [DuckNative]::Key([System.UInt16]$keys[$name],$Key.StartsWith('Shift+'),$Key.StartsWith('Alt+'))
-}
-if($Action -eq 'capture'){
- $bounds=[System.Windows.Forms.SystemInformation]::VirtualScreen
- $image=New-Object System.Drawing.Bitmap($bounds.Width,$bounds.Height)
- $graphics=[System.Drawing.Graphics]::FromImage($image)
- try{$graphics.CopyFromScreen($bounds.Left,$bounds.Top,0,0,$bounds.Size);$image.Save($Output,[System.Drawing.Imaging.ImageFormat]::Png)}finally{$graphics.Dispose();$image.Dispose()}
-}
-Start-Sleep -Milliseconds 120
-$r=New-Object DuckNative+RECT;$point=New-Object DuckNative+POINT
-if(![DuckNative]::GetClientRect($handle,[ref]$r)){throw 'Cannot observe owned window client rect'}
-if(![DuckNative]::ClientToScreen($handle,[ref]$point)){throw 'Cannot map owned window to desktop'}
-$inputDesktop=[DuckNative]::OpenInputDesktop(0,$false,0x0100)
-$inputAvailable=$inputDesktop -ne [IntPtr]::Zero
-if($inputAvailable){[void][DuckNative]::CloseDesktop($inputDesktop)}
-$owned=[System.UInt32[]]@(($OwnedPids -split ',')|ForEach-Object{[System.UInt32]$_})
-@{foreground=[DuckNative]::GetForegroundWindow().ToInt64().ToString();client=@{x=$point.X;y=$point.Y;width=$r.Right-$r.Left;height=$r.Bottom-$r.Top};windows=@([DuckNative]::Windows($owned));inputDesktopAvailable=$inputAvailable;sessionId=[System.Diagnostics.Process]::GetCurrentProcess().SessionId;screen=@{width=[System.Windows.Forms.SystemInformation]::VirtualScreen.Width;height=[System.Windows.Forms.SystemInformation]::VirtualScreen.Height}}|ConvertTo-Json -Depth 7 -Compress
-`;
-type NativeWindow={handle:string;pid:number;className:string;left:number;top:number;right:number;bottom:number};
-type NativeState={foreground:string;client:{x:number;y:number;width:number;height:number};windows:NativeWindow[];inputDesktopAvailable:boolean;sessionId:number;screen:{width:number;height:number}};
-async function native(action:string,extra:string[]=[]):Promise<NativeState>{
- const pids=app?await app.evaluate(({app})=>app.getAppMetrics().map(item=>item.pid)):[];
- const answer=await run('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',script,'-Action',action,'-Window',hwnd,'-OwnedPids',pids.join(','),...extra],{timeout:30_000,maxBuffer:1024*1024});
- const state=JSON.parse(answer.stdout.trim()) as NativeState;
- nativeEvidence.push({action,extra,state});assert.equal(state.inputDesktopAvailable,true,'The runner must expose an unlocked input desktop');assert.ok(state.sessionId>0,'An interactive Windows session is required');return state;
-}
 function check(name:string,passed:boolean,detail:unknown=null){checks.push({name,passed,detail});console.log(JSON.stringify({check:name,passed,detail}));assert.ok(passed,name+' '+JSON.stringify(detail));}
-async function click(target:Locator){
- const box=required(await target.boundingBox());const state=await native('inspect');const viewport=await required(page).evaluate(()=>({width:innerWidth,height:innerHeight}));
- await native('click',['-X',String(Math.round(state.client.x+(box.x+box.width/2)*state.client.width/viewport.width)),'-Y',String(Math.round(state.client.y+(box.y+box.height/2)*state.client.height/viewport.height))]);
-}
-async function key(value:string){await native('key',['-Key',value]);}
-async function capture(name:string){await native('capture',['-Output',join(output,name+'.png')]);}
-async function observe(select:Locator){return select.evaluate(element=>{if(!(element instanceof HTMLSelectElement))throw new Error('Expected actual select');return{value:element.value,index:element.selectedIndex,options:Array.from(element.options,option=>({value:option.value,text:option.text})),focused:document.activeElement===element,disabled:element.disabled,connected:element.isConnected};});}
-async function popup(before:NativeState):Promise<NativeWindow>{
- const known=new Set(before.windows.map(item=>item.handle));let state:NativeState|undefined;
- for(let i=0;i<5;i++){state=await native('inspect');const found=state.windows.find(item=>!known.has(item.handle)&&item.handle!==hwnd&&item.right>item.left&&item.bottom>item.top);if(found)return found;await delay(100);}
- throw new Error('No separate owned native popup window appeared: '+JSON.stringify(state));
-}
-async function menuJourney(select:Locator,label:string){
- const initial=await observe(select);check(label+' is an enabled actual select',!initial.disabled&&initial.options.length>0,initial);
- const original=required(await select.elementHandle());const baseline=await native('inspect');await click(select);const opened=await popup(baseline);await capture(label+'-mouse-open');
- check(label+' click preserves the control',await original.evaluate(element=>element.isConnected));
- // For these short menus the popup contains every row. Refuse guessed positions in a scrollable menu.
- const row=(opened.bottom-opened.top)/initial.options.length;
- check(label+' native popup rows fit without scrolling',row>=12&&row<=64&&initial.options.length<=12,{popup:opened,row,options:initial.options.length});
- const targetIndex=initial.options.length>1?(initial.index+1)%initial.options.length:initial.index;
- await native('click',['-X',String(Math.round((opened.left+opened.right)/2)),'-Y',String(Math.round(opened.top+row*(targetIndex+.5)))]);
- await select.page().waitForTimeout(150);const afterMouse=await observe(select);
- check(label+' actual mouse option selected',afterMouse.value===initial.options[targetIndex]!.value&&afterMouse.focused,{before:initial,after:afterMouse});
- const beforeKeyboard=await native('inspect');await click(select);await popup(beforeKeyboard);await key('Home');
- const keyboardIndex=initial.options.length>1?(targetIndex+1)%initial.options.length:0;
- if(keyboardIndex===0){await key('ArrowDown');await key('Home');}else for(let index=0;index<keyboardIndex;index++)await key('ArrowDown');
- await key('Enter');const afterKeyboard=await observe(select),expected=initial.options[keyboardIndex]!.value;
- check(label+' Down and Enter select through native input',afterKeyboard.value===expected&&afterKeyboard.focused&&(initial.options.length===1||afterKeyboard.value!==afterMouse.value),{afterKeyboard,mouseValue:afterMouse.value,changedSelectionCovered:initial.options.length>1});
- const beforeCancel=await native('inspect');await click(select);await popup(beforeCancel);await key('ArrowDown');await key('Escape');const afterCancel=await observe(select);
- check(label+' Escape cancels the pending selection and returns focus',afterCancel.value===afterKeyboard.value&&afterCancel.focused,afterCancel);
- await key('Tab');check(label+' Tab moves focus away',!(await observe(select)).focused);await key('Shift+Tab');check(label+' reverse Tab restores select focus',(await observe(select)).focused);
- const beforeSpace=await native('inspect');await key('Space');await popup(beforeSpace);await capture(label+'-space-reopen');await key('Escape');
- check(label+' Space reopens and Escape retains focus',(await observe(select)).focused);
- return{initial,afterMouse,afterKeyboard,afterCancel,changedSelectionCovered:initial.options.length>1};
-}
+const input=windowsNativeInput({script,output,page:()=>required(page),target:async()=>({window:hwnd,ownedPids:app?await app.evaluate(({app})=>app.getAppMetrics().map(item=>item.pid)):[]}),evidence:nativeEvidence,check});
+const {native,click,capture,menuJourney}=input;
+
 try{
- await writeFile(script,nativeScript);await stat(installer);
+ {const bytes=await readFile(installer);artifactIdentity.bytes=bytes.length;artifactIdentity.sha256=sha(bytes);}
+ await writeFile(join(output,'identity.json'),JSON.stringify(artifactIdentity));console.log(JSON.stringify(artifactIdentity));
+ await input.prepare();await stat(installer);
  await run(installer,['/S',`/D=${installation}`],{env:scope.env,timeout:180_000});await stopOwned();await stat(executable);
  const resources=join(installation,'resources');
  check('full-assets installation has licensed model',(await stat(join(resources,'runtime/assets/model.json'))).isFile());
  const fileExists=async(path:string)=>stat(path).then(()=>true,()=>false);
  const assetScope={filamentCatalog:await fileExists(join(resources,'runtime/assets/filament-catalog.json')),filamentProfiles:await fileExists(join(resources,'runtime/assets/filament-profiles.json'))};
+ seedSimulatedAssembly(required(scope.env.DUCK_PERSONAL_DB));
  app=await scope.launch(undefined,executable);page=await app.firstWindow();page.setDefaultTimeout(30_000);
  page.on('pageerror',error=>events.push({kind:'pageerror',message:error.message}));page.on('console',message=>{if(message.type()==='error')events.push({kind:'console',message:message.text()});});
  app.context().on('requestfailed',request=>events.push({kind:'requestfailed',url:request.url(),failure:request.failure()}));
@@ -166,12 +65,12 @@ try{
  const series=await menuJourney(frame.locator('#filament-series'),'filament-series');
  // A historical authorized asset pack can have only one series. Never inject extra options.
  const coverage={assetScope,filamentSeries:series,formalMultiBrandSeries:assetScope.filamentCatalog&&series.changedSelectionCovered?'covered for displayed options':'not_run: authorized historical archive lacks current extra filament files or multiple series'};
- await click(frame.locator('#workflow-settings'));await frame.locator('#workflow-settings-dialog').waitFor({state:'visible'});
- const settings=await menuJourney(frame.locator('#workflow-settings-default'),'workflow-default');
- check('a real multi-option native menu changed value',settings.changedSelectionCovered&&settings.afterMouse.value!==settings.initial.value,settings);
- await click(frame.locator('#workflow-settings-dialog .icon-button'));check('neighbor dialog closes through native mouse',!await frame.locator('#workflow-settings-dialog').isVisible());
  await app.evaluate(async({clipboard,ClipboardItem})=>{const copied=[];for(const item of await clipboard.read()){const types:Record<string,Blob|Electron.ClipboardBookmark>={};for(const type of item.types)types[type]=await item.getType(type);copied.push(new ClipboardItem(types));}Reflect.set(globalThis,'duckNativeClipboardBackup',copied);await clipboard.writeText('duck-native-clipboard-marker');});clipboardSaved=true;
- await click(frame.locator('[data-step="3"]').first());await click(frame.locator('[data-ptab="share"]'));await click(frame.locator('#open-poster'));
+ await click(frame.locator('[data-step="3"]').first());await click(frame.locator('[data-ptab="share"]'));
+ const textCode=required(await frame.locator('.code-box code').textContent());assert.ok(textCode.startsWith('v1.'),'The real share panel has an exportable code');await click(frame.locator('#copy-code'));
+ let copiedCode='';for(let i=0;i<30;i++){copiedCode=await app.evaluate(async({clipboard})=>clipboard.readText());if(copiedCode===textCode)break;await delay(100);}
+ check('native UI copies the displayed palette code to Windows text clipboard',copiedCode===textCode,{displaySelector:'.code-box code',buttonSelector:'#copy-code',expected:textCode,actual:copiedCode});
+ await click(frame.locator('#open-poster'));
  await frame.locator('#poster-copy-img').waitFor({state:'visible'});await frame.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('#poster-copy-img')?.disabled);
  await click(frame.locator('#poster-copy-img'));
  let clip:{formats:string[];width:number;height:number;png:string}|undefined;
@@ -180,11 +79,18 @@ try{
  await click(frame.locator('#poster-close'));await click(page.locator('#close-x'));check('native close returns to homepage',!await page.locator('#module-window').isVisible());await click(paint);await page.locator('#module-frame').waitFor({state:'visible'});
  const reopened=required(page.frames().find(frame=>frame.url()==='duck://app/paint'));await reopened.waitForFunction(()=>!!Reflect.get(window,'studioProto'));
  check('native homepage module reopens actual paint iframe',reopened.url()==='duck://app/paint');await capture('final-home-iframe');
+ await click(page.locator('#close-x'));check('native reopened paint module closes',!await page.locator('#module-window').isVisible());
+ const assemble=page.locator('[data-duck="assemble"]');if(await assemble.getAttribute('data-c-position')!=='true'){await click(assemble);await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck="assemble"]')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false');}
+ await click(assemble);await page.locator('#module-frame').waitFor({state:'visible'});await page.frameLocator('#module-frame').locator('#playback-rate select').waitFor();const assembly=required(page.frames().find(frame=>frame.url()==='duck://app/assemble/'));await assembly.waitForFunction(assemblyReady,undefined,{timeout:60_000});
+ check('native assembly entry uses the real homepage iframe',assembly.url()==='duck://app/assemble/');const settings=await menuJourney(assembly.locator('#playback-rate select'),'assembly-playback-rate');
+ check('a real six-option native menu changed value',settings.initial.options.length===6&&settings.changedSelectionCovered&&settings.afterMouse.value!==settings.initial.value,settings);
+ await click(assembly.locator('#sound-controls summary'));check('native adjacent sound controls open',await assembly.locator('#sound-controls').getAttribute('open')!==null);await click(assembly.locator('#sound-close'));check('native adjacent sound controls close',await assembly.locator('#sound-controls').getAttribute('open')===null);
+ await click(page.locator('#close-x'));check('native assembly closes to homepage',!await page.locator('#module-window').isVisible());await click(assemble);await page.locator('#module-frame').waitFor({state:'visible'});await page.frameLocator('#module-frame').locator('#playback-rate select').waitFor();const assemblyReopened=required(page.frames().find(frame=>frame.url()==='duck://app/assemble/'));await assemblyReopened.waitForFunction(assemblyReady,undefined,{timeout:60_000});check('native assembly iframe and select reopen',await assemblyReopened.locator('#playback-rate select').isVisible());await capture('final-assembly-iframe');
  check('no page runtime errors',!events.some(value=>typeof value==='object'&&value!==null&&'kind'in value&&value.kind==='pageerror'),events);
- result={status:'passed',installer:{path:installer,bytes:(await stat(installer)).size,sha256:sha(await readFile(installer))},identity,defaultGpu:true,sourceCommit:process.env.GITHUB_SHA||null,coverage,settings,clipboard:{formats:clip?.formats,bytes:png.length,width:clip?.width,height:clip?.height,sha256:sha(png)},checks,events,physicalDevices:'not_run: explicit invalid DUCK_ADB sentinel and temporary DB/profile',visualAcceptance:'automated native input and captured screens; no human visual approval'};
-}catch(error){result={status:'failed',error:failure(error),checks,events};process.exitCode=1;if(hwnd)await capture('failure-native').catch(()=>{});console.error(failure(error));}
+ result={status:'passed',artifactIdentity,installer:{path:installer,bytes:artifactIdentity.bytes,sha256:artifactIdentity.sha256},identity,assemblyPrerequisite:'15 explicitly simulated records in owned temporary SQLite; no hardware verification',defaultGpu:true,sourceCommit:process.env.GITHUB_SHA||null,coverage,settings,clipboard:{text:{displaySelector:'.code-box code',buttonSelector:'#copy-code',expected:textCode,actual:copiedCode},formats:clip?.formats,bytes:png.length,width:clip?.width,height:clip?.height,sha256:sha(png)},checks,events,physicalDevices:'not_run: explicit invalid DUCK_ADB sentinel and temporary DB/profile',visualAcceptance:'automated native input and captured screens; no human visual approval'};
+}catch(error){result={status:'failed',artifactIdentity,error:failure(error),checks,events};console.log(JSON.stringify(artifactIdentity));process.exitCode=1;if(hwnd)await capture('failure-native').catch(()=>{});console.error(failure(error));}
 finally{
  if(app&&clipboardSaved)try{await app.evaluate(async({clipboard})=>{const copied=Reflect.get(globalThis,'duckNativeClipboardBackup') as Electron.ClipboardItem[];if(copied.length)await clipboard.write(copied);else clipboard.clear();});clipboardRestored=true;}catch(error){events.push({kind:'clipboardRestore',error:String(error)});result={...result,status:'failed',clipboardRestoreError:failure(error)};process.exitCode=1;}
- let cleaned=false;try{await scope.dispose();cleaned=true;}catch(error){result={...result,status:'failed',cleanupError:failure(error)};process.exitCode=1;throw error;}finally{if(installationCleanup.some(item=>item.forcedPids.length>0)){result={...result,status:'failed',forcedOwnedProcessTermination:installationCleanup};process.exitCode=1;}await writeFile(join(output,'native-evidence.json'),JSON.stringify(nativeEvidence,null,2));await writeFile(join(output,'cleanup.json'),JSON.stringify({ownedProcessesExited:cleaned,temporaryInstallationRemoved:cleaned,temporaryDataRemoved:cleaned,clipboardRestored,installationCleanup,ownedPids:[...scope.pids],fakeAdb:scope.adbEvidence()},null,2));await writeFile(join(output,'result.json'),JSON.stringify(result,null,2));}
+ let cleaned=false;try{await scope.dispose();cleaned=true;}catch(error){result={...result,status:'failed',cleanupError:failure(error)};process.exitCode=1;throw error;}finally{if(installationCleanup.some(item=>item.forcedPids.length>0)){result={...result,status:'failed',forcedOwnedProcessTermination:installationCleanup};process.exitCode=1;}await writeFile(join(output,'identity.json'),JSON.stringify(artifactIdentity));await writeFile(join(output,'native-evidence.json'),JSON.stringify(nativeEvidence,null,2));await writeFile(join(output,'cleanup.json'),JSON.stringify({ownedProcessesExited:cleaned,temporaryInstallationRemoved:cleaned,temporaryDataRemoved:cleaned,clipboardRestored,installationCleanup,ownedPids:[...scope.pids],fakeAdb:scope.adbEvidence()},null,2));await writeFile(join(output,'result.json'),JSON.stringify(result,null,2));}
 }
 console.log(JSON.stringify(result));

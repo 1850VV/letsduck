@@ -109,7 +109,27 @@ jobs:
       - name: Preserve technical acceptance and cleanup results in the job log
         if: always() && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
         run: |
-          node --input-type=module -e 'import{existsSync,readFileSync}from"node:fs";for(const file of ["output/desktop-installed-smoke/result.json","output/desktop-installed-smoke/failure.json","output/desktop-installed-smoke/functional/result.json","output/desktop-installed-smoke/functional/failure-details.json","output/desktop-installed-smoke/functional/cleanup.json","output/windows-native-input/result.json","output/windows-native-input/cleanup.json","output/windows-portable-browser/result.json","output/windows-portable-browser/cleanup.json"]){if(existsSync(file))console.log(JSON.stringify({file,receipt:JSON.parse(readFileSync(file,"utf8"))}));}'
+          node --input-type=module <<'JS'
+          import { existsSync, readFileSync } from 'node:fs';
+          const files = [
+            'output/desktop-installed-smoke/result.json', 'output/desktop-installed-smoke/failure.json',
+            'output/desktop-installed-smoke/functional/result.json', 'output/desktop-installed-smoke/functional/failure-details.json',
+            'output/desktop-installed-smoke/functional/cleanup.json',
+            'output/windows-native-input/identity.json', 'output/windows-native-input/result.json',
+            'output/windows-native-input/cleanup.json', 'output/windows-native-input/native-evidence.json',
+            'output/windows-portable-browser/identity.json', 'output/windows-portable-browser/result.json',
+            'output/windows-portable-browser/cleanup.json', 'output/windows-portable-browser/native-evidence.json',
+            'output/windows-portable-browser/stop-failure.json',
+          ];
+          for (const file of files) {
+            if (!existsSync(file)) continue;
+            try {
+              const receipt = JSON.parse(readFileSync(file, 'utf8'));
+              if (Array.isArray(receipt)) receipt.forEach((entry, index) => console.log(JSON.stringify({ file, index, receipt: entry })));
+              else console.log(JSON.stringify({ file, receipt }));
+            } catch (error) { console.error(JSON.stringify({ file, error: String(error) })); process.exitCode = 1; }
+          }
+          JS
       - name: Require both independent Windows software checks to pass
         if: always() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
         run: |
