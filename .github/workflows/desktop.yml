@@ -15,11 +15,15 @@ on:
         description: 'Run only the isolated Windows console SIGINT transport diagnostic'
         type: boolean
         default: false
+      native_select_diagnostic:
+        description: 'Observe ordinary Windows select input in Electron and managed Chromium only'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   candidate:
-    if: ${{ !inputs.console_signal_diagnostic }}
+    if: ${{ !inputs.console_signal_diagnostic && !inputs.native_select_diagnostic }}
     strategy:
       fail-fast: false
       matrix:
@@ -99,7 +103,11 @@ jobs:
         continue-on-error: true
         run: node --import tsx apps/desktop/scripts/native-input-smoke.ts
       - name: Download and verify the matching official Node runtime
-        run: npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
+        run: |
+          if ! npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime; then
+            test ! -e output/node-runtime
+            npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
+          fi
       - name: Build the portable browser archive
         run: |
           if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
@@ -178,4 +186,42 @@ jobs:
           const file='output/windows-console-canary/result.json';
           if(existsSync(file)) console.log(JSON.stringify({file,receipt:JSON.parse(readFileSync(file,'utf8'))}));
           else process.exitCode=1;
+          JS
+  native_select:
+    if: github.event_name == 'workflow_dispatch' && inputs.native_select_diagnostic
+    runs-on: windows-2025
+    timeout-minutes: 12
+    defaults:
+      run:
+        shell: bash
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run build:core
+      - run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
+      - run: PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
+      - name: Observe plain select Down and Escape with real native input
+        run: node --import tsx apps/desktop/scripts/native-select-diagnostic.ts
+      - name: Preserve individual plain select observations and cleanup
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,existsSync} from 'node:fs';
+          const file='output/windows-native-select-diagnostic/result.json';
+          if(!existsSync(file)) { process.exitCode=1; }
+          else {
+            const {cases,...summary}=JSON.parse(readFileSync(file,'utf8'));
+            console.log(JSON.stringify({file,kind:'summary',receipt:summary}));
+            for(const {observations,nativeEvidence,...entry} of cases) {
+              console.log(JSON.stringify({file,kind:'engine',receipt:entry}));
+              for(const [index,snapshot] of (observations||[]).entries()) console.log(JSON.stringify({file,kind:'snapshot',engine:entry.engine,index,receipt:snapshot}));
+              for(const [index,evidence] of (nativeEvidence||[]).entries()) console.log(JSON.stringify({file,kind:'native',engine:entry.engine,index,receipt:evidence}));
+            }
+          }
           JS

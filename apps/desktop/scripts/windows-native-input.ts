@@ -1,4 +1,4 @@
-/** Shared Win32 input for the two disposable Windows acceptance scripts; no DOM input. */
+/** Shared Win32 clicks and keys; DOM scrolling prepares positions without setting selection values. */
 import assert from 'node:assert/strict';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
