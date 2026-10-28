@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,readFile,rm,copyFile,chmod,stat} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,readFile,readdir,rm,copyFile,chmod,stat} from 'node:fs/promises';
 import {join,resolve,dirname} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,execFile} from 'node:child_process';
@@ -18,7 +18,14 @@ import {writeSyntheticAssets} from './synthetic-assets.js';
 let electronBinary:string|undefined;
 try{const loaded:unknown=await import('electron');if(isJsonObject(loaded)&&typeof loaded.default==='string'&&(await stat(loaded.default)).isFile())electronBinary=loaded.default;}catch{/* Source-only Node CI deliberately omits the Electron binary. */}
 
-test('browser ZIP contains a standalone bundled runtime, exact Web and no npm, Electron or build tooling',{skip:!['darwin','win32'].includes(process.platform)&&'Browser binary deliveries target macOS and Windows; Linux keeps the Node CLI'},async()=>{
+test('retired Intel Mac browser delivery is refused before staging or runtime execution',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'duck-browser-retired-'));
+ try{await assert.rejects(packageBrowser({root,nodeDirectory:join(root,'missing'),platform:'darwin',arch:'x64',output:join(root,'retired.zip'),withoutAssets:true}),/Only Windows x64 and macOS arm64/);assert.deepEqual(await readdir(root),[]);}
+ finally{await rm(root,{recursive:true,force:true});}
+});
+
+const portableHost=process.platform==='darwin'&&process.arch==='arm64'||process.platform==='win32'&&process.arch==='x64';
+test('browser ZIP contains a standalone bundled runtime, exact Web and no npm, Electron or build tooling',{skip:!portableHost&&'Browser binary deliveries target macOS arm64 and Windows x64; Linux keeps the Node CLI'},async()=>{
  const root=await mkdtemp(join(tmpdir(),'duck-browser-package-test-'));
  try{
   for(const name of ['apps/local/dist','frontend/dist/static','scripts','node/bin'])await mkdir(join(root,name),{recursive:true});
@@ -55,7 +62,7 @@ async function exercise(binary:string,entry:string,runtime:string,owned:string,e
   assert.ok((await stat(join(owned,'personal.db'))).size>0);const {DatabaseSync}=await import('node:sqlite');const database=new DatabaseSync(join(owned,'personal.db'),{readOnly:true});try{assert.equal(database.prepare('SELECT name FROM schemes WHERE id=?').get('bundled')?.name,'Retained packaged scheme');}finally{database.close();}assert.equal(await stat(adbLog).then(()=>true,()=>false),false,'No device command should run during save/export');
  }finally{if(!closed){child.kill('SIGKILL');await exited;}}
 }
-test('unpacked browser ZIP uses bundled Node with empty PATH to save, export and drain the real signal handler',{skip:!['darwin','win32'].includes(process.platform)&&'Browser binary deliveries target macOS and Windows'},async()=>{
+test('unpacked browser ZIP uses bundled Node with empty PATH to save, export and drain the real signal handler',{skip:!portableHost&&'Browser binary deliveries target macOS arm64 and Windows x64'},async()=>{
  const owned=await mkdtemp(join(tmpdir(),'duck-bundled-runtime-test-')),root=resolve(import.meta.dirname,'../..');
  try{
   const source=join(owned,'synthetic'),node=join(owned,'node');await mkdir(source);writeSyntheticAssets(source);await writeFile(join(source,'geometry.bin'),'synthetic geometry');const binary=process.platform==='win32'?'node.exe':'bin/node';await mkdir(dirname(join(node,binary)),{recursive:true});await copyFile(process.execPath,join(node,binary));await chmod(join(node,binary),0o755);await writeFile(join(node,'LICENSE'),'Synthetic test wrapper; no distribution');

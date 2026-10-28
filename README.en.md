@@ -56,7 +56,7 @@ Mobile painting supports bottom panels, pinch zoom, double-tap focus and long-pr
 | Accounts and gallery | None | Nickname accounts, private schemes, publishing, ratings and remix families |
 | USB device control | Local only | Unavailable |
 
-The personal, server and Electron desktop entries share the TypeScript renderer, validation, storage and 3MF exporter. The instructions below cover the source personal edition and Docker server edition. See [desktop and offline packaging](apps/desktop/README.md) for desktop candidates and browser archives with bundled Node. Installation, updates, signing and physical devices have separate acceptance checks.
+The personal, server and Electron desktop entries share the TypeScript renderer, validation, storage and 3MF exporter. The instructions below cover the source personal edition and Docker server edition. Desktop installers and browser archives with bundled Node support Windows x64 (`win32/x64`) and Apple silicon Macs (`darwin/arm64`) only. Intel Mac packages are no longer provided. See [desktop and offline packaging](apps/desktop/README.md) for builds and acceptance checks. Linux Node CLI and server support remains available. Installation, updates, signing and physical devices have separate acceptance checks.
 
 ## Run locally
 

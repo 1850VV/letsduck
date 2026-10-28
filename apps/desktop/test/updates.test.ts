@@ -45,6 +45,8 @@ test('release feeds require HTTPS and a supported platform/channel', () => {
   assert.equal(updateFeed('https://example.com', 'stable', 'win32', 'x64'), 'https://example.com/stable/win32/x64/');
   for (const base of ['http://example.com', 'https:' + '//name:secret@example.com', 'https://example.com/?token=x']) assert.throws(() => updateFeed(base, 'beta', 'darwin', 'arm64'));
   assert.throws(() => updateFeed('https://example.com', 'beta', 'linux', 'arm64'));
+  assert.throws(() => updateFeed('https://example.com', 'beta', 'darwin', 'x64'));
+  assert.throws(() => updateFeed('https://example.com', 'beta', 'win32', 'arm64'));
 });
 
 test('release events clamp progress and never install or download by themselves', () => {

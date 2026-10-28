@@ -13,7 +13,7 @@ type Architecture = 'arm64' | 'x64';
 interface RuntimeOptions { platform: Platform; arch: Architecture; target: string; fetcher?: typeof fetch }
 
 export async function fetchNodeRuntime(options: RuntimeOptions) {
-  if (options.platform === 'win32' && options.arch !== 'x64') throw new Error('Only Windows x64 and macOS arm64/x64 are supported.');
+  if (!(options.platform === 'win32' && options.arch === 'x64' || options.platform === 'darwin' && options.arch === 'arm64')) throw new Error('Only Windows x64 and macOS arm64 are supported.');
   const target = resolve(options.target);
   try { await lstat(target); throw new Error('Runtime destination already exists; choose an empty new destination.'); }
   catch (error) { if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error; }

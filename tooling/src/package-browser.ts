@@ -14,7 +14,7 @@ export interface BrowserPackageOptions {root:string;nodeDirectory:string;platfor
 export interface BrowserPackageReceipt {output:string;bytes:number;sha256:string;node:{source:string;version:string;platform:string;arch:string;sha256:string};resources:Awaited<ReturnType<typeof stageRuntimeAssets>>;application:Awaited<ReturnType<typeof stageProductionApp>>}
 const sha=(data:Buffer)=>createHash('sha256').update(data).digest('hex');
 export async function packageBrowser(options:BrowserPackageOptions):Promise<BrowserPackageReceipt>{
- if(options.platform==='win32'&&options.arch!=='x64')throw new Error('Unsupported Windows runtime architecture');
+ if(!(options.platform==='win32'&&options.arch==='x64'||options.platform==='darwin'&&options.arch==='arm64'))throw new Error('Only Windows x64 and macOS arm64 are supported.');
  const root=await realpath(options.root),source=resolve(options.source??join(root,'assets')),output=await newStageTarget(options.output,[source,join(root,'frontend/dist'),options.nodeDirectory]);
  const nodeSource=join(options.nodeDirectory,options.platform==='win32'?'node.exe':'bin/node');
  const run=spawnSync(nodeSource,['-p','JSON.stringify({version:process.versions.node,platform:process.platform,arch:process.arch})'],{encoding:'utf8',timeout:15_000,env:{...process.env,NODE_OPTIONS:'',NODE_PATH:'',PATH:''}});

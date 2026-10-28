@@ -56,7 +56,7 @@
 | 账号与配色广场 | 无 | 昵称账号、私有方案、发布、评分、「做同款」和改编家族 |
 | USB 设备控制 | 本机支持 | 不提供 |
 
-个人版、服务器版与 Electron 桌面端共用 TypeScript 前端、配色校验、存储和 3MF 导出包。以下介绍源码个人版与 Docker 服务器版；桌面候选和随附 Node 的浏览器包见[桌面与离线打包](apps/desktop/README.md)。安装、更新、签名和设备验收分别进行。
+个人版、服务器版与 Electron 桌面端共用 TypeScript 前端、配色校验、存储和 3MF 导出包。以下介绍源码个人版与 Docker 服务器版；桌面安装包和随附 Node 的浏览器包仅支持 Windows x64（`win32/x64`）与 Apple 芯片 Mac（`darwin/arm64`），不再提供 Intel Mac 包。构建与验收见[桌面与离线打包](apps/desktop/README.md)。Linux 的 Node CLI 与服务器支持保留。安装、更新、签名和设备验收分别进行。
 
 ## 本机启动
 

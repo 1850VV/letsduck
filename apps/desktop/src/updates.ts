@@ -45,7 +45,7 @@ export function feedURL(value: string): URL {
 }
 export function updateFeed(base: string, channel: string, platform: string, arch: string): string {
   const url = feedURL(base);
-  if (!['stable', 'beta'].includes(channel) || !(platform === 'darwin' && ['arm64', 'x64'].includes(arch) || platform === 'win32' && arch === 'x64')) throw new Error('Invalid release feed');
+  if (!['stable', 'beta'].includes(channel) || !(platform === 'darwin' && arch === 'arm64' || platform === 'win32' && arch === 'x64')) throw new Error('Invalid release feed');
   return url.href.replace(/\/+$/, '') + `/${channel}/${platform}/${arch}/`;
 }
 export class UpdateController extends EventEmitter<{ state: [state: UpdateState] }> {

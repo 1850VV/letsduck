@@ -2,6 +2,8 @@
 
 Electron 窗口使用 `duck://app`、默认 `letsduck` profile 和一套共享 `@letsduck/host`。它直接服务主线 `frontend/dist`；个人数据库、设备控制、耗材规则和导出都来自 `packages/`。源码运行与打包需要 Node 24.20+（24.x）。用户包内已带运行时。
 
+桌面安装包和随附 Node 的浏览器包只维护 Windows x64（`win32/x64`）与 Apple 芯片 Mac（`darwin/arm64`）。Intel Mac 包停止维护，不再纳入交付或验收；Rosetta 运行结果不扩大支持范围。Linux 继续使用 Node CLI 或服务器版。
+
 ## 开发
 
 ```sh
@@ -18,7 +20,7 @@ npm run start:desktop
 
 ```sh
 npm run package:desktop -- --mac --arm64
-# Intel Mac：--mac --x64；Windows：--win --x64
+npm run package:desktop -- --win --x64
 ```
 
 构建在 `apps/desktop/build/` 暂存生产依赖、同一 Web 产物与授权素材，安装器输出到 `apps/desktop/release/`。`DUCK_DISTRIBUTABLE_ASSETS` 可指定打包素材目录。暂存不修改源素材，也不复制符号链接。设置 `DUCK_PACKAGE_WITHOUT_ASSETS=1` 可构建不含模型的源码候选；它不能完成模型操作。
@@ -32,9 +34,13 @@ npm run package:desktop -- --mac --arm64
 ```sh
 npm run fetch:node -- --platform darwin --arch arm64 --output output/node-runtime
 npm run package:browser -- --node-dir output/node-runtime --platform darwin --arch arm64 --output output/letsduck-browser.zip
+
+# Windows x64（在 Windows 上执行）
+npm run fetch:node -- --platform win32 --arch x64 --output output/node-runtime-win32-x64
+npm run package:browser -- --node-dir output/node-runtime-win32-x64 --platform win32 --arch x64 --output output/letsduck-browser-win32-x64.zip
 ```
 
-支持 `darwin/arm64`、`darwin/x64`、`win32/x64`。下载工具核对 Node 官方 `SHASUMS256.txt`，只提取 Node 24.20.0 二进制与许可证。打包前实际执行该二进制核实版本与架构。Windows 使用 `node.exe`，macOS 使用 `bin/node`。打包可用 `--assets DIR` 或 `--without-assets`；输出必须为新文件。
+仅支持 `darwin/arm64`、`win32/x64`。下载工具核对 Node 官方 `SHASUMS256.txt`，只提取 Node 24.20.0 二进制与许可证。打包前实际执行该二进制核实版本与架构。Windows 使用 `node.exe`，macOS 使用 `bin/node`。打包可用 `--assets DIR` 或 `--without-assets`；输出必须为新文件。
 
 解压后双击包内启动器。它直接运行随包 Node、共享本机入口和同一 Web，不安装或要求系统 Node、npm、Python。数据库默认位置和端口选择与源码个人版相同。退出会排空当前工作；Windows 关闭控制台受系统约十秒的终止上限约束，不能把强制关闭当作正常排空通过，见 [Node 信号说明](https://nodejs.org/docs/latest-v24.x/api/process.html#signal-events)。没有授权素材的包只能作源码候选，不能代替完整产品安装验收。
 
@@ -56,4 +62,4 @@ node --import tsx apps/desktop/scripts/installed-smoke.ts --installer /path/to/c
 
 `installed-upgrade.ts` 的真实 Windows A→B 验收需要隔离 Actions runner 和可匿名下载的已发布版本；它不模拟升级，也不发布安装包。`benchmark.ts` 默认使用共享 Node 基线采集，只有显式历史模式才调用旧 Python 对照。
 
-Windows x64、Apple Silicon 和 Intel Mac 分别报告安装、保存、3MF/BOM、海报、剪贴板、视频、重启和退出结果；Rosetta 不能替代原生 Intel。签名、公证、自动更新、完整进程组 CPU/RSS、下载/安装大小、真实菜单和设备检查各自保留证据，普通单元测试不能替代这些验收。运行上述命令不表示这些条件已经通过。
+Windows x64 与 Apple 芯片 Mac 分别报告桌面安装包及浏览器包的安装或解压启动、保存、3MF/BOM、海报、剪贴板、视频、重启和退出结果。签名、公证、自动更新、完整进程组 CPU/RSS、下载/安装大小、真实菜单和设备检查各自保留证据，普通单元测试不能替代这些验收。运行上述命令不表示这些条件已经通过。

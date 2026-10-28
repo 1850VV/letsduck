@@ -14,7 +14,7 @@ function publishConfig(value: unknown): ReleaseConfig['publish'] {
 }
 function config(env: Record<string, string> = {}, target = '--win'): ReleaseConfig {
   const raw: unknown = JSON.parse(execFileSync(process.execPath, ['-e', `const c = require('./dist-config/electron-builder.cjs'); console.log(JSON.stringify({ publish: c.publish, version: c.extraMetadata?.version }));`, '--', target], {
-    cwd: desktop, encoding: 'utf8', env: { ...process.env, CSC_NAME: '', CSC_LINK: '', DUCK_UPDATE_BASE: '', DUCK_UPDATE_URL: '', DUCK_UPDATE_REPOSITORY: '', DUCK_RELEASE_VERSION: '', DUCK_BUILD_ARCH: 'x64', ...env }, stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: desktop, encoding: 'utf8', env: { ...process.env, CSC_NAME: '', CSC_LINK: '', DUCK_UPDATE_BASE: '', DUCK_UPDATE_URL: '', DUCK_UPDATE_REPOSITORY: '', DUCK_RELEASE_VERSION: '', DUCK_BUILD_ARCH: target==='--mac'?'arm64':'x64', ...env }, stdio: ['ignore', 'pipe', 'pipe'],
   }));
   if (typeof raw !== 'object' || raw === null || !('publish' in raw)) throw new TypeError('Missing publish configuration');
   const publish = publishConfig(raw.publish);
@@ -50,4 +50,12 @@ test('ordinary development packages remain offline; an explicit feed takes prece
   assert.equal(config().publish, null);
   const c = config({ DUCK_UPDATE_URL: 'https://downloads.example.com/beta/', DUCK_UPDATE_REPOSITORY: '1850VV/letsduck-releases' });
   assert.equal(c.publish?.url, 'https://downloads.example.com/beta/');
+});
+
+test('retired Intel Mac installer is refused even without an update feed',()=>{
+  assert.throws(()=>config({DUCK_BUILD_ARCH:'x64'},'--mac'),/Only Windows x64 and macOS arm64/);
+});
+
+test('actual packer target cannot create Intel or universal Mac output under an arm64 environment',()=>{
+  for(const arch of ['x64','universal']) assert.throws(()=>execFileSync(process.execPath,['-e',`const c=require('./dist-config/electron-builder.cjs');const {Arch}=require('electron-builder');Promise.resolve(c.beforePack?.({electronPlatformName:'darwin',arch:Arch[${JSON.stringify(arch)}]})).catch(e=>{console.error(e.message);process.exitCode=1});`,'--','--mac'],{cwd:desktop,encoding:'utf8',env:{...process.env,DUCK_BUILD_ARCH:'arm64',DUCK_UPDATE_BASE:'',DUCK_UPDATE_URL:'',DUCK_UPDATE_REPOSITORY:'',CSC_NAME:'',CSC_LINK:''},stdio:['ignore','pipe','pipe']}),/Only Windows x64 and macOS arm64/);
 });
