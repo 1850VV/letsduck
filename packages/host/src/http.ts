@@ -118,13 +118,18 @@ export function createPersonalHttp(options: PersonalHttpOptions): PersonalHttpSe
     }
     if (path === '/api/servo-setup' || path.startsWith('/api/servo-setup/')) {
       guardPeer(request, deviceMessage('device.access.setup_local'));
+      if (method === 'GET' && path === '/api/servo-setup/state') return options.setup.snapshot();
       if (method === 'GET' && path === '/api/servo-setup') return options.setup.inspect();
       if (method === 'GET' && path === '/api/servo-setup/records') return { records: options.store.servoRecords() };
       const action = path.slice('/api/servo-setup/'.length);
       if (method === 'POST' && ['start', 'pause', 'halt', 'refresh', 'audit', 'repair', 'queue'].includes(action)) {
         guardOrigin(request, options, deviceMessage('device.access.setup_origin'));
         const body = await readJson(request);
-        if (action === 'start') return options.setup.start(readJsonField(body, 'targetId'));
+        if (action === 'start') {
+          const state = await options.setup.start(readJsonField(body, 'targetId'));
+          options.debug.invalidateReadbacks();
+          return state;
+        }
         if (action === 'audit' || action === 'repair' || action === 'queue') return options.setup[action](readJsonField(body, 'id'));
         if (action === 'pause' || action === 'halt' || action === 'refresh') return options.setup[action]();
       }

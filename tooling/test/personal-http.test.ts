@@ -29,6 +29,7 @@ async function fixture(options: { exporter?: HostExporter | null; uiOrigin?: str
   let ready = false, debugFailure: Error | undefined, setupFailure: Error | undefined;
   const snapshot = { phase: 'idle', running: false, records: [], telemetry: {} };
   const setup = {
+    snapshot: () => { observed.push({ action: 'snapshot' }); return snapshot; },
     inspect: () => { observed.push({ action: 'inspect' }); return snapshot; },
     start: (input: unknown) => { if (setupFailure) throw setupFailure; observed.push({ action: 'start', input }); return snapshot; },
     pause: () => { observed.push({ action: 'pause' }); return snapshot; },
@@ -39,6 +40,7 @@ async function fixture(options: { exporter?: HostExporter | null; uiOrigin?: str
     queue: (input: unknown) => { observed.push({ action: 'queue', input }); return snapshot; },
   };
   const debug = {
+    invalidateReadbacks: () => { observed.push({ action: 'invalidate-readbacks' }); },
     numbering: () => ({ ready, verifiedIds: ready ? [10] : [], records: [] }),
     status: () => { observed.push({ action: 'status' }); return { connected: false, transport: 'usb', error: null, devices: [], numbering: { ready } }; },
     action: (input: Record<string, unknown>) => { if (debugFailure) throw debugFailure; observed.push({ action: 'debug', input }); return { ok: true, input }; },

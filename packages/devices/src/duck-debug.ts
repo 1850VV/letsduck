@@ -60,6 +60,8 @@ export class DuckDebug {
   constructor(readonly store: DeviceStore, readonly setup: DebugSetupBridge, timing: Partial<DeviceTiming> = {}) {
     this.runtime = setup.runtime; this.timing = deviceTiming(timing);
   }
+  /** Automatic setup supersedes manual parameter receipts for this shared runtime. */
+  invalidateReadbacks(): void { this.readbacks.clear(); }
   private async connect(): Promise<string> {
     const board = await this.runtime.connect();
     if (this.board && this.board !== board) { this.readbacks.clear(); this.held.clear(); this.pendingReadback.clear(); }
