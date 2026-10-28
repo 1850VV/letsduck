@@ -87,7 +87,9 @@ jobs:
         timeout-minutes: 10
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts
       - name: Windows native mouse, keyboard and clipboard
+        id: native_input
         if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        continue-on-error: true
         run: node --import tsx apps/desktop/scripts/native-input-smoke.ts
       - name: Download and verify the matching official Node runtime
         run: npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
@@ -99,6 +101,7 @@ jobs:
             npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
           fi
       - name: Windows portable launch, full-model UI and console shutdown
+        id: portable_browser
         if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
         run: |
           PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
@@ -107,6 +110,11 @@ jobs:
         if: always() && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
         run: |
           node --input-type=module -e 'import{existsSync,readFileSync}from"node:fs";for(const file of ["output/desktop-installed-smoke/result.json","output/desktop-installed-smoke/failure.json","output/desktop-installed-smoke/functional/result.json","output/desktop-installed-smoke/functional/failure-details.json","output/desktop-installed-smoke/functional/cleanup.json","output/windows-native-input/result.json","output/windows-native-input/cleanup.json","output/windows-portable-browser/result.json","output/windows-portable-browser/cleanup.json"]){if(existsSync(file))console.log(JSON.stringify({file,receipt:JSON.parse(readFileSync(file,"utf8"))}));}'
+      - name: Require both independent Windows software checks to pass
+        if: always() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        run: |
+          test "${{ steps.native_input.outcome }}" = success
+          test "${{ steps.portable_browser.outcome }}" = success
       - name: Source and publication boundary
         run: |
           npm run audit:typescript
