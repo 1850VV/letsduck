@@ -12,6 +12,7 @@ import {ZipArchive} from '@letsduck/exporter';
 import {root,required,seedSimulatedAssembly,failure,assemblyReady} from './check-support.js';
 import {windowsNativeInput,windowsPowerShell} from './windows-native-input.js';
 import {experimentalAccessState,unlockExperimentalHome} from './experimental-access-check.js';
+import {capturePortableFailure,observePortablePage} from './portable-browser-diagnostics.js';
 
 assert.equal(process.platform,'win32');assert.equal(process.arch,'x64');
 assert.equal(process.env.GITHUB_ACTIONS,'true','This acceptance owns a disposable Windows runner');
@@ -132,7 +133,7 @@ async function open(url:string){
  const windowSize={width:Math.min(1280,area.width-20),height:Math.min(800,area.height-20)};
  context=await chromium.launchPersistentContext(profile,{headless:false,viewport:null,locale:'zh-CN',acceptDownloads:true,args:[`--window-size=${windowSize.width},${windowSize.height}`,`--window-position=${area.x+10},${area.y+10}`]});
  await context.addInitScript('globalThis.__name = value => value');const browser=required(context.browser());for(const pid of await browserPids(browser))pids.add(pid);
- page=context.pages()[0]||await context.newPage();page.setDefaultTimeout(30_000);page.on('pageerror',error=>events.push({kind:'pageerror',message:error.message}));page.on('console',message=>{if(message.type()==='error')events.push({kind:'console',message:message.text()});});
+ page=context.pages()[0]||await context.newPage();page.setDefaultTimeout(30_000);observePortablePage(page,events);
  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:url});await page.goto(url);await page.waitForFunction(()=>document.body.dataset.homeReady==='true');
  const active=await input.native('activate'),viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio}));
  check('owned managed Chromium is foreground with a validated renderer HWND',active.foreground===active.root.handle,{browserPid:active.root.pid,hwnd:active.root.handle,rendererHwnd:active.contentHandle,viewport,client:active.client,desktop,windowSize});effectiveViewports.push({url,viewport,client:active.client,window:active.root,desktop});return page;
@@ -213,7 +214,7 @@ try{
  await closeBrowser();await stop();
  check('no page errors in portable journeys',!events.some(item=>typeof item==='object'&&item!==null&&'kind'in item&&item.kind==='pageerror'),events);
  result={status:'passed',artifactIdentity,sourceCommit:process.env.GITHUB_SHA||null,archive:{path:archive,bytes:archiveBytes.length,sha256:sha(archiveBytes)},bundledNode:{...nodeIdentity,sha256:sha(await readFile(binary))},managedChromium:chromium.executablePath(),renderer:'default; no ANGLE override',clipboardText:{displaySelector:'.code-box code',buttonSelector:'#copy-code',expected:textCode,actual:copiedCode},checks,events,launches,assemblyPrerequisite:'15 explicitly simulated records in owned temporary SQLite; no hardware verification',nativeSelect:nativeCoverage,effectiveViewports,clipboardRestored:'not_run: this disposable Actions runner has no personal clipboard; existing PNG write/read assertion retained',physicalDevices:'not_run: invalid DUCK_ADB sentinel; no real personal database',visualApproval:'automated browser actions and private captures; no human visual approval'};
-}catch(error){result={status:'failed',artifactIdentity,error:failure(error),checks,events,launches,nativeSelect:nativeCoverage||{status:'not_verified',reason:'native journey did not complete; see error/native-evidence.json'},effectiveViewports};console.log(JSON.stringify(artifactIdentity));process.exitCode=1;console.error(failure(error));await page?.screenshot({path:join(output,'failure.png'),timeout:5000}).catch(()=>{});}
+}catch(error){const browserFailure=await capturePortableFailure(page,output);result={status:'failed',artifactIdentity,error:failure(error),browserFailure,checks,events,launches,nativeSelect:nativeCoverage||{status:'not_verified',reason:'native journey did not complete; see error/native-evidence.json'},effectiveViewports};console.log(JSON.stringify(artifactIdentity));process.exitCode=1;console.error(failure(error));}
 finally{
  let browserClosed=false,hostExited=false,temporaryRemoved=false;try{await closeBrowser();browserClosed=true;}catch(error){events.push({kind:'browserCleanup',error:String(error)});process.exitCode=1;}
  if(live){try{await stop();}catch(error){forcedCleanup=true;events.push({kind:'forcedOwnedCleanup',error:String(error)});await run('taskkill.exe',['/PID',String(live.rootPid),'/T','/F'],{timeout:20_000}).catch(()=>{});process.exitCode=1;}}
