@@ -194,3 +194,4 @@ body.preparing #part-tooltip[data-horn]:not([hidden]){display:grid!important}
   .section-heading .view-dock{margin-inline-start:auto;margin-inline-end:0}
 }
 @media(max-height:500px) and (min-width:681px){.workspace{grid-template-rows:auto minmax(0,1fr) auto}}
+@media(max-width:420px){.player-buttons>#start,.player-buttons>#start>button{white-space:normal;overflow-wrap:anywhere;line-height:1.05}}

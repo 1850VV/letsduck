@@ -32,26 +32,36 @@ async function rowsReachable(page:Page){
  return count;
 }
 
+async function startButtonReach(page:Page){
+ const button=page.locator('#start > button');assert.equal(await button.isVisible(),true,'Start control is visible in the initial tutorial state');
+ const text=await button.evaluate(element=>{const range=document.createRange();range.selectNodeContents(element);const b=element.parentElement!.getBoundingClientRect();return{box:{left:b.left,right:b.right,top:b.top,bottom:b.bottom},lines:[...range.getClientRects()].filter(r=>r.width&&r.height).map(r=>({left:r.left,right:r.right,top:r.top,bottom:r.bottom}))};});
+ for(const line of text.lines)assert.ok(line.left>=text.box.left-1&&line.right<=text.box.right+1&&line.top>=text.box.top-1&&line.bottom<=text.box.bottom+1,'Start label stays inside its existing button');
+ const area=await visibleArea(page.locator('#start'));assert.ok(area.height>=28&&area.width>=44&&area.hit,'Start button receives a real pointer through ancestors');
+}
+
+async function returnToStart(page:Page){if(await page.evaluate(()=>window.anklePrototype.state.step>0)){await page.locator('#back').click();await page.waitForFunction(()=>window.anklePrototype.state.step===0&&!window.anklePrototype.state.backTransition&&!window.anklePrototype.state.cameraTransition);}}
+
 export default async function localizedMaterialReach(page:Page){
  await preparePage(page);await page.addInitScript(()=>{localStorage.setItem('dd-locale','fr');localStorage.setItem('letsduck-assemble-desk','off');});
  const controller=await page.context().newPage(),origin=browserUrl(),directory=process.env.ASSEMBLY_EVIDENCE_DIR,errors:string[]=[],writes:string[]=[];
  page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(!['GET','HEAD'].includes(request.method()))writes.push(request.method()+' '+request.url());});
  await controller.route('**/__material-reach-controller',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Material locale controller</title>'}));
  try{
-  await controller.goto(new URL('/__material-reach-controller',origin).href);await page.goto(new URL('/assemble/',origin).href);await page.waitForFunction(()=>window.anklePrototype?.state.uiReady);
+  await controller.goto(new URL('/__material-reach-controller',origin).href);await page.goto(new URL('/assemble/',origin).href);await page.waitForFunction(()=>window.anklePrototype?.state.uiReady);await page.bringToFront();
   let checked=0;
   for(const size of [{width:960,height:600},{width:390,height:844}])for(const locale of ['fr','de','ar']){
    await page.setViewportSize(size);await controller.evaluate(locale=>localStorage.setItem('dd-locale',locale),locale);await page.waitForFunction(locale=>document.documentElement.lang===locale,locale);
-   if(!await page.locator('#kit').isVisible())await page.locator('#step-materials').click();await page.locator('#kit').waitFor({state:'visible'});
-   checked+=await rowsReachable(page);
+   await returnToStart(page);if(!await page.locator('#kit').isVisible())await page.locator('#step-materials').click();await page.locator('#kit').waitFor({state:'visible'});
+   checked+=await rowsReachable(page);await startButtonReach(page);
    if(directory){await mkdir(directory,{recursive:true});await page.screenshot({path:join(directory,locale+'-'+size.width+'-preparing.png')});}
-   const enter=await revealList(page);await page.mouse.move((enter.left+enter.right)/2,(enter.top+enter.bottom)/2);await page.mouse.wheel(0,-10000);await page.waitForTimeout(70);await page.locator('#kit-parts .material-row').first().click({position:{x:40,y:20}});await page.locator('#inspection-screen').waitFor({state:'visible'});checked+=await rowsReachable(page);
+   const enter=await revealList(page);await page.mouse.move((enter.left+enter.right)/2,(enter.top+enter.bottom)/2);await page.mouse.wheel(0,-10000);await page.waitForTimeout(70);await page.locator('#kit-parts .material-row').first().click({position:{x:40,y:20}});await page.locator('#inspection-screen').waitFor({state:'visible'});checked+=await rowsReachable(page);await startButtonReach(page);
    const first=page.locator('#kit-parts .material-row').first();const area=await revealList(page);await page.mouse.move((area.left+area.right)/2,(area.top+area.bottom)/2);await page.mouse.wheel(0,-10000);await page.waitForTimeout(70);await first.click({position:{x:40,y:20}});
    if(directory)await page.screenshot({path:join(directory,locale+'-'+size.width+'-inspection.png')});
    await page.locator('.inspection-return').click();assert.equal(await page.locator('#inspection-screen').isVisible(),false);
    await page.locator('#kit').hover({position:{x:8,y:16}});await page.mouse.wheel(0,10000);await page.waitForTimeout(70);const start=await visibleArea(page.locator('#kit-go'));assert.ok(start.height>=43&&start.hit,'Start button is reachable through ancestors');await page.locator('#kit-go').click();
    if(await page.evaluate(()=>window.anklePrototype.state.playing))await page.locator('#pause').click();
   }
+  for(const locale of ['fr','de']){await controller.evaluate(locale=>localStorage.setItem('dd-locale',locale),locale);await page.waitForFunction(locale=>document.documentElement.lang===locale,locale);await returnToStart(page);await startButtonReach(page);await page.locator('#start').click();await page.waitForFunction(()=>window.anklePrototype.state.step===1);if(await page.evaluate(()=>window.anklePrototype.state.playing))await page.locator('#pause').click();await page.locator('#back').click();await page.waitForFunction(()=>window.anklePrototype.state.step===0&&!window.anklePrototype.state.backTransition&&!window.anklePrototype.state.cameraTransition);}
   assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);return{passed:true,layouts:6,modes:2,materialRowsReached:checked,deviceAndDataWrites:0};
  }catch(error){if(directory){await mkdir(directory,{recursive:true});await page.screenshot({path:join(directory,'failure.png')});}throw error;}finally{await controller.close();}
 }
