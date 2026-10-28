@@ -177,12 +177,11 @@ body.preparing #part-tooltip[data-horn]:not([hidden]){display:grid!important}
 .view-tools{max-width:100%;min-width:0;flex-wrap:wrap}
 .top .brand{flex:none}
 .top .header-name{min-width:0;overflow-wrap:anywhere}
-.top>#desk-toggle,.top>#servo-open,.top>#overview,.top>#reference-toggle{flex:0 1 auto;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.15;height:auto!important;min-height:26px}
+.top>#desk-toggle,.top>#overview,.top>#reference-toggle{flex:0 1 auto;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.15;height:auto!important;min-height:26px}
 @media(max-width:800px){.top>#overview{margin-right:0}.top{gap:8px}}
 @media(max-width:600px){
   .top{padding:0 8px;gap:6px}
   header.top>.scheme-tag{max-width:90px;min-width:0;flex:0 1 auto}
-  header.top>#servo-open{max-width:90px;padding:3px 5px;font-size:10px}
 }
 @media(max-width:680px){
   .workspace{grid-template-rows:auto minmax(0,1fr) auto}

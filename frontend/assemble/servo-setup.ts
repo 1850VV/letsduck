@@ -2,24 +2,24 @@ import {assemblyText,assemblyField,bindAssemblyTranslations,assemblyApiError,ass
 import {onLocale,formatDate} from '../shared/i18n.js';
 import {parseResponseJson,jsonStringify} from '../shared/json.js';
 import {byId} from './dom.js';
-import {record,parseSetupState,parseSetupRecords,type SetupUiState} from './servo-types.js';
+import {record,parseSetupState,type SetupUiState} from './servo-types.js';
 import type {EntityMap,Actor,State} from './types.js';
 import type {HardwareModelFactory} from './hardware-models.js';
 import type {ResolvedBinding} from './servo-types.js';
 import type {ServoMapping} from './servo-types.js';
 import {createServoScene} from './servo-scene.js';
 import {deriveServoStatus,ServoSelection} from './servo-status.js';
-import {createServoPreparation,servoLeadMarkup} from './servo-preparation.js';
+import {servoLeadMarkup,type createServoAssemblyData} from './servo-preparation.js';
 const escape=(s:unknown)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const button=(text:string,action:string,secondary=false,disabled=false)=>`<button type="button" class="sv-${secondary?'secondary':'primary'}" data-action="${action}" ${disabled?'disabled':''}>${text}</button>`;
 const fact=(name:string,value:unknown,bad:unknown=false)=>`<div class="sv-fact ${bad?'bad':''}"><span>${name}</span><b>${escape(value)}</b></div>`;
 const names=()=>({pending:assemblyText("assemble.ui.0130"),working:assemblyText("assemble.ui.0131"),verified:assemblyText("assemble.ui.0132"),review:assemblyText("assemble.ui.0133")}),marks={pending:'○',working:'◌',verified:'✓',review:'△'};
 
-export async function createServoWorkbench({map,hardware,entities,actors,poses,onVisibility,onInstall,onGuide}:{map:ServoMapping;hardware:HardwareModelFactory;entities:EntityMap;actors:Record<string,Actor>;poses:State;onVisibility:(visible:boolean)=>void;onInstall:(binding:ResolvedBinding)=>void;onGuide:()=>void}){
+export async function createServoWorkbench({map,assemblyData,hardware,entities,actors,poses,onVisibility,onInstall,onGuide}:{map:ServoMapping;assemblyData:ReturnType<typeof createServoAssemblyData>;hardware:HardwareModelFactory;entities:EntityMap;actors:Record<string,Actor>;poses:State;onVisibility:(visible:boolean)=>void;onInstall:(binding:ResolvedBinding)=>void;onGuide:()=>void}){
  const root=byId('servo-workbench'),entry=byId('servo-open'),choice=new ServoSelection(map.bindings.map(b=>b.id));
- let active=false,scene:ReturnType<typeof createServoScene>|null=null,data:SetupUiState={phase:'idle',records:[]},requesting=false,polling=false,timer:ReturnType<typeof setTimeout>|null=null,epoch=0,pendingAudit:number|undefined|null=null,supported=false,historyLoaded=false,panelHTML='',sceneKey='',completionOpen=false,wasComplete=false,notice:unknown=null,selectionRevision=0;
- const preparation=createServoPreparation(map);
- const $=(id:string)=>byId('sv-'+id),recordFor=(id:number)=>(data.records||[]).find(r=>r.id===id),binding=(id:number)=>map.byId.get(id);
+ let active=false,scene:ReturnType<typeof createServoScene>|null=null,data:SetupUiState={phase:'idle',records:assemblyData.records},requesting=false,polling=false,timer:ReturnType<typeof setTimeout>|null=null,epoch=0,pendingAudit:number|undefined|null=null,panelHTML='',sceneKey='',completionOpen=false,wasComplete=false,notice:unknown=null,selectionRevision=0;
+ const {preparation,supported}=assemblyData;
+ const $=(id:string)=>byId('sv-'+id),recordFor=assemblyData.recordFor,binding=(id:number)=>map.byId.get(id);
  root.innerHTML=`<div class="sv-heading"><div><p data-assemble-i18n="assemble.ui.0134">${assemblyText("assemble.ui.0134")}</p><h1 id="sv-title" data-assemble-i18n="assemble.ui.0135">${assemblyText("assemble.ui.0135")}</h1></div><div class="sv-device"><i id="sv-dot"></i><span id="sv-device" data-assemble-i18n="assemble.ui.0136">${assemblyText("assemble.ui.0136")}</span></div><button type="button" id="sv-close" class="sv-back" data-assemble-i18n="assemble.ui.0137">${assemblyText("assemble.ui.0137")}</button></div>
  <div class="sv-layout"><section class="sv-model"><div class="sv-caption"><b data-assemble-i18n="assemble.ui.0138">${assemblyText("assemble.ui.0138")}</b><span data-assemble-i18n="assemble.ui.0139">${assemblyText("assemble.ui.0139")}</span></div>
  <div class="sv-stage"><div id="sv-viewport" aria-label="${assemblyText("assemble.ui.0140")}"></div><div class="sv-stage-top"><span id="sv-tag"></span><button id="sv-arrange" type="button" aria-pressed="false" data-assemble-i18n="assemble.ui.0141">${assemblyText("assemble.ui.0141")}</button></div><div id="sv-labels" class="sv-labels"></div><span class="sv-stage-bottom" data-assemble-i18n="assemble.ui.0142">${assemblyText("assemble.ui.0142")}</span></div>
@@ -93,7 +93,7 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   if(action&&requesting){if(action==='audit')pendingAudit=body.id;return;}
   if(!action&&polling)return;
   const version=action?++epoch:epoch;if(action)requesting=true;else polling=true;render();
-  try{const response=await fetch('/api/servo-setup'+(action?'/'+action:''),action?{method:'POST',headers:{'Content-Type':'application/json'},body:jsonStringify(body)}:{});const raw:unknown=await parseResponseJson(response),answer=record(raw);if(!response.ok)throw assemblyApiError(answer);if(version===epoch){data=parseSetupState(raw);choice.apply(data);historyLoaded=true;notice=null;}return true;}
+  try{const response=await fetch('/api/servo-setup'+(action?'/'+action:''),action?{method:'POST',headers:{'Content-Type':'application/json'},body:jsonStringify(body)}:{});const raw:unknown=await parseResponseJson(response),answer=record(raw);if(!response.ok)throw assemblyApiError(answer);if(version===epoch){data=parseSetupState(raw);assemblyData.setRecords(data.records);choice.apply(data);notice=null;}return true;}
   catch(error){if(version===epoch){notice=error;if(!action)data={...data,online:false,telemetry:{known:false,ids:[]}};}return false;}
   finally{if(action)requesting=false;else polling=false;render();if(active&&!requesting&&pendingAudit!==null){const id=pendingAudit;pendingAudit=null;queueMicrotask(()=>call('audit',{id}));}}
  }
@@ -125,9 +125,9 @@ export async function createServoWorkbench({map,hardware,entities,actors,poses,o
   else await call(action);
  });
  root.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='Escape')close();});
- try{const site=record(await fetch('/api/site').then(parseResponseJson));supported=!!site.servoSetup;await preparation.load(site.servoPreparation);entry.hidden=!supported;entry.onclick=open;if(supported){const response=await fetch('/api/servo-setup/records');if(!response.ok)throw Error(assemblyText("assemble.ui.0258"));const answer=record(await parseResponseJson(response));data.records=parseSetupRecords(answer.records);historyLoaded=true;const assigned=new Set(data.records.map(r=>r.id));data.targetId=map.bindings.find(b=>!assigned.has(b.id))?.id;choice.apply(data);}}
- catch{entry.hidden=true;}
+ entry.hidden=!supported||!assemblyData.historyLoaded;entry.onclick=open;
+ if(assemblyData.historyLoaded){const assigned=new Set(data.records.map(r=>r.id));data.targetId=map.bindings.find(b=>!assigned.has(b.id))?.id;choice.apply(data);}
  onLocale(()=>{bindAssemblyTranslations(root);root.querySelector('.sv-legend .sv-online-dot')!.parentElement!.lastChild!.textContent=assemblyText('assemble.ui.0147');$('viewport').setAttribute('aria-label',assemblyText('assemble.ui.0140'));$('refresh').setAttribute('aria-label',assemblyText('assemble.ui.0148'));$('refresh').title=assemblyText('assemble.ui.0148');sceneKey='';panelHTML='';render();});
  preparation.subscribe(render);
- return {preparation,get active(){return active;},get supported(){return supported;},get historyLoaded(){return historyLoaded;},get state(){const state=deriveServoStatus(data,map);return {active,selected:choice.selected,view:choice.view,labelTarget:choice.labelTarget,supported,historyLoaded,...data,complete:state.complete,verified:[...state.verified],review:[...state.review],onlineIds:[...state.online],models:scene?.stats,preparation:preparation.loaded?preparation.view.counts:null};},open,close,recordFor,refresh:()=>active?poll():Promise.resolve()};
+ return {preparation,get active(){return active;},get supported(){return supported;},get historyLoaded(){return assemblyData.historyLoaded;},get state(){const state=deriveServoStatus(data,map);return {active,selected:choice.selected,view:choice.view,labelTarget:choice.labelTarget,supported,historyLoaded:assemblyData.historyLoaded,...data,complete:state.complete,verified:[...state.verified],review:[...state.review],onlineIds:[...state.online],models:scene?.stats,preparation:preparation.loaded?preparation.view.counts:null};},open,close,recordFor,refresh:()=>active?poll():Promise.resolve()};
 }

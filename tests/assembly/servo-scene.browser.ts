@@ -6,7 +6,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 
 import {PNG} from 'pngjs';
-import {STEPS,OVERVIEW_STEP} from '../../frontend/assemble/hardware-state.js';
+import {STEPS} from '../../frontend/assemble/hardware-state.js';
 
 function modelPixels(buffer:Buffer){
  const png=PNG.sync.read(buffer);let count=0;
@@ -14,45 +14,43 @@ function modelPixels(buffer:Buffer){
  return count;
 }
 
-test('servo overview renders independently of the saved tutorial step',{
+// The retired Workbench overview is covered by Debug's shared scene check.
+// Assembly retains the real tutorial model and the physical inventory overlay.
+test('servo pickup preserves the saved tutorial scene and manufacturing poses',{
  skip:!process.env.ASSEMBLY_TEST_URL,timeout:120000,
 },async t=>{
  const browser=await browserChecks.launchBrowser({headless:false});
  try{
-  for(const step of [STEPS.findIndex(s=>s.id==='prepare-usb'),STEPS.findIndex(s=>s.id==='r-prepare'),OVERVIEW_STEP]){
-   await t.test(browserChecks.required(STEPS[step]).id,async()=>{
+  for(const [stepId,id]of [['l-prepare',14],['r-prepare',24],['t-pair',10]] as const){
+   const step=STEPS.findIndex(s=>s.id===stepId);assert.ok(step>=0);
+   await t.test(stepId,async()=>{
     const context=await browser.newContext({locale:'zh-CN',viewport:{width:1400,height:1040}});
     try{
      await context.addInitScript(value=>localStorage.setItem('letsduck-assembly',JSON.stringify({step:value})),step);
      const page=await context.newPage(),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
      await browserChecks.preparePage(page);await page.goto(process.env.ASSEMBLY_TEST_URL+'/assemble/');
-     await page.waitForFunction(()=>window.anklePrototype?.state.ready&&window.anklePrototype?.servo?.supported);
+     await page.waitForFunction(()=>window.anklePrototype?.state.ready&&window.anklePrototype?.preparation?.loaded&&!!document.querySelector('#sp-summary'));
+     assert.equal(await page.locator('#servo-open, #servo-guide-open').count(),0,'Assembly no longer exposes the retired automatic Workbench');
+     if(await page.locator('body').evaluate(el=>el.classList.contains('desk')))await page.locator('#desk-toggle').click();
+     await page.keyboard.press('Escape');
      assert.equal(await page.evaluate(()=>window.anklePrototype.state.step),step);
-     const source=await page.evaluate(()=>window.anklePrototype.getActorTransform('t_motor21'));
-     await page.locator('#servo-open').click();
-     await page.waitForFunction(()=>(window.anklePrototype.servo?.models?.draws??0)>0);
-     const frame=await page.locator('#sv-viewport').screenshot(),pixels=modelPixels(frame);
+     const source=await page.evaluate(()=>window.anklePrototype.state.actors),frame=await page.locator('#canvas-host canvas').screenshot(),pixels=modelPixels(frame);
      if(process.env.ASSEMBLY_EVIDENCE_DIR){
       await mkdir(process.env.ASSEMBLY_EVIDENCE_DIR,{recursive:true});
-      await writeFile(join(process.env.ASSEMBLY_EVIDENCE_DIR,browserChecks.required(STEPS[step]).id+'.png'),frame);
+      await writeFile(join(process.env.ASSEMBLY_EVIDENCE_DIR,stepId+'.png'),frame);
      }
-     assert.ok(pixels>3000,`${browserChecks.required(STEPS[step]).id}: assembled duck must be visible; measured ${pixels} model pixels`);
-     assert.equal(await page.locator('.sv-model-label:visible').count(),0);
-     await page.locator('.sv-slot[data-id="21"]').click();
-     await page.locator('#sv-arrange').click();
-     await page.waitForFunction(()=>window.anklePrototype.servo?.view==='tray');
-     assert.ok(modelPixels(await page.locator('#sv-viewport').screenshot())>3000,'spread servos remain visible');
-     await page.locator('#sv-arrange').click();
-     await page.waitForFunction(()=>window.anklePrototype.servo?.view==='robot');
-     assert.ok(modelPixels(await page.locator('#sv-viewport').screenshot())>3000,'folding back preserves the duck');
-     assert.equal(await page.locator('.sv-model-label:visible').count(),1);
-     assert.equal(await page.evaluate(()=>window.__browserChecks.required(window.anklePrototype.servo).selected),21);
-     await page.locator('#sv-close').click();
+     assert.ok(pixels>3000,`${stepId}: tutorial geometry must be visible; measured ${pixels} model pixels`);
+     await page.locator('#instruction-toggle').click();await page.locator(`[data-servo-ids="${id}"]`).click();
+     assert.equal(await page.locator('#servo-pickup').isVisible(),true);
+     assert.deepEqual(await page.locator('.sp-slot').evaluateAll(els=>els.map(el=>Number(el.getAttribute('data-id')))),[10,11,12,13,14,20,21,22,23,24,30,31,32,33,34]);
+     await page.locator('.sp-slot[data-id="21"]').click();assert.match(await page.locator('#sp-id').innerText(),/21/);
+     await page.locator('#sp-close').click();assert.equal(await page.locator('#servo-pickup').isHidden(),true);
      assert.equal(await page.evaluate(()=>window.anklePrototype.state.step),step);
-     assert.deepEqual(await page.evaluate(()=>window.anklePrototype.getActorTransform('t_motor21')),source,'overview must not change the tutorial actor');
+     assert.deepEqual(await page.evaluate(()=>window.anklePrototype.state.actors),source,'inventory selection must not change any tutorial manufacturing pose');
+     assert.ok(modelPixels(await page.locator('#canvas-host canvas').screenshot())>3000,'closing inventory preserves the tutorial geometry');
      assert.deepEqual(errors,[]);
     }finally{await context.close();}
    });
   }
- }finally{await browser.close();}
+ }finally{const owned=await browserChecks.browserPids(browser);await browser.close();await browserChecks.processesExited(owned);}
 });

@@ -1,10 +1,30 @@
 import {assemblyText,displayLeadLabel,assemblyApiError,assemblyErrorText} from './i18n.js';
 import {parseResponseJson,jsonStringify} from '../shared/json.js';
 import {sameOriginUrl} from '../shared/url.js';
-import {record,parseLeadCatalog,parsePreparationRecords,type ServoMapping,type LeadCatalog,type PreparationRecord,type PickState} from './servo-types.js';
+import {record,parseLeadCatalog,parsePreparationRecords,parseSetupRecords,type ServoMapping,type LeadCatalog,type PreparationRecord,type PickState,type SetupRecord} from './servo-types.js';
 import {deriveServoPreparation} from './servo-map.js';
+import {deriveServoHistory} from './servo-status.js';
 
 const escape=(value:unknown)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+
+/** Tutorial inventory and numbering history load without starting device inspection. */
+export function createServoAssemblyData(map:ServoMapping){
+ const preparation=createServoPreparation(map);
+ let supported=false,historyLoaded=false,records:SetupRecord[]=[];
+ const setRecords=(saved:SetupRecord[])=>{records=saved;historyLoaded=true;};
+ return {
+  preparation,get supported(){return supported;},get historyLoaded(){return historyLoaded;},get records(){return records;},
+  get history(){const history=deriveServoHistory(records,map);return {verified:[...history.verified],review:[...history.review],pending:[...history.pending]};},
+  recordFor:(id:number)=>records.find(r=>r.id===id),setRecords,
+  async load(){
+   try{
+    const response=await fetch('/api/site'),site=record(await parseResponseJson(response));if(!response.ok)throw assemblyApiError(site);
+    supported=!!site.servoSetup;await preparation.load(site.servoPreparation);
+    if(supported){const response=await fetch('/api/servo-setup/records'),answer=record(await parseResponseJson(response));if(!response.ok)throw assemblyApiError(answer);setRecords(parseSetupRecords(answer.records));}
+   }catch{/* Inventory remains usable when only historical numbering proof is unavailable. */}
+  }
+ };
+}
 
 /** One shared local inventory; mutations acknowledge a real SQLite save first. */
 export function createServoPreparation(map:ServoMapping){
