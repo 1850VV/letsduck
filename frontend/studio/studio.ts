@@ -29,7 +29,7 @@ import { createLineup } from './lineup.js';
 import { bindCompareHold } from './compare-hold.js';
 import { createActionPlayer, ACTIONS, VOICES, describeVoice, seedFromText } from '../shared/duck-actions.js';
 import { hexToHsv, hsvToHex } from '../lib/focus-rules.js';
-import { applyBrand, BRAND, brandName } from '../shared/brand.js';
+import { applyBrand, brandName } from '../shared/brand.js';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.js';
 import { api } from '../shared/api.js';
 import { loadSite } from '../shared/edition.js';
@@ -45,7 +45,7 @@ function renderEdition() {
   $('#edition-badge').hidden = !personal;
   $<HTMLButtonElement>('#import-code').hidden = !personal;
   const brand = $<HTMLAnchorElement>('[data-brand-slot]');brand.href = personal ? './' : './gallery/';
-  brand.title = personal ? brandName() + ' / ' + BRAND.en : _t('text.0614');
+  brand.title = personal ? brandName() : _t('text.0614');
   if (personal) {
     $('#steps [data-step="3"] [data-i18n]').dataset.i18n = 'personal.show';
     $('#steps [data-step="3"] [data-i18n]').textContent = _t('personal.show');

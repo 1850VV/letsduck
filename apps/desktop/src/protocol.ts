@@ -6,10 +6,11 @@ export function activityCounter(){
  let count=0;const waiting=new Set<()=>void>();
  return{change(delta:1|-1){count+=delta;if(count===0){for(const resolve of waiting)resolve();waiting.clear();}},wait:()=>count===0?Promise.resolve():new Promise<void>(resolve=>waiting.add(resolve))};
 }
-export function createProtocolHandler(options:{backend:string;panel:()=>Promise<string>;write:(delta:1|-1)=>void;fetch?:Fetcher;accepting?:()=>boolean}){
+export function createProtocolHandler(options:{backend:string;panel:()=>Promise<string>;copy?:()=>Promise<string>;write:(delta:1|-1)=>void;fetch?:Fetcher;accepting?:()=>boolean}){
  return async(request:Request):Promise<Response>=>{
   if(!localURL(request.url))return new Response('Forbidden',{status:403});
   if(new URL(request.url).pathname==='/__desktop/update-panel.js')return new Response(await options.panel(),{headers:{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache'}});
+  if(new URL(request.url).pathname==='/__desktop/copy.js'&&options.copy)return new Response(await options.copy(),{headers:{'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache'}});
   const target=new URL(proxyURL(request.url,options.backend));
   if(target.origin!==new URL(options.backend).origin)return new Response('Forbidden',{status:403});
   const headers=new Headers(request.headers);headers.delete('host');

@@ -203,7 +203,17 @@ async function differential(t: Parameters<typeof temporary>[0], raw: string[]): 
       const result = body.action === '$status' ? await debug.status() : body.action === '$numbering' ? debug.numbering() : await debug.action(body);
       const pack = JSON.parse(jsonStringify(result)) as Record<string, unknown>;
       const numberings = ['records' in pack ? pack : undefined, pack.numbering].filter(value => value !== undefined) as Record<string, unknown>[];
-      for (const item of numberings) for (const record of item.records as Record<string, unknown>[]) if ('verifiedAt' in record) record.verifiedAt = '<time>';
+      for (const item of numberings) for (const record of item.records as Record<string, unknown>[]) {
+        if ('verifiedAt' in record) record.verifiedAt = '<time>';
+        // The frozen Python oracle predates additive localization metadata.
+        // Validate those fields independently, then compare every legacy field and RPC.
+        if ('reviewReasonCode' in record) {
+          assert.equal(record.reviewReasonCode,'device.debug.034');
+          assert.deepEqual(record.reviewReasonParams,{});
+          assert.equal(record.reviewReason,'写入结果尚未读回复核');
+          delete record.reviewReasonCode;delete record.reviewReasonParams;
+        }
+      }
       output.push({ value: pack });
     } catch (error) {
       assert.ok(error instanceof Error && 'details' in error); output.push({ failure: { error: error.message, details: error.details } });

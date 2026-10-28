@@ -36,7 +36,8 @@ function publicServoMaps(): Plugin {
 function modelPreloads(): Plugin {
   return {
     name: 'duck-model-fetch-preloads',
-    transformIndexHtml(html) {
+    transformIndexHtml(html,context) {
+      if(context.path.endsWith('/assemble/audio-credits.html'))return;
       if (!/<script\b[^>]*type=["']module["']/.test(html)) return;
       return ['model.json', 'geometry.positions.bin', 'catalog.json'].map(name => ({
         tag: 'link', attrs: { rel: 'preload', href: '/assets/' + name, as: 'fetch', crossorigin: true }, injectTo: 'head' as const,

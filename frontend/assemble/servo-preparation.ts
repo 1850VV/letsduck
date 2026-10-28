@@ -1,17 +1,18 @@
+import {assemblyText,displayLeadLabel,assemblyApiError,assemblyErrorText} from './i18n.js';
 import {parseResponseJson,jsonStringify} from '../shared/json.js';
 import {sameOriginUrl} from '../shared/url.js';
-import {record,parseLeadCatalog,parsePreparationRecords,errorMessage,type ServoMapping,type LeadCatalog,type PreparationRecord,type PickState} from './servo-types.js';
+import {record,parseLeadCatalog,parsePreparationRecords,type ServoMapping,type LeadCatalog,type PreparationRecord,type PickState} from './servo-types.js';
 import {deriveServoPreparation} from './servo-map.js';
 
 const escape=(value:unknown)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 
 /** One shared local inventory; mutations acknowledge a real SQLite save first. */
 export function createServoPreparation(map:ServoMapping){
- let catalog:LeadCatalog={requirements:{}},records:PreparationRecord[]=[],supported=false,loaded=false,saving=false,error='';
+ let catalog:LeadCatalog={requirements:{}},records:PreparationRecord[]=[],supported=false,loaded=false,saving=false,error:unknown=null;
  const listeners=new Set<()=>void>(),emit=()=>{for(const listener of listeners)listener();};
- const read=async (response:Response)=>{const answer=record(await parseResponseJson(response));if(!response.ok)throw Error(typeof answer.error==='string'?answer.error:'取件记录没有保存成功');return {records:parsePreparationRecords(answer.records)};};
+ const read=async (response:Response)=>{const answer=record(await parseResponseJson(response));if(!response.ok)throw assemblyApiError(answer);return {records:parsePreparationRecords(answer.records)};};
  return {
-  get supported(){return supported;},get loaded(){return loaded;},get saving(){return saving;},get error(){return error;},get catalog(){return catalog;},
+  get supported(){return supported;},get loaded(){return loaded;},get saving(){return saving;},get error(){return error?assemblyErrorText(error):'';},get catalog(){return catalog;},
   get view(){return deriveServoPreparation(map,catalog,records);},
   subscribe(listener:()=>void){listeners.add(listener);return()=>listeners.delete(listener);},
   async load(enabled:unknown){
@@ -19,17 +20,17 @@ export function createServoPreparation(map:ServoMapping){
    try{
     const response=await fetch(sameOriginUrl('/assemble/servo-leads.json'));if(!response.ok)throw Error('线材要求没有加载成功');catalog=parseLeadCatalog(await parseResponseJson(response));
     if(supported){const answer=await read(await fetch('/api/servo-preparation'));deriveServoPreparation(map,catalog,answer.records);records=answer.records;loaded=true;}
-    error='';
-   }catch(e){error=errorMessage(e);loaded=false;}
+    error=null;
+   }catch(e){error=e;loaded=false;}
    emit();
   },
   async update(ids:number[],values:{state?:PickState;preparedLeads?:string[]}){
    if(!supported||!loaded||saving)throw Error('取件记录尚不可用');
-   saving=true;error='';emit();
+   saving=true;error=null;emit();
    try{
     const answer=await read(await fetch('/api/servo-preparation',{method:'POST',headers:{'Content-Type':'application/json'},body:jsonStringify({ids,...values})}));
     deriveServoPreparation(map,catalog,answer.records);records=answer.records;
-   }catch(e){error=errorMessage(e);throw e;}
+   }catch(e){error=e;throw e;}
    finally{saving=false;emit();}
   }
  };
@@ -38,5 +39,5 @@ export function createServoPreparation(map:ServoMapping){
 export function servoLeadMarkup(preparation:ReturnType<typeof createServoPreparation>,id:number){
  const item=preparation.view.byId.get(id),reported=preparation.catalog.reportedRequirement;
  if(!item)return '';
- return `<div class="servo-leads ${item.leadKnown?'known':'unresolved'}" data-lead-id="${id}"><b>${escape(item.leadLabel)}</b><span>${item.prepared?'预接线已备好':item.leadKnown?'按要求接好舵机端，连线与编号一起归位。':'预接线未确认 · 编号参数完成不代表线材已备好。'}</span>${!item.leadKnown&&reported?`<small>待核线索：${reported.servosRequiringLongLead} 只需长 AMP 线，具体编号与长度待核。</small>`:''}</div>`;
+ return `<div class="servo-leads ${item.leadKnown?'known':'unresolved'}" data-lead-id="${id}"><b>${escape(displayLeadLabel(item))}</b><span>${item.prepared?assemblyText("assemble.ui.0126"):item.leadKnown?assemblyText("assemble.ui.0127"):assemblyText("assemble.ui.0128")}</span>${!item.leadKnown&&reported?`<small>${assemblyText("assemble.ui.0129",{p0:reported.servosRequiringLongLead})}</small>`:''}</div>`;
 }

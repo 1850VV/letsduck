@@ -72,7 +72,7 @@ test('physical servo inventory stays fixed and independent of configuration',{
   lines.close();
   browserServer=await chromium.launchServer(browserChecks.browserLaunchOptions({headless:false}));pid=browserServer.process().pid;browser=await chromium.connect(browserServer.wsEndpoint());
   const videoDir=process.env.ASSEMBLY_EVIDENCE_DIR?join(process.env.ASSEMBLY_EVIDENCE_DIR,'video'):null;if(videoDir)await mkdir(videoDir,{recursive:true});
-  context=await browser.newContext({viewport:{width:1400,height:1040},...(videoDir?{recordVideo:{dir:videoDir,size:{width:1400,height:1040}}}:{})});const page=await context.newPage(),errors:string[]=[];await installRenderProbe(page);video=page.video();
+  context=await browser.newContext({locale:'zh-CN',viewport:{width:1400,height:1040},...(videoDir?{recordVideo:{dir:videoDir,size:{width:1400,height:1040}}}:{})});const page=await context.newPage(),errors:string[]=[];await installRenderProbe(page);video=page.video();
   page.on('pageerror',e=>errors.push(e.message));
   const api=async (body?:{ids:number[];state:string})=>{const r=await fetch(info.url+'/api/servo-preparation',body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});assert.equal(r.status,200);const raw:unknown=await r.json();return {records:parsePreparationRecords(record(raw).records)};};
   const shot=async (name:string)=>{if(!process.env.ASSEMBLY_EVIDENCE_DIR)return;await mkdir(process.env.ASSEMBLY_EVIDENCE_DIR,{recursive:true});await page.screenshot({path:join(process.env.ASSEMBLY_EVIDENCE_DIR,name+'.png')});};
@@ -215,7 +215,7 @@ test('historical servo records can finish confirmed multi-lead preparation witho
  try{
   server=spawn(process.execPath,['--import','tsx','tests/assembly/fixtures/preparation_server.ts','--db',join(dir,'personal.db'),'--confirmed-leads'],{stdio:['ignore','pipe','ignore']});
   const lines=createInterface({input:browserChecks.required(server.stdout)}),[line]=await once(lines,'line'),info=parseLine(line);lines.close();
-  browserServer=await chromium.launchServer(browserChecks.browserLaunchOptions({headless:false}));pid=browserServer.process().pid;browser=await chromium.connect(browserServer.wsEndpoint());context=await browser.newContext({viewport:{width:1400,height:1040}});const page=await context.newPage();
+  browserServer=await chromium.launchServer(browserChecks.browserLaunchOptions({headless:false}));pid=browserServer.process().pid;browser=await chromium.connect(browserServer.wsEndpoint());context=await browser.newContext({locale:'zh-CN',viewport:{width:1400,height:1040}});const page=await context.newPage();
   await page.route('**/assemble/servo-leads.json',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(info.catalog)}));
   const history=await fetch(info.url+'/api/servo-setup/records').then(r=>r.json());
   await browserChecks.preparePage(page);await page.goto(info.url+'/assemble/');await page.waitForFunction(()=>window.anklePrototype?.servo?.historyLoaded);

@@ -8,7 +8,7 @@ const KEY='dd-token';
 let token:string|null=null;try{token=localStorage.getItem(KEY);}catch{}
 export const getToken=()=>token;
 export function setToken(value:string|null){token=value||null;try{value?localStorage.setItem(KEY,value):localStorage.removeItem(KEY);}catch{}}
-function failure(code='request_failed',params:Record<string,unknown>={},status=0):ApiFailure {const error=Object.assign(new Error(),{code,params,status});Object.defineProperty(error,'message',{get:()=>errorText(error)});return error;}
+function failure(code='request_failed',params:Record<string,unknown>={},status=0,source?:Record<string,unknown>):ApiFailure {const error=Object.assign(new Error(),{code,params,status},source&&typeof source.messageCode==='string'?{messageCode:source.messageCode,messageParams:record(source.messageParams)?source.messageParams:{}}:{});Object.defineProperty(error,'message',{get:()=>errorText(error)});return error;}
 function decode(method:string,path:string,value:unknown):unknown {
   if(path==='/me')return parseUser(value);
   if(path==='/schemes'){if(!Array.isArray(value))throw Error('Invalid scheme list response');return value.map(parseScheme);}
@@ -39,6 +39,6 @@ export async function api(method:string,path:string,body?:unknown):Promise<unkno
   let response:Response;try{response=await fetch('/api'+path,{method,headers:{...(body!==undefined?{'Content-Type':'application/json'}:{}),...(token?{Authorization:'Bearer '+token}:{})},...(body!==undefined?{body:jsonStringify(body)}:{})});}catch{throw failure();}
   let data:unknown=null;try{data=await parseResponseJson(response);}catch{}
   if(response.status===401&&token)setToken(null);
-  if(!response.ok)throw failure(record(data)&&typeof data.code==='string'?data.code:'request_failed',record(data)&&record(data.params)?data.params:{},response.status);
+  if(!response.ok)throw failure(record(data)&&typeof data.code==='string'?data.code:'request_failed',record(data)&&record(data.params)?data.params:{},response.status,record(data)?data:undefined);
   return decode(method,path,data);
 }

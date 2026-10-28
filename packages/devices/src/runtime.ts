@@ -1,3 +1,4 @@
+import {deviceMessage} from './messages.js';
 import { execFile } from 'node:child_process';
 import { access, readdir, stat } from 'node:fs/promises';
 import { constants } from 'node:fs';
@@ -43,7 +44,7 @@ export class AdbRuntime implements DuckRuntime {
       let versions: string[]; try { versions = await readdir(root); } catch { continue; }
       for (const version of versions.sort().reverse()) { const candidate = join(root, version, 'adb'); if (await executableFile(candidate)) return candidate; }
     }
-    throw new Offline('没有找到 ADB。请先安装 Arduino App Lab，完成 UNO Q 的首次设置。');
+    throw new Offline(deviceMessage('device.runtime.001'));
   }
 
   command(...args: string[]): Promise<string> {
@@ -52,7 +53,7 @@ export class AdbRuntime implements DuckRuntime {
       const executable = await AdbRuntime.executable(this.options);
       return new Promise<string>((resolve, reject) => {
         execFile(executable, args, { encoding: 'utf8', timeout: this.options.commandTimeoutMs ?? 8_000, killSignal: 'SIGKILL', env: this.options.env ?? process.env }, (error, stdout) => {
-          if (error) { reject(new Offline(typeof error.code === 'number' && !error.killed ? 'ADB 未连接到 UNO Q，请检查 USB 线和板卡供电。' : 'USB 连接没有响应，请重新插接 UNO Q。', { cause: error })); return; }
+          if (error) { reject(new Offline(typeof error.code === 'number' && !error.killed ? deviceMessage('device.runtime.002') : deviceMessage('device.runtime.003'), { cause: error })); return; }
           resolve(pythonStrip(stdout));
         });
       });
@@ -74,10 +75,10 @@ export class AdbRuntime implements DuckRuntime {
       try { if (AdbRuntime.isUnoq(await this.command('-s', serial, 'shell', 'cat', '/sys/firmware/devicetree/base/model'))) boards.push(serial); }
       catch (error) { if (!(error instanceof Offline)) throw error; }
     }
-    if (boards.length !== 1) throw new Offline(boards.length ? '请只连接一块 UNO Q。' : '尚未发现 UNO Q，请连接 USB 并等待板子启动。');
+    if (boards.length !== 1) throw new Offline(boards.length ? deviceMessage('device.runtime.004') : deviceMessage('device.runtime.005'));
     this.serial = boards[0]!;
     const value = await this.command('-s', this.serial, 'forward', 'tcp:0', 'tcp:9527'), port = Number(value);
-    if (!/^\d+$/u.test(value) || !Number.isInteger(port) || port <= 0 || port >= 65536) throw new Offline('无法建立 UNO Q 的本机连接。');
+    if (!/^\d+$/u.test(value) || !Number.isInteger(port) || port <= 0 || port >= 65536) throw new Offline(deviceMessage('device.runtime.006'));
     this.port = port;
     return this.serial;
   }
@@ -92,7 +93,7 @@ export class AdbRuntime implements DuckRuntime {
         let settled = false;
         const finish = (error: Error | null, value?: Buffer) => { if (settled) return; settled = true; if (error) reject(error); else resolve(value!); };
         const request = httpRequest({ hostname: '127.0.0.1', port: this.port!, path, method, agent, headers: bytes ? { 'Content-Type': 'application/json', 'Content-Length': bytes.length } : {} }, response => {
-          if ((response.statusCode ?? 500) >= 300) { response.resume(); finish(new SetupError('运行端拒绝了当前操作，请重新检测连接与参数。')); return; }
+          if ((response.statusCode ?? 500) >= 300) { response.resume(); finish(new SetupError(deviceMessage('device.runtime.007'))); return; }
           const chunks: Buffer[] = []; let length = 0;
           response.on('data', (chunk: Buffer) => {
             if (settled) return;
@@ -112,13 +113,13 @@ export class AdbRuntime implements DuckRuntime {
     } catch (error) {
       if (error instanceof SetupError) throw error;
       await this.close();
-      throw new Offline('UNO Q 或运行应用暂未就绪，正在等待重新连接。', { cause: error });
+      throw new Offline(deviceMessage('device.runtime.008'), { cause: error });
     } finally { agent.destroy(); }
   }
 
   async halt(): Promise<void> {
     const serial = await this.connect(), model = await this.command('-s', serial, 'shell', 'cat', '/sys/firmware/devicetree/base/model');
-    if (!AdbRuntime.isUnoq(model)) throw new SetupError('无法确认板卡身份，未发送停机命令。');
+    if (!AdbRuntime.isUnoq(model)) throw new SetupError(deviceMessage('device.runtime.009'));
     await this.command('-s', serial, 'shell', 'sudo', '-n', 'halt');
     await this.close();
   }

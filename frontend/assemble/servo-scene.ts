@@ -1,3 +1,4 @@
+import {assemblyText} from './i18n.js';
 import type {EntityMap,Actor,State,TintableMaterial} from './types.js';
 import type {HardwareModelFactory} from './hardware-models.js';
 import type {ServoMapping,SetupItem} from './servo-types.js';
@@ -26,7 +27,7 @@ export function createServoScene({host,labelsHost,hardware,entities,actors,poses
   const ring=new THREE.Mesh(new THREE.TorusGeometry(25,.5,5,48),new THREE.MeshBasicMaterial({color:0x4d6bfe}));ring.name='selection-ring';ring.rotation.x=-Math.PI/2;ring.position.y=-12;group.add(ring);
   tray.add(group);specimens.set(binding.id,group);
   marker(group,new THREE.Vector3(16,25,5));
-  const label=document.createElement('button');label.type='button';label.className='sv-model-label';label.hidden=true;label.setAttribute('aria-label',`查看 ID${binding.id}`);label.onclick=()=>onSelect(binding.id);labelsHost.append(label);labels.set(binding.id,label);
+  const label=document.createElement('button');label.type='button';label.className='sv-model-label';label.hidden=true;label.setAttribute('aria-label',assemblyText("assemble.ui.0259",{p0:binding.id}));label.onclick=()=>onSelect(binding.id);labelsHost.append(label);labels.set(binding.id,label);
  });
  const ids=new Map(map.bindings.map(b=>[b.actorId,b.id]));
  for(const [id,entity] of entities){
@@ -54,7 +55,7 @@ export function createServoScene({host,labelsHost,hardware,entities,actors,poses
   tray.visible=view==='tray';robot.visible=view==='robot';
   for(const [id,group] of specimens){const available=!preparation||preparation.byId.get(id)?.state==='available';group.userData.specimen.visible=available;const status=statuses.get(id)?.status,ring=group.getObjectByName('selection-ring')!;if(!(ring instanceof THREE.Mesh))throw Error('Selection ring mesh missing');ring.visible=id===selected||done.has(id)||status==='review'||status==='working';ring.material.color.setHex(id===selected||status==='working'?0x4d6bfe:status==='review'?0xc99736:0x53a77b);group.getObjectByName('online-marker')!.visible=available&&online.has(id);if(!available){ring.visible=true;ring.material.color.setHex(id===selected?0x8da5d3:0xd2dce9);}}
   for(const [id,object] of motors){const review=statuses.get(id)?.status==='review';object.getObjectByName('online-marker')!.visible=online.has(id);object.traverse(o=>{if(o instanceof THREE.Mesh&&!o.userData.onlineMarker)for(const m of [o.material].flat()){const tint:TintableMaterial=m;m.opacity=id===selected?1:done.has(id)||review?.65:.3;m.depthWrite=id===selected;if(tint.emissive){tint.emissive.setHex(id===selected?0x1b2c60:review?0x4a3008:done.has(id)?0x0b291b:0);tint.emissiveIntensity=.35;}}});}
-  for(const [id,label] of labels){const status=statuses.get(id)?.status,names:Record<string,string>={pending:'待配置',working:'配置中',verified:'已验证',review:'需复核'};label.textContent='ID '+id+(status?' · '+names[status]:'')+(online.has(id)?' · 在线':'');label.classList.toggle('selected',id===selected);label.classList.toggle('done',done.has(id));}
+  for(const [id,label] of labels){label.setAttribute('aria-label',assemblyText('assemble.ui.0259',{p0:id}));const status=statuses.get(id)?.status,names:Record<string,string>={pending:assemblyText("assemble.ui.0130"),working:assemblyText("assemble.ui.0131"),verified:assemblyText("assemble.ui.0132"),review:assemblyText("assemble.ui.0133")};label.textContent='ID '+id+(status?' · '+names[status]:'')+(online.has(id)?assemblyText("assemble.ui.0215"):'');label.classList.toggle('selected',id===selected);label.classList.toggle('done',done.has(id));}
   invalidate();
  }
  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down:[number,number]|undefined;

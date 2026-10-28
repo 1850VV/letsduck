@@ -1,3 +1,5 @@
+import {assemblyText} from './i18n.js';
+import {onLocale} from '../shared/i18n.js';
 import type {Vector,EntityMap,Actor} from './types.js';
 
 import {byId} from './dom.js';
@@ -24,7 +26,7 @@ const grainShader=`
 `;
 
 function matteFinish(original:THREE.MeshStandardMaterial,kind:string,edges:boolean){
-  const material:THREE.MeshStandardMaterial & {defines?:Record<string,unknown>}=original.clone();material.name='极致 · '+kind;material.userData={...original.userData};
+  const material:THREE.MeshStandardMaterial & {defines?:Record<string,unknown>}=original.clone();material.name=assemblyText("assemble.ui.0272")+kind;material.userData={...original.userData};
   if(edges)material.defines={...material.defines,DUCK_EDGE_SHADING:1};
   const metal=kind==='metal',lens=kind==='lens',rubber=kind==='rubber';
   material.metalness=metal?.96:0;
@@ -96,8 +98,9 @@ export function createRenderQuality({renderer,scene,key,fill,hemi,ground}:{rende
     }
     key.shadow.camera.updateProjectionMatrix();key.shadow.map?.dispose();key.shadow.map=null;key.shadow.needsUpdate=true;renderer.shadowMap.needsUpdate=true;dirty=true;
     scene.traverse(o=>{for(const m of objectMaterials(o))m.needsUpdate=true;});
-    input.dataset.active=mode;input.title=ultra?'极致 · 细腻哑光、边缘柔光与摄影棚反射':'当前 · 原有材质和渲染';
+    input.dataset.active=mode;input.title=ultra?assemblyText("assemble.ui.0273"):assemblyText("assemble.ui.0274");
   }
+  onLocale(()=>{input.title=mode==='ultra'?assemblyText('assemble.ui.0273'):assemblyText('assemble.ui.0274');});
   input.addEventListener('ryugi-change',e=>set(e.detail.value));
   return{
     attach(entities:EntityMap,actors:Record<string,Actor>){

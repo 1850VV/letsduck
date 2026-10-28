@@ -1,3 +1,4 @@
+import {assemblyText,displayCueLabel} from './i18n.js';
 import type {FocusState} from './types.js';
 import type {Vector,EntityMap,CableMap,State} from './types.js';
 import * as THREE from '../vendor/three.module.js';
@@ -53,7 +54,7 @@ export function createAssemblyFocus(scene:THREE.Scene, entities:EntityMap, cable
   let activeStep = '', clock:Map<string,number> = new Map(), details:FocusState = {phase:'none',boxes:[]};
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const boundsFor = (id:string,padding=3) => {const o=entities.get(id)!;o.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(o).expandByScalar(padding);};
-  const strength = (at:number,now:number) => reducedMotion.matches || now-at>=pulseDuration ? .86 : .36+.64*(.5+.5*Math.cos((now-at)/pulseDuration*Math.PI*6));
+  const strength = (joinedAt:number,now:number) => reducedMotion.matches || now-joinedAt>=pulseDuration ? .86 : .36+.64*(.5+.5*Math.cos((now-joinedAt)/pulseDuration*Math.PI*6));
   return {
     reset() { activeStep='';clock.clear();frames.forEach(f=>f.hide());details={phase:'none',boxes:[]}; },
     get state() { return structuredClone(details); },
@@ -74,9 +75,9 @@ export function createAssemblyFocus(scene:THREE.Scene, entities:EntityMap, cable
         }
         while(frames.length<draw.length)frames.push(frame(scene));
         draw.forEach((r,i)=>frames[i]!.show(r.bounds,r.color,r.opacity));
-        const labels:Record<string,[string,string]>={fasten:['拧入中','已紧固'],partial:['预拧中','预拧到位'],remove:['正在取下','已取下'],connect:['插接中','已接合'],route:['整理中','余量已留好'],seat:['压入中','已就位']};
-        const status=choice.fitPending?'模型配合待核':labels[choice.operation]![current.done?1:0],title=choice.type==='screw'?'螺丝放大':choice.type==='part'?(choice.operation==='remove'?'副舵盘放大':choice.label+'放大'):choice.operation==='route'?'线端放大':'接头放大';
-        details={fine:true,detailActive:progress>=choice.from,phase:allDone?'completed':'aligning',detailPhase:choice.fitPending?'pending':current.done?'completed':'aligning',detailId:choice.id,detailType:choice.type,detailTitle:title,detailStatus:`${choice.ordinal}/${choice.total} · ${status}`,detailDirection:current.normal.toArray(),message:`${current.done?'绿框':'红框'} · ${status}`,totalTargets:cues.length,completedTargets:resolved.filter(r=>r.done).length,matchedSocket:current.matched,animating:!reducedMotion.matches&&draw.some(r=>r.color===GREEN&&now-clock.get(r.id)!<pulseDuration),pulsing:draw.some(r=>r.color===GREEN&&r.opacity<.85),boxes:draw.map(r=>({id:r.id,role:r.role,color:r.color,opacity:r.opacity,center:r.bounds.getCenter(new THREE.Vector3()).toArray(),size:r.bounds.getSize(new THREE.Vector3()).toArray()}))};
+        const labels:Record<string,[string,string]>={fasten:[assemblyText("assemble.ui.0062"),assemblyText("assemble.ui.0063")],partial:[assemblyText("assemble.ui.0064"),assemblyText("assemble.ui.0065")],remove:[assemblyText("assemble.ui.0066"),assemblyText("assemble.ui.0067")],connect:[assemblyText("assemble.ui.0068"),assemblyText("assemble.ui.0069")],route:[assemblyText("assemble.ui.0070"),assemblyText("assemble.ui.0071")],seat:[assemblyText("assemble.ui.0072"),assemblyText("assemble.ui.0073")]};
+        const status=choice.fitPending?assemblyText("assemble.ui.0074"):labels[choice.operation]![current.done?1:0],title=choice.type==='screw'?assemblyText("assemble.ui.0075"):choice.type==='part'?(choice.operation==='remove'?assemblyText("assemble.ui.0076"):displayCueLabel(choice.label||'')+assemblyText("assemble.ui.0077")):choice.operation==='route'?assemblyText("assemble.ui.0078"):assemblyText("assemble.ui.0079");
+        details={fine:true,detailActive:progress>=choice.from,phase:allDone?'completed':'aligning',detailPhase:choice.fitPending?'pending':current.done?'completed':'aligning',detailId:choice.id,detailType:choice.type,detailTitle:title,detailStatus:`${choice.ordinal}/${choice.total} · ${status}`,detailDirection:current.normal.toArray(),message:`${current.done?assemblyText("assemble.ui.0080"):assemblyText("assemble.ui.0081")} · ${status}`,totalTargets:cues.length,completedTargets:resolved.filter(r=>r.done).length,matchedSocket:current.matched,animating:!reducedMotion.matches&&draw.some(r=>r.color===GREEN&&now-clock.get(r.id)!<pulseDuration),pulsing:draw.some(r=>r.color===GREEN&&r.opacity<.85),boxes:draw.map(r=>({id:r.id,role:r.role,color:r.color,opacity:r.opacity,center:r.bounds.getCenter(new THREE.Vector3()).toArray(),size:r.bounds.getSize(new THREE.Vector3()).toArray()}))};
         return details;
       }
       let pending:JoinTarget[]=[], completed:JoinTarget[]=[];

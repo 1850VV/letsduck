@@ -1,5 +1,9 @@
+import {displayError} from './i18n.js';
+import type {LocalizedMessage} from '../shared/i18n.js';
 import type {DebugScan} from '@letsduck/devices';
 import {isRecord} from '../lib/browser.js';
+export type DebugNotice=string|LocalizedMessage;
+export type DebugScanState=DebugScan&{errorCode?:string;errorParams?:Record<string,unknown>};
 export type BoardId='arduino'|'expansion';
 export type DebugView='robot'|'tray'|'circuit';
 export interface Device {uid:string;id:number;online:boolean;pos:unknown;kp:unknown;kd:unknown;held?:boolean;jogReady:boolean;parametersLive?:boolean;readbackPending?:boolean}
@@ -12,11 +16,11 @@ export interface MCUStatus {
  head?:number[];mouth?:number;acc?:number[];gyro?:number[];gravity?:number[];angles?:number[];targets?:number[];
  active_model?:string;mcu_command_seq?:number|bigint;sequence_gaps?:number|bigint;mcu_invalid_commands?:number|bigint;
 }
-export interface DebugSnapshot {devices:Device[];boards:Record<BoardId,{connected:boolean}>;transport:'usb'|'lan';status:MCUStatus;scan:DebugScan;numbering:unknown;onlineIds:number[];error:string}
-export interface DebugState {devices:Device[];boards:Record<BoardId,{connected:boolean}>;selectedBoard:BoardId|null;selected:string|undefined;view:DebugView;mode:'single'|'swap'|'custom';batch:Mapping[];busy:boolean;draft:Parameters|null;message:string;status:MCUStatus;transport:'usb'|'lan'|undefined;scan?:DebugScan}
+export interface DebugSnapshot {devices:Device[];boards:Record<BoardId,{connected:boolean}>;transport:'usb'|'lan';status:MCUStatus;scan:DebugScanState;numbering:unknown;onlineIds:number[];error:string;errorCode?:string;errorParams?:Record<string,unknown>}
+export interface DebugState {devices:Device[];boards:Record<BoardId,{connected:boolean}>;selectedBoard:BoardId|null;selected:string|undefined;view:DebugView;mode:'single'|'swap'|'custom';batch:Mapping[];busy:boolean;draft:Parameters|null;message:DebugNotice;status:MCUStatus;transport:'usb'|'lan'|undefined;scan?:DebugScanState}
 export type DebugAction=(action:string,values?:Record<string,unknown>)=>Promise<Record<string,unknown>>;
-export type DebugRun=(action:string,values?:Record<string,unknown>,message?:string,after?:(data:Record<string,unknown>)=>void)=>Promise<Record<string,unknown>|null|undefined>;
-const numericArray=(value:unknown):number[]=>{if(!Array.isArray(value))return [];if(!value.every((item:unknown):item is number=>typeof item==='number'))throw Error('控制器数组格式异常');return value;};
+export type DebugRun=(action:string,values?:Record<string,unknown>,message?:DebugNotice,after?:(data:Record<string,unknown>)=>void)=>Promise<Record<string,unknown>|null|undefined>;
+const numericArray=(value:unknown):number[]=>{if(!Array.isArray(value))return [];if(!value.every((item:unknown):item is number=>typeof item==='number'))throw displayError("控制器数组格式异常");return value;};
 function profile(value:unknown):RuntimeProfile|undefined {
  if(!isRecord(value))return undefined;
  const result:RuntimeProfile={};
@@ -25,7 +29,7 @@ function profile(value:unknown):RuntimeProfile|undefined {
  return result;
 }
 export function readMCUStatus(value:unknown):MCUStatus {
- if(!isRecord(value))throw Error('控制器状态格式异常');
+ if(!isRecord(value))throw displayError("控制器状态格式异常");
  const result:MCUStatus={};
  for(const key of ['feedback_age_ms','feedback_hz','inference_hz','mouth'] as const)if(typeof value[key]==='number')result[key]=value[key];
  for(const key of ['mode','active_model'] as const)if(typeof value[key]==='string')result[key]=value[key];
@@ -39,8 +43,8 @@ export function readMCUStatus(value:unknown):MCUStatus {
  return result;
 }
 export function readDebugSnapshot(value:unknown):DebugSnapshot {
- if(!isRecord(value)||!Array.isArray(value.devices)||!isRecord(value.boards))throw Error('控制器状态格式异常');
- const devices=value.devices.map((item:unknown):Device=>{if(!isRecord(item)||typeof item.id!=='number'||typeof item.online!=='boolean')throw Error('舵机状态格式异常');return {uid:'servo-'+item.id,id:item.id,online:item.online,pos:item.pos,kp:item.kp,kd:item.kd,held:item.held===true,jogReady:false,parametersLive:item.parametersLive===true,readbackPending:item.readbackPending===true};});
+ if(!isRecord(value)||!Array.isArray(value.devices)||!isRecord(value.boards))throw displayError("控制器状态格式异常");
+ const devices=value.devices.map((item:unknown):Device=>{if(!isRecord(item)||typeof item.id!=='number'||typeof item.online!=='boolean')throw displayError("舵机状态格式异常");return {uid:'servo-'+item.id,id:item.id,online:item.online,pos:item.pos,kp:item.kp,kd:item.kd,held:item.held===true,jogReady:false,parametersLive:item.parametersLive===true,readbackPending:item.readbackPending===true};});
  const arduino=value.boards.arduino,expansion=value.boards.expansion,scan=isRecord(value.scan)?value.scan:{};
- return {devices,boards:{arduino:{connected:isRecord(arduino)&&arduino.connected===true},expansion:{connected:isRecord(expansion)&&expansion.connected===true}},transport:value.transport==='lan'?'lan':'usb',status:readMCUStatus(value.status),scan:{active:scan.active===true,checked:typeof scan.checked==='number'?scan.checked:0,total:typeof scan.total==='number'?scan.total:254,found:numericArray(scan.found),stopped:scan.stopped===true,error:typeof scan.error==='string'?scan.error:''},numbering:value.numbering,onlineIds:numericArray(value.onlineIds),error:typeof value.error==='string'?value.error:''};
+ return {devices,boards:{arduino:{connected:isRecord(arduino)&&arduino.connected===true},expansion:{connected:isRecord(expansion)&&expansion.connected===true}},transport:value.transport==='lan'?'lan':'usb',status:readMCUStatus(value.status),scan:{active:scan.active===true,checked:typeof scan.checked==='number'?scan.checked:0,total:typeof scan.total==='number'?scan.total:254,found:numericArray(scan.found),stopped:scan.stopped===true,error:typeof scan.error==='string'?scan.error:'',...(typeof scan.errorCode==='string'?{errorCode:scan.errorCode}:{}),...(isRecord(scan.errorParams)?{errorParams:scan.errorParams}:{})},numbering:value.numbering,onlineIds:numericArray(value.onlineIds),error:typeof value.error==='string'?value.error:'',...(typeof value.errorCode==='string'?{errorCode:value.errorCode}:{}),...(isRecord(value.errorParams)?{errorParams:value.errorParams}:{})};
 }

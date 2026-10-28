@@ -1,3 +1,5 @@
+import {assemblyText,displayChapter,displayMaterial,bindAssemblyTranslations} from './i18n.js';
+import {onLocale} from '../shared/i18n.js';
 import type {EntityMap,State,MaterialItem,Chapter,TintableMaterial} from './types.js';
 import type {HardwareModelFactory} from './hardware-models.js';
 import {byId as $} from './dom.js';
@@ -14,11 +16,12 @@ import {firstVisibleIntersection,hornPart} from './horn-selection.js';
 /** Chapter inventory owns display clones; assembly entities and their buffers stay intact. */
 export function createChapterMaterials({scene,camera,controls,renderer,host,entities,onHornPick,getHardware,getState,pause,stopCamera,applyState,fit,invalidate,resetFocus,clearSelection,hideArrow,onStart,onInspect}:{scene:THREE.Scene;camera:THREE.PerspectiveCamera;controls:OrbitControls;renderer:THREE.WebGLRenderer;host:HTMLElement;entities:EntityMap;onHornPick?:(hit:THREE.Intersection)=>boolean;getHardware:()=>HardwareModelFactory|null;getState:()=>{step:number;progress:number;ready:boolean};pause:()=>void;stopCamera:()=>void;applyState:(state:State)=>void;fit:()=>void;invalidate:()=>void;resetFocus:()=>void;clearSelection:()=>void;hideArrow:()=>void;onStart:()=>void;onInspect?:(material:MaterialItem,unit:number)=>boolean}){
 const stage=$('stage');
+let trayChapter:Chapter|null=null,trayTitle:string|undefined;
 let materialTrayActive=false,materialSelection:{index:number;unitIndex:number}|null=null,trayReturn:{camera:THREE.Vector3;target:THREE.Vector3;maxDistance:number;far:number;enabled:boolean}|null=null,trayRows:MaterialItem[]=[],trayGroups:THREE.Group[]=[],trayUnits:THREE.Group[][]=[],trayLabels:HTMLElement[]=[],trayUnitLabels:HTMLButtonElement[][]=[],trayBox:THREE.Box3Helper|null=null;
 const trayRoot=new THREE.Group();trayRoot.name='chapter-materials';scene.add(trayRoot);
 const trayLabelHost=document.createElement('div');trayLabelHost.id='tray-labels';trayLabelHost.hidden=true;host.append(trayLabelHost);
-const materialsButton=document.createElement('button');materialsButton.type='button';materialsButton.id='step-materials';materialsButton.className='stage-pill';materialsButton.textContent='本章零件';stage.append(materialsButton);
-const quantityNote=document.createElement('p');quantityNote.className='tray-quantity-note';quantityNote.textContent='按已知数量陈列，大小仅作展示';$('kit-go').before(quantityNote);
+const materialsButton=document.createElement('button');materialsButton.type='button';materialsButton.id='step-materials';materialsButton.className='stage-pill';materialsButton.textContent=assemblyText("assemble.ui.0039");stage.append(materialsButton);
+const quantityNote=document.createElement('p');quantityNote.className='tray-quantity-note';quantityNote.textContent=assemblyText("assemble.ui.0040");$('kit-go').before(quantityNote);
 function cloneForTray(source:THREE.Object3D,{mutableGeometry=false}={}){
  const root=source.clone(true),materials:Map<THREE.Material,TintableMaterial>=new Map();
  root.traverse(o=>{if(!(o instanceof THREE.Mesh))return;
@@ -86,38 +89,38 @@ function selectTray(index:number,unitIndex=0){
  trayBox.visible=true;$('kit-parts').querySelectorAll('button')[index]?.scrollIntoView({block:'nearest'});invalidate();
  if(onInspect?.(trayRows[index]!,unitIndex))closeInspection();else if(inspectionEnabled)openInspection(index,unitIndex);else closeInspection();
 }
-function showPreparation(c:Chapter,rows=chapterMaterials(c),title=c.name+' · 本章零件',start=false){
+function showPreparation(c:Chapter,rows=chapterMaterials(c),title?:string,start=false){
  if(!getState().ready)return;endMaterial();pause();const {step,progress}=getState();
  trayReturn={camera:camera.position.clone(),target:controls.target.clone(),maxDistance:controls.maxDistance,far:camera.far,enabled:controls.enabled};
  const original=snapshot(step,progress);applyState(snapshot(c.end,1));
- trayRows=rows;trayGroups=rows.map((m,i)=>{
+ trayChapter=c;trayTitle=title;trayRows=rows;trayGroups=rows.map((raw,i)=>{const m=displayMaterial(raw);
   const {size:unitSize,positions}=specimenLayout(m),count=positions.length;
   const group=new THREE.Group();trayRoot.add(group);trayUnits[i]=[];trayUnitLabels[i]=[];
   for(let j=0;j<count;j++){
    const unit=sampleFor(m),size=new THREE.Box3().setFromObject(unit).getSize(new THREE.Vector3());unit.scale.setScalar(unitSize/Math.max(size.x,size.y,size.z));unit.position.fromArray(positions[j]!);unit.traverse(o=>{o.userData.trayIndex=i;o.userData.trayUnitIndex=j;});group.add(unit);trayUnits[i].push(unit);
-   if(count>1){const label=document.createElement('button');label.type='button';label.className='tray-unit-label';label.textContent=String(j+1);label.setAttribute('aria-label',`${m.name} · 第 ${j+1} 件`);label.addEventListener('click',()=>selectTray(i,j));trayLabelHost.append(label);trayUnitLabels[i].push(label);}
+   if(count>1){const label=document.createElement('button');label.type='button';label.className='tray-unit-label';label.textContent=String(j+1);label.setAttribute('aria-label',assemblyText("assemble.ui.0042",{p0:m.name,p1:j+1}));label.addEventListener('click',()=>selectTray(i,j));trayLabelHost.append(label);trayUnitLabels[i].push(label);}
   }
   return group;
  });
  applyState(original);for(const obj of entities.values())obj.visible=false;
  const sizes=trayGroups.map(g=>new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3()));
  arrangeGroups(rows,sizes).forEach((p,i)=>trayGroups[i]!.position.fromArray(p));
- trayGroups.forEach((_g,i)=>{const label=document.createElement('span');label.className='tray-label';label.textContent=String(i+1).padStart(2,'0')+' · '+(rows[i]!.quantity||`×${rows[i]!.count}`);trayLabelHost.append(label);trayLabels.push(label);});
- $('kit-title').textContent=title;$('kit').querySelector('.kit-eyebrow')!.textContent=`第 ${CHAPTERS.indexOf(c)+1} / 14 章 · 点零件查看`;
+ trayGroups.forEach((_g,i)=>{const label=document.createElement('span');label.className='tray-label';label.textContent=String(i+1).padStart(2,'0')+' · '+(displayMaterial(rows[i]!).quantity||`×${rows[i]!.count}`);trayLabelHost.append(label);trayLabels.push(label);});
+ $('kit-title').textContent=title==='step'?assemblyText('assemble.ui.0047'):title??displayChapter(c).name+assemblyText('assemble.ui.0041');$('kit').querySelector('.kit-eyebrow')!.textContent=assemblyText("assemble.ui.0043",{p0:CHAPTERS.indexOf(c)+1});
  $('kit-parts').replaceChildren();$('kit-screws-block').hidden=true;
- rows.forEach((m,i)=>{const li=document.createElement('li'),b=document.createElement('button');b.className='material-row';b.type='button';b.setAttribute('aria-pressed','false');
+ rows.forEach((raw,i)=>{const m=displayMaterial(raw),li=document.createElement('li'),b=document.createElement('button');b.className='material-row';b.type='button';b.setAttribute('aria-pressed','false');
   const ordinal=document.createElement('span');ordinal.className='ordinal';ordinal.textContent=String(i+1).padStart(2,'0');
-  const name=document.createElement('strong');name.textContent=m.fastener?m.fastener.replace('x','×')+' 螺丝':m.short||m.name;b.title=m.name;const spec=document.createElement('span');spec.className='spec';spec.textContent=m.spec;
+  const name=document.createElement('strong');name.textContent=m.fastener?m.fastener.replace('x','×')+assemblyText("assemble.ui.0044"):m.short||m.name;b.title=m.name;const spec=document.createElement('span');spec.className='spec';spec.textContent=m.spec;
   const quantity=document.createElement('em');quantity.textContent=m.quantity||`×${m.count}`;const note=document.createElement('small');note.className='note';note.textContent=m.note;note.hidden=true;
   b.append(ordinal,name,quantity,spec,note);b.addEventListener('click',()=>selectTray(i));li.append(b);$('kit-parts').append(li);
  });
- $('kit-go').textContent=start?'开始本章':'返回本步';$('kit-go').dataset.start=String(start);
+ $('kit-go').textContent=start?assemblyText("assemble.ui.0045"):assemblyText("assemble.ui.0046");$('kit-go').dataset.start=String(start);
  $('kit').hidden=false;trayLabelHost.hidden=false;materialTrayActive=true;document.body.classList.add('preparing');$('instruction-dialog').close();resetFocus();clearSelection();fit();
 }
 function inspectMaterial(m:MaterialItem){
  const c=chapterFor(getState().step)!;if(!materialTrayActive)showPreparation(c);
  let index=trayRows.findIndex(row=>row.ids.some(id=>m.ids.includes(id)));
- if(index<0){showPreparation(c,[m],'本步零件');index=0;}selectTray(index);
+ if(index<0){showPreparation(c,[m],'step');index=0;}selectTray(index);
 }
 function updateMaterialFrames(){
  if(!materialTrayActive)return;camera.updateMatrixWorld();
@@ -145,13 +148,13 @@ renderer.domElement.addEventListener('pointerup',ev=>{if(!materialTrayActive||!p
 
 let inspectionEnabled=true;try{inspectionEnabled=localStorage.getItem('duck-material-zoom')!=='off';}catch{}
 let inspectionVisible=false,inspectionRoot:THREE.Group|null=null,inspectionDirty=false,inspectionFrame=0,inspectionFlight:Animation|null=null;
-const inspectionSwitch=document.createElement('button');inspectionSwitch.type='button';inspectionSwitch.id='inspection-enabled';inspectionSwitch.setAttribute('role','switch');inspectionSwitch.setAttribute('aria-checked',String(inspectionEnabled));inspectionSwitch.setAttribute('aria-label','选中放大');inspectionSwitch.innerHTML='<span>选中放大</span><i aria-hidden="true"></i>';$('kit-parts').before(inspectionSwitch);
-quantityNote.textContent='按已知数量陈列，大小仅作展示';
+const inspectionSwitch=document.createElement('button');inspectionSwitch.type='button';inspectionSwitch.id='inspection-enabled';inspectionSwitch.setAttribute('role','switch');inspectionSwitch.setAttribute('aria-checked',String(inspectionEnabled));inspectionSwitch.setAttribute('aria-label',assemblyText("assemble.ui.0048"));inspectionSwitch.innerHTML=`<span data-assemble-i18n="assemble.ui.0048">${assemblyText("assemble.ui.0048")}</span><i aria-hidden="true"></i>`;$('kit-parts').before(inspectionSwitch);
+quantityNote.textContent=assemblyText("assemble.ui.0040");
 const inspectionScreen=document.createElement('div');inspectionScreen.id='inspection-screen';inspectionScreen.hidden=true;host.append(inspectionScreen);
 const inspectionName=document.createElement('strong');inspectionName.className='inspection-name';inspectionScreen.append(inspectionName);
 const inspectionSurface=document.createElement('div');inspectionSurface.className='inspection-surface';inspectionScreen.append(inspectionSurface);
-const inspectionHint=document.createElement('span');inspectionHint.className='inspection-hint';inspectionHint.textContent='拖动旋转 360° · 滚轮缩放 · 右键平移';inspectionScreen.append(inspectionHint);
-const inspectionReturn=document.createElement('button');inspectionReturn.type='button';inspectionReturn.className='inspection-return';inspectionReturn.textContent='收回零件';inspectionReturn.addEventListener('click',()=>closeInspection());inspectionScreen.append(inspectionReturn);
+const inspectionHint=document.createElement('span');inspectionHint.className='inspection-hint';inspectionHint.textContent=assemblyText("assemble.ui.0049");inspectionScreen.append(inspectionHint);
+const inspectionReturn=document.createElement('button');inspectionReturn.type='button';inspectionReturn.className='inspection-return';inspectionReturn.textContent=assemblyText("assemble.ui.0050");inspectionReturn.addEventListener('click',()=>closeInspection());inspectionScreen.append(inspectionReturn);
 let inspectionScene:THREE.Scene|undefined,inspectionRenderer:THREE.WebGLRenderer|undefined,inspectionCamera:THREE.PerspectiveCamera|undefined,inspectionControls:OrbitControls|undefined;
 function initInspection(){
  if(inspectionRenderer)return;
@@ -187,12 +190,26 @@ function openInspection(index:number,unitIndex=0){
  inspectionRoot.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(inspectionRoot),center=bounds.getCenter(new THREE.Vector3()),radius=bounds.getSize(new THREE.Vector3()).length()/2;inspectionRoot.position.sub(center);inspectionScene!.add(inspectionRoot);
  inspectionControls!.enableDamping=false;inspectionControls!.update();inspectionControls!.enableDamping=true;
  inspectionControls!.target.set(0,0,0);inspectionControls!.minDistance=radius*1.1;inspectionControls!.maxDistance=radius*12;inspectionCamera!.near=Math.max(.001,radius*.001);inspectionCamera!.far=Math.max(1000,radius*30);inspectionCamera!.updateProjectionMatrix();inspectionCamera!.position.copy(new THREE.Vector3(.4,.75,1.15).normalize().multiplyScalar(radius/Math.sin(THREE.MathUtils.degToRad(17))*1.08));inspectionControls!.update();
- sizeInspection();inspectionName.textContent=trayRows[index]!.name+(trayUnits[index].length>1?` · 第 ${unitIndex+1} / ${trayUnits[index].length} 件`:'');inspectionScreen.hidden=false;inspectionVisible=true;source.visible=false;if(trayBox)trayBox.visible=false;inspectionDirty=true;drawInspection();
+ sizeInspection();inspectionName.textContent=displayMaterial(trayRows[index]!).name+(trayUnits[index].length>1?assemblyText("assemble.ui.0051",{p0:unitIndex+1,p1:trayUnits[index].length}):'');inspectionScreen.hidden=false;inspectionVisible=true;source.visible=false;if(trayBox)trayBox.visible=false;inspectionDirty=true;drawInspection();
  const scale=Math.max(.02,Math.min(.8,startSize/(inspectionSurface.clientWidth*.68)));
  inspectionFlight=inspectionSurface.animate([{transform:`translate(-50%,-50%) translate(${startX}px,${startY}px) scale(${scale})`,opacity:.35},{transform:'translate(-50%,-50%) translate(0,0) scale(1)',opacity:1}],{duration:480,easing:'cubic-bezier(.2,.75,.2,1)'});
 }
 inspectionSwitch.addEventListener('click',()=>{inspectionEnabled=!inspectionEnabled;try{localStorage.setItem('duck-material-zoom',inspectionEnabled?'on':'off');}catch{}inspectionSwitch.setAttribute('aria-checked',String(inspectionEnabled));if(!inspectionEnabled)closeInspection();else if(materialSelection)openInspection(materialSelection.index,materialSelection.unitIndex);});
 document.addEventListener('visibilitychange',()=>{if(inspectionVisible){cancelAnimationFrame(inspectionFrame);drawInspection();}});
 
-return{get active(){return materialTrayActive;},open(c:Chapter,options:{rows?:MaterialItem[];title?:string;start?:boolean}={}){showPreparation(c,options.rows||chapterMaterials(c),options.title||c.name+' · 本章零件',!!options.start);},close:endMaterial,inspect:inspectMaterial,update:updateMaterialFrames,resize(){if(materialTrayActive)fitTray();if(inspectionVisible)sizeInspection();}};
+
+onLocale(()=>{
+ materialsButton.textContent=assemblyText('assemble.ui.0039');quantityNote.textContent=assemblyText('assemble.ui.0040');inspectionSwitch.setAttribute('aria-label',assemblyText('assemble.ui.0048'));inspectionSwitch.querySelector('span')!.textContent=assemblyText('assemble.ui.0048');inspectionHint.textContent=assemblyText('assemble.ui.0049');inspectionReturn.textContent=assemblyText('assemble.ui.0050');
+ if(!materialTrayActive||!trayChapter)return;
+ $('kit-title').textContent=trayTitle==='step'?assemblyText('assemble.ui.0047'):trayTitle??displayChapter(trayChapter).name+assemblyText('assemble.ui.0041');
+ $('kit').querySelector('.kit-eyebrow')!.textContent=assemblyText('assemble.ui.0043',{p0:CHAPTERS.indexOf(trayChapter)+1});
+ $('kit-go').textContent=assemblyText($('kit-go').dataset.start==='true'?'assemble.ui.0045':'assemble.ui.0046');
+ [...$('kit-parts').querySelectorAll<HTMLButtonElement>('button')].forEach((button,i)=>{const m=displayMaterial(trayRows[i]!);button.title=m.name;button.querySelector('strong')!.textContent=m.fastener?m.fastener.replace('x','×')+assemblyText('assemble.ui.0044'):m.short||m.name;button.querySelector('.spec')!.textContent=m.spec;button.querySelector('em')!.textContent=m.quantity||`×${m.count}`;button.querySelector('.note')!.textContent=m.note;});
+ trayUnitLabels.forEach((labels,i)=>labels.forEach((label,j)=>label.setAttribute('aria-label',assemblyText('assemble.ui.0042',{p0:displayMaterial(trayRows[i]!).name,p1:j+1}))));
+ trayLabels.forEach((label,i)=>{const m=displayMaterial(trayRows[i]!);label.textContent=String(i+1).padStart(2,'0')+' · '+(m.quantity||`×${m.count}`);});
+ if(inspectionVisible&&materialSelection){const {index,unitIndex}=materialSelection;inspectionName.textContent=displayMaterial(trayRows[index]!).name+(trayUnits[index]!.length>1?assemblyText('assemble.ui.0051',{p0:unitIndex+1,p1:trayUnits[index]!.length}):'');}
+ bindAssemblyTranslations();invalidate();
+});
+
+return{get active(){return materialTrayActive;},open(c:Chapter,options:{rows?:MaterialItem[];title?:string;start?:boolean}={}){showPreparation(c,options.rows||chapterMaterials(c),options.title,!!options.start);},close:endMaterial,inspect:inspectMaterial,update:updateMaterialFrames,resize(){if(materialTrayActive)fitTray();if(inspectionVisible)sizeInspection();}};
 }

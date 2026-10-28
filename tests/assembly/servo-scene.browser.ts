@@ -21,7 +21,7 @@ test('servo overview renders independently of the saved tutorial step',{
  try{
   for(const step of [STEPS.findIndex(s=>s.id==='prepare-usb'),STEPS.findIndex(s=>s.id==='r-prepare'),OVERVIEW_STEP]){
    await t.test(browserChecks.required(STEPS[step]).id,async()=>{
-    const context=await browser.newContext({viewport:{width:1400,height:1040}});
+    const context=await browser.newContext({locale:'zh-CN',viewport:{width:1400,height:1040}});
     try{
      await context.addInitScript(value=>localStorage.setItem('letsduck-assembly',JSON.stringify({step:value})),step);
      const page=await context.newPage(),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));

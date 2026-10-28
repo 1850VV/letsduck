@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {IDS,ACTORS} from '../debug/state.js';
+import {SERVO_BINDINGS} from '../shared/servo-map.js';
 import {readNumberingReadiness,subscribeNumberingReadiness,updateNumberingReadiness} from '../shared/numbering-readiness.js';
 
 import {applyBrand} from '../shared/brand.js';
@@ -19,7 +19,7 @@ type AssemblyPart=ReturnType<typeof parseAssemblyManifest>['parts'][number];
 applyBrand();
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.querySelector<T>('#'+id)!,KEY='letsduck.duck-hub.v1';
 const access=new ExperimentalAccess(null,accessStorage());
-const entries=[{id:'paint',name:'来涂鸭',caption:'配色 · 涂装 · 导出',color:0x7187f9},{id:'debug',name:'调试鸭',caption:'舵机 · 参数 · 连接',color:0x3aa276},{id:'assemble',name:'组装鸭',caption:'原组装台 · 3D教程',color:0xe5a06a}];
+const entries=[{id:'paint',get name(){return t('hub.paint.name');},get caption(){return t('hub.paint.caption');},color:0x7187f9},{id:'debug',get name(){return t('hub.debug.name');},get caption(){return t('hub.debug.caption');},color:0x3aa276},{id:'assemble',get name(){return t('hub.assemble.name');},get caption(){return t('hub.assemble.caption');},color:0xe5a06a}];
 const valid=(id:unknown):id is string=>typeof id==='string'&&entries.some(e=>e.id===id);
 let focus='debug',lastUsed:string|null=null,opened:string|null=null,ready=false,carousel:ReturnType<typeof createCarousel>;
 try{const stored=localStorage.getItem(KEY);if(valid(stored)){focus=stored;lastUsed=stored;}}catch{}
@@ -40,14 +40,15 @@ function positionModels(angle=carousel.angle,current=focus){
   const a=(index-1)*Math.PI*2/3+angle,z=Math.cos(a),position:Vec3=[Math.sin(a)*radius,0,z*radius],obj=models.get(e.id),front=e.id===focus;
   if(obj){obj.position.fromArray(position);obj.scale.setScalar(.9+.1*z);obj.rotation.y=(e.id==='paint'?.35:e.id==='assemble'?-.35:.1)+Math.sin(a)*.12;}
   placements.set(e.id,position);const b=buttons.get(e.id)!;b.classList.toggle('front',front);b.setAttribute('data-c-position',String(front));b.style.opacity=String(.64+.36*(z+1)/2);b.style.zIndex=String(Math.round((z+1)*100));
-  b.setAttribute('aria-label',access.edition==='server'&&e.id==='debug'?t('beta.debugLabel'):access.locked(e.id)?t('beta.lockedLabel',{name:e.name}):front?'进入'+e.name:'将'+e.name+'转到前面');
+  b.setAttribute('aria-label',access.edition==='server'&&e.id==='debug'?t('beta.debugLabel'):access.locked(e.id)?t('beta.lockedLabel',{name:e.name}):front?t('hub.enter',{name:e.name}):t('hub.rotate',{name:e.name}));
  }
- experiment.position();$('remember-status').textContent=lastUsed?`最近使用 · ${entries.find(e=>e.id===lastUsed)!.name}`:'首次使用 · 默认从调试鸭开始';invalidate();
+ experiment.position();$('remember-status').textContent=lastUsed?t('hub.recent',{name:entries.find(e=>e.id===lastUsed)!.name}):t('hub.first');invalidate();
 }
-function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const obj=models.get(e.id),p=new THREE.Vector3(0,-9,e.id==='debug'?175:95);if(obj){obj.updateMatrixWorld(true);p.applyMatrix4(obj.matrixWorld);}else p.add(new THREE.Vector3(...placements.get(e.id)!));p.project(camera);const b=buttons.get(e.id)!;b.hidden=!ready||p.z>1;b.style.left=(p.x*.5+.5)*host.clientWidth+'px';b.style.top=Math.min((-p.y*.5+.5)*host.clientHeight,host.clientHeight-b.offsetHeight-12)+'px';}experiment.position();}
+function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const obj=models.get(e.id),p=new THREE.Vector3(0,-9,e.id==='debug'?175:95);if(obj){obj.updateMatrixWorld(true);p.applyMatrix4(obj.matrixWorld);}else p.add(new THREE.Vector3(...placements.get(e.id)!));p.project(camera);const b=buttons.get(e.id)!;b.hidden=!ready||p.z>1;const spread=host.clientWidth<700?1.2:1;b.style.left=(p.x*.5*spread+.5)*host.clientWidth+'px';b.style.top=Math.min((-p.y*.5+.5)*host.clientHeight,host.clientHeight-b.offsetHeight-12)+'px';}experiment.position();}
 function persist(id:string){if(!valid(id))return;try{localStorage.setItem(KEY,id);}catch{}lastUsed=id;}
 function open(id:string){if(!ready||!valid(id)||experiment.suppressed)return;if(access.locked(id)){experiment.show(id);return;}if(id==='assemble'&&!readNumberingReadiness().ready){id='debug';carousel.jump(id);if(access.locked(id)){experiment.show(id);return;}}experiment.hide();carousel.jump(id);opened=id;persist(id);positionModels();
  $('module-title').textContent=entries.find(e=>e.id===id)!.name;
+ $<HTMLIFrameElement>('module-frame').title=t('hub.frame.named',{name:entries.find(e=>e.id===id)!.name});
  $('window-note').textContent='';
  $<HTMLIFrameElement>('module-frame').src=id==='debug'?'/debug/?embedded=1':id==='assemble'?'/assemble/':'/paint';
  $('module-window').hidden=false;document.body.classList.add('module-open');$('close-module').focus();
@@ -85,11 +86,11 @@ function hitAt(e:PointerEvent){
  return nearest;
 }
 $('reset-carousel').onclick=()=>{try{localStorage.removeItem(KEY);}catch{}lastUsed=null;carousel.rotateTo('debug');};
-const servoIds=new Map(ACTORS.map((id,i)=>[id,IDS[i]]));
+const servoIds=new Map(SERVO_BINDINGS.map(binding=>[binding.actorId,binding.id]));
 function updateReadiness(progress:NumberingReadiness){const b=buttons.get('assemble')!;b.classList.toggle('locked',!progress.ready);b.dataset.numberingReady=String(progress.ready);
- b.querySelector('small')!.textContent=progress.ready?'取件 · 3D组装教程':`编号已验证 ${progress.verifiedIds.length}/15 · 前往调试鸭`;
+ b.querySelector('small')!.textContent=progress.ready?t('hub.assemble.caption'):t('hub.numbering',{count:progress.verifiedIds.length});
  b.querySelector('.go')!.innerHTML=progress.ready?'↗':'<svg width="13" height="14" viewBox="0 0 16 18" fill="none" aria-hidden="true"><rect x="3" y="8" width="10" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8V5a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>';
- b.setAttribute('aria-label',progress.ready?'打开组装鸭':'组装鸭未解锁，前往调试鸭');if(opened==='assemble'&&!progress.ready){close();carousel.jump('debug');open('debug');}refreshAccess();
+ b.setAttribute('aria-label',progress.ready?t('hub.enter',{name:t('hub.assemble.name')}):t('hub.assemble.locked'));if(opened==='assemble'&&!progress.ready){close();carousel.jump('debug');open('debug');}refreshAccess();
 }
 
 function box(parent:THREE.Object3D,size:Vec3,color:THREE.ColorRepresentation,position:Vec3){const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),new THREE.MeshStandardMaterial({color,roughness:.45,metalness:.18}));mesh.position.set(...position);parent.add(mesh);return mesh;}
@@ -137,9 +138,9 @@ async function init(){
  }
  ready=true;refreshAccess();$('home-loading').hidden=true;document.body.dataset.homeReady='true';positionModels();resize();showRequestedHint();
 }
-positionModels();init().catch(e=>{$('home-loading').textContent='组装模型未加载，仍可选择功能';ready=true;document.body.dataset.homeReady='true';resize();layoutLabels();showRequestedHint();console.error(e);});
+positionModels();init().catch(e=>{$('home-loading').textContent=t('hub.loading.failed');ready=true;document.body.dataset.homeReady='true';resize();layoutLabels();showRequestedHint();console.error(e);});
 
-function updatePaint(){const draft=readDraft();for(const child of models.get('paint')?.children??[]){const id:unknown=child.userData.partId;if(typeof id!=='string'||!id||!(child instanceof THREE.Mesh)||!(child.material instanceof THREE.MeshStandardMaterial))continue;const value=draft?.colors[assemblyActors[id]?.sourceId??''];if(/^#[0-9a-f]{6}$/i.test(value??''))child.material.color.set(value!);}const small=buttons.get('paint')?.querySelector('small');if(small)small.textContent=draft?.name?'继续涂装 · '+draft.name:'配色 · 涂装 · 导出';invalidate();}
+function updatePaint(){const draft=readDraft();for(const child of models.get('paint')?.children??[]){const id:unknown=child.userData.partId;if(typeof id!=='string'||!id||!(child instanceof THREE.Mesh)||!(child.material instanceof THREE.MeshStandardMaterial))continue;const value=draft?.colors[assemblyActors[id]?.sourceId??''];if(/^#[0-9a-f]{6}$/i.test(value??''))child.material.color.set(value!);}const small=buttons.get('paint')?.querySelector('small');if(small)small.textContent=draft?.name?t('hub.paint.resume',{name:draft.name}):t('hub.paint.caption');invalidate();}
 window.addEventListener('storage',updatePaint);
 
 async function refreshHomeStatus(){
@@ -154,9 +155,10 @@ const statusTimer=setInterval(refreshHomeStatus,2000);window.addEventListener('p
 interface OriginalTint{color:THREE.Color;emissive:THREE.Color|null;roughness:number;metalness:number}
 const originalTints=new WeakMap<THREE.Material,OriginalTint>();
 function refreshAccess(){
+ $('profile-slot').textContent=t(access.edition==='server'?'hub.edition.server':'hub.edition.personal');
  for(const id of ['debug','assemble'] as const){
   const locked=access.locked(id),b=buttons.get(id)!;b.classList.toggle('beta-locked',locked);b.dataset.betaLocked=String(locked);b.dataset.betaPermanent=String(id==='debug'&&access.edition==='server');
-  b.querySelector('small')!.textContent=id==='debug'&&access.edition==='server'?t('beta.localOnly'):locked?t('beta.badge'):id==='debug'?'舵机 · 参数 · 连接':readNumberingReadiness().ready?'取件 · 3D组装教程':`编号已验证 ${readNumberingReadiness().verifiedIds.length}/15 · 前往调试鸭`;
+  b.querySelector('small')!.textContent=id==='debug'&&access.edition==='server'?t('beta.localOnly'):locked?t('beta.badge'):id==='debug'?t('hub.debug.caption'):readNumberingReadiness().ready?t('hub.assemble.caption'):t('hub.numbering',{count:readNumberingReadiness().verifiedIds.length});
   b.querySelector('.go')!.innerHTML=locked?'<svg width="12" height="14" viewBox="0 0 16 18" fill="none" aria-hidden="true"><rect x="3" y="8" width="10" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8V5a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>':'↗';
   models.get(id)?.traverse(obj=>{if(!(obj instanceof THREE.Mesh))return;for(const m of Array.isArray(obj.material)?obj.material:[obj.material]){
    if(!(m instanceof THREE.MeshStandardMaterial||m instanceof THREE.MeshBasicMaterial))continue;
@@ -172,4 +174,8 @@ window.addEventListener('storage',e=>{if(e.key===ACCESS_KEY){access.reload();ref
 updateReadiness(readNumberingReadiness());
 
 function showRequestedHint(){const requested=new URLSearchParams(location.search).get('unlock');if(requested&&valid(requested)&&access.locked(requested)){carousel.jump(requested);experiment.show(requested);}}
-onLocale(refreshAccess);
+onLocale(()=>{
+ for(const entry of entries)buttons.get(entry.id)!.querySelector('strong')!.firstChild!.textContent=entry.name;
+ if(opened){const name=entries.find(entry=>entry.id===opened)!.name;$('module-title').textContent=name;$<HTMLIFrameElement>('module-frame').title=t('hub.frame.named',{name});}
+ updatePaint();refreshAccess();
+});

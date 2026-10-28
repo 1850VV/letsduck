@@ -19,6 +19,7 @@ export default async(page:Page)=>{
  await page.mouse.click(535.4782693603406,384.5215966339462);await front('paint');check('paint leg margin rotates to front',true);
  await button('paint').click();await page.frameLocator('#module-frame').locator('#steps').waitFor();check('paint remains available from actual home iframe',true);await page.locator('#close-module').click();
  await button('debug').click();await front('debug');await button('debug').click();check('short click shows compact hint only',await tip.isVisible()&&await page.locator('#module-window').isHidden());
+ await button('debug').dblclick({delay:45});check('double click cannot bypass first-use lock',await page.locator('#module-window').isHidden()&&await button('debug').getAttribute('data-beta-locked')==='true');
  await tip.waitFor({state:'hidden',timeout:4500});check('hint disappears after idle time',true);
  const b=await button('debug').boundingBox();assert.ok(b);await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForTimeout(250);await page.mouse.up();await page.waitForTimeout(2100);check('short hold does not unlock',await button('debug').getAttribute('data-beta-locked')==='true');
  await hold('debug');check('acknowledgement is saved',await page.evaluate(key=>JSON.parse(localStorage.getItem(key)??'{}').debug===true,ACCESS_KEY));check('hold unlocks debug without entering',await page.locator('#module-window').isHidden()&&await button('assemble').getAttribute('data-beta-locked')==='true');

@@ -1,4 +1,5 @@
-import type {Chapter,Actor,State} from './types.js';
+import {assemblyText,displayStep,displayChapter} from './i18n.js';
+import type {Step,Chapter,Actor,State} from './types.js';
 import {byId as $} from './dom.js';
 // Desk mode: the guide is read from about a metre away while both hands hold parts.
 // Big caption, keyboard steps, a parts kit at each chapter start, right/wrong cards on
@@ -25,24 +26,24 @@ function newParts(from:number,to:number){
 export const kitFor=(chapter:Chapter)=>newParts(chapter.start-1,chapter.end);
 export const screwsFor=(index:number)=>index>0?newParts(index-1,index).screws:[];
 
-const ART={
- horn:[`<svg viewBox="0 0 150 90"><rect x="22" y="25" width="60" height="45" rx="5" fill="#252b36"/><circle cx="98" cy="47" r="16" fill="#111317"/><circle cx="98" cy="47" r="3" fill="#a9b1bd"/><rect x="84" y="68" width="17" height="9" rx="2" fill="#fff" stroke="#a9b1bd"/><path d="M87 71h11v4H87z" fill="#687384"/><path d="M120 30a22 22 0 010 34" stroke="#1f9d6a" stroke-width="3" fill="none"/><path d="M114 64l6 1 1-6" stroke="#1f9d6a" stroke-width="3" fill="none"/></svg>`,'认准插座开口同侧，再卸副盘',
-       `<svg viewBox="0 0 150 90"><rect x="22" y="25" width="60" height="45" rx="5" fill="#252b36"/><g transform="rotate(35 98 47)"><circle cx="98" cy="47" r="16" fill="#111317"/><rect x="95" y="25" width="6" height="44" fill="#e5484d"/></g><path d="M98 15a32 32 0 0128 22" stroke="#e5484d" stroke-width="3" fill="none" stroke-dasharray="4 3"/></svg>`,'不能拆主舵盘或输出轴','只拆副舵盘，主舵盘不拆'],
- plug:[`<svg viewBox="0 0 150 90"><rect x="70" y="22" width="50" height="46" rx="4" fill="#252b36"/><rect x="66" y="38" width="6" height="14" fill="#f5f6fa"/><rect x="22" y="30" width="36" height="30" rx="3" fill="#f4f5f9" stroke="#b8bcc6"/><rect x="56" y="40" width="8" height="10" fill="#1f9d6a"/></svg>`,'凸起对缺口，一推到底',
-       `<svg viewBox="0 0 150 90"><rect x="70" y="22" width="50" height="46" rx="4" fill="#252b36"/><rect x="66" y="38" width="6" height="14" fill="#f5f6fa"/><rect x="22" y="30" width="36" height="30" rx="3" fill="#f4f5f9" stroke="#b8bcc6"/><rect x="16" y="40" width="8" height="10" fill="#e5484d"/><path d="M60 34l6 6m0-6l-6 6" stroke="#e5484d" stroke-width="3"/></svg>`,'反着硬插，针会弯','插头有方向'],
- screw:[`<svg viewBox="0 0 150 90"><rect x="20" y="40" width="110" height="40" fill="#f4f5f9" stroke="#d4d9e3"/><rect x="62" y="30" width="26" height="10" rx="2" fill="#a9b1bd"/><rect x="72" y="40" width="6" height="34" fill="#8d97a6"/><path d="M58 40h34" stroke="#1f9d6a" stroke-width="3"/></svg>`,'螺丝头刚贴平就停',
-        `<svg viewBox="0 0 150 90"><rect x="20" y="40" width="110" height="40" fill="#f4f5f9" stroke="#d4d9e3"/><rect x="62" y="44" width="26" height="10" rx="2" fill="#a9b1bd"/><rect x="72" y="54" width="6" height="30" fill="#8d97a6"/><path d="M50 40c6 8 12 8 18 2m14 0c6 6 12 6 18-2" stroke="#e5484d" stroke-width="2" fill="none"/></svg>`,'拧到打滑，打印孔就废了','贴平就停'],
-};
+const art=()=>({
+ horn:[`<svg viewBox="0 0 150 90"><rect x="22" y="25" width="60" height="45" rx="5" fill="#252b36"/><circle cx="98" cy="47" r="16" fill="#111317"/><circle cx="98" cy="47" r="3" fill="#a9b1bd"/><rect x="84" y="68" width="17" height="9" rx="2" fill="#fff" stroke="#a9b1bd"/><path d="M87 71h11v4H87z" fill="#687384"/><path d="M120 30a22 22 0 010 34" stroke="#1f9d6a" stroke-width="3" fill="none"/><path d="M114 64l6 1 1-6" stroke="#1f9d6a" stroke-width="3" fill="none"/></svg>`,assemblyText("assemble.ui.0052"),
+       `<svg viewBox="0 0 150 90"><rect x="22" y="25" width="60" height="45" rx="5" fill="#252b36"/><g transform="rotate(35 98 47)"><circle cx="98" cy="47" r="16" fill="#111317"/><rect x="95" y="25" width="6" height="44" fill="#e5484d"/></g><path d="M98 15a32 32 0 0128 22" stroke="#e5484d" stroke-width="3" fill="none" stroke-dasharray="4 3"/></svg>`,assemblyText("assemble.ui.0053"),assemblyText("assemble.ui.0054")],
+ plug:[`<svg viewBox="0 0 150 90"><rect x="70" y="22" width="50" height="46" rx="4" fill="#252b36"/><rect x="66" y="38" width="6" height="14" fill="#f5f6fa"/><rect x="22" y="30" width="36" height="30" rx="3" fill="#f4f5f9" stroke="#b8bcc6"/><rect x="56" y="40" width="8" height="10" fill="#1f9d6a"/></svg>`,assemblyText("assemble.ui.0055"),
+       `<svg viewBox="0 0 150 90"><rect x="70" y="22" width="50" height="46" rx="4" fill="#252b36"/><rect x="66" y="38" width="6" height="14" fill="#f5f6fa"/><rect x="22" y="30" width="36" height="30" rx="3" fill="#f4f5f9" stroke="#b8bcc6"/><rect x="16" y="40" width="8" height="10" fill="#e5484d"/><path d="M60 34l6 6m0-6l-6 6" stroke="#e5484d" stroke-width="3"/></svg>`,assemblyText("assemble.ui.0056"),assemblyText("assemble.ui.0057")],
+ screw:[`<svg viewBox="0 0 150 90"><rect x="20" y="40" width="110" height="40" fill="#f4f5f9" stroke="#d4d9e3"/><rect x="62" y="30" width="26" height="10" rx="2" fill="#a9b1bd"/><rect x="72" y="40" width="6" height="34" fill="#8d97a6"/><path d="M58 40h34" stroke="#1f9d6a" stroke-width="3"/></svg>`,assemblyText("assemble.ui.0058"),
+        `<svg viewBox="0 0 150 90"><rect x="20" y="40" width="110" height="40" fill="#f4f5f9" stroke="#d4d9e3"/><rect x="62" y="44" width="26" height="10" rx="2" fill="#a9b1bd"/><rect x="72" y="54" width="6" height="30" fill="#8d97a6"/><path d="M50 40c6 8 12 8 18 2m14 0c6 6 12 6 18-2" stroke="#e5484d" stroke-width="2" fill="none"/></svg>`,assemblyText("assemble.ui.0059"),assemblyText("assemble.ui.0060")],
+});
 // Only steps that are easy to get wrong and hard to undo get a card. It never blocks the step.
 const plugSteps=new Set(['r-wire-a','l-wire-a','t-wire','t-motor-r','t-motor-l','head-yaw-wire','head-neck-wire','final-power','final-buses']);
-const guardFor=(id:string)=>/horn/.test(id)?ART.horn:/-plug$/.test(id)||plugSteps.has(id)?ART.plug:/tighten/.test(id)?ART.screw:null;
+const guardFor=(id:string)=>/horn/.test(id)?art().horn:/-plug$/.test(id)||plugSteps.has(id)?art().plug:/tighten/.test(id)?art().screw:null;
 
-export function createDeskMode({getStep,isReady,openReference,canvas,openChapter,closeChapter}:{getStep:()=>number;isReady:()=>boolean;openReference:()=>void;canvas:HTMLCanvasElement;openChapter:(chapter:Chapter)=>void;closeChapter:()=>void}){
+export function createDeskMode({getStep,getStepView,isReady,openReference,canvas,openChapter,closeChapter}:{getStep:()=>number;getStepView?:(index:number)=>Step;isReady:()=>boolean;openReference:()=>void;canvas:HTMLCanvasElement;openChapter:(chapter:Chapter)=>void;closeChapter:()=>void}){
   let desk=true,kitShownFor:string|null=null,last=-1;
   try{desk=localStorage.getItem(DESK)!=='off';}catch{}
 
   const journey=$('journey');
-  journey.replaceChildren(...CHAPTERS.map(c=>{const s=document.createElement('span');s.title=c.name;return s;}));
+  journey.replaceChildren(...CHAPTERS.map(c=>{const s=document.createElement('span');s.title=displayChapter(c).name;return s;}));
 
   function setDesk(on:boolean){
     desk=on;document.body.classList.toggle('desk',on);
@@ -56,18 +57,19 @@ export function createDeskMode({getStep,isReady,openReference,canvas,openChapter
   }
   const closeKit=()=>closeChapter();
 
-  function sync(step:number){
-    const s=STEPS[step]!,c=chapterFor(step)!,local=step-c.start+1,ci=CHAPTERS.indexOf(c);
+  function sync(step:number,{localeOnly=false}={}){
+    const s=getStepView?.(step)??displayStep(STEPS[step]!),chapter=chapterFor(step)!,c=displayChapter(chapter),local=step-c.start+1,ci=CHAPTERS.indexOf(chapter);
+    [...journey.children].forEach((el,i)=>{if(el instanceof HTMLElement)el.title=displayChapter(CHAPTERS[i]!).name;});
     [...journey.querySelectorAll<HTMLElement>(':scope > *')].forEach((el,i)=>{el.className=i<ci?'done':i===ci?'current':'';el.style.setProperty('--p',`${Math.round(local/(c.end-c.start+1)*100)}%`);});
-    $('desk-count').textContent=s.complete?`${c.name} · 完成`:`${c.name} · 第 ${local} / ${c.end-c.start+1} 步 · 第 ${ci+1} 章 / ${CHAPTERS.length}`;
+    $('desk-count').textContent=s.complete?assemblyText("assemble.ui.0024",{p0:c.name}):assemblyText("assemble.ui.0061",{p0:c.name,p1:local,p2:c.end-c.start+1,p3:ci+1,p4:CHAPTERS.length});
     $('desk-title').textContent=s.title;
     $('desk-specs').innerHTML=screwsFor(step).map(x=>`<span>${x.label} ×${x.count}</span>`).join('');
     const g=guardFor(s.id);
     $('guard-card').hidden=!g;
     if(g)$('guard-card').innerHTML=`<b>${g[4]}</b><div><figure class="ok">${g[0]}<figcaption>✓ ${g[1]}</figcaption></figure><figure class="bad">${g[2]}<figcaption>✗ ${g[3]}</figcaption></figure></div>`;
-    $('desk-recenter').hidden=true;
-    if(step!==last){
-      if(step===c.start&&kitShownFor!==c.id)showKit(c);else if(step!==c.start)closeKit();
+    if(!localeOnly)$('desk-recenter').hidden=true;
+    if(step!==last&&!localeOnly){
+      if(step===c.start&&kitShownFor!==c.id)showKit(chapter);else if(step!==c.start)closeKit();
       last=step;
     }
   }
@@ -79,7 +81,7 @@ export function createDeskMode({getStep,isReady,openReference,canvas,openChapter
   }
   function stuck(){
     closeKit();
-    $('reference-check').textContent=STEPS[getStep()]!.check||'';
+    $('reference-check').textContent=(getStepView?.(getStep())??displayStep(STEPS[getStep()]!)).check||'';
     openReference();
   }
 

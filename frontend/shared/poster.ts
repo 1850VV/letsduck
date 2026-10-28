@@ -1,6 +1,6 @@
 import { escapeAttribute as _attr } from "./i18n.js";import { t as _t, label as _label, onLocale as _onLocale } from "./i18n.js"; // Share previews use a canonical public work link only for published works.
 import { encodeLook, designNotes } from '../lib/quick-style.js';
-import { BRAND, brandName } from './brand.js';
+import { brandName } from './brand.js';
 import { drawQR } from './qr.js';
 import { workURL, loadPublicSite, copyText, UNCONFIGURED_SHARE } from './work-links.js';
 import type {Design,ModelPart,Product} from './types.js';
@@ -30,7 +30,7 @@ export function drawPoster({ view, design, parts, products, before, opts, workUr
   const pad = 72,footH = 270,maxRows = Math.max(1, Math.floor((H - footH - 140 - 150 - 240 - 54) / 74));
   const shown = used.slice(0, maxRows * 3),remaining = used.length - shown.length;
   const infoH = (opts.materials ? Math.ceil(shown.length / 3) * 74 + 24 + (remaining ? 30 : 0) : 0) + 150,modelH = H - footH - infoH - 140;
-  ctx.fillStyle = t.brand;ctx.font = '700 26px -apple-system,"PingFang SC",sans-serif';ctx.fillText(brandName() + ' ' + BRAND.en + ' · XGO Duck V2', pad, 92);
+  ctx.fillStyle = t.brand;ctx.font = '700 26px -apple-system,"PingFang SC",sans-serif';ctx.fillText(brandName() + ' · XGO Duck V2', pad, 92);
   ctx.drawImage(view.snapshot(W, modelH, { colors: design.colors }), 0, 120);
   if (opts.compare && before) {const s = Math.round(W * .26),img = view.snapshot(s, Math.round(s * 1.15), { colors: before.colors });const x = W - pad - s,y = 140;ctx.fillStyle = t.card;ctx.beginPath();ctx.roundRect(x - 8, y - 8, s + 16, s * 1.15 + 52, 22);ctx.fill();ctx.drawImage(img, x, y);ctx.fillStyle = t.muted;ctx.font = '600 20px sans-serif';ctx.textAlign = 'center';ctx.fillText(_t("text.0472"), x + s / 2, y + s * 1.15 + 30);ctx.textAlign = 'left';}
   let y = 120 + modelH + 70;

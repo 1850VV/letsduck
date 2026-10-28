@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>来做鸭 / letsduck · 3D 组装教程</title>
+  <title data-assemble-i18n="assemble.ui.0275">来做鸭 / letsduck · 3D 组装教程</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="prototype.css"><link rel="stylesheet" href="ui-elements.css"><link rel="stylesheet" href="desk-mode.css"><link rel="stylesheet" href="materials.css"><link rel="stylesheet" href="../shared/handoff.css">
   <link rel="stylesheet" href="servo-setup.css"><link rel="stylesheet" href="servo-pickup.css">
@@ -10,84 +10,84 @@
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="../" data-brand-slot title="来做鸭 / letsduck"></a>
-    <span class="header-divider"></span><span class="header-name">3D 组装教程</span><button id="desk-toggle" class="desk-toggle" type="button" aria-pressed="true" title="F">远看模式</button>
-    <button id="servo-open" type="button" hidden>舵机准备</button>
-    <ryugi-button id="overview" variant="outlined" size="small" style="height:26px;padding:0 8px;font-size:11px;background:#eef1ff;color:#4d6bfe;border-color:#d5dfff">整机预览</ryugi-button>
-    <ryugi-button id="reference-toggle" variant="outlined" size="small" icon="play">对照原片</ryugi-button>
+    <a class="brand" href="../" data-brand-slot title="来做鸭 / letsduck" data-assemble-i18n-title="assemble.ui.0276"></a>
+    <span class="header-divider"></span><span class="header-name" data-assemble-i18n="assemble.ui.0277">3D 组装教程</span><button id="desk-toggle" class="desk-toggle" type="button" aria-pressed="true" title="F" data-assemble-i18n="assemble.ui.0278">远看模式</button>
+    <button id="servo-open" type="button" hidden data-assemble-i18n="assemble.ui.0135">舵机准备</button>
+    <ryugi-button id="overview" variant="outlined" size="small" style="height:26px;padding:0 8px;font-size:11px;background:#eef1ff;color:#4d6bfe;border-color:#d5dfff" data-assemble-i18n="assemble.ui.0279">整机预览</ryugi-button>
+    <ryugi-button id="reference-toggle" variant="outlined" size="small" icon="play" data-assemble-i18n="assemble.ui.0280">对照原片</ryugi-button>
   </header>
   <main class="workspace">
-      <div class="section-heading"><div><p class="eyebrow">跟着视频，一步一步装</p><h1>整机组装</h1></div><span class="source-range">原片 00:00—23:10</span><div class="view-tools"><div class="quality-control"><span>画质</span><ryugi-select id="render-quality" value="current" size="small" aria-label="渲染画质" style="width:66px"><ryugi-option value="current">当前</ryugi-option><ryugi-option value="ultra">极致</ryugi-option></ryugi-select></div><ryugi-button id="focus-zoom-toggle" variant="outlined" size="small" aria-label="局部放大" aria-pressed="false" disabled style="font-size:var(--view-font);padding:0 var(--view-pad)"><span id="focus-zoom-toggle-label">局部放大 · 关</span></ryugi-button><div class="view-dock"><ryugi-button id="reset-view" variant="borderless" size="small" icon="refresh" style="font-size:var(--view-font);padding:0 var(--view-pad)">最佳视角</ryugi-button><span></span><ryugi-button id="front-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)">正面</ryugi-button><ryugi-button id="back-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)">背面</ryugi-button></div></div></div>
-    <section class="model-column" aria-label="三维组装区域">
+      <div class="section-heading"><div><p class="eyebrow" data-assemble-i18n="assemble.ui.0281">跟着视频，一步一步装</p><h1 data-assemble-i18n="assemble.ui.0282">整机组装</h1></div><span class="source-range" data-assemble-i18n="assemble.ui.0283">原片 00:00—23:10</span><div class="view-tools"><div class="quality-control"><span data-assemble-i18n="assemble.ui.0284">画质</span><ryugi-select id="render-quality" value="current" size="small" aria-label="渲染画质" data-assemble-i18n-aria-label="assemble.ui.0285" style="width:90px"><ryugi-option value="current" data-assemble-i18n="assemble.ui.0286">当前</ryugi-option><ryugi-option value="ultra" data-assemble-i18n="assemble.ui.0287">极致</ryugi-option></ryugi-select></div><ryugi-button id="focus-zoom-toggle" variant="outlined" size="small" aria-label="局部放大" data-assemble-i18n-aria-label="assemble.ui.0082" aria-pressed="false" disabled style="font-size:var(--view-font);padding:0 var(--view-pad)"><span id="focus-zoom-toggle-label" data-assemble-i18n="assemble.ui.0288">局部放大 · 关</span></ryugi-button><div class="view-dock"><ryugi-button id="reset-view" variant="borderless" size="small" icon="refresh" style="font-size:var(--view-font);padding:0 var(--view-pad)" data-assemble-i18n="assemble.ui.0289">最佳视角</ryugi-button><span></span><ryugi-button id="front-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)" data-assemble-i18n="assemble.ui.0290">正面</ryugi-button><ryugi-button id="back-view" variant="borderless" size="small" style="font-size:var(--view-font);padding:0 var(--view-pad)" data-assemble-i18n="assemble.ui.0291">背面</ryugi-button></div></div></div>
+    <section class="model-column" aria-label="三维组装区域" data-assemble-i18n-aria-label="assemble.ui.0292">
       <div id="stage" class="stage">
         <div id="loading" role="status">正在加载现有模型…</div>
-        <div class="stage-top"><span class="step-label" id="stage-step">准备零件</span><span class="real-model">真实零件网格</span></div>
-        <div id="canvas-host" aria-label="可旋转的整机三维模型"></div>
+        <div class="stage-top"><span class="step-label" id="stage-step">准备零件</span><span class="real-model" data-assemble-i18n="assemble.ui.0034">真实零件网格</span></div>
+        <div id="canvas-host" aria-label="可旋转的整机三维模型" data-assemble-i18n-aria-label="assemble.ui.0295"></div>
         <div id="journey" class="journey" aria-hidden="true"></div>
-        <button id="stuck" class="stage-pill stuck-pill" type="button">我卡住了 <kbd>H</kbd></button>
-        <button id="desk-recenter" class="stage-pill recenter-pill" type="button" hidden>回到最佳视角 <kbd>V</kbd></button>
-        <aside id="guard-card" class="guard-card" aria-label="容易装错的地方" hidden></aside>
+        <button id="stuck" class="stage-pill stuck-pill" type="button"><span data-assemble-i18n="assemble.ui.0296">我卡住了</span> <kbd>H</kbd></button>
+        <button id="desk-recenter" class="stage-pill recenter-pill" type="button" hidden><span data-assemble-i18n="assemble.ui.0297">回到最佳视角</span> <kbd>V</kbd></button>
+        <aside id="guard-card" class="guard-card" aria-label="容易装错的地方" data-assemble-i18n-aria-label="assemble.ui.0298" hidden></aside>
         <div class="desk-caption" aria-live="polite"><span id="desk-count"></span><h2 id="desk-title"></h2><div id="desk-specs"></div></div>
         <section id="kit" class="kit" aria-labelledby="kit-title" hidden>
-          <p class="kit-eyebrow">开始前，先把零件摆到桌上</p>
+          <p class="kit-eyebrow" data-assemble-i18n="assemble.ui.0299">开始前，先把零件摆到桌上</p>
           <h2 id="kit-title"></h2>
           <ul id="kit-parts" class="kit-parts"></ul>
-          <div id="kit-screws-block"><p class="kit-label">螺丝放大 3 倍画，看长短区分</p><ul id="kit-screws" class="kit-screws"></ul></div>
-          <button id="kit-go" class="kit-go" type="button">摆好了，开始 <kbd>空格</kbd></button>
+          <div id="kit-screws-block"><p class="kit-label" data-assemble-i18n="assemble.ui.0300">螺丝放大 3 倍画，看长短区分</p><ul id="kit-screws" class="kit-screws"></ul></div>
+          <button id="kit-go" class="kit-go" type="button"><span data-assemble-i18n="assemble.ui.0301">摆好了，开始</span> <kbd data-assemble-i18n="assemble.ui.0302">空格</kbd></button>
         </section>
         <script data-duck-prepaint="assemble"></script>
         <svg id="focus-zoom-leader" class="focus-zoom-leader" aria-hidden="true" hidden><line id="focus-zoom-line" stroke="#4d6bfe" stroke-width="1"/><circle id="focus-zoom-dot" r="2" fill="#4d6bfe"/></svg>
-        <section id="focus-zoom" class="focus-zoom" aria-label="接头局部放大窗" hidden>
-          <div id="focus-zoom-handle" class="focus-zoom-handle" title="拖动放大窗"><b id="focus-zoom-title">接头放大</b><span id="focus-zoom-factor"></span><ryugi-action-icon id="focus-zoom-close" icon="x" title="收起局部放大" aria-label="收起局部放大" size="small"></ryugi-action-icon></div>
-          <div id="focus-zoom-view" class="focus-zoom-view" role="img" aria-label="当前接头的实时三维放大画面"></div>
+        <section id="focus-zoom" class="focus-zoom" aria-label="接头局部放大窗" data-assemble-i18n-aria-label="assemble.ui.0303" hidden>
+          <div id="focus-zoom-handle" class="focus-zoom-handle" title="拖动放大窗" data-assemble-i18n-title="assemble.ui.0304"><b id="focus-zoom-title">接头放大</b><span id="focus-zoom-factor"></span><ryugi-action-icon id="focus-zoom-close" icon="x" title="收起局部放大" data-assemble-i18n-title="assemble.ui.0305" aria-label="收起局部放大" data-assemble-i18n-aria-label="assemble.ui.0305" size="small"></ryugi-action-icon></div>
+          <div id="focus-zoom-view" class="focus-zoom-view" role="img" aria-label="当前接头的实时三维放大画面" data-assemble-i18n-aria-label="assemble.ui.0306"></div>
           <div id="focus-zoom-status" class="focus-zoom-status">对准接口</div>
         </section>
         <svg id="part-leader" class="part-leader" aria-hidden="true" hidden><polyline id="part-leader-line" fill="none" stroke="#4d6bfe" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline><circle id="part-leader-dot" r="2" fill="#4d6bfe"></circle></svg>
-        <div id="part-tooltip" class="part-tooltip" role="region" aria-label="所选零件信息" hidden><b id="part-name"></b><span id="part-source"></span><button id="part-close" class="part-close" type="button" aria-label="收起零件信息">×</button></div>
+        <div id="part-tooltip" class="part-tooltip" role="region" aria-label="所选零件信息" data-assemble-i18n-aria-label="assemble.ui.0307" hidden><b id="part-name"></b><span id="part-source"></span><button id="part-close" class="part-close" type="button" aria-label="收起零件信息" data-assemble-i18n-aria-label="assemble.ui.0308">×</button></div>
         <div class="orientation"><i class="axis y">Y</i><i class="axis x">X</i><i class="axis z">Z</i></div>
 
         <div class="animation-state"><i id="play-dot"></i><span id="play-state">可以开始</span></div>
       </div>
     </section>
       <div class="player-bar">
-        <div class="scrub-row"><span id="motion-label">本步动作</span><div id="action-indicator" class="action-indicator" hidden><span></span><b id="action-caption"></b></div><ryugi-slider id="motion-progress" value="100" min="0" max="100" step="1" aria-label="本步动作进度"></ryugi-slider><span id="motion-percent">100%</span></div>
-        <div class="player-buttons"><ryugi-button id="back" variant="outlined" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)">← 上一步</ryugi-button><ryugi-button id="replay" variant="borderless" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="replay-label">红绿框演示</span></ryugi-button><ryugi-button id="pause" variant="borderless" icon="pause" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="pause-label">暂停</span></ryugi-button><div class="playback-controls"><ryugi-button id="autoplay" variant="outlined" size="small" disabled style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="autoplay-label">自动播放 · 关</span></ryugi-button><ryugi-select id="playback-rate" value="1" size="small" aria-label="播放倍率" style="width:70px"><ryugi-option value="0.5">0.5×</ryugi-option><ryugi-option value="1">1×</ryugi-option><ryugi-option value="1.5">1.5×</ryugi-option><ryugi-option value="2">2×</ryugi-option><ryugi-option value="3">3×</ryugi-option><ryugi-option value="4">4×</ryugi-option></ryugi-select><details id="sound-controls" class="sound-controls">
-          <summary aria-label="声音设置"><i aria-hidden="true"></i>声音</summary>
-          <section id="sound-panel" class="sound-panel" aria-label="声音设置">
-            <div class="sound-heading"><b>声音</b><ryugi-action-icon id="sound-close" icon="x" size="small" aria-label="收起声音设置"></ryugi-action-icon></div>
-            <div class="sound-row"><span>背景音乐</span><ryugi-switch id="music-enabled" checked size="small" aria-label="背景音乐"></ryugi-switch></div>
-            <ryugi-select id="piano-track" value="satie" size="small" aria-label="选择钢琴曲" style="width:100%"><ryugi-option value="satie">萨蒂 · 第一号吉姆诺佩蒂</ryugi-option><ryugi-option value="mozart">莫扎特 · K.545 行板</ryugi-option></ryugi-select>
-            <div class="sound-row"><span>完成提示音</span><ryugi-switch id="effects-enabled" checked size="small" aria-label="完成提示音"></ryugi-switch></div>
-            <div class="sound-row sound-volume-row"><span>音量</span><ryugi-slider id="sound-volume" value="24" min="0" max="100" step="1" aria-label="音量"></ryugi-slider><span id="sound-volume-label">24%</span></div>
+        <div class="scrub-row"><span id="motion-label" data-assemble-i18n="assemble.ui.0309">本步动作</span><div id="action-indicator" class="action-indicator" hidden><span></span><b id="action-caption"></b></div><ryugi-slider id="motion-progress" value="100" min="0" max="100" step="1" aria-label="本步动作进度" data-assemble-i18n-aria-label="assemble.ui.0310"></ryugi-slider><span id="motion-percent">100%</span></div>
+        <div class="player-buttons"><ryugi-button id="back" variant="outlined" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)" data-assemble-i18n="assemble.ui.0311">← 上一步</ryugi-button><ryugi-button id="replay" variant="borderless" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="replay-label">红绿框演示</span></ryugi-button><ryugi-button id="pause" variant="borderless" icon="pause" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="pause-label">暂停</span></ryugi-button><div class="playback-controls"><ryugi-button id="autoplay" variant="outlined" size="small" disabled style="height:var(--player-height);border-radius:10px;padding:0 var(--player-secondary-pad)"><span id="autoplay-label">自动播放 · 关</span></ryugi-button><ryugi-select id="playback-rate" value="1" size="small" aria-label="播放倍率" data-assemble-i18n-aria-label="assemble.ui.0313" style="width:70px"><ryugi-option value="0.5">0.5×</ryugi-option><ryugi-option value="1">1×</ryugi-option><ryugi-option value="1.5">1.5×</ryugi-option><ryugi-option value="2">2×</ryugi-option><ryugi-option value="3">3×</ryugi-option><ryugi-option value="4">4×</ryugi-option></ryugi-select><details id="sound-controls" class="sound-controls">
+          <summary aria-label="声音设置" data-assemble-i18n-aria-label="assemble.ui.0314"><i aria-hidden="true"></i><span data-assemble-i18n="assemble.ui.0315">声音</span></summary>
+          <section id="sound-panel" class="sound-panel" aria-label="声音设置" data-assemble-i18n-aria-label="assemble.ui.0314">
+            <div class="sound-heading"><b data-assemble-i18n="assemble.ui.0315">声音</b><ryugi-action-icon id="sound-close" icon="x" size="small" aria-label="收起声音设置" data-assemble-i18n-aria-label="assemble.ui.0316"></ryugi-action-icon></div>
+            <div class="sound-row"><span data-assemble-i18n="assemble.ui.0317">背景音乐</span><ryugi-switch id="music-enabled" checked size="small" aria-label="背景音乐" data-assemble-i18n-aria-label="assemble.ui.0317"></ryugi-switch></div>
+            <ryugi-select id="piano-track" value="satie" size="small" aria-label="选择钢琴曲" data-assemble-i18n-aria-label="assemble.ui.0318" style="width:100%"><ryugi-option value="satie" data-assemble-i18n="assemble.ui.0090">萨蒂 · 第一号吉姆诺佩蒂</ryugi-option><ryugi-option value="mozart" data-assemble-i18n="assemble.ui.0091">莫扎特 · K.545 行板</ryugi-option></ryugi-select>
+            <div class="sound-row"><span data-assemble-i18n="assemble.ui.0319">完成提示音</span><ryugi-switch id="effects-enabled" checked size="small" aria-label="完成提示音" data-assemble-i18n-aria-label="assemble.ui.0319"></ryugi-switch></div>
+            <div class="sound-row sound-volume-row"><span data-assemble-i18n="assemble.ui.0320">音量</span><ryugi-slider id="sound-volume" value="24" min="0" max="100" step="1" aria-label="音量" data-assemble-i18n-aria-label="assemble.ui.0320"></ryugi-slider><span id="sound-volume-label">24%</span></div>
             <p id="sound-status" class="sound-status" role="status" aria-live="polite">正在准备钢琴曲…</p>
-            <a class="sound-credits" href="audio-credits.html" target="_blank" rel="noopener">曲目与模型来源 ↗</a>
+            <a class="sound-credits" href="audio-credits.html" target="_blank" rel="noopener" data-assemble-i18n="assemble.ui.0321">曲目与模型来源 ↗</a>
           </section>
-        </details></div><span></span><ryugi-button id="start" variant="filled" icon="play" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">开始组装</ryugi-button><ryugi-button id="next" variant="filled" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650">下一步 →</ryugi-button><ryugi-button id="restart" variant="filled" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650" hidden>从头再看</ryugi-button></div>
+        </details></div><span></span><ryugi-button id="start" variant="filled" icon="play" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650" data-assemble-i18n="assemble.ui.0322">开始组装</ryugi-button><ryugi-button id="next" variant="filled" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650" data-assemble-i18n="assemble.ui.0004">下一步 →</ryugi-button><ryugi-button id="restart" variant="filled" icon="refresh" style="height:var(--player-height);border-radius:10px;padding:0 var(--player-pad);background:#4d6bfe;color:#fff;border-color:#4d6bfe;font-weight:650" hidden data-assemble-i18n="assemble.ui.0323">从头再看</ryugi-button></div>
       </div>
-      <p class="prototype-note"><span class="note-dot"></span>新插头与部分3MF支架/外壳有几何干涉，红框部位配合待核。</p>
-    <aside class="instruction-column" aria-label="组装步骤">
-      <div class="lesson-list"><div class="lesson-list-heading"><b>组装顺序</b><div class="chapter-picker"><ryugi-select id="phase-select" value="13" size="small" aria-label="选择组装阶段" style="width:100%;font-size:11px"><ryugi-option value="0">1 · 准备与编号</ryugi-option><ryugi-option value="1">2 · 右脚踝</ryugi-option><ryugi-option value="2">3 · 左脚踝</ryugi-option><ryugi-option value="3">4 · 右腿连接</ryugi-option><ryugi-option value="4">5 · 左腿连接</ryugi-option><ryugi-option value="5">6 · 双腿收尾</ryugi-option><ryugi-option value="6">7 · 身体与髋支撑</ryugi-option><ryugi-option value="7">8 · 髋电机与接腿</ryugi-option><ryugi-option value="8">9 · 头部旋转与接线</ryugi-option><ryugi-option value="9">10 · 嘴部与双舵机脖子</ryugi-option><ryugi-option value="10">11 · 头盖与嘴部软垫</ryugi-option><ryugi-option value="11">12 · 身体与头颈总装</ryugi-option><ryugi-option value="12">13 · 电控与外壳收尾</ryugi-option><ryugi-option value="13">14 · 校准与完成</ryugi-option></ryugi-select></div></div><nav id="step-list" aria-label="选择组装步骤"></nav></div>
-      <button id="instruction-toggle" class="instruction-toggle" type="button" aria-haspopup="dialog"><span id="instruction-summary-title">先认清这几件</span><b>本步说明 ↗</b></button>
+      <p class="prototype-note"><span class="note-dot"></span><span data-assemble-i18n="assemble.ui.0324">新插头与部分3MF支架/外壳有几何干涉，红框部位配合待核。</span></p>
+    <aside class="instruction-column" aria-label="组装步骤" data-assemble-i18n-aria-label="assemble.ui.0325">
+      <div class="lesson-list"><div class="lesson-list-heading"><b data-assemble-i18n="assemble.ui.0326">组装顺序</b><div class="chapter-picker"><ryugi-select id="phase-select" value="13" size="small" aria-label="选择组装阶段" data-assemble-i18n-aria-label="assemble.ui.0327" style="width:100%;font-size:11px"><ryugi-option value="0" data-assemble-i18n="assemble.ui.0328">1 · 准备与编号</ryugi-option><ryugi-option value="1" data-assemble-i18n="assemble.ui.0329">2 · 右脚踝</ryugi-option><ryugi-option value="2" data-assemble-i18n="assemble.ui.0330">3 · 左脚踝</ryugi-option><ryugi-option value="3" data-assemble-i18n="assemble.ui.0331">4 · 右腿连接</ryugi-option><ryugi-option value="4" data-assemble-i18n="assemble.ui.0332">5 · 左腿连接</ryugi-option><ryugi-option value="5" data-assemble-i18n="assemble.ui.0333">6 · 双腿收尾</ryugi-option><ryugi-option value="6" data-assemble-i18n="assemble.ui.0334">7 · 身体与髋支撑</ryugi-option><ryugi-option value="7" data-assemble-i18n="assemble.ui.0335">8 · 髋电机与接腿</ryugi-option><ryugi-option value="8" data-assemble-i18n="assemble.ui.0336">9 · 头部旋转与接线</ryugi-option><ryugi-option value="9" data-assemble-i18n="assemble.ui.0337">10 · 嘴部与双舵机脖子</ryugi-option><ryugi-option value="10" data-assemble-i18n="assemble.ui.0338">11 · 头盖与嘴部软垫</ryugi-option><ryugi-option value="11" data-assemble-i18n="assemble.ui.0339">12 · 身体与头颈总装</ryugi-option><ryugi-option value="12" data-assemble-i18n="assemble.ui.0340">13 · 电控与外壳收尾</ryugi-option><ryugi-option value="13" data-assemble-i18n="assemble.ui.0341">14 · 校准与完成</ryugi-option></ryugi-select></div></div><nav id="step-list" aria-label="选择组装步骤" data-assemble-i18n-aria-label="assemble.ui.0342"></nav></div>
+      <button id="instruction-toggle" class="instruction-toggle" type="button" aria-haspopup="dialog"><span id="instruction-summary-title">先认清这几件</span><b data-assemble-i18n="assemble.ui.0344">本步说明 ↗</b></button>
       <dialog id="instruction-dialog" aria-labelledby="step-title">
       <div class="instruction-card">
-        <button id="instruction-close" class="instruction-close" type="button" aria-label="收起本步说明">×</button>
+        <button id="instruction-close" class="instruction-close" type="button" aria-label="收起本步说明" data-assemble-i18n-aria-label="assemble.ui.0345">×</button>
         <div class="instruction-top"><span id="step-count">准备</span><span id="source-time">02:06</span></div>
-        <h2 id="step-title">先认清这几件</h2><p id="step-description"></p><div id="software-guide" class="software-guide" hidden><p id="software-guide-note">装配后的零位校准仍需在运行端进行。</p><button id="servo-guide-open" type="button" hidden>打开舵机准备</button><div id="servo-id-list"></div></div>
-        <div class="parts-needed"><span>本步用到</span><div id="needed-parts"></div></div>
+        <h2 id="step-title">先认清这几件</h2><p id="step-description"></p><div id="software-guide" class="software-guide" hidden><p id="software-guide-note">装配后的零位校准仍需在运行端进行。</p><button id="servo-guide-open" type="button" hidden data-assemble-i18n="assemble.ui.0347">打开舵机准备</button><div id="servo-id-list"></div></div>
+        <div class="parts-needed"><span data-assemble-i18n="assemble.ui.0348">本步用到</span><div id="needed-parts"></div></div>
         <div class="checkpoint"><span class="check-icon">✓</span><p id="step-check"></p></div>
-        <ryugi-button id="source-step" variant="borderless" size="small" icon="play">看这一步的原片</ryugi-button>
-        <p class="detail-note">教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。</p>
+        <ryugi-button id="source-step" variant="borderless" size="small" icon="play" data-assemble-i18n="assemble.ui.0349">看这一步的原片</ryugi-button>
+        <p class="detail-note" data-assemble-i18n="assemble.ui.0350">教学示意：孔位、连接配合、板卡修订和线路端点尚未实物核验。</p>
       </div>
       </dialog>
-      <div id="reference-panel" class="reference-panel" role="dialog" aria-label="原片对照" hidden>
-        <div class="reference-heading"><b>原片对照</b><ryugi-action-icon id="reference-close" icon="x" title="收起原片" aria-label="收起原片"></ryugi-action-icon></div>
+      <div id="reference-panel" class="reference-panel" role="dialog" aria-label="原片对照" data-assemble-i18n-aria-label="assemble.ui.0351" hidden>
+        <div class="reference-heading"><b data-assemble-i18n="assemble.ui.0351">原片对照</b><ryugi-action-icon id="reference-close" icon="x" title="收起原片" data-assemble-i18n-title="assemble.ui.0352" aria-label="收起原片" data-assemble-i18n-aria-label="assemble.ui.0352"></ryugi-action-icon></div>
         <video id="reference-video" controls playsinline muted preload="metadata" src="/assemble/assets/full-calibration.mp4"></video>
         <p id="reference-check" class="reference-check"></p>
         <p id="reference-caption">截取自你提供的视频 · 20:58—23:10</p>
       </div>
     </aside>
   </main>
-  <section id="servo-workbench" class="servo-workbench" aria-label="舵机准备与编号" hidden></section>
+  <section id="servo-workbench" class="servo-workbench" aria-label="舵机准备与编号" data-assemble-i18n-aria-label="assemble.ui.0354" hidden></section>
   <input type="hidden" id="full-saved-step" value="0"><input type="hidden" id="full-saved-progress" value="1">
   <input type="hidden" id="focus-zoom-saved" value="1"><input type="hidden" id="focus-zoom-step" value=""><input type="hidden" id="focus-zoom-position" value="">
   <audio id="piano-audio" loop preload="none" playsinline crossorigin="anonymous"></audio>

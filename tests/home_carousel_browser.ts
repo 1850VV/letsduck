@@ -9,7 +9,10 @@ export default async (page:Page)=>{
  page.on('request',request=>{if(request.method()==='POST'&&request.url().includes('/api/duck-debug/'))writes.push(request.url());});
  const check=(name:string,ok:boolean|undefined)=>{if(!ok)throw Error(name);checks.push(name);};
  const front=()=>page.locator('.duck-choice[data-c-position="true"]').getAttribute('data-duck');
- const waitFront=(id:string)=>page.waitForFunction(id=>document.querySelector<HTMLElement>(`[data-duck="${id}"]`)?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false',id,{timeout:2500});
+ const waitFront=async(id:string)=>{
+  try{await page.waitForFunction(id=>document.querySelector<HTMLElement>(`[data-duck="${id}"]`)?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false',id,{timeout:2500});}
+  catch(error){console.log(JSON.stringify({expectedFront:id,actual:await front(),settled:await page.locator('.duck-stage').getAttribute('data-settled'),moduleOpen:await page.locator('#module-window').isVisible(),errors}));await page.screenshot({path:'output/integration/home-carousel-failure.png'});throw error;}
+ };
  const home=async()=>{await browserChecks.preparePage(page);await page.goto(base+'/');await page.waitForSelector('body[data-home-ready="true"]');};
  await page.setViewportSize({width:1440,height:900});await home();
  await page.evaluate(()=>localStorage.removeItem('letsduck.duck-hub.v1'));await home();

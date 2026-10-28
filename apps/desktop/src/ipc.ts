@@ -1,12 +1,20 @@
 import type {DesktopUpdateState} from './updates.js';
 import {localURL} from './navigation.js';
+import {DESKTOP_LOCALES} from './copy.js';
+import type {DesktopLocale} from './copy.js';
 export type HostRequest={kind:'stop'}|{kind:'busy';id:number};
 export type HostReply={kind:'ready';url:string}|{kind:'failed';message:string}|{kind:'busy';id:number;busy:boolean}|{kind:'stopped'};
 export interface ParentPort{postMessage(message:HostReply):void;on(event:'message',listener:(event:{data:unknown})=>void):unknown;off(event:'message',listener:(event:{data:unknown})=>void):unknown}
 export type UpdateAction='check'|'download'|'install';
-export interface DesktopBridge{state():Promise<DesktopUpdateState>;action(action:UpdateAction):Promise<void>;onState(callback:(state:DesktopUpdateState)=>void):()=>void}
+export interface DesktopLocalePayload{locale:DesktopLocale;brand:string}
+export interface DesktopBridge{state():Promise<DesktopUpdateState>;action(action:UpdateAction):Promise<void>;onState(callback:(state:DesktopUpdateState)=>void):()=>void;setLocale?(payload:{locale:string;brand:string}):void}
 function object(value:unknown):value is Record<string,unknown>{return value!==null&&typeof value==='object'&&!Array.isArray(value);}
 const id=(value:unknown):value is number=>typeof value==='number'&&Number.isSafeInteger(value)&&value>=0;
+export function parseDesktopLocale(value:unknown):DesktopLocalePayload|undefined{
+ if(!object(value)||typeof value.brand!=='string'||!value.brand.trim())return;
+ const locale=DESKTOP_LOCALES.find(code=>code===value.locale);if(locale)return{locale,brand:value.brand};
+ return;
+}
 export function parseHostRequest(value:unknown):HostRequest|undefined{
  if(!object(value))return;
  if(value.kind==='stop')return{kind:'stop'};

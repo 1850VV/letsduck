@@ -9,6 +9,7 @@ export default async(page:Page)=>{
  await page.waitForSelector('body[data-home-ready=true]');
  assert.match(await page.locator('#beta-tip').innerText(),/仅本地客户端可用/);const debug=page.locator('[data-duck=debug]');assert.equal(await debug.getAttribute('data-beta-permanent'),'true');assert.equal(await debug.getAttribute('data-beta-locked'),'true');
  await debug.click();assert.match(await page.locator('#beta-tip').innerText(),/仅本地客户端可用/);
+ await debug.dblclick({delay:45});assert.ok(await page.locator('#module-window').isHidden());assert.equal(await debug.getAttribute('data-beta-locked'),'true');
  assert.equal((await page.request.get(base+'/api/duck-debug/status')).status(),404);
  assert.deepEqual(debugRequests,[]);
  return {pass:true,checks:['actual server overrides stored unlock','direct debug returns to home','client-only notice','device API absent','no device polling'],previewAssets:'not distributed by existing community host; fallback labels checked'};

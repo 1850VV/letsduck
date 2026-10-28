@@ -40,7 +40,7 @@ export interface Provenance { workId?: string; title: string; author: string }
 export interface Scheme { id: string; name: string; design: Design; provenance: unknown; voiceSalt: WireInteger; created: WireInteger; updated: WireInteger }
 export interface Rating { average: number; count: number; mine: number }
 export interface Work { id: string; title: string; description: string; author: PublicAuthor; design: Design; provenance: unknown; parentId: string | null; schemeId: string | null; created: WireInteger; rating: Rating }
-export interface ApiFailure extends Error { code: string; params: Record<string, unknown>; status: number }
+export interface ApiFailure extends Error { code: string; params: Record<string, unknown>; status: number;messageCode?:string;messageParams?:Record<string,unknown> }
 export type MessageScalar = string | number | bigint | boolean | null | undefined | LocalizedMessage;
 export type MessageParameters = Record<string, MessageScalar | (() => MessageScalar)>;
 export interface LocalizedMessage { toString(): string }

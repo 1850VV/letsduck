@@ -1,8 +1,7 @@
 // Shared product identity. Storage names (dd-* keys, doodleduck databases) stay stable across renames.
-import { getLocale, onLocale } from './i18n.js';
+import { getLocale, onLocale, t, translate } from './i18n.js';
 export const BRAND = Object.freeze({zh: '来做鸭', en: 'letsduck', tagline: '机器鸭涂装与配色社区'});
-// Traditional Chinese readers see the same name in their script, matching the translated text.
-export const brandName = (locale = getLocale()) => locale === 'zh-Hant' ? '來做鴨' : BRAND.zh;
+export const brandName = (locale = getLocale()) => translate(locale,'brand.name');
 
 // Original MicroDuck full-body render, framed as approved in avatar v1.
 // The embedded image is third-party artwork; see THIRD_PARTY_NOTICES.md.
@@ -11,15 +10,16 @@ export const MARK = "<metadata>MicroDuck product render, Pollen Robotics. Source
 
 export const logoSVG = () => `<svg class="logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${MARK}</svg>`;
 export const faviconURL = () => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${MARK}</svg>`);
-// The name in the system font, Chinese above, English below (lower case, like letsduck.club).
-export const brandHTML = () => `${logoSVG()}<span class="wordmark"><b>${brandName()}</b><small>${BRAND.en}</small></span>`;
+// The product name and workshop subtitle follow the selected interface language.
+export const brandHTML = () => `${logoSVG()}<span class="wordmark"><b>${brandName()}</b><small>${t('brand.subtitle')}</small></span>`;
 
 // Fills every [data-brand-slot] and the tab icon; the name follows language changes.
 let following = false;
 export function applyBrand() {
   document.querySelectorAll('[data-brand-slot]').forEach((el) => {
     el.innerHTML = brandHTML();
-    el.setAttribute('aria-label', brandName() + ' / ' + BRAND.en);
+    el.setAttribute('aria-label', brandName() + ' · ' + t('brand.subtitle'));
+    el.setAttribute('title',brandName());
   });
   if (!following) {following = true;onLocale(() => applyBrand());}
   let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');

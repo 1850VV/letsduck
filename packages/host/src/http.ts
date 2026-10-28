@@ -3,7 +3,8 @@ import { isIP } from 'node:net';
 import type { IncomingMessage } from 'node:http';
 import Fastify, { LogController } from 'fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { DebugError, SetupError, validatedUpdates } from '@letsduck/devices';
+import { DebugError, SetupError, validatedUpdates, deviceMessage } from '@letsduck/devices';
+import type {DeviceMessage} from '@letsduck/devices';
 import { Invalid, errorPayload, isJsonObject, parseWireJson, readJsonField } from '@letsduck/domain';
 import { ExportBodyError, ExportBusy, decodeJsonBytes, parseMultipart } from '@letsduck/exporter';
 import { htmlError, personalStatic, sendBody } from './static.js';
@@ -19,6 +20,14 @@ const supported = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH']);
 const schemeId = /^[\p{L}\p{N}_-]{1,64}$/u;
 class Reply extends Error { constructor(readonly status: number, readonly body: Record<string, unknown>) { super(String(body.code ?? body.error)); } }
 const fail = (status: number, error: string, code: string): never => { throw new Reply(status, { error, code, params: {} }); };
+function describedError(error:unknown){
+  const payload=errorPayload(error);
+  if(error&&typeof error==='object'){
+    const messageCode=Reflect.get(error,'messageCode'),messageParams=Reflect.get(error,'messageParams');
+    if(typeof messageCode==='string')return {...payload,messageCode,messageParams:messageParams&&typeof messageParams==='object'?messageParams:{}};
+  }
+  return payload;
+}
 function loopback(address: string | undefined): boolean {
   if (!address) return false;
   const normalized = address.toLowerCase().split('%')[0]!;
@@ -37,8 +46,8 @@ function allowedOrigin(request: FastifyRequest, options: PersonalHttpOptions): b
   const hosts = loopback(host) || host === 'localhost' ? ['127.0.0.1', 'localhost', '::1'] : [host];
   return hosts.some(value => origin === `http://${value.includes(':') ? '[' + value + ']' : value}${port === 80 ? '' : ':' + port}` || origin === `http://${value.includes(':') ? '[' + value + ']' : value}:${port}`);
 }
-function guardPeer(request: FastifyRequest, message: string): void { if (!loopback(request.raw.socket.remoteAddress)) throw new Reply(403, { error: message }); }
-function guardOrigin(request: FastifyRequest, options: PersonalHttpOptions, message: string): void { if (!allowedOrigin(request, options)) throw new Reply(403, { error: message }); }
+function guardPeer(request: FastifyRequest, message: DeviceMessage): void { if (!loopback(request.raw.socket.remoteAddress)) throw new Reply(403, { error:message.text,code:message.code,params:message.params }); }
+function guardOrigin(request: FastifyRequest, options: PersonalHttpOptions, message: DeviceMessage): void { if (!allowedOrigin(request, options)) throw new Reply(403, { error:message.text,code:message.code,params:message.params }); }
 function length(request: FastifyRequest): number {
   const header = request.headers['content-length'];
   if (header === undefined || header === '') return 0;
@@ -96,24 +105,24 @@ export function createPersonalHttp(options: PersonalHttpOptions): PersonalHttpSe
     if (method === 'GET' && path === '/api/health') return { version: '3.1.0', export: Boolean(options.exporter?.available), source_sha256: options.exporter?.available ? options.exporter.sourceSha256 : null };
     if (method === 'GET' && path === '/api/site') return { publicUrl: '', edition: 'personal', assembly: await files.assemblyReady(), servoSetup: loopback(request.raw.socket.remoteAddress), servoPreparation: loopback(request.raw.socket.remoteAddress) };
     if (path.startsWith('/api/duck-debug/')) {
-      guardPeer(request, '请在连接 UNO Q 的这台电脑上打开调试鸭。');
+      guardPeer(request, deviceMessage('device.access.debug_local'));
       if (method === 'GET' && path === '/api/duck-debug/status') return options.debug.status();
       if (method === 'GET' && path === '/api/duck-debug/numbering') return options.debug.numbering();
-      if (method === 'POST' && path === '/api/duck-debug/action') { guardOrigin(request, options, '请从本机调试鸭执行操作。'); return options.debug.action(await readJson(request)); }
+      if (method === 'POST' && path === '/api/duck-debug/action') { guardOrigin(request, options, deviceMessage('device.access.debug_origin')); return options.debug.action(await readJson(request)); }
       throw new Reply(404, notFound);
     }
     if (path === '/api/servo-preparation') {
-      guardPeer(request, '请在本机组装台记录取件。');
+      guardPeer(request, deviceMessage('device.access.preparation_local'));
       if (method === 'GET') return { records: options.store.servoPreparationRecords() };
-      if (method === 'POST') { guardOrigin(request, options, '请从本机组装台记录取件。'); return { records: options.store.saveServoPreparation(validatedUpdates(await readJson(request))) }; }
+      if (method === 'POST') { guardOrigin(request, options, deviceMessage('device.access.preparation_origin')); return { records: options.store.saveServoPreparation(validatedUpdates(await readJson(request))) }; }
     }
     if (path === '/api/servo-setup' || path.startsWith('/api/servo-setup/')) {
-      guardPeer(request, '请在连接 UNO Q 的这台电脑上打开组装台。');
+      guardPeer(request, deviceMessage('device.access.setup_local'));
       if (method === 'GET' && path === '/api/servo-setup') return options.setup.inspect();
       if (method === 'GET' && path === '/api/servo-setup/records') return { records: options.store.servoRecords() };
       const action = path.slice('/api/servo-setup/'.length);
       if (method === 'POST' && ['start', 'pause', 'halt', 'refresh', 'audit', 'repair', 'queue'].includes(action)) {
-        guardOrigin(request, options, '请从本机组装台执行此操作。');
+        guardOrigin(request, options, deviceMessage('device.access.setup_origin'));
         const body = await readJson(request);
         if (action === 'start') return options.setup.start(readJsonField(body, 'targetId'));
         if (action === 'audit' || action === 'repair' || action === 'queue') return options.setup[action](readJsonField(body, 'id'));
@@ -149,8 +158,8 @@ export function createPersonalHttp(options: PersonalHttpOptions): PersonalHttpSe
       if (error instanceof Reply) return sendBody(request, reply, error.status, error.body);
       if (error instanceof ExportBodyError) return sendBody(request, reply, error.status, error.body);
       if (error instanceof ExportBusy) return sendBody(request, reply, 503, errorPayload(error), undefined, { 'retry-after': '2' });
-      if (error instanceof DebugError) return sendBody(request, reply, 422, { error: error.message, ...error.details });
-      if (error instanceof Invalid || error instanceof SetupError || (error instanceof Error && error.name === 'ValueError')) return sendBody(request, reply, 422, errorPayload(error));
+      if (error instanceof DebugError) return sendBody(request, reply, 422, { error: error.message, ...error.details,code:error.code,params:error.params });
+      if (error instanceof Invalid || error instanceof SetupError || (error instanceof Error && error.name === 'ValueError')) return sendBody(request, reply, 422, describedError(error));
       request.log.error({ err: error }, 'Unhandled API failure');
       return sendBody(request, reply, 500, { error: '出错了，请查看启动窗口里的日志', code: 'server.failed', params: {} });
     }

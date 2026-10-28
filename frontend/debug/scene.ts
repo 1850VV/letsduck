@@ -1,3 +1,4 @@
+import {dt,displayError} from './i18n.js';
 import type {DebugState,DebugView,BoardId} from './types.js';
 import {required,isRecord} from '../lib/browser.js';
 import {assemblyAssetUrl} from '../shared/url.js';
@@ -9,7 +10,7 @@ const materials=(object:{material:THREE.Material|THREE.Material[]}):THREE.Materi
 const hasColor=(material:THREE.Material):material is THREE.Material&{color:THREE.Color}=>'color'in material&&material.color instanceof THREE.Color;
 interface AssemblyPart {id:string;positionOffset:number;vertexCount:number;indexOffset:number;indexCount:number}
 const assemblyPart=(value:unknown):value is AssemblyPart=>isRecord(value)&&typeof value.id==='string'&&['positionOffset','vertexCount','indexOffset','indexCount'].every(key=>typeof value[key]==='number');
-function readParts(value:unknown):AssemblyPart[] {if(!isRecord(value)||!Array.isArray(value.parts)||!value.parts.every(assemblyPart))throw Error('Assembly metadata format invalid');return value.parts;}
+function readParts(value:unknown):AssemblyPart[] {if(!isRecord(value)||!Array.isArray(value.parts)||!value.parts.every(assemblyPart))throw displayError('组装模型数据格式异常');return value.parts;}
 import * as THREE from 'three';
 import {OrbitControls} from '../vendor/OrbitControls.js';
 import {GLTFLoader} from '../vendor/GLTFLoader.js';
@@ -35,7 +36,7 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
  controls.addEventListener('change',invalidate);document.addEventListener('visibilitychange',invalidate);
  function resize(){const r=host.getBoundingClientRect();if(!r.width||!r.height)return;renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();invalidate();}
  new ResizeObserver(resize).observe(host);
- function addLabel(text:string,position:THREE.Vector3,kind:string,id?:number){const button=document.createElement(id!==undefined?'button':'span');button.className=kind;button.textContent=text;if(id!==undefined){if(button instanceof HTMLButtonElement)button.type='button';button.dataset.model=String(id);button.setAttribute('aria-label','在3D中选择 ID'+id);button.onclick=()=>onSelect(id);}labelsHost.append(button);labels.push({el:button,position});return button;}
+ function addLabel(text:string,position:THREE.Vector3,kind:string,id?:number){const button=document.createElement(id!==undefined?'button':'span');button.className=kind;button.textContent=text;if(id!==undefined){if(button instanceof HTMLButtonElement)button.type='button';button.dataset.model=String(id);button.setAttribute('aria-label',dt("在3D中选择 ID{id}",{id:String(id)}));button.onclick=()=>onSelect(id);}labelsHost.append(button);labels.push({el:button,position});return button;}
  function layoutLabels(){camera.updateMatrixWorld();for(const l of labels){const p=l.position.clone().project(camera);l.el.style.left=(p.x*.5+.5)*host.clientWidth+'px';l.el.style.top=(-p.y*.5+.5)*host.clientHeight+'px';l.el.hidden=p.z>1||p.z< -1||Math.abs(p.x)>1.12||Math.abs(p.y)>1.12;}}
  function paint(object:THREE.Object3D,connected:boolean,chosen:boolean,ghost=false){
   object.traverse(o=>{if(!isMesh(o)||o.userData.selectionRing)return;for(const m of materials(o)){
@@ -120,19 +121,29 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
    let p=obj.position.clone();
    if(view==='robot'){const box=new THREE.Box3().setFromObject(obj);p=box.getCenter(new THREE.Vector3());p.x+=p.x<0?-32:34;const joint=id<30?id%10:-1;p.y+=joint===2?21:joint===3?-1:joint===4?-15:10;}
    else p.add(new THREE.Vector3(0,31,6));
-   const el=addLabel('ID '+id+(connected?' · 在线':''),p,'model-label',id);el.classList.toggle('online',connected);el.classList.toggle('selected',chosenId);
+   const el=addLabel(connected?dt('ID {id} · 在线',{id:String(id)}):'ID '+id,p,'model-label',id);el.classList.toggle('online',connected);el.classList.toggle('selected',chosenId);
   };
   if(required(state).view==='robot')for(const [id,obj] of robotObjects)labelFor(id,obj,'robot');
   if(required(state).view==='tray')for(const [id,obj] of trayObjects)labelFor(id,obj,'tray');
   if(required(state).view!=='circuit')for(const [uid,obj] of looseObjects){const d=required(required(state).devices.find(d=>d.uid===uid));labelFor(d.id,obj,'tray');}
   if(required(state).view==='circuit'){
-   addLabel(required(state).transport==='lan'?'Mac · 网络':'Mac · USB',new THREE.Vector3(-295,65,-40),'circuit-label');addLabel('舵机独立电源',new THREE.Vector3(-210,10,103),'circuit-label');
+   addLabel(required(state).transport==='lan'?dt("Mac · 网络"):'Mac · USB',new THREE.Vector3(-295,65,-40),'circuit-label').dataset.debugCopy='transport';addLabel(dt("舵机独立电源"),new THREE.Vector3(-210,10,103),'circuit-label').dataset.debugCopy='power';
    for(const [uid,obj] of circuitObjects){const item=required(required(state).devices.find(d=>d.uid===uid));labelFor(item.id,obj,'circuit');}
   }
-  for(const [id,obj] of boardObjects){if(required(state).view==='robot'&&required(state).selectedBoard!==id)continue;const name=id==='arduino'?'Arduino UNO Q':'舵机扩展板',el=addLabel(name,obj.position.clone().add(new THREE.Vector3(0,36,0)),'model-label');
-   el.classList.toggle('online',required(state).boards[id].connected);el.classList.toggle('selected',required(state).selectedBoard===id);el.dataset.boardModel=id;el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label','在3D中选择 '+name);el.onclick=()=>onBoardSelect(id);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onBoardSelect(id);}};
+  for(const [id,obj] of boardObjects){if(required(state).view==='robot'&&required(state).selectedBoard!==id)continue;const name=id==='arduino'?'Arduino UNO Q':dt("舵机扩展板"),el=addLabel(name,obj.position.clone().add(new THREE.Vector3(0,36,0)),'model-label');
+   el.classList.toggle('online',required(state).boards[id].connected);el.classList.toggle('selected',required(state).selectedBoard===id);el.dataset.boardModel=id;el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',dt("在3D中选择 {name}",{name}));el.onclick=()=>onBoardSelect(id);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onBoardSelect(id);}};
   }
   invalidate();
+ }
+ function refreshCopy(){
+  if(!state)return;
+  const active=new Set(online(state).map(device=>device.id));
+  for(const {el}of labels){
+   if(el.dataset.model!==undefined){const id=Number(el.dataset.model);el.textContent=active.has(id)?dt('ID {id} · 在线',{id:String(id)}):'ID '+id;el.setAttribute('aria-label',dt('在3D中选择 ID{id}',{id:String(id)}));}
+   else if(el.dataset.boardModel){const name=el.dataset.boardModel==='arduino'?'Arduino UNO Q':dt('舵机扩展板');el.textContent=name;el.setAttribute('aria-label',dt('在3D中选择 {name}',{name}));}
+   else if(el.dataset.debugCopy==='transport')el.textContent=state.transport==='lan'?dt('Mac · 网络'):'Mac · USB';
+   else if(el.dataset.debugCopy==='power')el.textContent=dt('舵机独立电源');
+  }
  }
  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down:[number,number]|undefined;
  renderer.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
@@ -155,5 +166,5 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
   ready=true;resize();if(state)update(state);return true;
  })();
  function inspect(){const greens=<K>(map:ReadonlyMap<K,THREE.Object3D>)=>[...map].filter(([,obj])=>{let green=false;obj.traverse(o=>{if(isMesh(o)&&!o.userData.selectionRing&&materials(o).some(m=>hasColor(m)&&m.color.getHex()===GREEN&&m.opacity===1))green=true;});return green;}).map(([id])=>id);return {ready,view:currentView,robotCount:robotObjects.size,trayCount:trayObjects.size,greenRobotIds:greens(robotObjects),greenTrayIds:greens(trayObjects),greenBoardIds:greens(boardObjects),boardCount:boardObjects.size,greenLooseIds:greens(looseObjects).map(uid=>required(required(state).devices.find(d=>d.uid===uid)).id),circuitCount:circuitObjects.size,camera:camera.position.toArray()};}
- return {update,fit,ready:readyPromise,inspect};
+ return {update,refreshCopy,fit,ready:readyPromise,inspect};
 }

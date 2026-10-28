@@ -65,7 +65,7 @@ test('IPC validates host messages, update DTOs and the exact trusted main frame'
 
 test('protocol preserves request origin/body/query and safe redirects, and releases write accounting',async()=>{
  const calls:{url:string;origin:string|null;host:string|null;length:string|null;body:string}[]=[];let writes=0;
- const handler=createProtocolHandler({backend:'http://127.0.0.1:8123/',panel:()=>Promise.resolve('export {};'),write:delta=>{writes+=delta;},fetch:async(input,init)=>{
+ const handler=createProtocolHandler({backend:'http://127.0.0.1:8123/',panel:()=>Promise.resolve('export {};'),copy:()=>Promise.resolve('export const copy = {};'),write:delta=>{writes+=delta;},fetch:async(input,init)=>{
   const request=new Request(input,init);calls.push({url:request.url,origin:request.headers.get('origin'),host:request.headers.get('host'),length:request.headers.get('content-length'),body:await request.text()});
   return new Response('saved',{status:302,headers:{location:'http://127.0.0.1:8123/paint?scheme=one'}});
  }});
@@ -76,6 +76,7 @@ test('protocol preserves request origin/body/query and safe redirects, and relea
  const cancelled=await handler(new Request('duck://app/api/schemes/cancelled',{method:'PUT',body:'{}'}));assert.equal(writes,1);
  await cancelled.body?.cancel();assert.equal(writes,0,'Cancelled response releases its write exactly once');
  assert.equal(await(await handler(new Request('duck://app/__desktop/update-panel.js'))).text(),'export {};');
+ assert.equal(await(await handler(new Request('duck://app/__desktop/copy.js'))).text(),'export const copy = {};');
  const failed=createProtocolHandler({backend:'http://127.0.0.1:8123/',panel:async()=>'',write:delta=>{writes+=delta;},fetch:async()=>{throw new Error('offline');}});
  await assert.rejects(failed(new Request('duck://app/api/export',{method:'POST'})),/offline/);assert.equal(writes,0);
  const external=createProtocolHandler({backend:'http://127.0.0.1:8123/',panel:async()=>'',write:()=>{},fetch:async()=>new Response(null,{status:302,headers:{location:'https://example.com/'}})});

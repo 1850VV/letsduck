@@ -9,6 +9,7 @@ export default async (page: Page) =>{
   if(errors.length)throw Error(errors.join('\n'));
   await page.locator('.card .visual').first().click();await page.locator('#viewer canvas').waitFor();
   await page.locator('#spin').click();
+  if(await page.locator('#spin').getAttribute('aria-pressed')!=='false')throw Error('Gallery turntable must stop before checking the camera');
   const point=browserChecks.required(await page.locator('#viewer canvas').boundingBox());
   await page.mouse.move(point.x+point.width*.45,point.y+point.height*.45);await page.mouse.down();await page.mouse.move(point.x+point.width*.45+100,point.y+point.height*.45+30,{steps:12});await page.mouse.up();
   const pixelHash=()=>{
