@@ -58,5 +58,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const { values } = parseArgs({ options: { platform: { type: 'string' }, arch: { type: 'string' }, output: { type: 'string' } } });
     if ((values.platform !== 'darwin' && values.platform !== 'win32') || (values.arch !== 'arm64' && values.arch !== 'x64') || !values.output) throw new Error('Usage: --platform darwin|win32 --arch arm64|x64 --output NEW_DIRECTORY');
     console.log(JSON.stringify(await fetchNodeRuntime({ platform: values.platform, arch: values.arch, target: values.output }), null, 2));
-  } catch (error) { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; }
+  } catch (error) { console.error(error); process.exitCode = 1; }
 }

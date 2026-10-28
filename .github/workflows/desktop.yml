@@ -6,22 +6,34 @@ on:
   pull_request:
     paths: ['apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
   workflow_dispatch:
+    inputs:
+      full_software_acceptance:
+        description: 'Check full-model installers using the existing asset bundle; do not publish'
+        type: boolean
+        default: false
+      windows_scope:
+        description: 'Run all candidates, or one Windows software check in its own VM'
+        type: choice
+        options: [all, native, portable]
+        default: all
+      console_signal_diagnostic:
+        description: 'Run only the isolated Windows console SIGINT transport diagnostic'
+        type: boolean
+        default: false
+      native_select_diagnostic:
+        description: 'Observe ordinary Windows select input in Electron and managed Chromium only'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   candidate:
+    if: ${{ !inputs.console_signal_diagnostic && !inputs.native_select_diagnostic }}
+    name: ${{ inputs.windows_scope && inputs.windows_scope != 'all' && format('Windows {0} software acceptance', inputs.windows_scope) || format('candidate ({0}, {1}, {2}, {3})', matrix.os, matrix.platform, matrix.arch, matrix.target) }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: windows-2025
-            platform: win32
-            arch: x64
-            target: '--win --x64'
-          - os: macos-15
-            platform: darwin
-            arch: arm64
-            target: '--mac --arm64'
+        include: ${{ fromJSON(inputs.windows_scope && inputs.windows_scope != 'all' && '[{"os":"windows-2025","platform":"win32","arch":"x64","target":"--win --x64"}]' || '[{"os":"windows-2025","platform":"win32","arch":"x64","target":"--win --x64"},{"os":"macos-15","platform":"darwin","arch":"arm64","target":"--mac --arm64"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     defaults:
@@ -44,7 +56,27 @@ jobs:
         with:
           node-version: '24.20.0'
           cache: npm
+      - name: Validate the selected acceptance scope
+        env:
+          DUCK_QA_SCOPE: ${{ inputs.windows_scope || 'all' }}
+          DUCK_QA_FULL: ${{ inputs.full_software_acceptance }}
+        run: node -e 'const scope=process.env.DUCK_QA_SCOPE;if(!["all","native","portable"].includes(scope)||scope!=="all"&&process.env.DUCK_QA_FULL!=="true")throw new Error("Windows subsets require full_software_acceptance");'
       - run: npm ci
+      - name: Prepare the existing full-model acceptance bundle
+        if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        env:
+          DUCK_ACCEPTANCE_ARCHIVE: ${{ runner.temp }}/letsduck-assets.zip
+          DUCK_ACCEPTANCE_ASSETS: ${{ runner.temp }}/letsduck-acceptance-assets
+        run: |
+          curl --fail --location --retry 3 https://github.com/1850VV/letsduck/releases/download/desktop-assets-20261025/letsduck-assets.zip --output "$DUCK_ACCEPTANCE_ARCHIVE"
+          node --input-type=module -e 'import{readFileSync}from"node:fs";import{createHash}from"node:crypto";import assert from"node:assert/strict";assert.equal(createHash("sha256").update(readFileSync(process.env.DUCK_ACCEPTANCE_ARCHIVE)).digest("hex"),"d91f56074787702eff7e82625f17e6fa957b02c3cac0eb783b1ace36b3d24162");'
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            pwsh -NoProfile -NonInteractive -Command 'Expand-Archive -LiteralPath $env:DUCK_ACCEPTANCE_ARCHIVE -DestinationPath $env:DUCK_ACCEPTANCE_ASSETS'
+          else
+            unzip -q "$DUCK_ACCEPTANCE_ARCHIVE" -d "$DUCK_ACCEPTANCE_ASSETS"
+          fi
+          echo "DUCK_DISTRIBUTABLE_ASSETS=$DUCK_ACCEPTANCE_ASSETS" >> "$GITHUB_ENV"
+          echo "DUCK_PACKAGE_WITHOUT_ASSETS=0" >> "$GITHUB_ENV"
       - name: Install the pinned official Electron binary
         run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
       - name: Strict desktop, tooling and renderer checks
@@ -57,17 +89,151 @@ jobs:
         run: npx tsx --test tooling/test/local-cli.test.ts
       - name: Actual Electron protocol, startup, utility lifecycle and retained profile
         run: node --import tsx apps/desktop/test/shell.browser.ts
-      - name: Build an offline source-only installer
+      - name: Build the offline installer
+        if: inputs.windows_scope != 'portable'
         run: npm run package:desktop -- ${{ matrix.target }}
       - name: Install the candidate and check the synthetic subset
+        if: github.event_name != 'workflow_dispatch' || !inputs.full_software_acceptance
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts --synthetic
+      - name: Install the candidate and check the full-model journey
+        id: installed_full
+        if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance && (inputs.windows_scope == '' || inputs.windows_scope == 'all')
+        continue-on-error: true
+        timeout-minutes: 10
+        run: node --import tsx apps/desktop/scripts/installed-smoke.ts
+      - name: Windows native mouse, keyboard and clipboard
+        id: native_input
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance && inputs.windows_scope != 'portable'
+        continue-on-error: true
+        run: node --import tsx apps/desktop/scripts/native-input-smoke.ts
       - name: Download and verify the matching official Node runtime
-        run: npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
+        if: inputs.windows_scope != 'native'
+        run: |
+          if ! npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime; then
+            test ! -e output/node-runtime
+            npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
+          fi
       - name: Build the portable browser archive
-        run: npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
+        if: inputs.windows_scope != 'native'
+        run: |
+          if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
+            npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --assets "$DUCK_DISTRIBUTABLE_ASSETS" --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          else
+            npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          fi
+      - name: Windows portable launch, full-model UI and console shutdown
+        id: portable_browser
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance && inputs.windows_scope != 'native'
+        run: |
+          PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
+          node --import tsx apps/desktop/scripts/portable-browser-smoke.ts
+      - name: Preserve technical acceptance and cleanup results in the job log
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        run: |
+          node --input-type=module <<'JS'
+          import { existsSync, readFileSync } from 'node:fs';
+          const files = [
+            'output/desktop-installed-smoke/result.json', 'output/desktop-installed-smoke/failure.json',
+            'output/desktop-installed-smoke/functional/result.json', 'output/desktop-installed-smoke/functional/failure-details.json',
+            'output/desktop-installed-smoke/functional/cleanup.json',
+            'output/windows-native-input/identity.json', 'output/windows-native-input/result.json',
+            'output/windows-native-input/cleanup.json', 'output/windows-native-input/native-evidence.json',
+            'output/windows-portable-browser/identity.json', 'output/windows-portable-browser/result.json',
+            'output/windows-portable-browser/cleanup.json', 'output/windows-portable-browser/native-evidence.json',
+            'output/windows-portable-browser/stop-failure.json',
+          ];
+          for (const file of files) {
+            if (!existsSync(file)) continue;
+            try {
+              const receipt = JSON.parse(readFileSync(file, 'utf8'));
+              if (Array.isArray(receipt)) receipt.forEach((entry, index) => console.log(JSON.stringify({ file, index, receipt: entry })));
+              else console.log(JSON.stringify({ file, receipt }));
+            } catch (error) { console.error(JSON.stringify({ file, error: String(error) })); process.exitCode = 1; }
+          }
+          JS
+      - name: Require the selected independent software checks to pass
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        env:
+          DUCK_QA_SCOPE: ${{ inputs.windows_scope || 'all' }}
+          DUCK_QA_INSTALLED: ${{ steps.installed_full.outcome }}
+          DUCK_QA_NATIVE: ${{ steps.native_input.outcome }}
+          DUCK_QA_PORTABLE: ${{ steps.portable_browser.outcome }}
+        run: |
+          node -e 'console.log(JSON.stringify({kind:"software-outcomes",scope:process.env.DUCK_QA_SCOPE,installed:process.env.DUCK_QA_INSTALLED,native:process.env.DUCK_QA_NATIVE,portable:process.env.DUCK_QA_PORTABLE}))'
+          if [[ "$DUCK_QA_SCOPE" == all ]]; then test "$DUCK_QA_INSTALLED" = success; fi
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            if [[ "$DUCK_QA_SCOPE" != portable ]]; then test "$DUCK_QA_NATIVE" = success; fi
+            if [[ "$DUCK_QA_SCOPE" != native ]]; then test "$DUCK_QA_PORTABLE" = success; fi
+          fi
       - name: Source and publication boundary
         run: |
           npm run audit:typescript
           npm run audit:publication
       - name: State the candidate boundary
-        run: echo "Source-only installers and portable archives exclude licensed models. Synthetic installation checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."
+        run: |
+          if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
+            echo "Full-model checks use the existing pinned bundle, which omits newer optional filament data. Native input, physical devices, signed updates and public-release acceptance remain separate. No assets, installers or screenshots are published."
+          else
+            echo "Source-only installers and portable archives exclude licensed models. Synthetic installation checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."
+          fi
+  console_signal:
+    if: github.event_name == 'workflow_dispatch' && inputs.console_signal_diagnostic
+    runs-on: windows-2025
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+      - name: Observe actual console SIGINT and owned parent comparison
+        run: node apps/desktop/scripts/windows-console-canary.ts
+      - name: Preserve compact transport and cleanup evidence
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,existsSync} from 'node:fs';
+          const file='output/windows-console-canary/result.json';
+          if(existsSync(file)) console.log(JSON.stringify({file,receipt:JSON.parse(readFileSync(file,'utf8'))}));
+          else process.exitCode=1;
+          JS
+  native_select:
+    if: github.event_name == 'workflow_dispatch' && inputs.native_select_diagnostic
+    runs-on: windows-2025
+    timeout-minutes: 12
+    defaults:
+      run:
+        shell: bash
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.20.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run build:core
+      - run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
+      - run: PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
+      - name: Observe plain select Down and Escape with real native input
+        run: node --import tsx apps/desktop/scripts/native-select-diagnostic.ts
+      - name: Preserve individual plain select observations and cleanup
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,existsSync} from 'node:fs';
+          const file='output/windows-native-select-diagnostic/result.json';
+          if(!existsSync(file)) { process.exitCode=1; }
+          else {
+            const {cases,...summary}=JSON.parse(readFileSync(file,'utf8'));
+            console.log(JSON.stringify({file,kind:'summary',receipt:summary}));
+            for(const {observations,nativeEvidence,...entry} of cases) {
+              console.log(JSON.stringify({file,kind:'engine',receipt:entry}));
+              for(const [index,snapshot] of (observations||[]).entries()) console.log(JSON.stringify({file,kind:'snapshot',engine:entry.engine,index,receipt:snapshot}));
+              for(const [index,evidence] of (nativeEvidence||[]).entries()) console.log(JSON.stringify({file,kind:'native',engine:entry.engine,index,receipt:evidence}));
+            }
+          }
+          JS
