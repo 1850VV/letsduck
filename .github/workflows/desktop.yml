@@ -6,6 +6,11 @@ on:
   pull_request:
     paths: ['apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
   workflow_dispatch:
+    inputs:
+      full_software_acceptance:
+        description: 'Check full-model installers using the existing asset bundle; do not publish'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -45,6 +50,21 @@ jobs:
           node-version: '24.20.0'
           cache: npm
       - run: npm ci
+      - name: Prepare the existing full-model acceptance bundle
+        if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        env:
+          DUCK_ACCEPTANCE_ARCHIVE: ${{ runner.temp }}/letsduck-assets.zip
+          DUCK_ACCEPTANCE_ASSETS: ${{ runner.temp }}/letsduck-acceptance-assets
+        run: |
+          curl --fail --location --retry 3 https://github.com/1850VV/letsduck/releases/download/desktop-assets-20261025/letsduck-assets.zip --output "$DUCK_ACCEPTANCE_ARCHIVE"
+          node --input-type=module -e 'import{readFileSync}from"node:fs";import{createHash}from"node:crypto";import assert from"node:assert/strict";assert.equal(createHash("sha256").update(readFileSync(process.env.DUCK_ACCEPTANCE_ARCHIVE)).digest("hex"),"d91f56074787702eff7e82625f17e6fa957b02c3cac0eb783b1ace36b3d24162");'
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            pwsh -NoProfile -NonInteractive -Command 'Expand-Archive -LiteralPath $env:DUCK_ACCEPTANCE_ARCHIVE -DestinationPath $env:DUCK_ACCEPTANCE_ASSETS'
+          else
+            unzip -q "$DUCK_ACCEPTANCE_ARCHIVE" -d "$DUCK_ACCEPTANCE_ASSETS"
+          fi
+          echo "DUCK_DISTRIBUTABLE_ASSETS=$DUCK_ACCEPTANCE_ASSETS" >> "$GITHUB_ENV"
+          echo "DUCK_PACKAGE_WITHOUT_ASSETS=0" >> "$GITHUB_ENV"
       - name: Install the pinned official Electron binary
         run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
       - name: Strict desktop, tooling and renderer checks
@@ -57,17 +77,31 @@ jobs:
         run: npx tsx --test tooling/test/local-cli.test.ts
       - name: Actual Electron protocol, startup, utility lifecycle and retained profile
         run: node --import tsx apps/desktop/test/shell.browser.ts
-      - name: Build an offline source-only installer
+      - name: Build the offline installer
         run: npm run package:desktop -- ${{ matrix.target }}
       - name: Install the candidate and check the synthetic subset
+        if: github.event_name != 'workflow_dispatch' || !inputs.full_software_acceptance
         run: node --import tsx apps/desktop/scripts/installed-smoke.ts --synthetic
+      - name: Install the candidate and check the full-model journey
+        if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
+        run: node --import tsx apps/desktop/scripts/installed-smoke.ts
       - name: Download and verify the matching official Node runtime
         run: npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
       - name: Build the portable browser archive
-        run: npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
+        run: |
+          if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
+            npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --assets "$DUCK_DISTRIBUTABLE_ASSETS" --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          else
+            npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          fi
       - name: Source and publication boundary
         run: |
           npm run audit:typescript
           npm run audit:publication
       - name: State the candidate boundary
-        run: echo "Source-only installers and portable archives exclude licensed models. Synthetic installation checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."
+        run: |
+          if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
+            echo "Full-model checks use the existing pinned bundle, which omits newer optional filament data. Native input, physical devices, signed updates and public-release acceptance remain separate. No assets, installers or screenshots are published."
+          else
+            echo "Source-only installers and portable archives exclude licensed models. Synthetic installation checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."
+          fi
