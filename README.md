@@ -147,6 +147,16 @@ npm run baseline:capture -- --assets /path/to/authorized/assets --output output/
 
 默认采集 30 次保存和 10 次真实导出，保留环境、引擎、请求/响应和 ZIP 摘要。结果含本机环境和独立授权资产信息，只放在忽略的私有目录。缺少模型的结果不能作为真实导出证据。性能比较必须使用相同输入、机器和环境。
 
+macOS同机新旧对照使用独立的显式测试入口，自动先构建当前前端与共享宿主：
+
+```sh
+npm run baseline:compare -- --revision FULL_OLD_COMMIT --python /path/to/legacy/python --assets /path/to/authorized/assets --output output/comparison
+```
+
+它交替运行两个隔离引擎，使用同一个静态来源、相同前端字节和空库副本。默认三轮、每轮30次保存与10次导出；模型完整绘制、真实输入后的交互帧和帧间隔分别记录。浏览器冷上下文不等于清空系统文件缓存；小样本尾延迟与资源差异须按报告范围解释。该入口需要旧提交可读及明确选择的Python，仅用于历史对照，不是普通运行依赖；不要与其他GUI、导出或构建同时测量。
+
+`--pilot`只跑一轮试跑，写入`pilot.json`并标明采样预算未完成，不能作为正式验收。测量使用有窗口的managed Chromium与默认GPU，资源采样需要POSIX `ps`；设备路由在对照中隔离，扫描/停止及实机性能须单独验收。
+
 常规构建、测试与工具不需要 Python。独立旧 Python 结果已冻结为合成 oracle。显式历史回放可用 `npm run test:historical -- --list` 查看范围，再以 `--python /path/to/legacy/python` 选择解释器；它从固定旧 Git 提交提取只读参考，所有数据和服务都在自有临时目录中。`baseline:capture -- --engine historical ...` 单独采集旧引擎，结果明确标注。浅克隆须先取得参考提交，历史模式不作为正常运行依赖。
 
 组装姿态的跨平台诊断可显式运行 `npx tsx tooling/test/assembly-diagnostic.ts .`。它用 Node 比较固定历史 MJS 与当前 TS 的完整姿态、顺序和数值，并清理临时参考；不需要 Python，也不进入普通测试。

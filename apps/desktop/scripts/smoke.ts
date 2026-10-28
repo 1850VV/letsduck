@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import type { ElectronApplication, Page } from 'playwright';
 import { jsonParse } from '@letsduck/storage';
-import { root, desktopScope, failure, object, required, resizeWindow, studioState, waitStudio, updateState, chooseLocale, seedSimulatedAssembly } from './check-support.js';
+import { root, desktopScope, failure, object, required, resizeWindow, studioState, waitStudio, updateState, chooseLocale, seedSimulatedAssembly, assemblyReady } from './check-support.js';
 
 type NativeDownload = { state: string; path: string };
 declare global {
@@ -140,11 +140,13 @@ try {
   if (synthetic) assert.equal(await page.evaluate(async () => (await fetch('/api/schemes')).text()), schemes);
   else {
     await page.goto('duck://app/assemble/'); await page.waitForURL('duck://app/debug/?from=assemble');
+    await application.context().tracing.stop({ path: join(output, 'gate-session.zip') });
     await scope.close(application);
     // This explicit test fixture is not evidence of physical numbering or readiness.
     seedSimulatedAssembly(required(scope.env.DUCK_PERSONAL_DB));
     application = await scope.launch(); page = await application.firstWindow(); page.on('pageerror', error => errors.push(String(error))); await page.waitForURL('duck://app/');
-    await page.goto('duck://app/assemble/'); await page.waitForFunction(() => document.querySelector('canvas'), null, { timeout: 60_000 }); await page.screenshot({ path: join(output, 'assemble.png') });
+    await application.context().tracing.start({ screenshots: true, snapshots: true });
+    await page.goto('duck://app/assemble/'); await page.waitForFunction(assemblyReady, undefined, { timeout: 60_000 }); await page.screenshot({ path: join(output, 'assemble.png') });
     await page.locator('#reference-toggle').click();
     await page.waitForFunction(() => { const video = document.querySelector('#reference-video'); return video instanceof HTMLVideoElement && video.videoWidth > 0 && !video.paused && video.currentTime > 1; }, null, { timeout: 30_000 });
     await page.locator('#reference-video').evaluate(video => { if (!(video instanceof HTMLVideoElement)) throw new Error('Expected video'); video.currentTime = 10; });
@@ -161,7 +163,9 @@ try {
   throw error;
 } finally {
   if (application) await application.context().tracing.stop({ path: join(output, 'last-session.zip') }).catch(() => {});
-  await scope.dispose();
+  let cleaned = false;
+  try { await scope.dispose(); cleaned = true; }
+  finally { await writeFile(join(output, 'cleanup.json'), JSON.stringify({ ownedProcessesExited: cleaned, temporaryDataRemoved: cleaned, fakeAdb: scope.adbEvidence(), ownedPids: [...scope.pids] }, null, 2)); }
 }
 const receipt = { ...result, fakeAdb: scope.adbEvidence(), ownedPids: [...scope.pids], ownedProcessesExited: true, temporaryDataRemoved: true };
 await writeFile(join(output, 'result.json'), JSON.stringify(receipt, null, 2));

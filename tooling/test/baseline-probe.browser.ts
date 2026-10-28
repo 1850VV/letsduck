@@ -1,0 +1,33 @@
+/** Explicit controlled GPU checks. Requires the performance GUI reservation. */
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {chromium} from 'playwright';
+import {bufferKey,installVisualProbe} from './baseline-probe.js';
+import {createStaticBridge,acceptVisualSample} from './baseline-comparison.js';
+const positions=[new Float32Array([-.8,-.8,0,-.1,-.8,0,-.5,.8,0]),new Float32Array([.1,-.8,0,.8,-.8,0,.5,.8,0])],indices=new Uint16Array([0,1,2]);
+const config={selector:'#model',copies:1,models:positions.map((value,index)=>({key:bufferKey(value)+'/'+bufferKey(indices),ids:['part'+index]}))};
+const html=`<!doctype html><canvas id="model" width="200" height="200"></canvas><script>
+document.body.dataset.homeReady='true';const mode=new URL(location.href).searchParams.get('mode');
+if(mode!=='none'){
+const canvas=document.querySelector('canvas'),gl=canvas.getContext('webgl2');if(!gl)throw Error('WebGL2 unavailable');
+const shader=(kind,source)=>{const value=gl.createShader(kind);gl.shaderSource(value,source);gl.compileShader(value);return value;};
+const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,'#version 300 es\\n in vec3 position;uniform mat4 modelViewMatrix;void main(){gl_Position=modelViewMatrix*vec4(position,1.);}'));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,'#version 300 es\\n precision mediump float;out vec4 color;void main(){color=vec4(1.,.3,.1,1.);}'));gl.linkProgram(program);gl.useProgram(program);
+const geometries=${JSON.stringify(positions.map(value=>[...value]))}.map(values=>{const vao=gl.createVertexArray();gl.bindVertexArray(vao);const position=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,position);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(values),gl.STATIC_DRAW);const at=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(at);gl.vertexAttribPointer(at,3,gl.FLOAT,false,0,0);const index=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,index);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array([0,1,2]),gl.STATIC_DRAW);return vao;});
+const uniform=gl.getUniformLocation(program,'modelViewMatrix');let offset=mode==='blank'?1000:0;canvas.onpointermove=event=>{if(event.buttons)offset=event.offsetX/200*.1;};
+function draw(){gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(program);for(const vao of mode==='part'?geometries.slice(0,1):geometries){gl.bindVertexArray(vao);gl.uniformMatrix4fv(uniform,false,new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,offset,0,0,1]));gl.drawElements(gl.TRIANGLES,3,gl.UNSIGNED_SHORT,0);}requestAnimationFrame(draw);}requestAnimationFrame(draw);
+}</script>`;
+const temporary=await mkdtemp(join(tmpdir(),'duck-gpu-probe-')),frontend=join(temporary,'frontend'),assets=join(temporary,'assets');let browser:Awaited<ReturnType<typeof chromium.launch>>|undefined,bridge:Awaited<ReturnType<typeof createStaticBridge>>|undefined;const pids=new Set<number>();
+try{
+ await mkdir(frontend);await mkdir(assets);await writeFile(join(frontend,'home.html'),html);bridge=await createStaticBridge({frontend,assets,assembly:[]});browser=await chromium.launch({headless:false});const inspector=await browser.newBrowserCDPSession();for(const process of(await inspector.send('SystemInfo.getProcessInfo')).processInfo)pids.add(process.id);
+ for(const mode of ['none','part','blank','full']){
+  const context=await browser.newContext();try{const page=await context.newPage();page.on('pageerror',error=>console.log('pageerror '+String(error)));await installVisualProbe(page,config);await page.goto(bridge.url+'/?mode='+mode);await page.waitForTimeout(300);console.log(JSON.stringify({mode,probe:await page.evaluate(()=>window.__baselineVisual)}));
+   if(mode==='none'||mode==='part'){assert.equal(await page.evaluate(()=>window.__baselineVisual.firstModelMs),-1,mode+' falsely accepted a usable model');continue;}
+   if(mode==='blank'){const state=await page.evaluate(()=>window.__baselineVisual);assert.equal(state.opaquePixels,0);assert.ok(state.errors.length>0);assert.throws(()=>acceptVisualSample({...state,completed:true,expected:['part0','part1'],usableMs:state.firstModelMs+1,interactionChanged:true,frameTimes:[1,2,3]}));continue;}
+   await page.waitForFunction(()=>window.__baselineVisual.firstModelMs>=0);await page.evaluate(()=>{window.__baselineVisual.sampling=true;document.querySelector('canvas')!.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>window.__baselineVisual.usableMs),-1,'untrusted event accepted');
+   await page.mouse.move(50,50);await page.mouse.down();await page.mouse.move(90,50,{steps:10});await page.waitForTimeout(100);await page.mouse.up();const state=await page.evaluate(()=>window.__baselineVisual);assert.ok(state.trustedPointer);acceptVisualSample({...state,completed:true,expected:['part0','part1']});assert.ok(state.usableMs>=state.inputMs);assert.equal(state.readbackMs>=0,true);console.log(JSON.stringify({mode,state}));
+  }finally{await context.close();}
+ }
+ for(const process of(await inspector.send('SystemInfo.getProcessInfo')).processInfo)pids.add(process.id);await inspector.detach();console.log('Controlled missing-model / incomplete-model / untrusted-event / real interactive GPU checks passed');
+}finally{await browser?.close();await bridge?.close();await rm(temporary,{recursive:true,force:true});for(const pid of pids)assert.throws(()=>process.kill(pid,0),{code:'ESRCH'});}

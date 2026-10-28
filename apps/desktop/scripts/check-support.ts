@@ -75,6 +75,7 @@ export async function studioState(page: Page): Promise<StudioState> { return unt
 export async function waitStudio(page: Page, predicate: (state: StudioState) => boolean, timeout = 60_000): Promise<StudioState> {
   return until(async () => { const value = await page.evaluate(observeStudio); return value !== false && predicate(value) ? value : false; }, 'production studio condition', timeout);
 }
+export function assemblyReady(): boolean { return document.documentElement.dataset.ready === 'true'; }
 export async function desktopScope(prefix: string) {
   const temporary = await mkdtemp(join(tmpdir(), prefix));
   const downloads = join(temporary, 'downloads'); await mkdir(downloads);
@@ -87,8 +88,17 @@ export async function desktopScope(prefix: string) {
   const cleanups: Array<() => Promise<unknown>> = [];
   let adbCalls: string[] | null = process.platform === 'win32' ? null : [];
   let cleanupPromise: Promise<void> | undefined;
-  const env: NodeJS.ProcessEnv = { ...process.env, DUCK_PERSONAL_DB: join(temporary, 'personal.db'), DUCK_DESKTOP_DATA: join(temporary, 'profile'), DUCK_ADB: fakeAdb, DUCK_DESKTOP_TEST_ADB_LOG: adbLog };
-  delete env.DUCK_DB; delete env.DUCK_DATABASE_URL; delete env.DUCK_TEST_DATABASE_URL;
+  // Electron traces retain launch options. Inherit only runtime paths and explicit test configuration.
+  const env: NodeJS.ProcessEnv = {};
+  for (const key of [
+    'PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT',
+    'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'TMPDIR', 'TMP', 'TEMP',
+    'LANG', 'LC_ALL', 'LC_CTYPE', 'TZ', 'DISPLAY', 'XAUTHORITY', 'DBUS_SESSION_BUS_ADDRESS',
+    'CI', 'GITHUB_ACTIONS', 'DUCK_APP_EXECUTABLE', 'DUCK_REAL_ASSETS', 'DUCK_ASSETS', 'DUCK_FRONTEND',
+    'DUCK_ASSEMBLY_MANIFEST', 'DUCK_TEST_OUTPUT', 'DUCK_EXPECTED_VERSION', 'DUCK_EXPECT_OFFLINE',
+    'DUCK_BUILD_ARCH', 'DUCK_RELEASE_VERSION', 'DUCK_TEST_ANGLE',
+  ]) if (process.env[key] !== undefined) env[key] = process.env[key];
+  Object.assign(env, { DUCK_PERSONAL_DB: join(temporary, 'personal.db'), DUCK_DESKTOP_DATA: join(temporary, 'profile'), DUCK_ADB: fakeAdb, DUCK_DESKTOP_TEST_ADB_LOG: adbLog });
   env.DUCK_LEGACY_DB = join(temporary, 'absent-legacy.db');
   const packaged = process.env.DUCK_APP_EXECUTABLE;
   if (packaged) { delete env.DUCK_ASSETS; delete env.DUCK_FRONTEND; delete env.DUCK_ASSEMBLY_MANIFEST; }
