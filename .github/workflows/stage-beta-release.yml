@@ -1,0 +1,90 @@
+name: Stage verified beta installers
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: 'Successful main-branch Internal beta installers run ID'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BUILD_RUN: ${{ inputs.build_run }}
+    steps:
+      - name: Resolve the successful mainline build
+        run: |
+          node --input-type=module <<'JS'
+          import {execFileSync} from 'node:child_process';
+          import {appendFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          assert.match(process.env.BUILD_RUN,/^\d+$/);
+          const run=JSON.parse(execFileSync('gh',['api',`repos/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.BUILD_RUN}`],{encoding:'utf8'}));
+          assert.equal(run.conclusion,'success'); assert.equal(run.event,'workflow_dispatch');
+          assert.equal(run.head_branch,'main'); assert.equal(run.path,'.github/workflows/release-packages.yml');
+          assert.match(run.head_sha,/^[a-f0-9]{40}$/);
+          appendFileSync(process.env.GITHUB_ENV,`SOURCE_SHA=${run.head_sha}\n`);
+          JS
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+      - name: Download the exact tested installer artifacts
+        run: |
+          gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name beta-installer-darwin-arm64 --dir fetched/mac
+          gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name beta-installer-win32-x64 --dir fetched/windows
+      - name: Verify installer bytes and all installed resources, then stage the unpublished release
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync,readdirSync,mkdirSync} from 'node:fs';
+          import {join,basename} from 'node:path';
+          import {execFileSync} from 'node:child_process';
+          import {createHash} from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const api=endpoint=>JSON.parse(execFileSync('gh',['api',endpoint],{encoding:'utf8'}));
+          const hash=data=>createHash('sha256').update(data).digest('hex');
+          function files(root){return readdirSync(root,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(join(root,e.name)):[join(root,e.name)]);}
+          const {version}=JSON.parse(readFileSync('apps/desktop/package.json','utf8'));
+          assert.match(version,/^\d+\.\d+\.\d+-beta\.\d+$/);
+          const tag='v'+version,inventory=execFileSync('git',['ls-files','-z','assets'],{encoding:'utf8'}).split('\0').filter(Boolean);
+          const expected=Object.fromEntries(inventory.map(name=>{const data=readFileSync(name);return [name.slice(7),{bytes:data.length,sha256:hash(data)}];}));
+          assert.ok(inventory.length>0);
+          const release=api(`repos/${process.env.GITHUB_REPOSITORY}/releases?per_page=100`).find(r=>r.tag_name===tag);
+          assert.ok(release); assert.equal(release.draft,true); assert.equal(release.prerelease,true);
+          assert.equal(release.target_commitish,process.env.SOURCE_SHA);
+          const prepared=[];
+          for(const [directory,platform,arch,suffix] of [['mac','darwin','arm64','mac-arm64.dmg'],['windows','win32','x64','win-x64.exe']]){
+            const entries=files('fetched/'+directory),receipt=JSON.parse(readFileSync(entries.find(p=>p.endsWith('release-evidence/installer.json')),'utf8'));
+            assert.equal(receipt.sourceCommit,process.env.SOURCE_SHA); assert.equal(receipt.version,version);
+            assert.equal(receipt.platform,platform); assert.equal(receipt.arch,arch);
+            assert.equal(receipt.installedAndLaunched,true); assert.equal(receipt.ownedProcessesExited,true); assert.equal(receipt.updateFeedEmbedded,false);
+            assert.deepEqual(Object.fromEntries(receipt.bundledAssets.map(f=>[f.path,{bytes:f.bytes,sha256:f.sha256}])),expected);
+            const name=`letsduck-${version}-${suffix}`,file=entries.find(p=>basename(p)===name),data=readFileSync(file);
+            assert.equal(receipt.file,name); assert.equal(data.length,receipt.bytes); assert.equal(hash(data),receipt.sha256);
+            prepared.push({file,name,bytes:data.length,sha256:receipt.sha256});
+          }
+          mkdirSync('staging',{recursive:true});
+          const checksums=prepared.map(p=>`${p.sha256}  ${p.name}\n`).join('');writeFileSync('staging/SHA256SUMS.txt',checksums);
+          prepared.push({file:'staging/SHA256SUMS.txt',name:'SHA256SUMS.txt',bytes:Buffer.byteLength(checksums),sha256:hash(checksums)});
+          for(const p of prepared){
+            const existing=api(release.assets_url).find(a=>a.name===p.name);
+            if(!existing)execFileSync('gh',['release','upload',tag,p.file,'--repo',process.env.GITHUB_REPOSITORY],{stdio:'inherit'});
+            const uploaded=api(release.assets_url).find(a=>a.name===p.name);
+            assert.equal(uploaded?.state,'uploaded'); assert.equal(uploaded.size,p.bytes); assert.equal(uploaded.digest,'sha256:'+p.sha256);
+          }
+          assert.equal(api(`repos/${process.env.GITHUB_REPOSITORY}/releases/${release.id}`).draft,true);
+          const result={releaseId:release.id,tag,sourceCommit:process.env.SOURCE_SHA,buildRun:process.env.BUILD_RUN,assetsVerifiedPerPlatform:inventory.length,files:prepared.map(({file,...p})=>p),published:false};
+          writeFileSync('staging/result.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+          JS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-beta-release-staging
+          path: staging/*
+          if-no-files-found: error
+          retention-days: 14
