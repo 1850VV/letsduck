@@ -5,7 +5,7 @@ import {jsonStringify,parseResponseJson} from '../shared/json.js';
 import {deriveServoStatus} from '../assemble/servo-status.js';
 import {parseSetupState,record} from '../assemble/servo-types.js';
 import type {SetupUiState} from '../assemble/servo-types.js';
-import servoMap from '../assemble/servo-map.json' with {type:'json'};
+import {servoMap} from '@letsduck/contracts';
 
 interface Options {api(action:string):Promise<unknown>;busy():boolean;setBusy(value:boolean):void;select(id:number):void;render():void;poll():Promise<void>}
 const escape=(value:unknown)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));

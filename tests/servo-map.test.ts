@@ -7,7 +7,7 @@ import {resolveServoMap, servosForStep, deriveServoPreparation} from '../fronten
 import {materialFor} from '../frontend/assemble/material-catalog.js';
 import {SERVO_IDS} from '../frontend/assemble/servo-horns.js';
 
-const data=readServoMap(new URL('../frontend/assemble/servo-map.json',import.meta.url));
+const data=readServoMap();
 
 test('ID14 selects the PDF left ankle and its matching lesson',()=>{
  const map=resolveServoMap(data,{actors:ACTORS,steps:STEPS});

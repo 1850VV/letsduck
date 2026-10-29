@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readServoMap} from './fixtures/source-data.js';
 import * as module from '../frontend/assemble/servo-map.js';
 import {STEPS,ACTORS} from '../frontend/assemble/hardware-state.js';
-const raw=readServoMap(new URL('../frontend/assemble/servo-map.json',import.meta.url));
+const raw=readServoMap();
 const map=module.resolveServoMap(raw,{actors:ACTORS,steps:STEPS});
 const unknown={requirements:Object.fromEntries(raw.bindings.map(b=>[b.id,{connections:null}]))};
 

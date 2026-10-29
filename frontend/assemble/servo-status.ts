@@ -1,5 +1,5 @@
 import type {SetupUiState,SetupRecord,ServoMapping,ResolvedBinding,SetupItem,SetupStatusKind} from './servo-types.js';
-type HistoryMap={version:ServoMapping['version'];bindings:Pick<ResolvedBinding,'id'>[]};
+type HistoryMap={version:ServoMapping['version'];bindings:readonly Pick<ResolvedBinding,'id'>[]};
 /** Classify saved proof without inventing a device connection or running task. */
 export function deriveServoHistory(saved:SetupRecord[],map:HistoryMap){
  const records=new Map(saved.map(r=>[r.id,r])),verified=new Set<number>(),review=new Set<number>(),pending=new Set<number>();

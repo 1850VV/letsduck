@@ -51,7 +51,7 @@ npm run package:browser -- --node-dir output/node-runtime-win32-x64 --platform w
 ## 检查
 
 ```sh
-npm run verify:phase7
+npm run verify
 node --import tsx apps/desktop/test/shell.browser.ts
 node --import tsx apps/desktop/test/experimental-access.browser.ts
 node --import tsx --test apps/desktop/test/assembly-ready.browser.ts

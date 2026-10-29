@@ -6,7 +6,7 @@ import {STEPS,ACTORS} from '../frontend/assemble/hardware-state.js';
 import type {SetupRecord} from '../frontend/assemble/servo-types.js';
 import {readServoMap,replaceProperty} from './fixtures/source-data.js';
 
-const map=resolveServoMap(readServoMap(new URL('../frontend/assemble/servo-map.json',import.meta.url)),{actors:ACTORS,steps:STEPS});
+const map=resolveServoMap(readServoMap(),{actors:ACTORS,steps:STEPS});
 const createData=()=>createServoAssemblyData(map);
 const proof=(id:number):SetupRecord=>({id,state:'verified',mapVersion:map.version,sourceId:id,profile:{kp:5,kd:10},readback:{kp:5,kd:10},oldIdAbsent:true});
 const catalog={requirements:{14:{connections:[{key:'lead-a',cableClass:'long',lengthMm:200,to:'fixture',sourceStatus:'confirmed'}]}}};

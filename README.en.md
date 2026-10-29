@@ -84,12 +84,7 @@ The server provides accounts, private schemes, a palette gallery, ratings and re
 ## Development and documentation
 
 ```sh
-npm run build
-npm run typecheck
-npm test
-npm run probe:runtime
-npm run audit:typescript
-npm run audit:publication
+npm run verify
 ```
 
 See [development and verification](docs/development.md) and [client packaging and acceptance](apps/desktop/README.md) for asset, MySQL, browser and installation requirements. Technical checks do not replace human interaction or physical-device acceptance.

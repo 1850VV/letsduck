@@ -84,12 +84,7 @@ npm run start:desktop
 ## 开发与文档
 
 ```sh
-npm run build
-npm run typecheck
-npm test
-npm run probe:runtime
-npm run audit:typescript
-npm run audit:publication
+npm run verify
 node --import tsx tests/browser/ui-system.ts
 ```
 

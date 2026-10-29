@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
+import {servoMap,servoLeads} from '@letsduck/contracts';
 const frontend=resolve(import.meta.dirname,'../../frontend'),dist=process.env.DUCK_WEB_DIST??join(frontend,'dist');
 test('Vite pages keep product routes, hashed modules and classic synchronous prepaint',async()=>{
  for(const page of ['index.html','home.html','assemble/index.html','debug/index.html','gallery/index.html','assemble/audio-credits.html']){
@@ -12,7 +13,7 @@ test('Vite pages keep product routes, hashed modules and classic synchronous pre
  }
 });
 test('public servo maps retain exact same paths and bytes, without copying licensed assets',async()=>{
- for(const path of ['assemble/servo-map.json','assemble/servo-leads.json','shared/servo-map.json'])assert.deepEqual(await readFile(join(dist,path)),await readFile(join(frontend,path==='shared/servo-map.json'?'assemble/servo-map.json':path)),path);
+ for(const path of ['assemble/servo-map.json','assemble/servo-leads.json','shared/servo-map.json'])assert.deepEqual(await readFile(join(dist,path)),Buffer.from(JSON.stringify(path.endsWith('servo-leads.json')?servoLeads:servoMap,null,2)+'\n'),path);
  const files=(await readdir(dist,{recursive:true})).map(file=>file.replaceAll('\\','/'));assert.ok(files.some(file=>/^static\/positions-worker-[^/]+\.js$/.test(file)),'model worker must be bundled');assert.equal(files.some(file=>/\.(?:3mf|bin|glb|mp4|mp3|py|ts)$/.test(file)),false,'private assets and source code must stay outside web dist');
 });
 

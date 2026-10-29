@@ -3,13 +3,14 @@
 import assert from 'node:assert/strict';
 import {spawn,type ChildProcess} from 'node:child_process';
 import {randomBytes,createHash} from 'node:crypto';
-import {mkdtemp,mkdir,writeFile,readFile,rm,rmdir,lstat} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,rm,rmdir,lstat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parseArgs} from 'node:util';
 import {setTimeout as delay} from 'node:timers/promises';
 import {writeSyntheticAssets} from './synthetic-assets.js';
+import {servoMap,servoLeads} from '@letsduck/contracts';
 
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const {values}=parseArgs({options:{image:{type:'string'},'backend-image':{type:'string'},help:{type:'boolean'}}});
@@ -54,7 +55,7 @@ async function checkStatic(url:string,container:string){
  for(const path of routes){const response=await request(url,path),html=await response.text();assert.equal(response.status,200,path);assert.match(response.headers.get('content-type')??'',/^text\/html/);assert.equal(response.headers.get('cache-control'),'no-cache');if(path!=='/assemble/audio-credits.html')assert.match(html,/<script[^>]+type="module"[^>]+src="[^"]+-[A-Za-z0-9_-]{8,}\.js"/);else{assert.ok(html.includes('https://creativecommons.org/licenses/by/3.0/'));assert.ok(html.includes('Kevin MacLeod'));}assert.doesNotMatch(html,/<script[^>]+src="[^"]+\.ts(?:\?|"|$)/);}
  const list=(await docker('exec',container,'find','/usr/share/nginx/html','-type','f','-print')).output.trim().split('\n'),code=list.filter(path=>/\.(?:js|css)$/.test(path));assert.ok(code.length>=6);assert.ok(code.some(path=>/positions-worker-[^/]+\.js$/.test(path)));
  for(const path of code){const relative=path.replace('/usr/share/nginx/html','');assert.match(relative,/^\/static\/[^/]+-[A-Za-z0-9_-]{8,}\.(?:js|css)$/);const response=await request(url,relative);assert.equal(response.status,200,relative);assert.match(response.headers.get('content-type')??'',path.endsWith('.css')?/^text\/css/:/^(?:text|application)\/javascript/);assert.match(response.headers.get('cache-control')??'',/public, max-age=31536000, immutable/);assert.equal(response.headers.get('x-content-type-options'),'nosniff');assert.ok((await response.arrayBuffer()).byteLength>0);}
- for(const path of ['/assemble/servo-map.json','/assemble/servo-leads.json','/shared/servo-map.json']){const response=await request(url,path);assert.equal(response.status,200,path);assert.match(response.headers.get('content-type')??'',/^application\/json/);const bytes=Buffer.from(await response.arrayBuffer()),source=await readFile(join(root,'frontend',path==='/shared/servo-map.json'?'assemble/servo-map.json':path.slice(1)));assert.equal(createHash('sha256').update(bytes).digest('hex'),createHash('sha256').update(source).digest('hex'));JSON.parse(bytes.toString('utf8'));}
+ for(const path of ['/assemble/servo-map.json','/assemble/servo-leads.json','/shared/servo-map.json']){const response=await request(url,path);assert.equal(response.status,200,path);assert.match(response.headers.get('content-type')??'',/^application\/json/);const bytes=Buffer.from(await response.arrayBuffer()),source=Buffer.from(JSON.stringify(path.endsWith('servo-leads.json')?servoLeads:servoMap,null,2)+'\n');assert.equal(createHash('sha256').update(bytes).digest('hex'),createHash('sha256').update(source).digest('hex'));JSON.parse(bytes.toString('utf8'));}
  assert.equal((await request(url,'/assets/source.3mf')).status,404);
  const model=await request(url,'/assets/model.json');assert.equal(model.status,200);assert.match(model.headers.get('content-type')??'',/^application\/json/);assert.equal(model.headers.get('cache-control'),'public, max-age=604800');
  console.log(`PASS six built HTML routes, ${code.length} exact hashed JS/CSS MIME/cache including Worker, three byte-identical authored JSON resources and source3MF denial`);
