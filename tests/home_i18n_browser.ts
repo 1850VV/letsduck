@@ -17,7 +17,7 @@ export default async(page:Page)=>{
   await page.waitForFunction(code=>document.documentElement.lang===code,locale);
   assert.equal(await page.locator('.home-brand b').innerText(),copy['brand.name']);
   for(const id of ['paint','debug','assemble'])assert.equal(await page.locator(`[data-duck=${id}] strong`).evaluate(node=>node.firstChild?.textContent),copy[`hub.${id}.name`]);
-  assert.equal(await page.locator('.home-brand small').innerText(),copy['brand.subtitle']);
+  assert.equal(await page.locator('.home-brand small').count(),0);
   assert.equal(await page.locator('html').getAttribute('dir'),locale==='ar'?'rtl':'ltr');
   assert.ok((await page.title()).includes(copy['brand.name']!));
   assert.ok(await canvas?.evaluate(node=>node.isConnected),'language change preserves the WebGL canvas');

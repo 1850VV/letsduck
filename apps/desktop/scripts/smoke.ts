@@ -175,7 +175,8 @@ try {
   else {
     milestone('assembly-gate');
     assert.deepEqual(await experimentalAccessState(page), { debug: true, assemble: true });
-    await page.goto('duck://app/assemble/'); await page.waitForURL('duck://app/debug/?from=assemble');
+    // Incomplete numbering no longer redirects; the home page only suggests Debug Duck first.
+    await page.goto('duck://app/assemble/'); await page.waitForURL('duck://app/assemble/');
     await application.context().tracing.stop({ path: join(output, 'gate-session.zip') });
     milestone('gate-application-close'); await scope.close(application);
     // This explicit test fixture is not evidence of physical numbering or readiness.
