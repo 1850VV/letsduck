@@ -1,0 +1,4 @@
+Hardware v2 approved local models, from hardware-batch-review. Source baseline preserved; units metres.
+UNO Q derived geometry: Arduino, CC BY-SA 4.0. Official STEP https://docs.arduino.cc/resources/models/ABX00162-step.zip ; license https://creativecommons.org/licenses/by-sa/4.0/ . User-provided photographs and labels retain their original ownership; no public publication authorized.
+Other models: original photo-informed procedural geometry provided by the hardware modeling task; physical fit, electrical mapping and torque unverified.
+Three.js and GLTFLoader: MIT, see ../../vendor/THREE-LICENSE.txt.

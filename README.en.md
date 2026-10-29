@@ -10,7 +10,7 @@ A painting tool for the XGO Duck V2. Choose colours, make posters, and export a 
 > **Debug and Assemble are currently internal test previews. Their functionality is not yet available for use.**
 > **Do not follow Assemble's tutorials or use Debug with real hardware.** For actual debugging, use the [manufacturer's official debugging software (downloads)](https://downloads.xgorobot.com/xgoduck/).
 
-**The public main branch provides software source. Running it requires a complete local asset pack that you are entitled to use; a single 3MF is insufficient.** Models, manufacturing data, tutorial media and derived assets have separate terms. The code's MIT licence does not cover them. Read [local assets](docs/local-assets.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
+**Client downloads include the models, resources and runtime needed to run the application. Install the desktop client or extract the browser archive to get started; no separate asset pack or 3MF is required.**
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Switching palettes in the painting studio"></p>
 
@@ -25,7 +25,7 @@ On the client home page, drag the three ducks sideways or use the arrow keys. Cl
 
 | Entry | Features and current status | Usage |
 | --- | --- | --- |
-| Paint `/paint` | Palettes, part colours, poses, posters, saved schemes, 3MF + BOM export | Complete painting asset pack |
+| Paint `/paint` | Palettes, part colours, poses, posters, saved schemes, 3MF + BOM export | Required resources are included in the client |
 | Debug `/debug/` | Internal test preview; functionality not yet available for use | Do not use with real hardware; use the manufacturer's official debugging software instead |
 | Assemble `/assemble/` | Internal test preview; functionality not yet available for use | Do not follow the assembly tutorials |
 
@@ -48,9 +48,13 @@ The home, paint, debug and assembly interfaces use the existing 12 language dict
 
 ### Install and launch
 
-The client has two launch options built on the same code: a **desktop installer** opens an application window; a **browser archive** runs locally in your browser after extraction and a double-click on its launcher. Both bundle their runtime, so users do not need to install Node.js or Python. See [client packaging](apps/desktop/README.md) for builds.
+The client has two launch options built on the same code: a **desktop installer** opens an application window; a **browser archive** runs locally in your browser after extraction and a double-click on its launcher. Both include the required resources and runtime. Users do not need to install Node.js or Python, or import models or a 3MF separately. See [client packaging](apps/desktop/README.md) for builds.
 
-The files currently in [Releases](https://github.com/1850VV/letsduck/releases) are historical test candidates; no formal client release is available yet. Candidate packages do not establish full product acceptance. Full functionality still requires assets you are entitled to use; see [local assets](docs/local-assets.md).
+The files currently in [Releases](https://github.com/1850VV/letsduck/releases) are historical test candidates; no formal client release is available yet. Candidate packages do not establish full product acceptance. See each release's notes for its version and verified scope.
+
+### Run from source (developers)
+
+The repository includes the required resources in `assets/`. Use the included build tools; no separate asset pack or 3MF import is needed. See [project resources](docs/local-assets.md) for the directory contents. Users who download the client do not need the following development commands.
 
 To run the client from source, install Node.js 24.20+ (24.x):
 
@@ -59,8 +63,6 @@ git clone https://github.com/1850VV/letsduck.git
 cd letsduck
 npm ci
 npm run setup:electron
-npm run import:assets -- /path/to/authorized/assets
-npm run import:assembly -- /path/to/authorized/assembly/assets
 npm run start:desktop
 ```
 

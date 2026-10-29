@@ -2,6 +2,8 @@
 
 [中文介绍](../README.md) · [English overview](../README.en.md) · [客户端打包与验收](../apps/desktop/README.md)
 
+本文面向源码开发与自行构建。仓库的 `assets/` 已包含所需资源，直接使用下方构建程序即可，无需另备素材或导入 3MF；目录说明见[项目资源](local-assets.md)。普通客户端下载包已包含资源和运行时，无需执行开发命令。
+
 客户端版仅面向 Apple 芯片 Mac 和 Windows x64。桌面窗口与本机浏览器入口是同一客户端的两种启动方式；服务器版独立部署。Linux 上的 CI 和服务器检查不表示提供 Linux 客户端。
 
 应用源码、前端、工具和常规测试统一使用严格 TypeScript。`frontend/` 经 Vite 构建到 `frontend/dist/`，客户端版和服务器都服务构建产物。保留 `/paint`、`/assemble/`、`/debug/`、`/gallery/` 与各自版本的入口规则；服务器的 `/` 是涂装台，客户端版的 `/` 是三入口首页。

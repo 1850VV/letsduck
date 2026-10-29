@@ -50,7 +50,7 @@ async function main() {
     source = args.positionals[0]!; target = args.values.target ?? join(root, 'assets');
   } catch (error) { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 2; return; }
   try {
-    const digest = await importAssets(source, target); console.log('Imported local-only assets (five required, plus any optional catalogue and presets). Source SHA-256: ' + digest); console.log('These assets retain their own terms; do not force-add them to Git.');
+    const digest = await importAssets(source, target); console.log('Imported project assets (five required, plus any optional catalogue and presets). Source SHA-256: ' + digest); console.log('Retain the accompanying asset notices when replacing project resources.');
     try { const { writePack } = await import('./pack_geometry.js'); console.log('Packed the geometry for faster loading: geometry.pack.bin, ' + await writePack(target) + ' bytes.'); }
     catch (error) { console.log('Could not pack the geometry (' + (error instanceof Error ? error.message : String(error)) + '); the site uses geometry.bin.'); }
   } catch (error) { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; }

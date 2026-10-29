@@ -8,20 +8,20 @@
 
 letsduck's (formerly DoodleDuck / DuckPalette) original software and documentation are MIT licensed. Imported libraries retain their own notices. Historical research documents quote and link external sources; those sources and trademarks do not become letsduck's intellectual property.
 
-## Not distributed
+## Bundled project assets
 
-- **XGO Duck V2 3MF and derived meshes/manifests:** the reviewed input metadata identifies `MakerWorld Exclusive License`. The [XGO hardware licensing statement](https://github.com/LuwuDynamics/xgoduck_hardware/blob/cd3358d96945c6ff2b713c7c2f3084321b9537ca/LICENSING.md) says that final file-level terms remain pending. This release does not establish permission for public redistribution; it excludes both original and converted model assets, previews, manufacturing exports, and archives.
-- **Bambu catalog and export schema:** the local catalog was derived from [Bambu Studio color codes at a pinned revision](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/profiles/BBL/filament/filaments_color_codes.json). Bambu Studio uses [AGPL-3.0](https://github.com/bambulab/BambuStudio/blob/master/LICENSE). No separate permissive data grant was established during this release review, so the catalog and derived schema are not redistributed under MIT here. The archived generation scripts are original project tooling, not the upstream data or source tables.
-- **Assembly guide assets** (`assets/assembly/`, imported by `scripts/import_assembly_assets.ts`): the tutorial videos are clips of the owner's own recordings; the Arduino UNO Q board model is converted from Arduino's official STEP under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); the other hardware models are hand-built approximations; the piano pieces are Kevin MacLeod's *Gymnopedie No. 1* ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)) and a public-domain rendering of Mozart K.545. Credits are shown in the guide at `frontend/assemble/audio-credits.html`. None of these files are in this repository.
-- **Other robot repositories:** software licenses do not automatically cover their design assets. The local project used XGO assembly references and identified MicroDuck ancestry; neither robot's meshes are included in this public distribution.
+The project resources in `assets/` are included with the repository owner's confirmed authorization. They retain their source terms and attribution; inclusion does not relicense them under the software's MIT licence.
 
-Asset filenames in code, hashes, citations and historical verification records describe the adapter's inputs. They do not grant rights in those inputs. Obtain assets and any necessary permission from their respective owners. Personal/local possession also does not automatically authorize a public hosted model viewer or download service.
+- **XGO Duck V2 3MF and derived meshes/manifests:** the fixed project, model manifest and display geometry are included in `assets/`. The source metadata identifies `MakerWorld Exclusive License`; keep the original notices. Upstream hardware provenance is recorded in the [XGO hardware licensing statement](https://github.com/LuwuDynamics/xgoduck_hardware/blob/cd3358d96945c6ff2b713c7c2f3084321b9537ca/LICENSING.md).
+- **Bambu catalog and export schema:** the catalog was derived from [Bambu Studio color codes at a pinned revision](https://github.com/bambulab/BambuStudio/blob/79df7ae309be398ed30c9f397c13c9911c2edc57/resources/profiles/BBL/filament/filaments_color_codes.json). Bambu Studio uses [AGPL-3.0](https://github.com/bambulab/BambuStudio/blob/master/LICENSE). The bundled catalog, presets and export data retain their respective terms; they are not relicensed under MIT.
+- **Assembly preview assets** (`assets/assembly/`): tutorial videos are clips of the owner's recordings; the Arduino UNO Q model is converted from Arduino's official STEP under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); other hardware models are hand-built approximations. The piano pieces are Kevin MacLeod's *Gymnopedie No. 1* ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)) and a public-domain rendering of Mozart K.545. Keep `assets/assembly/hardware-v2/ATTRIBUTION.txt` and the credits at `frontend/assemble/audio-credits.html`.
+- **Other robot repositories:** unrelated models and design assets are outside this bundle. Their software licences do not automatically cover design assets.
 
 ## Credits
 
 XGO-Duck by Luwu Dynamics builds on the MicroDuck ecosystem by Pollen Robotics. The workspace references Bambu Lab product color identifiers. The blue-white-black design uses a DeepSeek brand-blue reference. These names identify compatibility and inspiration, not endorsement, affiliation, or trademark permission.
 
-Review date: 2026-10-22. See [licensing research](docs/history/outputs/MicroDuck-XGODuck-授权核查-2026-10-22.md) for the recorded evidence and remaining uncertainty. This is an engineering release boundary, not legal advice.
+The [2026-10-22 licensing research](docs/history/outputs/MicroDuck-XGODuck-授权核查-2026-10-22.md) is a historical record from before the bundled project assets were authorized for this distribution.
 
 ## QR Code generator
 

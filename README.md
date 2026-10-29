@@ -10,7 +10,7 @@
 > **调试鸭和组装鸭目前均为内测版本，功能尚不可用，仅供预览。**
 > **请勿参考组装鸭的教程，也不要使用调试鸭调试真实设备。** 实际调试推荐使用[厂商官方调试程序（下载页）](https://downloads.xgorobot.com/xgoduck/)。
 
-**公开主线提供软件源码。运行需要另行准备有权使用的本地资产包，单独一份 3MF 不够。** 模型、制造数据、教程媒体及其衍生资产有独立授权，代码的 MIT 许可证不覆盖它们。先读 [本地资产说明](docs/local-assets.md) 和 [第三方声明](THIRD_PARTY_NOTICES.md)。
+**客户端下载包已包含运行所需的模型、资源和运行时。安装桌面客户端，或解压浏览器包后即可使用，无需另外准备资产包或 3MF。**
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="在涂装台切换机器鸭配色"></p>
 
@@ -25,7 +25,7 @@
 
 | 入口 | 功能与当前状态 | 使用说明 |
 | --- | --- | --- |
-| 来涂鸭 `/paint` | 选配色、细调零件、摆姿势、制作海报、保存方案、导出 3MF + BOM | 完整涂装资产包 |
+| 来涂鸭 `/paint` | 选配色、细调零件、摆姿势、制作海报、保存方案、导出 3MF + BOM | 所需资源已随客户端提供 |
 | 调试鸭 `/debug/` | 内测版本，功能尚不可用，仅供预览 | 请勿用于真实设备调试；实际调试请使用厂商官方程序 |
 | 组装鸭 `/assemble/` | 内测版本，功能尚不可用，仅供预览 | 请勿参考其中的组装教程 |
 
@@ -48,9 +48,13 @@
 
 ### 安装与启动
 
-客户端有两种启动方式，功能共用同一套代码：**桌面安装包**在应用窗口中运行；**浏览器包**解压后双击启动器，在本机浏览器中运行。两者都随附运行时，无需另装 Node.js 或 Python。构建说明见[客户端打包](apps/desktop/README.md)。
+客户端有两种启动方式，功能共用同一套代码：**桌面安装包**在应用窗口中运行；**浏览器包**解压后双击启动器，在本机浏览器中运行。两者都已包含所需资源和运行时，无需另装 Node.js 或 Python，也无需单独导入模型或 3MF。构建说明见[客户端打包](apps/desktop/README.md)。
 
-[Releases](https://github.com/1850VV/letsduck/releases) 中现有文件是历史内测候选，尚无正式客户端发行。候选包不等于完整产品验收；完整功能仍需要有权使用的资产，见[本地资产说明](docs/local-assets.md)。
+[Releases](https://github.com/1850VV/letsduck/releases) 中现有文件是历史内测候选，尚无正式客户端发行。候选包不等于完整产品验收；版本与已验收范围请以各条目的说明为准。
+
+### 从源码运行（开发者）
+
+仓库的 `assets/` 已包含构建所需资源，使用仓库自带的构建程序即可，无需另找素材或导入 3MF。资源目录说明见[项目资源](docs/local-assets.md)。下载客户端的用户无需执行以下开发命令。
 
 从源码启动客户端，需要 Node.js 24.20+（24.x）：
 
@@ -59,8 +63,6 @@ git clone https://github.com/1850VV/letsduck.git
 cd letsduck
 npm ci
 npm run setup:electron
-npm run import:assets -- /path/to/authorized/assets
-npm run import:assembly -- /path/to/authorized/assembly/assets
 npm run start:desktop
 ```
 

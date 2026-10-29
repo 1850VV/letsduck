@@ -39,6 +39,7 @@ test('the disposable debug firmware serves the production model, read-only mappi
  const f=await createBrowserFixture({mode:'debug'}),browser=await launchBrowser({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']}),previous=process.env.DUCK_BROWSER_URL;
  process.env.DUCK_BROWSER_URL=f.url;
  try{
-  const page=await browser.newPage({viewport:{width:1440,height:1000}});assert.equal((await mapping(page)).pass,true);assert.equal((await feedback(page)).pass,true);
+  // The reused mapping and feedback checks assert Chinese labels.
+  const page=await browser.newPage({locale:'zh-CN',viewport:{width:1440,height:1000}});assert.equal((await mapping(page)).pass,true);assert.equal((await feedback(page)).pass,true);
  }finally{if(previous===undefined)delete process.env.DUCK_BROWSER_URL;else process.env.DUCK_BROWSER_URL=previous;await browser.close();await f.close();assert.equal(f.app.server.address(),null);await assert.rejects(fetch(f.url));}
 });

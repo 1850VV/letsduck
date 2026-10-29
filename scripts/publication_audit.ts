@@ -19,15 +19,21 @@ const byteRules = Object.entries(rules).map(([rule,pattern]) => [rule,new RegExp
 const localOnly = new Set(['filament-catalog.json','filament-profiles.json','source.3mf','geometry.bin','geometry.pack.bin','geometry.positions.bin','model.json','catalog.json','export-schema.json']);
 const binary = new Set(['.3mf','.stl','.zip','.bin','.glb','.png','.jpg','.gif','.webm','.mp4','.mp3','.pdf']);
 const privateParts = new Set(['.env','.codex','.agents','.playwright-cli','.ryugi','node_modules','__pycache__']);
+async function bundledAssetPaths(): Promise<ReadonlySet<string>> {
+  const isJsonObject = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const manifest: unknown = JSON.parse(await readFile(join(root,'scripts/assembly-assets.json'),'utf8'));
+  if (!isJsonObject(manifest) || !isJsonObject(manifest.files) || (manifest.optionalFiles !== undefined && !isJsonObject(manifest.optionalFiles))) throw new Error('Invalid bundled assembly manifest');
+  return new Set([...localOnly].map(name=>'assets/'+name).concat(Object.keys({...manifest.files,...manifest.optionalFiles}).map(name=>'assets/assembly/'+name)));
+}
 export interface Finding { file: string; rule: string; line?: number }
 export async function audit(options: { root?: string; files?: readonly string[] } = {}): Promise<{ filesChecked: number; findings: Finding[] }> {
   const directory = options.root ?? root, files = options.files ?? execFileSync('git', ['ls-files','-z'], { cwd: directory }).toString('utf8').split('\0').filter(Boolean);
-  const findings: Finding[] = [];
+  const findings: Finding[] = [], bundled = await bundledAssetPaths();
   for (const name of files) {
     const file = join(directory,name), info = await lstat(file); if (info.isSymbolicLink()) { findings.push({file:name,rule:'symlink'}); continue; }
     const suffix = extname(name).toLowerCase(), media = name.startsWith('docs/media/') && ['.jpg','.gif'].includes(suffix);
     if (media && info.size > 3_000_000) findings.push({file:name,rule:'readme-media-too-large'});
-    if (localOnly.has(basename(name)) || (!media && binary.has(suffix))) findings.push({file:name,rule:'local-only-or-unreviewed-binary'});
+    if (!bundled.has(name) && (localOnly.has(basename(name)) || (!media && binary.has(suffix)))) findings.push({file:name,rule:'local-only-or-unreviewed-binary'});
     if (name.split('/').some(part=>privateParts.has(part))) findings.push({file:name,rule:'private-or-generated-path'});
     const data = (await readFile(file)).toString('latin1');
     for (const [rule, pattern] of byteRules) for (const match of data.matchAll(pattern)) findings.push({ file:name, line:data.slice(0,match.index).split('\n').length, rule });
