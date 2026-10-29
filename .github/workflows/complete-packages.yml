@@ -11,11 +11,11 @@ on:
   workflow_dispatch:
     inputs:
       assets_release:
-        description: 'Draft release holding the authorized letsduck-build-assets.zip'
+        description: 'Draft release holding the authorized letsduck-build-assets.zip overlay'
         required: true
         type: string
       assets_sha256:
-        description: 'SHA-256 of the complete asset archive'
+        description: 'SHA-256 of the authorized asset overlay archive'
         required: true
         type: string
 permissions:
@@ -44,7 +44,7 @@ jobs:
             target: ''
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
-    # Draft release downloads require repository write access. No job publishes a release.
+    # Only these manual jobs read and stage draft assets. No job publishes a release.
     permissions:
       contents: write
     defaults:
@@ -77,21 +77,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ASSETS_RELEASE: ${{ inputs.assets_release }}
           ASSETS_SHA256: ${{ inputs.assets_sha256 }}
+          DUCK_BASELINE_ARCHIVE: ${{ runner.temp }}/letsduck-assets.zip
           DUCK_ASSET_ARCHIVE: ${{ runner.temp }}/letsduck-build-assets.zip
           DUCK_DISTRIBUTABLE_ASSETS: ${{ runner.temp }}/letsduck-complete-assets
         run: |
+          gh release download desktop-assets-20261025 --repo "$GITHUB_REPOSITORY" --pattern letsduck-assets.zip --dir "$RUNNER_TEMP"
           gh release download "$ASSETS_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern letsduck-build-assets.zip --dir "$RUNNER_TEMP"
           node --input-type=module <<'JS'
           import {readFileSync} from 'node:fs';
           import {createHash} from 'node:crypto';
           import assert from 'node:assert/strict';
           assert.match(process.env.ASSETS_SHA256,/^[a-f0-9]{64}$/);
+          assert.equal(createHash('sha256').update(readFileSync(process.env.DUCK_BASELINE_ARCHIVE)).digest('hex'),'d91f56074787702eff7e82625f17e6fa957b02c3cac0eb783b1ace36b3d24162');
           assert.equal(createHash('sha256').update(readFileSync(process.env.DUCK_ASSET_ARCHIVE)).digest('hex'),process.env.ASSETS_SHA256);
           JS
           if [[ "$RUNNER_OS" == Windows ]]; then
-            pwsh -NoProfile -NonInteractive -Command 'Expand-Archive -LiteralPath $env:DUCK_ASSET_ARCHIVE -DestinationPath $env:DUCK_DISTRIBUTABLE_ASSETS'
+            pwsh -NoProfile -NonInteractive -Command 'Expand-Archive -LiteralPath $env:DUCK_BASELINE_ARCHIVE -DestinationPath $env:DUCK_DISTRIBUTABLE_ASSETS; Expand-Archive -LiteralPath $env:DUCK_ASSET_ARCHIVE -DestinationPath $env:DUCK_DISTRIBUTABLE_ASSETS -Force'
           else
-            unzip -q "$DUCK_ASSET_ARCHIVE" -d "$DUCK_DISTRIBUTABLE_ASSETS"
+            unzip -q "$DUCK_BASELINE_ARCHIVE" -d "$DUCK_DISTRIBUTABLE_ASSETS"
+            unzip -oq "$DUCK_ASSET_ARCHIVE" -d "$DUCK_DISTRIBUTABLE_ASSETS"
           fi
           node --input-type=module <<'JS'
           import {readFileSync} from 'node:fs';
@@ -131,6 +135,26 @@ jobs:
         run: |
           npm run audit:typescript
           npm run audit:publication
+      - name: Stage validated packages on the unpublished release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSETS_RELEASE: ${{ inputs.assets_release }}
+        run: |
+          gh release view "$ASSETS_RELEASE" --repo "$GITHUB_REPOSITORY" --json isDraft,tagName,targetCommitish > "$RUNNER_TEMP/release-before-upload.json"
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          import assert from 'node:assert/strict';
+          const release=JSON.parse(readFileSync(join(process.env.RUNNER_TEMP,'release-before-upload.json'),'utf8'));
+          assert.equal(release.isDraft,true,'Package staging requires an unpublished draft');
+          assert.equal(release.tagName,'v'+process.env.DUCK_RELEASE_VERSION);
+          assert.equal(release.targetCommitish,process.env.GITHUB_SHA);
+          JS
+          shopt -s nullglob
+          packages=(apps/desktop/release/*/letsduck-*.dmg apps/desktop/release/*/letsduck-*.exe apps/desktop/release/*/letsduck-*.zip output/letsduck-*-browser-*.zip)
+          test "${#packages[@]}" -gt 0
+          node --input-type=module -e 'import{readFileSync}from"node:fs";import{createHash}from"node:crypto";for(const file of process.argv.slice(1))console.log(createHash("sha256").update(readFileSync(file)).digest("hex")+"  "+file)' "${packages[@]}"
+          gh release upload "$ASSETS_RELEASE" "${packages[@]}" --repo "$GITHUB_REPOSITORY" --clobber
       - name: Store validated packages for final release verification
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
