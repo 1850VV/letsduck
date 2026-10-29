@@ -2,8 +2,8 @@
 #   cp .env.example .env   # then set the two MySQL passwords
 #   docker compose up -d --build
 # Fits a 1-core / 2 GB server (add swap, see README); raise DUCK_MYSQL_BUFFER_POOL on bigger hosts.
-# ./assets must hold the separately licensed asset pack (docs/local-assets.md); it is mounted
-# read-only and never baked into an image.
+# The repository includes ./assets (docs/local-assets.md); it is mounted read-only
+# and never baked into an image.
 # The personal edition does not use Docker: double-click 启动来做鸭.command / 启动来做鸭.bat instead.
 services:
   mysql:
