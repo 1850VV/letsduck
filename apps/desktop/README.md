@@ -69,6 +69,8 @@ node --import tsx apps/desktop/scripts/installed-smoke.ts --installer /path/to/c
 
 `Desktop and portable candidates` 工作流可手动启用 `full_software_acceptance`，使用固定校验的既有素材包执行完整模型安装流程。常规 push/PR 仍使用源码候选；手动验收不发布素材或安装包。该历史素材包缺少较新的可选耗材数据，不能据此宣称完整耗材数据验收。Windows 专项 `native-input-smoke.ts` 只在隔离 Actions runner 使用 Win32 原生输入检查首页 iframe、下拉菜单、键盘和真实剪贴板；`portable-browser-smoke.ts` 检查真实 BAT 启动、完整模型浏览器流程、同库重启和实际控制台 Ctrl+C 退出。这些结果不能替代用户电脑、GPU或人工视觉验收。
 
+`Complete release packages` 是手动完整发行构建：输入持有 `letsduck-build-assets.zip` 的草稿 Release 标签和档案 SHA-256，使用包含耗材目录、打印预设及组装素材的授权包。Mac arm64、Windows x64 安装版和 Windows x64 便携版分开验证；只有成功的 job 才保存下载包 artifact。工作流不会公开 Release；发布者还需验证 Mac 便携包、最终下载文件及校验和，再将草稿转为公开发行。草稿素材下载需要该 job 的仓库写权限；常规 PR 工作流仍只读。默认构建是无自动更新源的离线 beta，Mac 使用 ad-hoc 签名，不能据此宣称 Developer ID、公证或 Windows 发行签名通过。
+
 Windows x64 与 Apple 芯片 Mac 分别报告桌面安装包及浏览器包的安装或解压启动、保存、3MF/BOM、海报、剪贴板、视频、重启和退出结果。签名、公证、自动更新、完整进程组 CPU/RSS、下载/安装大小、真实菜单和设备检查各自保留证据，普通单元测试不能替代这些验收。运行上述命令不表示这些条件已经通过。
 
 手动完整验收可分别以 `windows_scope=native` 和 `windows_scope=portable` 启动，两项在独立 Windows 虚拟机中并行，避免共享前景窗口。子集只要求所选检查成功，并输出各项原始 outcome；默认 `all` 仍要求完整实装及 Windows 两路专项全部成功。`console_signal_diagnostic` 和 `native_select_diagnostic` 仅运行最小控制台或标准 HTML 控件诊断，其观察不能替代产品验收。
