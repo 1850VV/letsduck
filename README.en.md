@@ -10,7 +10,7 @@ A painting tool for the XGO Duck V2. Choose colours, make posters, and export a 
 > **Debug and Assemble are currently internal test previews. Their functionality is not yet available for use.**
 > **Do not follow Assemble's tutorials or use Debug with real hardware.** For actual debugging, use the [manufacturer's official debugging software (downloads)](https://downloads.xgorobot.com/xgoduck/).
 
-**Client downloads include the models, resources and runtime needed to run the application. Install the desktop client or extract the browser archive to get started; no separate asset pack or 3MF is required.**
+**Client installers include the models, resources and runtime needed to run the application. Install the client to get started; no separate asset pack or 3MF is required.**
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Switching palettes in the painting studio"></p>
 
@@ -48,7 +48,7 @@ The home, paint, debug and assembly interfaces use the existing 12 language dict
 
 ### Install and launch
 
-The client has two launch options built on the same code: a **desktop installer** opens an application window; a **browser archive** runs locally in your browser after extraction and a double-click on its launcher. Both include the required resources and runtime. Users do not need to install Node.js or Python, or import models or a 3MF separately. See [client packaging](apps/desktop/README.md) for builds.
+Internal test Releases provide only two installers: **Apple silicon Mac DMG** and **Windows x64 EXE**. Both include the required resources and runtime; users do not need to install Node.js or Python, or import models or a 3MF separately. The browser entry remains available from source as described below. See [client packaging](apps/desktop/README.md) for builds.
 
 [Releases](https://github.com/1850VV/letsduck/releases) provides internal test clients with the resources needed to run them. These are prereleases, not formal releases. See each release's notes for its version and verified scope.
 

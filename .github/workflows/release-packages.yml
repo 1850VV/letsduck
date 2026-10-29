@@ -9,8 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: macos-15, platform: darwin, arch: arm64, target: '--mac --arm64', suffix: mac-arm64.dmg}
-          - {os: windows-2025, platform: win32, arch: x64, target: '--win --x64', suffix: win-x64.exe}
+          - {os: macos-15, platform: darwin, arch: arm64, target: '--mac dmg --arm64', suffix: mac-arm64.dmg}
+          - {os: windows-2025, platform: win32, arch: x64, target: '--win nsis --x64', suffix: win-x64.exe}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     defaults:

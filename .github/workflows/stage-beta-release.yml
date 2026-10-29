@@ -71,13 +71,13 @@ jobs:
           }
           mkdirSync('staging',{recursive:true});
           const checksums=prepared.map(p=>`${p.sha256}  ${p.name}\n`).join('');writeFileSync('staging/SHA256SUMS.txt',checksums);
-          prepared.push({file:'staging/SHA256SUMS.txt',name:'SHA256SUMS.txt',bytes:Buffer.byteLength(checksums),sha256:hash(checksums)});
           for(const p of prepared){
             const existing=api(release.assets_url).find(a=>a.name===p.name);
             if(!existing)execFileSync('gh',['release','upload',tag,p.file,'--repo',process.env.GITHUB_REPOSITORY],{stdio:'inherit'});
             const uploaded=api(release.assets_url).find(a=>a.name===p.name);
             assert.equal(uploaded?.state,'uploaded'); assert.equal(uploaded.size,p.bytes); assert.equal(uploaded.digest,'sha256:'+p.sha256);
           }
+          assert.equal(api(release.assets_url).length,2,'Beta release contains only the Mac and Windows installers');
           assert.equal(api(`repos/${process.env.GITHUB_REPOSITORY}/releases/${release.id}`).draft,true);
           const result={releaseId:release.id,tag,sourceCommit:process.env.SOURCE_SHA,buildRun:process.env.BUILD_RUN,assetsVerifiedPerPlatform:inventory.length,files:prepared.map(({file,...p})=>p),published:false};
           writeFileSync('staging/result.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
