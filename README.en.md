@@ -4,7 +4,11 @@
 
 <p align="center"><img src="frontend/shared/brand/logo.svg" width="128" alt="letsduck"></p>
 
-A painting, servo debugging and 3D assembly tool for the XGO Duck V2. Choose colours, export a recoloured 3MF and bill of materials, connect an UNO Q locally to check servo IDs and parameters, then follow the assembly guide.
+A painting tool for the XGO Duck V2. Choose colours, make posters, and export a recoloured 3MF and bill of materials.
+
+> [!IMPORTANT]
+> **Debug and Assemble are currently internal test previews. Their functionality is not yet available for use.**
+> **Do not follow Assemble's tutorials or use Debug with real hardware.** For actual debugging, use the [manufacturer's official debugging software (downloads)](https://downloads.xgorobot.com/xgoduck/).
 
 **The public main branch provides software source. Running it requires a complete local asset pack that you are entitled to use; a single 3MF is insufficient.** Models, manufacturing data, tutorial media and derived assets have separate terms. The code's MIT licence does not cover them. Read [local assets](docs/local-assets.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
 
@@ -12,20 +16,20 @@ A painting, servo debugging and 3D assembly tool for the XGO Duck V2. Choose col
 
 ## Two editions
 
-- **Client edition (primary)**: painting, debugging and assembly on your own computer. Available only for **Apple silicon Macs (arm64)** and **Windows x64**. No Intel Mac, Linux or other client platforms are provided.
+- **Client edition (primary)**: painting, saved schemes and export on your own computer; Debug and Assemble are internal test previews only. Available only for **Apple silicon Macs (arm64)** and **Windows x64**. No Intel Mac, Linux or other client platforms are provided.
 - **Server edition**: self-hosted palette sharing, ratings and remixes. Optimisation and adaptation remain limited; see the brief server section below.
 
 ## Client edition
 
 On the client home page, drag the three ducks sideways or use the arrow keys. Click a side duck to bring it to the centre, then click the centre duck to open its tool.
 
-| Entry | Features | Requirements |
+| Entry | Features and current status | Usage |
 | --- | --- | --- |
 | Paint `/paint` | Palettes, part colours, poses, posters, saved schemes, 3MF + BOM export | Complete painting asset pack |
-| Debug `/debug/` | Connection status, live feedback, automatic numbering and next-servo queue, scanning, ID and parameter checks and writes, jogging and zero calibration | Local USB connection to UNO Q, installed ADB and compatible Duck Runtime |
-| Assemble `/assemble/` | Chapter materials, pickup positions, 3D installation steps and reference videos | Assembly asset pack; the home entry unlocks after all 15 installation IDs pass read-back verification |
+| Debug `/debug/` | Internal test preview; functionality not yet available for use | Do not use with real hardware; use the manufacturer's official debugging software instead |
+| Assemble `/assemble/` | Internal test preview; functionality not yet available for use | Do not follow the assembly tutorials |
 
-Studio animations are screen previews. Device actions in Debug affect real hardware and require clicking the corresponding control. Opening Debug only reads status.
+Poses and animations in the painting studio are screen previews and do not control real hardware.
 
 ### Paint and export
 
@@ -41,16 +45,6 @@ Studio animations are screen previews. Device actions in Debug affect real hardw
 Export targets a fixed project with 35 parts and 6 print plates. Display poses and exploded views do not alter manufacturing meshes. Arbitrary 3MF import, automatic slicing and printer control are outside the project. Screen colours do not guarantee physical colour accuracy, and model previews do not validate assembly tolerances.
 
 The home, paint, debug and assembly interfaces use the existing 12 language dictionaries. See [translation maintenance](docs/i18n.md) for coverage and review status.
-
-### Servo preparation and assembly
-
-- Follow the [manufacturer's instructions](https://www.xgorobot.com/duck.html#software) to set up Arduino App Lab, Duck OS and the board. letsduck reuses installed ADB; set `DUCK_ADB` for a custom executable path.
-- Use Debug's **Automatic numbering** tab for the automatic flow. Explicitly start scanning and configuration, add or remove the next servo, pause with progress retained, and resume after a power swap. Assembly keeps tutorials, materials and pickup.
-- Connect one servo at a time for initial numbering. Target IDs are `10–14`, `20–24` and `30–34`. The tool matches the runtime profile and verifies writes by reading them back. Duplicate-ID servos must be connected separately.
-- Use safe shutdown before changing connections. Wait at least 15 seconds and confirm the board has stopped, then disconnect USB and battery power. Do not reconnect servos while powered.
-- Saved numbering verification and current online status are separate. Disconnecting preserves progress; ID changes or unconfirmed writes recalculate readiness. An online count is not a verified-ID count.
-- Assembly includes material quantities, enlarged rotatable items, direct main/secondary horn selection and pickup records. Keep the tray in its fixed three-by-five arrangement; leave removed positions empty.
-- IDs, parameters and mechanical zero are separate. Software cannot fix reversed or jammed hardware. Cable specifications and some installation orientations still need manufacturer and physical checks; a completed page is not physical acceptance.
 
 ### Install and launch
 
