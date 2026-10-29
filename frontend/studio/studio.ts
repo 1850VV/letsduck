@@ -48,6 +48,9 @@ function renderEdition() {
   $<HTMLButtonElement>('#import-code').hidden = !personal;
   const brand = $<HTMLAnchorElement>('[data-brand-slot]');brand.href = personal ? './' : './gallery/';
   brand.title = personal ? brandName() : _t('text.0614');
+  const frame=window.frameElement,close=personal&&frame?.id==='module-frame'?frame.ownerDocument.getElementById('close-module'):null;
+  document.body.classList.toggle('embedded-paint',Boolean(close));
+  brand.onclick=close?event=>{event.preventDefault();close.click();}:null;
   if (personal) {
     $('#steps [data-step="3"] [data-i18n]').dataset.i18n = 'personal.show';
     $('#steps [data-step="3"] [data-i18n]').textContent = _t('personal.show');
