@@ -50,7 +50,7 @@
 
 客户端有两种启动方式，功能共用同一套代码：**桌面安装包**在应用窗口中运行；**浏览器包**解压后双击启动器，在本机浏览器中运行。两者都随附运行时，无需另装 Node.js 或 Python。构建说明见[客户端打包](apps/desktop/README.md)。
 
-[Releases](https://github.com/1850VV/letsduck/releases) 中现有文件是历史内测候选，尚无正式客户端发行。候选包不等于完整产品验收；完整功能仍需要有权使用的资产，见[本地资产说明](docs/local-assets.md)。
+从 [Releases](https://github.com/1850VV/letsduck/releases) 下载内测包，目前支持 **Apple 芯片 Mac（arm64）和 Windows x64**。桌面版选择 `.dmg` 或 `.exe`；浏览器版选择名称含 `browser` 的对应平台 ZIP，解压后运行“启动来做鸭”。标注完整包的发行包含模型、组装媒体和耗材数据；这些素材不属于代码的 MIT 许可。每版实际验证范围与签名状态见发行说明，内测包不等于完整产品或实物验收。源码所需素材见[本地资产说明](docs/local-assets.md)。
 
 从源码启动客户端，需要 Node.js 24.20+（24.x）：
 

@@ -7,6 +7,12 @@ on:
     paths: ['apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
   workflow_dispatch:
     inputs:
+      complete_assets_release:
+        description: 'Build complete release packages from this authorized draft asset release'
+        type: string
+      complete_assets_sha256:
+        description: 'SHA-256 of letsduck-build-assets.zip for complete packages'
+        type: string
       full_software_acceptance:
         description: 'Check full-model installers using the existing asset bundle; do not publish'
         type: boolean
@@ -27,8 +33,16 @@ on:
 permissions:
   contents: read
 jobs:
+  complete_packages:
+    if: github.event_name == 'workflow_dispatch' && inputs.complete_assets_release != ''
+    permissions:
+      contents: write
+    uses: ./.github/workflows/complete-packages.yml
+    with:
+      assets_release: ${{ inputs.complete_assets_release }}
+      assets_sha256: ${{ inputs.complete_assets_sha256 }}
   candidate:
-    if: ${{ !inputs.console_signal_diagnostic && !inputs.native_select_diagnostic }}
+    if: ${{ !inputs.complete_assets_release && !inputs.console_signal_diagnostic && !inputs.native_select_diagnostic }}
     name: ${{ inputs.windows_scope && inputs.windows_scope != 'all' && format('Windows {0} software acceptance', inputs.windows_scope) || format('candidate ({0}, {1}, {2}, {3})', matrix.os, matrix.platform, matrix.arch, matrix.target) }}
     strategy:
       fail-fast: false
@@ -46,7 +60,7 @@ jobs:
       CSC_NAME: '-'
       CSC_FOR_PULL_REQUEST: 'true'
       DUCK_BUILD_ARCH: ${{ matrix.arch }}
-      DUCK_RELEASE_VERSION: '0.1.0-beta.4'
+      DUCK_RELEASE_VERSION: '0.1.0-beta.5'
       DUCK_PACKAGE_WITHOUT_ASSETS: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

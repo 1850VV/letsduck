@@ -1,0 +1,178 @@
+name: Complete release packages
+on:
+  workflow_call:
+    inputs:
+      assets_release:
+        required: true
+        type: string
+      assets_sha256:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      assets_release:
+        description: 'Draft release holding the authorized letsduck-build-assets.zip overlay'
+        required: true
+        type: string
+      assets_sha256:
+        description: 'SHA-256 of the authorized asset overlay archive'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  package:
+    name: ${{ matrix.platform }} ${{ matrix.kind }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin
+            arch: arm64
+            kind: desktop-and-browser
+            target: '--mac --arm64'
+          - os: windows-2025
+            platform: win32
+            arch: x64
+            kind: desktop
+            target: '--win --x64'
+          - os: windows-2025
+            platform: win32
+            arch: x64
+            kind: browser
+            target: ''
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    # Only these manual jobs read and stage draft assets. No job publishes a release.
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      CSC_NAME: '-'
+      DUCK_BUILD_ARCH: ${{ matrix.arch }}
+      DUCK_PACKAGE_WITHOUT_ASSETS: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.20.0'
+          cache: npm
+      - run: npm ci
+      - name: Read the package version
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,appendFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const {version}=JSON.parse(readFileSync('apps/desktop/package.json','utf8'));
+          assert.match(version,/^\d+\.\d+\.\d+-beta\.\d+$/);
+          appendFileSync(process.env.GITHUB_ENV,`DUCK_RELEASE_VERSION=${version}\n`);
+          JS
+      - name: Download and verify the complete authorized assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSETS_RELEASE: ${{ inputs.assets_release }}
+          ASSETS_SHA256: ${{ inputs.assets_sha256 }}
+          DUCK_BASELINE_ARCHIVE: ${{ runner.temp }}/letsduck-assets.zip
+          DUCK_ASSET_ARCHIVE: ${{ runner.temp }}/letsduck-build-assets.zip
+          DUCK_DISTRIBUTABLE_ASSETS: ${{ runner.temp }}/letsduck-complete-assets
+        run: |
+          gh release download desktop-assets-20261025 --repo "$GITHUB_REPOSITORY" --pattern letsduck-assets.zip --dir "$RUNNER_TEMP"
+          gh release download "$ASSETS_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern letsduck-build-assets.zip --dir "$RUNNER_TEMP"
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          import assert from 'node:assert/strict';
+          assert.match(process.env.ASSETS_SHA256,/^[a-f0-9]{64}$/);
+          assert.equal(createHash('sha256').update(readFileSync(process.env.DUCK_BASELINE_ARCHIVE)).digest('hex'),'d91f56074787702eff7e82625f17e6fa957b02c3cac0eb783b1ace36b3d24162');
+          assert.equal(createHash('sha256').update(readFileSync(process.env.DUCK_ASSET_ARCHIVE)).digest('hex'),process.env.ASSETS_SHA256);
+          JS
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            pwsh -NoProfile -NonInteractive -Command 'Expand-Archive -LiteralPath $env:DUCK_BASELINE_ARCHIVE -DestinationPath $env:DUCK_DISTRIBUTABLE_ASSETS; Expand-Archive -LiteralPath $env:DUCK_ASSET_ARCHIVE -DestinationPath $env:DUCK_DISTRIBUTABLE_ASSETS -Force'
+          else
+            unzip -q "$DUCK_BASELINE_ARCHIVE" -d "$DUCK_DISTRIBUTABLE_ASSETS"
+            unzip -oq "$DUCK_ASSET_ARCHIVE" -d "$DUCK_DISTRIBUTABLE_ASSETS"
+          fi
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          for(const file of ['source.3mf','model.json','catalog.json','export-schema.json','geometry.bin','filament-catalog.json','filament-profiles.json','assembly/full-assembly.json','assembly/full-assembly.bin']) readFileSync(join(process.env.DUCK_DISTRIBUTABLE_ASSETS,file));
+          JS
+          echo "DUCK_DISTRIBUTABLE_ASSETS=$DUCK_DISTRIBUTABLE_ASSETS" >> "$GITHUB_ENV"
+      - name: Source, desktop and packaging checks
+        run: |
+          npm run typecheck
+          npm run test:desktop
+          npx tsx --test tooling/test/stage-runtime-assets.test.ts tooling/test/package-browser.test.ts tooling/test/fetch-node-runtime.test.ts
+      - name: Install the official Electron runtime
+        if: matrix.kind != 'browser'
+        run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
+      - name: Build and install the full-model desktop package
+        if: matrix.kind != 'browser'
+        run: |
+          npm run package:desktop -- ${{ matrix.target }}
+          node --import tsx apps/desktop/scripts/installed-smoke.ts
+      - name: Windows native mouse, keyboard and clipboard
+        if: matrix.kind == 'desktop'
+        run: node --import tsx apps/desktop/scripts/native-input-smoke.ts
+      - name: Build the portable browser archive with official bundled Node
+        if: matrix.kind != 'desktop'
+        run: |
+          npm run fetch:node -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/node-runtime
+          npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --assets "$DUCK_DISTRIBUTABLE_ASSETS" --output "output/letsduck-$DUCK_RELEASE_VERSION-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip"
+      - name: Windows original BAT launcher, UI, persistence and actual Ctrl+C
+        if: matrix.kind == 'browser'
+        env:
+          DUCK_BROWSER_ARCHIVE: output/letsduck-${{ env.DUCK_RELEASE_VERSION }}-browser-win32-x64.zip
+        run: |
+          PLAYWRIGHT_SKIP_BROWSER_GC=1 npx playwright install chromium
+          node --import tsx apps/desktop/scripts/portable-browser-smoke.ts
+      - name: Publication boundary
+        run: |
+          npm run audit:typescript
+          npm run audit:publication
+      - name: Stage validated packages on the unpublished release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSETS_RELEASE: ${{ inputs.assets_release }}
+        run: |
+          gh release view "$ASSETS_RELEASE" --repo "$GITHUB_REPOSITORY" --json isDraft,tagName,targetCommitish > "$RUNNER_TEMP/release-before-upload.json"
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          import assert from 'node:assert/strict';
+          const release=JSON.parse(readFileSync(join(process.env.RUNNER_TEMP,'release-before-upload.json'),'utf8'));
+          assert.equal(release.isDraft,true,'Package staging requires an unpublished draft');
+          assert.equal(release.tagName,'v'+process.env.DUCK_RELEASE_VERSION);
+          assert.equal(release.targetCommitish,process.env.GITHUB_SHA);
+          JS
+          shopt -s nullglob
+          packages=(apps/desktop/release/*/letsduck-*.dmg apps/desktop/release/*/letsduck-*.exe apps/desktop/release/*/letsduck-*.zip output/letsduck-*-browser-*.zip)
+          test "${#packages[@]}" -gt 0
+          node --input-type=module -e 'import{readFileSync}from"node:fs";import{createHash}from"node:crypto";for(const file of process.argv.slice(1))console.log(createHash("sha256").update(readFileSync(file)).digest("hex")+"  "+file)' "${packages[@]}"
+          gh release upload "$ASSETS_RELEASE" "${packages[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+      - name: Store validated packages for final release verification
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: complete-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.kind }}
+          path: |
+            apps/desktop/release/*/letsduck-*.dmg
+            apps/desktop/release/*/letsduck-*.exe
+            apps/desktop/release/*/letsduck-*.zip
+            output/letsduck-*-browser-*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Acceptance receipts and owned-process cleanup
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import {existsSync,readFileSync} from 'node:fs';
+          for(const file of ['output/desktop-installed-smoke/result.json','output/desktop-installed-smoke/failure.json','output/desktop-installed-smoke/functional/result.json','output/desktop-installed-smoke/functional/cleanup.json','output/windows-native-input/result.json','output/windows-native-input/cleanup.json','output/windows-portable-browser/result.json','output/windows-portable-browser/cleanup.json']) {
+            if(existsSync(file)) console.log(JSON.stringify({file,receipt:JSON.parse(readFileSync(file,'utf8'))}));
+          }
+          JS

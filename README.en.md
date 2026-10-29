@@ -50,7 +50,7 @@ The home, paint, debug and assembly interfaces use the existing 12 language dict
 
 The client has two launch options built on the same code: a **desktop installer** opens an application window; a **browser archive** runs locally in your browser after extraction and a double-click on its launcher. Both bundle their runtime, so users do not need to install Node.js or Python. See [client packaging](apps/desktop/README.md) for builds.
 
-The files currently in [Releases](https://github.com/1850VV/letsduck/releases) are historical test candidates; no formal client release is available yet. Candidate packages do not establish full product acceptance. Full functionality still requires assets you are entitled to use; see [local assets](docs/local-assets.md).
+Download beta packages from [Releases](https://github.com/1850VV/letsduck/releases), currently for **Apple Silicon Mac (arm64) and Windows x64**. Choose `.dmg` or `.exe` for the desktop client, or the matching ZIP with `browser` in its name for portable browser use; extract it and run `启动来做鸭`. Releases marked complete include model, assembly media and filament data, which remain outside the code's MIT license. Each release documents its actual verification scope and signing status; beta packages do not establish full product or physical-device acceptance. Source builds require [local assets](docs/local-assets.md).
 
 To run the client from source, install Node.js 24.20+ (24.x):
 
