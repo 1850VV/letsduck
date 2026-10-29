@@ -46,7 +46,15 @@ function positionModels(angle=carousel.angle,current=focus){
 }
 function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const obj=models.get(e.id),p=new THREE.Vector3(0,-9,e.id==='debug'?175:95);if(obj){obj.updateMatrixWorld(true);p.applyMatrix4(obj.matrixWorld);}else p.add(new THREE.Vector3(...placements.get(e.id)!));p.project(camera);const b=buttons.get(e.id)!;b.hidden=!ready||p.z>1;const spread=host.clientWidth<700?1.2:1;b.style.left=(p.x*.5*spread+.5)*host.clientWidth+'px';b.style.top=Math.min((-p.y*.5+.5)*host.clientHeight,host.clientHeight-b.offsetHeight-12)+'px';}experiment.position();}
 function persist(id:string){if(!valid(id))return;try{localStorage.setItem(KEY,id);}catch{}lastUsed=id;}
-function open(id:string){if(!ready||!valid(id)||experiment.suppressed)return;if(access.locked(id)){experiment.show(id);return;}if(id==='assemble'&&!readNumberingReadiness().ready){id='debug';carousel.jump(id);if(access.locked(id)){experiment.show(id);return;}}experiment.hide();carousel.jump(id);opened=id;persist(id);positionModels();
+// Assembly needs the servos connected in Debug Duck first; the prompt suggests that order but lets the user go on.
+// The prompt opens under the cursor, so the second click of a double-click must not choose for the user.
+let promptShown=0;const settled=()=>performance.now()-promptShown>400;
+function askPrerequisite(){if($('prerequisite').hidden)promptShown=performance.now();$('prerequisite-copy').textContent=t('hub.prerequisite',{count:readNumberingReadiness().verifiedIds.length});$('prerequisite-debug').textContent=t('hub.enter',{name:entries.find(e=>e.id==='debug')!.name});$('prerequisite').hidden=false;$('prerequisite-debug').focus();}
+function hidePrerequisite(){$('prerequisite').hidden=true;}
+$('prerequisite-debug').onclick=()=>{if(!settled())return;hidePrerequisite();open('debug');};$('prerequisite-skip').onclick=()=>{if(!settled())return;hidePrerequisite();open('assemble',true);};
+function open(id:string,skipPrerequisite=false){if(!ready||!valid(id)||experiment.suppressed)return;if(access.locked(id)){experiment.show(id);return;}
+ if(id==='assemble'&&!skipPrerequisite&&access.edition==='personal'&&!readNumberingReadiness().ready){experiment.hide();carousel.jump(id);askPrerequisite();return;}
+ hidePrerequisite();experiment.hide();carousel.jump(id);opened=id;persist(id);positionModels();
  $('module-window').dataset.module=id;
  $('module-title').textContent=entries.find(e=>e.id===id)!.name;
  $<HTMLIFrameElement>('module-frame').title=t('hub.frame.named',{name:entries.find(e=>e.id===id)!.name});
@@ -57,7 +65,7 @@ function open(id:string){if(!ready||!valid(id)||experiment.suppressed)return;if(
 function close(){if(!opened)return;updatePaint();persist(opened);opened=null;$('module-window').hidden=true;$<HTMLIFrameElement>('module-frame').src='about:blank';document.body.classList.remove('module-open');positionModels();resize();buttons.get(focus)!.focus();}
 $('close-module').onclick=close;$('close-x').onclick=close;
 $<HTMLIFrameElement>('module-frame').addEventListener('load',()=>{try{$<HTMLIFrameElement>('module-frame').contentWindow?.addEventListener('keydown',e=>{if(e.key==='Escape')close();});}catch{}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});window.addEventListener('pagehide',()=>{if(opened)persist(opened);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){hidePrerequisite();close();}});window.addEventListener('pagehide',()=>{if(opened)persist(opened);});
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
 function hitAt(e:PointerEvent){
  const label=e.target instanceof Element?e.target.closest<HTMLElement>('[data-duck]'):null;
@@ -88,11 +96,7 @@ function hitAt(e:PointerEvent){
 }
 $('reset-carousel').onclick=()=>{try{localStorage.removeItem(KEY);}catch{}lastUsed=null;carousel.rotateTo('debug');};
 const servoIds=new Map(SERVO_BINDINGS.map(binding=>[binding.actorId,binding.id]));
-function updateReadiness(progress:NumberingReadiness){const b=buttons.get('assemble')!;b.classList.toggle('locked',!progress.ready);b.dataset.numberingReady=String(progress.ready);
- b.querySelector('small')!.textContent=progress.ready?t('hub.assemble.caption'):t('hub.numbering',{count:progress.verifiedIds.length});
- b.querySelector('.go')!.innerHTML=progress.ready?'↗':'<svg width="13" height="14" viewBox="0 0 16 18" fill="none" aria-hidden="true"><rect x="3" y="8" width="10" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8V5a3 3 0 0 1 6 0v3" stroke="currentColor" stroke-width="1.5"/></svg>';
- b.setAttribute('aria-label',progress.ready?t('hub.enter',{name:t('hub.assemble.name')}):t('hub.assemble.locked'));if(opened==='assemble'&&!progress.ready){close();carousel.jump('debug');open('debug');}refreshAccess();
-}
+function updateReadiness(progress:NumberingReadiness){buttons.get('assemble')!.dataset.numberingReady=String(progress.ready);if(progress.ready)hidePrerequisite();refreshAccess();}
 
 function box(parent:THREE.Object3D,size:Vec3,color:THREE.ColorRepresentation,position:Vec3){const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),new THREE.MeshStandardMaterial({color,roughness:.45,metalness:.18}));mesh.position.set(...position);parent.add(mesh);return mesh;}
 function rod(parent:THREE.Object3D,a:Vec3,b:Vec3,r:number,color:THREE.ColorRepresentation,rEnd=r){const direction=new THREE.Vector3().subVectors(new THREE.Vector3(...b),new THREE.Vector3(...a));const mesh=new THREE.Mesh(new THREE.CylinderGeometry(rEnd,r,direction.length(),12),new THREE.MeshStandardMaterial({color,roughness:.4,metalness:.15}));mesh.position.fromArray(a).addScaledVector(direction,.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());parent.add(mesh);return mesh;}

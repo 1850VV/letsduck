@@ -119,7 +119,7 @@ test('preparation persistence validates independently without touching device AP
   } finally { await f.close(); }
 });
 
-test('static aliases, readiness gate, allowlists, directory and method errors match personal mode', async () => {
+test('static aliases, allowlists, directory and method errors match personal mode', async () => {
   const f = await fixture();
   try {
     assert.equal((await f.app.inject('/?q=1')).body, 'HOME'); assert.equal((await f.app.inject('/paint')).body, 'PAINT'); assert.equal((await f.app.inject('/module.mjs')).headers['content-type'], 'text/javascript');
@@ -130,7 +130,8 @@ test('static aliases, readiness gate, allowlists, directory and method errors ma
     for (const [path, kind] of [['/file.py', 'text/x-python'], ['/page.HTM', 'text/html']]) assert.equal((await f.app.inject(path!)).headers['content-type'], kind);
     for (const method of ['GET', 'HEAD'] as const) { const result = await f.app.inject({ method, url: '/paint/?q=1' }); assert.equal(result.statusCode, 308); assert.equal(result.headers.location, '/paint'); assert.equal(result.body, ''); }
     for (const url of ['/gallery', '/gallery/', '/gallery/a']) { const result = await f.app.inject(url); assert.equal(result.statusCode, 303); assert.equal(result.headers.location, '/'); }
-    for (const url of ['/assemble', '/assemble/', '/assemble/index.html///']) { const result = await f.app.inject(url); assert.equal(result.statusCode, 303); assert.equal(result.headers.location, '/debug/?from=assemble'); }
+    // The assembly guide opens before numbering is ready; the home page suggests Debug Duck first but lets the user go on.
+    for (const url of ['/assemble/', '/assemble/index.html']) assert.equal((await f.app.inject(url)).body, 'ASSEMBLE');
     assert.equal((await f.app.inject('/assemble/assets/clip.mp4')).statusCode, 200);
     f.setReady(true); assert.equal((await f.app.inject('/assemble/')).body, 'ASSEMBLE'); const redirect = await f.app.inject('/assemble?q=1'); assert.equal(redirect.statusCode, 301); assert.equal(redirect.headers.location, '/assemble/?q=1');
     for (const url of ['/assets/source.3mf', '/assets/%6dodel.json', '/assemble/assets/%2e%2e%2fclip.mp4']) assert.equal((await f.app.inject(url)).json().code, 'request.asset_missing');
@@ -264,6 +265,8 @@ test('frozen Python handler and TypeScript HTTP agree on synthetic routes, error
     context.diagnostic(`Frozen Python HTTP reference: ${cases.length} requests replayed against Node`);
     for (const [index,item] of cases.entries()) {
       const method = item.method ?? 'GET', body = item.body ?? '', request = `${method} ${item.path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n${item.headers ?? ''}${body ? 'Content-Length: ' + Buffer.byteLength(body) + '\r\n' : ''}\r\n${body}`;
+      // The Python reference predates direct assembly entry and redirected unverified numbering to Debug Duck.
+      if (/^\/assemble(?:\/|\/index\.html\/*)?$/.test(item.path)) continue;
       const expected=expectedRows[index]!;const actual=await rawCall(address.port,request);
       assert.equal(actual.status, expected.status, method + ' ' + item.path);
       for (const name of ['content-type', 'cache-control', 'x-content-type-options', 'location', 'content-range', 'accept-ranges', 'last-modified']) assert.equal(actual.headers[name], expected.headers[name], method + ' ' + item.path + ' ' + name);
