@@ -33,11 +33,13 @@ import { applyBrand, brandName } from '../shared/brand.js';
 import { mountAccount, initAccount, onAccount, requireLogin, account, avatarHTML } from '../shared/profile.js';
 import { api } from '../shared/api.js';
 import { loadSite } from '../shared/edition.js';
-import { stillURL } from '../shared/still.js';
 applyBrand();
 
 const esc = (v:unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]??c);
-const site = await loadSite(),edition = site.edition,personal = edition === 'personal';
+const siteReady=loadSite();
+const initialSchemes=siteReady.then(site=>site.edition==='personal'?api('GET','/schemes'):null).then(schemes=>({schemes}),error=>({error}));
+const [site,duck]=await Promise.all([siteReady,loadDuck()]);
+const edition = site.edition,personal = edition === 'personal';
 // Personal edition with the assembly guide installed: step 3 can open it with this duck's colours.
 const assembly = personal && !!(site.edition==='personal'&&site.assembly);
 document.body.dataset.edition = edition;
@@ -52,7 +54,7 @@ function renderEdition() {
   }
 }
 renderEdition();_onLocale(renderEdition);
-const duck = await loadDuck(),{ model, catalog, products } = duck,parts = model.parts,partById = new Map(parts.map((p) => [p.id, p]));
+const { model, catalog, products } = duck,parts = model.parts,partById = new Map(parts.map((p) => [p.id, p]));
 const knownPart=(id:string|null|undefined):ModelPart=>required(partById.get(id??''));
 const zoneOf = (id:string) => required(ZONES.find((z) => z.ids.includes(id)));
 const match = (p:ModelPart, hex:string) => catalog.products.find((x) => x.series === p.material && x.hex.toUpperCase() === hex.toUpperCase())?.id || null;
@@ -105,19 +107,10 @@ if (!['auto', 'soft', 'sand', 'sage', 'night', 'custom'].includes(bgPref)) bgPre
 let renamingId:string|null = null,compareId = 'original',splitOn = false,sideOn = false,focused = false,focusKey = '',menuOpen = false,pendingOpen:string|null = null;
 const undo:HistoryEntry[] = [],redo:HistoryEntry[] = [];
 
-const view = createDuckView(duck);view.mount($('#stage'));view.setColors(design.colors, true);$('#loading').remove();performance.mark('duck-ready');
-// Opening the studio shows no loading: index.html puts last visit's still of the stage in place, the live duck draws
-// beneath it and the still fades. Leaving saves the still for the next visit, as a fresh visit will first draw it.
-const STILL = 'letsduck-still-paint';let firstView:{vw:number;vh:number;w:number;h:number;css:number}|null = null;
-requestAnimationFrame(() => requestAnimationFrame(() => {
-  firstView = { vw: innerWidth, vh: innerHeight, w: view.canvas.width, h: view.canvas.height, css: view.canvas.clientWidth };
-  const still = document.querySelector<HTMLElement>('#stage > .still');if (still) {still.classList.add('done');still.addEventListener('transitionend', () => still.remove(), { once: true });}
-}));
-window.addEventListener('pagehide', () => {
-  if (!firstView) return;
-  try {if (innerWidth !== firstView.vw || innerHeight !== firstView.vh) return localStorage.removeItem(STILL);
-    localStorage.setItem(STILL, jsonStringify({ vw: firstView.vw, vh: firstView.vh, image: stillURL(view.still(firstView.w, firstView.h), firstView.css) }));} catch {}
-});
+const view = createDuckView(duck);
+// Hydrate the draft and entry route before presenting either the lineup or editor.
+view.stage.root.visible=false;view.stage.shadow.visible=false;
+view.mount($('#stage'));view.setColors(design.colors, true);
 const poster = createPosterDialog({ view, parts, products });
 const actions = createActionPlayer(view);
 // The playing action's button fills like a progress bar for exactly the action's length.
@@ -151,12 +144,12 @@ function pushScheme(s:Scheme) {if (account.user) api('PUT', `/schemes/${encodeUR
 function dropScheme(id:string) {if (account.user) api('DELETE', `/schemes/${encodeURIComponent(id)}`).catch((err) => toast(_message("text.0058", { v0: ()=>errorMessage(err) })));}
 // On sign-in the account's schemes replace the local list. The local cache remembers whose it is (owner):
 // only schemes made as a guest are uploaded, never a cache left behind by another account.
-async function syncSchemes() {
-  if (!account.user) {schemes = [];owner = null;if (activeId) activeId = null;persist();return renderAll();}
+async function syncSchemes(render=true) {
+  if (!account.user) {schemes = [];owner = null;if (activeId) activeId = null;persist();if(render)renderAll();return;}
   try {
     const remote:Scheme[] = await api('GET', '/schemes'),ids = new Set(remote.map((s) => s.id)),local = schemes.filter((s) => !ids.has(s.id) && (!owner || owner === required(account.user).id));let up = 0;
     for (const s of local) {try {remote.push(await api('PUT', `/schemes/${encodeURIComponent(s.id)}`, schemeBody(s)));up++;} catch (err) {if ((isRecord(err)?err.code:undefined) !== 'schemes.not_owner') remote.push(s);}} // keep it to retry later, unless it is another account's
-    schemes = remote.sort((a, b) => a.updated<b.updated?1:a.updated>b.updated?-1:0);owner = required(account.user).id;if (activeId && !schemes.some((s) => s.id === activeId)) activeId = null;persist();renderAll();
+    schemes = remote.sort((a, b) => a.updated<b.updated?1:a.updated>b.updated?-1:0);owner = required(account.user).id;if (activeId && !schemes.some((s) => s.id === activeId)) activeId = null;persist();if(render)renderAll();
     if (up) toast(_message("text.0059", { v0: up }));
   } catch (err) {toast(_message("text.0060", { v0: ()=>errorMessage(err) }));}
 }
@@ -896,7 +889,8 @@ async function importLook(text:string, src = '') {
 }
 if (personal) {
   try {
-    schemes = await api('GET', '/schemes');owner = null;
+    const result=await initialSchemes;if('error'in result)throw result.error;
+    schemes = result.schemes??[];owner = null;
     if (!saved.draft && schemes.length) {
       const s = required(schemes[0]);design = clone(s.design);name = s.name;provenance = s.provenance;voiceSalt = s.voiceSalt;activeId = s.id;
       slots = slotsFromDesign(products, design.assignments, slots);view.setColors(design.colors);
@@ -906,7 +900,7 @@ if (personal) {
   } catch {schemes = [];activeId = null;toast(_message('personal.loadFailed'));}
 } else {
   const accountUI = mountAccount($('#profile-slot'), { toast });
-  if (await initAccount()) {accountUI.refresh();await syncSchemes();} else
+  if (await initAccount()) {accountUI.refresh();await syncSchemes(false);} else
   if (owner) {schemes = [];owner = null;activeId = null;persist();}
   onAccount(() => syncSchemes());
 }
@@ -929,7 +923,8 @@ if (!personal && (!seen || location.hash === '#coach')) $('#coach').hidden = fal
 const coachDone = () => {$('#coach').hidden = true;try {localStorage.setItem(COACH, '1');} catch {}};
 $<HTMLButtonElement>('#coach-go').onclick = coachDone;
 $<HTMLButtonElement>('#coach-login').hidden = personal || !!account.user;$<HTMLButtonElement>('#coach-login').onclick = () => {coachDone();requireLogin('').catch(() => {});};
-renderAll();
+if(step!==1){view.stage.root.visible=true;view.stage.shadow.visible=true;}
+renderAll();$('#loading').remove();performance.mark('duck-ready');
 const studioProto = { view, actions, get state() {return { step, sel, tool, brush, name, activeId, dirty: dirty(), schemes: schemes.length, locks: [...locks], undo: undo.length, layout: view.layout, sideOn, focused, splitOn, compareId, replaceFrom, colors: design.colors, provenance };} };window.studioProto=studioProto;
 declare global {interface Window {studioProto:typeof studioProto}}
 _onLocale(() => {CLASSICS = CLASSICS.map(([id, , d], i) => [id, i ? required(THEMES[required([1,2,6][i-1])]).name : _t("text.0117"), d]);POSE_SLIDERS = [[_t("text.0283"), 'jaw', _t("text.0284"), 0, 28, '°'], [_t("text.0283"), 'headPitch', _t("text.0285"), -30, 50, '°'], [_t("text.0283"), 'headYaw', _t("text.0286"), -45, 45, '°'], [_t("text.0283"), 'headRoll', _t("text.0287"), -15, 15, '°'], [_t("text.0283"), 'neck', _t("text.0288"), -20, 80, '°'], [_t("text.0289"), 'crouch', _t("text.0290"), 0, 100, '%'], [_t("text.0289"), 'trunk', _t("text.0291"), -15, 25, '°'], [_t("text.0292"), 'legL', _t("text.0293"), 0, 100, '%'], [_t("text.0292"), 'legR', _t("text.0294"), 0, 100, '%']];MOVE_POSES = [[_t("text.0284"), '😮', 1], [_t("text.0295"), '👇', 2], [_t("text.0293"), '🦵', 4], [_t("text.0287"), '🤔', 5]];POSE_PRESETS = [[_t("text.0296"), {}], [_t("text.0297"), { jaw: 24, headPitch: -20 }], [_t("text.0295"), { neck: 45, headPitch: 35 }], [_t("text.0298"), { crouch: 100, trunk: -15, neck: -8 }], [_t("text.0293"), { legL: 70, headRoll: 6 }], [_t("text.0299"), { headRoll: 12, headYaw: 20, jaw: 8 }]];});

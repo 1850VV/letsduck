@@ -7,7 +7,8 @@ test('Vite pages keep product routes, hashed modules and classic synchronous pre
  for(const page of ['index.html','home.html','assemble/index.html','debug/index.html','gallery/index.html','assemble/audio-credits.html']){
   const html=await readFile(join(dist,page),'utf8');assert.ok(html.includes('<html'),page);assert.doesNotMatch(html, /type=["']importmap|src=["'][^"']+\.ts["']/);
   if(!page.endsWith('audio-credits.html'))assert.match(html,/<script[^>]*type="module"[^>]*src="\/static\/[^" ]+\.js"/);
-  if(page==='index.html'||page==='assemble/index.html'){assert.doesNotMatch(html,/data-duck-prepaint/);const scripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];assert.ok(scripts.some(match=>!match[1]!.includes('type=')&&match[2]!.includes('localStorage')&&match[2]!.includes('currentScript')),page+' prepaint must execute synchronously');}
+  if(page==='index.html')assert.doesNotMatch(html,/letsduck-still-paint|data-duck-prepaint/, 'Paint must not restore a previous single-duck image');
+  if(page==='assemble/index.html'){assert.doesNotMatch(html,/data-duck-prepaint/);const scripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];assert.ok(scripts.some(match=>!match[1]!.includes('type=')&&match[2]!.includes('localStorage')&&match[2]!.includes('currentScript')),page+' prepaint must execute synchronously');}
  }
 });
 test('public servo maps retain exact same paths and bytes, without copying licensed assets',async()=>{
