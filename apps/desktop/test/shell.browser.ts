@@ -76,8 +76,10 @@ try{
  await page.goto('duck://app/?after-automatic-exit');
  await page.waitForFunction(async()=>{const value:unknown=await(await fetch('/api/servo-setup/state')).json();return value!==null&&typeof value==='object'&&'phase'in value&&value.phase==='paused';});
  // The malformed body cannot start hardware even if a transport changes headers.
- const url=await application!.evaluate(({app})=>app.getAppMetrics().filter(item=>item.name==='LetsDuck shared host').length);
- assert.equal(url,1,'Exactly one shared utility host');
+ const hosts=await application!.evaluate(({app})=>app.getAppMetrics().filter(item=>item.name==='LetsDuck shared host'));
+ assert.equal(hosts.length,1,'Exactly one shared utility host');
+ const activeHostPid=hosts[0]!.pid;
+ if(!utilityPids.includes(activeHostPid))utilityPids.push(activeHostPid);
  await new Promise<void>(resolve=>external.listen(0,'127.0.0.1',resolve));
  const address=external.address();assert.ok(address&&typeof address!=='string');
  const attack='duck://app//127.0.0.1:'+address.port+'/attacker.html';
@@ -99,7 +101,7 @@ try{
  await application.evaluate(({app})=>app.quit());
  await delay(80);
  assert.equal(application.process().exitCode,null,'Ordinary quit waits for a paused native download');
- assert.equal(await application.evaluate(({app})=>app.getAppMetrics().filter(item=>item.name==='LetsDuck shared host').length),1,'Shared host remains alive until native download completion');
+ assert.doesNotThrow(()=>process.kill(activeHostPid,0),'Actual shared host PID remains alive until native download completion');
  await application.evaluate(()=>{const item:unknown=Reflect.get(globalThis,'pausedItem');if(item&&typeof item==='object'&&'resume'in item&&typeof item.resume==='function')item.resume();});
  await exiting;application=undefined;
  assert.equal((await readFile(join(downloads,'paused.bin'))).byteLength,262144);

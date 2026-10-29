@@ -2,6 +2,9 @@ name: Complete release packages
 on:
   workflow_call:
     inputs:
+      windows_scope:
+        type: string
+        default: all
       assets_release:
         required: true
         type: string
@@ -10,6 +13,11 @@ on:
         type: string
   workflow_dispatch:
     inputs:
+      windows_scope:
+        description: 'All packages or one independent Windows retry'
+        type: choice
+        options: [all, native, portable]
+        default: all
       assets_release:
         description: 'Draft release holding the authorized letsduck-build-assets.zip overlay'
         required: true
@@ -26,22 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-15
-            platform: darwin
-            arch: arm64
-            kind: desktop-and-browser
-            target: '--mac --arm64'
-          - os: windows-2025
-            platform: win32
-            arch: x64
-            kind: desktop
-            target: '--win --x64'
-          - os: windows-2025
-            platform: win32
-            arch: x64
-            kind: browser
-            target: ''
+        include: ${{ fromJSON(inputs.windows_scope == 'native' && '[{"os":"windows-2025","platform":"win32","arch":"x64","kind":"desktop","target":"--win --x64"}]' || inputs.windows_scope == 'portable' && '[{"os":"windows-2025","platform":"win32","arch":"x64","kind":"browser","target":""}]' || '[{"os":"macos-15","platform":"darwin","arch":"arm64","kind":"desktop-and-browser","target":"--mac --arm64"},{"os":"windows-2025","platform":"win32","arch":"x64","kind":"desktop","target":"--win --x64"},{"os":"windows-2025","platform":"win32","arch":"x64","kind":"browser","target":""}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     # Only these manual jobs read and stage draft assets. No job publishes a release.

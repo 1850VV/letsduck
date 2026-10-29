@@ -41,6 +41,7 @@ jobs:
     with:
       assets_release: ${{ inputs.complete_assets_release }}
       assets_sha256: ${{ inputs.complete_assets_sha256 }}
+      windows_scope: ${{ inputs.windows_scope || 'all' }}
   candidate:
     if: ${{ !inputs.complete_assets_release && !inputs.console_signal_diagnostic && !inputs.native_select_diagnostic }}
     name: ${{ inputs.windows_scope && inputs.windows_scope != 'all' && format('Windows {0} software acceptance', inputs.windows_scope) || format('candidate ({0}, {1}, {2}, {3})', matrix.os, matrix.platform, matrix.arch, matrix.target) }}

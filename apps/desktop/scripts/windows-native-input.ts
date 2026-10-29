@@ -13,12 +13,12 @@ export const windowsPowerShell=join(process.env.SystemRoot||'C:\\Windows','Syste
 export type NativeWindow={handle:string;pid:number;className:string;left:number;top:number;right:number;bottom:number};
 type Rectangle={x:number;y:number;width:number;height:number};
 export type NativeDesktop={inputDesktopAvailable:boolean;sessionId:number;screen:Rectangle;workArea:Rectangle};
-export type NativeState=NativeDesktop&{foregroundWindow:{handle:string;pid:number;className:string;title:string};activation:unknown;foreground:string;root:NativeWindow;contentHandle:string;client:Rectangle;windows:NativeWindow[]};
+export type NativeState=NativeDesktop&{foregroundWindow:{handle:string;pid:number;className:string;title:string};activation:unknown;foreground:string;root:NativeWindow;contentHandle:string;client:Rectangle;windows:NativeWindow[];menuRows?:Array<{name:string;controlType:string;left:number;top:number;right:number;bottom:number}>};
 type NativeTarget={window:string;ownedPids:number[];chromiumBrowserPid?:number};
 type Check=(name:string,passed:boolean,detail?:unknown)=>void;
 export type NativeCommandRunner=(executable:string,args:string[],options:{timeout:number;maxBuffer:number})=>Promise<{stdout:string;stderr:string}>;
 
-const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0,[string]$DiagnosticPath,[int]$HoldMilliseconds=0,[string]$NativeAssembly)
+const nativeScript=String.raw`param([string]$Action,[string]$Window,[double]$X=0,[double]$Y=0,[string]$Key,[string]$Output,[string]$OwnedPids,[System.UInt32]$BrowserPid=0,[string]$DiagnosticPath,[int]$HoldMilliseconds=0,[string]$NativeAssembly,[string]$Popup)
 $ErrorActionPreference='Stop'
 $nativeStarted=[DateTime]::UtcNow
 function Write-NativeProgress([string]$stage) {
@@ -128,6 +128,21 @@ if($BrowserPid -gt 0){
 $handle=[IntPtr]::new([long]$root.handle)
 Write-NativeProgress 'owned-renderer-mapped'
 $activation=$null
+$menuRows=@()
+if($Action -eq 'rows'){
+ $popupWindows=@($windows|Where-Object{$_.handle -eq $Popup})
+ if($popupWindows.Count -ne 1){throw 'Cannot observe the exact owned popup HWND'}
+ Add-Type -AssemblyName UIAutomationClient
+ Add-Type -AssemblyName UIAutomationTypes
+ $automation=[System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]::new([long]$Popup))
+ $elements=$automation.FindAll([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.Condition]::TrueCondition)
+ $menuRows=@(foreach($element in $elements){
+  $current=$element.Current;$rowRect=$current.BoundingRectangle
+  if(!$current.IsOffscreen -and $rowRect.Width -gt 0 -and $rowRect.Height -gt 0 -and $current.Name){
+   @{name=$current.Name;controlType=$current.ControlType.ProgrammaticName;left=$rowRect.Left;top=$rowRect.Top;right=$rowRect.Right;bottom=$rowRect.Bottom}
+  }
+ })
+}
 if($Action -eq 'activate'){
  $activation=@{before=[DuckNative]::Foreground();showWindowResult=$null;setForegroundResult=$null;normal=$null;captionPoint=$null;after=$null}
  $activation.showWindowResult=[DuckNative]::ShowWindow($handle,9)
@@ -173,7 +188,7 @@ if($renderer){$content=[IntPtr]::new([long]$renderer.handle)}
 if(![DuckNative]::GetClientRect($content,[ref]$r)){throw 'Cannot observe owned content client rect'}
 if(![DuckNative]::ClientToScreen($content,[ref]$point)){throw 'Cannot map owned content to desktop'}
 $foreground=[DuckNative]::Foreground()
-@{foreground=$foreground.handle;foregroundWindow=$foreground;activation=$activation;root=$root;contentHandle=$content.ToInt64().ToString();client=@{x=$point.X;y=$point.Y;width=$r.Right-$r.Left;height=$r.Bottom-$r.Top};windows=@([DuckNative]::Windows($owned));inputDesktopAvailable=$inputAvailable;sessionId=$sessionId;screen=$screen;workArea=$work}|ConvertTo-Json -Depth 7 -Compress
+@{foreground=$foreground.handle;foregroundWindow=$foreground;activation=$activation;menuRows=$menuRows;root=$root;contentHandle=$content.ToInt64().ToString();client=@{x=$point.X;y=$point.Y;width=$r.Right-$r.Left;height=$r.Bottom-$r.Top};windows=@([DuckNative]::Windows($owned));inputDesktopAvailable=$inputAvailable;sessionId=$sessionId;screen=$screen;workArea=$work}|ConvertTo-Json -Depth 7 -Compress
 `;
 
 export async function observeNativeClick(target:Locator){return target.evaluate(element=>{
@@ -258,11 +273,19 @@ async function menuJourney(select:Locator,label:string){
  const initial=await observe(select);check(label+' is an enabled actual select',!initial.disabled&&initial.options.length>0,initial);
  const original=required(await select.elementHandle());const baseline=await native('inspect');await click(select);const opened=await popup(baseline);await capture(label+'-mouse-open');
  check(label+' click preserves the control',await original.evaluate(element=>element.isConnected));
- // For these short menus the popup contains every row. Refuse guessed positions in a scrollable menu.
- const row=(opened.bottom-opened.top)/initial.options.length;
- check(label+' native popup rows fit without scrolling',row>=12&&row<=64&&initial.options.length<=12,{popup:opened,row,options:initial.options.length});
- const targetIndex=initial.options.length>1?(initial.index+1)%initial.options.length:initial.index;
- await native('click',['-X',String(Math.round((opened.left+opened.right)/2)),'-Y',String(Math.round(opened.top+row*(targetIndex+.5)))]);
+ let targetIndex=initial.options.length>1?(initial.index+1)%initial.options.length:initial.index;
+ let mouseX=(opened.left+opened.right)/2,mouseY:number;
+ if(initial.options.length<=12){
+  const row=(opened.bottom-opened.top)/initial.options.length;
+  check(label+' native popup rows fit without scrolling',row>=12&&row<=64,{popup:opened,row,options:initial.options.length});
+  mouseY=opened.top+row*(targetIndex+.5);
+ }else{
+  const observed=await native('rows',['-Popup',opened.handle]);
+  const visible=(observed.menuRows??[]).map(row=>({...row,index:initial.options.findIndex(option=>option.text.trim()===row.name.trim())})).filter(row=>row.index>=0&&row.index!==initial.index&&row.left>=opened.left&&row.right<=opened.right&&row.top>=opened.top&&row.bottom<=opened.bottom&&row.bottom-row.top<=64).sort((a,b)=>Math.abs(a.index-initial.index)-Math.abs(b.index-initial.index)||(a.bottom-a.top)-(b.bottom-b.top));
+  check(label+' long menu exposes an actual visible option row',visible.length>0,{popup:opened,options:initial.options.length,rows:observed.menuRows});
+  const row=required(visible[0]);targetIndex=row.index;mouseX=(row.left+row.right)/2;mouseY=(row.top+row.bottom)/2;
+ }
+ await native('click',['-X',String(Math.round(mouseX)),'-Y',String(Math.round(mouseY))]);
  await select.page().waitForTimeout(150);const afterMouse=await observe(select);
  check(label+' mouse selection closes the actual native popup',!(await native('inspect')).windows.some(item=>item.handle===opened.handle));
  check(label+' actual mouse option selected',afterMouse.value===initial.options[targetIndex]!.value&&afterMouse.focused,{before:initial,after:afterMouse});
