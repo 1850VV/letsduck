@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,writeFile,readFile,rm,symlink,lstat,access} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createHash} from 'node:crypto';
 import {stageRuntimeAssets,stageProductionApp} from '../src/stage-runtime-assets.js';
@@ -48,4 +48,12 @@ test('production app resolves transitive and nested dependency versions without 
   await stageProductionApp({root,target:join(root,'app'),entry:'browser'});assert.equal((await lstat(join(root,'app/node_modules/@letsduck/host'))).isSymbolicLink(),false);assert.equal(await readFile(join(root,'app/node_modules/first/node_modules/nested/index.js'),'utf8'),'module.exports=1');assert.equal(await readFile(join(root,'app/node_modules/second/node_modules/nested/index.js'),'utf8'),'module.exports=2');await assert.rejects(access(join(root,'app/node_modules/never-ship')));await assert.rejects(access(join(root,'app/node_modules/electron')));assert.deepEqual(await readFile(join(root,'app/packages/host/dist/index.js')),await readFile(join(root,'packages/host/dist/index.js')));
   const {execFile}=await import('node:child_process');const {promisify}=await import('node:util');const result=await promisify(execFile)(process.execPath,[join(root,'app/apps/local/dist/main.js')],{env:{PATH:''}});assert.equal(result.stdout.trim(),'3');
  }finally{await rm(root,{recursive:true,force:true});}
+});
+test('the built application ships runtime schema validation without schema typing libraries',async()=>{
+ const root=resolve(import.meta.dirname,'../..'),temporary=await mkdtemp(join(tmpdir(),'duck-production-type-boundary-'));
+ try{
+  const staged=await stageProductionApp({root,target:join(temporary,'app'),entry:'browser'});
+  assert.ok(staged.files.some(file=>file.path.endsWith('node_modules/ajv/package.json')),'runtime schema validator remains available');
+  for(const name of ['json-schema-to-ts','ts-algebra','@babel/runtime'])assert.ok(!staged.files.some(file=>file.path.endsWith('node_modules/'+name+'/package.json')),name+' is not part of the executable dependency closure');
+ }finally{await rm(temporary,{recursive:true,force:true});}
 });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type {SetupUiState,SetupRecord} from '../frontend/assemble/servo-types.js';
-import {deriveServoStatus,ServoSelection} from '../frontend/assemble/servo-status.js';
+import {deriveServoStatus} from '../frontend/assemble/servo-status.js';
 const ids=[10,11,12,13,14,20,21,22,23,24,30,31,32,33,34];
 const map={version:'v1',bindings:ids.map(id=>({id}))},now=10000;
 const proof=(id:number,state='verified')=>({id,state,mapVersion:'v1',sourceId:id,profile:{kp:5,kd:10},readback:{kp:5,kd:10},oldIdAbsent:true});
@@ -53,12 +53,4 @@ test('an accepted next target takes precedence over the default recommendation',
  const d=data();d.targetId=11;d.queuedTarget=20;
  assert.equal(deriveServoStatus(d,map,now).nextTarget,20);
  d.queuedTarget=null;assert.equal(deriveServoStatus(d,map,now).nextTarget,11);
-});
-test('display changes preserve selection; observations cannot replace a manually inspected servo',()=>{
- const choice=new ServoSelection(ids);choice.apply({targetId:11});assert.equal(choice.selected,11);assert.equal(choice.labelTarget,null);
- choice.choose(14);choice.toggle();assert.equal(choice.selected,14);assert.equal(choice.labelTarget,14);assert.equal(choice.view,'tray');
- choice.apply({currentId:11,phase:'working'});assert.equal(choice.selected,14);
- choice.begin();choice.apply({currentId:12,phase:'working'});assert.equal(choice.selected,12);
- choice.choose(10);choice.apply({currentId:13,phase:'working'});assert.equal(choice.selected,10);
- choice.sequential({targetId:14});assert.equal(choice.labelTarget,null);assert.equal(choice.selected,14);
 });

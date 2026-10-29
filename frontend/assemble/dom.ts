@@ -2,7 +2,6 @@ import type { RyugiButton, RyugiActionIcon, RyugiSelect, RyugiSlider, RyugiSwitc
 // These IDs and element kinds are the existing Assembly HTML/template contract.
 interface Elements {
     "desk-toggle": HTMLButtonElement;
-    "servo-open": HTMLButtonElement;
     "overview": RyugiButton;
     "reference-toggle": RyugiButton;
     "render-quality": RyugiSelect;
@@ -86,7 +85,6 @@ interface Elements {
     "step-description": HTMLElement;
     "software-guide": HTMLElement;
     "software-guide-note": HTMLElement;
-    "servo-guide-open": HTMLButtonElement;
     "servo-id-list": HTMLElement;
     "needed-parts": HTMLElement;
     "step-check": HTMLElement;
@@ -96,7 +94,6 @@ interface Elements {
     "reference-video": HTMLVideoElement;
     "reference-check": HTMLElement;
     "reference-caption": HTMLElement;
-    "servo-workbench": HTMLElement;
     "full-saved-step": HTMLInputElement;
     "full-saved-progress": HTMLInputElement;
     "focus-zoom-saved": HTMLInputElement;
@@ -110,24 +107,6 @@ interface Elements {
     "sp-error": HTMLElement;
     "sp-take": HTMLButtonElement;
     "sp-return": HTMLButtonElement;
-    "sv-title": HTMLElement;
-    "sv-dot": HTMLElement;
-    "sv-device": HTMLElement;
-    "sv-close": HTMLButtonElement;
-    "sv-viewport": HTMLElement;
-    "sv-tag": HTMLElement;
-    "sv-arrange": HTMLButtonElement;
-    "sv-labels": HTMLElement;
-    "sv-count": HTMLElement;
-    "sv-counts": HTMLElement;
-    "sv-completion": HTMLButtonElement;
-    "sv-meter": HTMLElement;
-    "sv-slots": HTMLElement;
-    "sv-online": HTMLElement;
-    "sv-refresh": HTMLButtonElement;
-    "sv-next": HTMLElement;
-    "sv-preparation-count": HTMLElement;
-    "sv-panel": HTMLElement;
 }
 export function byId<K extends keyof Elements>(id: K): Elements[K];
 export function byId(id: string): HTMLElement;
