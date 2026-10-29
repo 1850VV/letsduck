@@ -1,0 +1,86 @@
+name: Internal beta installers
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: macos-15, platform: darwin, arch: arm64, target: '--mac --arm64', suffix: mac-arm64.dmg}
+          - {os: windows-2025, platform: win32, arch: x64, target: '--win --x64', suffix: win-x64.exe}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      CSC_NAME: '-'
+      CSC_FOR_PULL_REQUEST: 'true'
+      DUCK_BUILD_ARCH: ${{ matrix.arch }}
+      DUCK_PACKAGE_WITHOUT_ASSETS: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.20.0'
+          cache: npm
+      - run: npm ci
+      - name: Read the repository beta version
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,appendFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const {version}=JSON.parse(readFileSync('apps/desktop/package.json','utf8'));
+          assert.match(version,/^\d+\.\d+\.\d+-beta\.\d+$/);
+          appendFileSync(process.env.GITHUB_ENV,`DUCK_RELEASE_VERSION=${version}\n`);
+          JS
+      - name: Check desktop and runtime staging
+        run: |
+          npm run typecheck
+          npm run test:desktop
+          npx tsx --test tooling/test/stage-runtime-assets.test.ts
+      - run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
+      - name: Build the complete offline installer
+        run: npm run package:desktop -- ${{ matrix.target }}
+      - name: Install, verify every bundled asset, and exercise the full-model journey
+        run: node --import tsx apps/desktop/scripts/installed-smoke.ts
+      - name: Record the tested installer and source
+        env:
+          INSTALLER_SUFFIX: ${{ matrix.suffix }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          import {createHash} from 'node:crypto';
+          import assert from 'node:assert/strict';
+          const result=JSON.parse(readFileSync('output/desktop-installed-smoke/result.json','utf8'));
+          assert.equal(result.synthetic,false); assert.equal(result.installedAndLaunched,true);
+          assert.equal(result.ownedProcessesExited,true); assert.equal(result.updateFeedEmbedded,false);
+          assert.ok(result.bundledAssets.length>0);
+          const file=`apps/desktop/release/${process.platform}-${process.env.DUCK_BUILD_ARCH}/letsduck-${process.env.DUCK_RELEASE_VERSION}-${process.env.INSTALLER_SUFFIX}`;
+          const data=readFileSync(file);
+          mkdirSync('output/release-evidence',{recursive:true});
+          writeFileSync('output/release-evidence/installer.json',JSON.stringify({version:process.env.DUCK_RELEASE_VERSION,sourceCommit:process.env.GITHUB_SHA,sourceTree:execFileSync('git',['rev-parse','HEAD^{tree}'],{encoding:'utf8'}).trim(),platform:process.platform,arch:process.env.DUCK_BUILD_ARCH,file:file.split('/').at(-1),bytes:data.length,sha256:createHash('sha256').update(data).digest('hex'),bundledAssets:result.bundledAssets,installedAndLaunched:true,ownedProcessesExited:true,updateFeedEmbedded:false},null,2));
+          JS
+      - name: Publication checks
+        run: |
+          npm run audit:typescript
+          npm run audit:publication
+      - name: Retain the tested installer and verification evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: beta-installer-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            apps/desktop/release/*/letsduck-${{ env.DUCK_RELEASE_VERSION }}-${{ matrix.suffix }}
+            output/release-evidence/installer.json
+            output/desktop-installed-smoke/**/*.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

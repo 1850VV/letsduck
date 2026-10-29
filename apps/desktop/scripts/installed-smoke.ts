@@ -1,9 +1,10 @@
 /** Installs only into owned temporary directories; never bypasses platform security prompts. */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFile, spawn, type ChildProcess } from 'node:child_process';
 import { promisify, parseArgs } from 'node:util';
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { root, desktop, desktopScope, failure, packageVersion, required, stopChild } from './check-support.js';
 
@@ -46,6 +47,18 @@ try {
   assert.equal(existsSync(join(resources, 'app-update.yml')), false, 'Offline friend-test package must not contact an update feed');
   assert.ok(existsSync(join(resources, 'runtime/frontend/home.html')), 'Installed package contains the staged frontend');
   if (!values.synthetic) assert.ok(existsSync(join(resources, 'runtime/assets/model.json')), 'Installed package contains licensed model assets');
+  const bundledAssets: Array<{path: string; bytes: number; sha256: string}> = [];
+  if (!values.synthetic) {
+    const {stdout} = await run('git', ['ls-files', '-z', 'assets'], {cwd: root, encoding: 'utf8'});
+    const names = stdout.split('\0').filter(Boolean); assert.ok(names.length > 0, 'Repository asset inventory exists');
+    for (const name of names) {
+      const source = await readFile(join(root, name)), installed = await readFile(join(resources, 'runtime', name));
+      const sha256 = createHash('sha256').update(source).digest('hex');
+      assert.equal(installed.length, source.length, 'Installed resource size: ' + name);
+      assert.equal(createHash('sha256').update(installed).digest('hex'), sha256, 'Installed resource SHA-256: ' + name);
+      bundledAssets.push({path: name.slice('assets/'.length), bytes: installed.length, sha256});
+    }
+  }
   await new Promise<void>((ok, no) => {
     smoke = spawn(process.execPath, ['--import', 'tsx', join(desktop, 'scripts/smoke.ts'), ...(values.synthetic ? ['--synthetic'] : [])], {
       cwd: root, stdio: 'inherit', env: { ...scope.env, DUCK_APP_EXECUTABLE: executable, DUCK_EXPECTED_VERSION: version, DUCK_EXPECT_OFFLINE: '1', DUCK_TEST_OUTPUT: join(output, 'functional') },
@@ -53,7 +66,7 @@ try {
     smoke.once('error', no); smoke.once('exit', code => code === 0 ? ok() : no(new Error(`Installed functional smoke exited ${code}`)));
   });
   result = { installer, version, platform, arch, synthetic: values.synthetic, installedAndLaunched: true, updateFeedEmbedded: false,
-    functionalSmoke: values.synthetic ? 'protocol/save/profile/relaunch/offline subset passed' : 'licensed functional suite passed with explicitly simulated assembly prerequisite',
+    bundledAssets, functionalSmoke: values.synthetic ? 'protocol/save/profile/relaunch/offline subset passed' : 'licensed functional suite passed with explicitly simulated assembly prerequisite',
     realAutomaticUpdate: 'not tested', cleanDeviceSecurityPrompts: 'not tested', licensedGroups: values.synthetic ? 'not run' : 'see functional/result.json' };
 } catch (error) { await writeFile(join(output, 'failure.json'), JSON.stringify({ platform, arch, version, error: failure(error) }, null, 2)); throw error; }
 finally { await scope.dispose(); }
