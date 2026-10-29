@@ -11,6 +11,10 @@ import {quickDesign,themeSlots,THEMES,encodeLook} from '../frontend/lib/quick-st
 
 interface EntryFrame {step:number;root:boolean;visible:boolean[];scale:number[];positions:{x:number;y:number}[];draws:number}
 declare global {interface Window {__paintEntry:{draws:number;first:EntryFrame|null;firstStage:EntryFrame|null;restoredStill:boolean;pendingForeground:boolean}}}
+interface CompileGate {released:boolean;supported:boolean|null;polls:number;first:{root:boolean;foreground:number[]}|null}
+declare global {interface Window {__paintCompileGate:CompileGate}}
+interface CompileFallback {requests:number;realAvailable:boolean;first:{root:boolean;foreground:number[]}|null}
+declare global {interface Window {__paintCompileFallback:CompileFallback}}
 
 // Records the first frame that actually submits the production lineup to WebGL.
 // A later settled frame cannot overwrite evidence of a staggered first appearance.
@@ -192,6 +196,139 @@ test('narrow Paint first drawn frame already has two columns and two rows',async
  finally{
   try{await browser?.close();}finally{await fixture.close();}
   await writeFile(join(output,'narrow-receipt.json'),JSON.stringify({first,errors,pids,browserClosed:true,fixtureClosed:true,...(thrown?{failure:failure(thrown)}:{})},null,2));
+ }
+ if(thrown)throw thrown;
+});
+
+test('Paint waits for real parallel shader completion before the first four-duck draw',async t=>{
+ const output=resolve(process.env.DUCK_PAINT_EVIDENCE??'.ryugi/sdd/paint-entry-20261029');await mkdir(output,{recursive:true});
+ const fixture=await createBrowserFixture({mode:'preparation'});
+ let browser:Awaited<ReturnType<typeof launchBrowser>>|undefined,thrown:unknown,skipped:string|undefined;
+ const owned=new Set<number>(),errors:string[]=[],consoleErrors:string[]=[],checks:{name:string;pass:boolean;detail:unknown}[]=[],rows:unknown[]=[];
+ try{
+  browser=await launchBrowser({headless:true,...(process.env.DUCK_PAINT_NATIVE_COMPILE==='1'?{channel:'chromium'}:{})});for(const pid of await browserPids(browser))owned.add(pid);
+  for(const entry of ['direct','home']as const){
+   const context=await browser.newContext({viewport:{width:1440,height:900},locale:'zh-CN'});
+   let paint:Page|Frame|undefined;
+   try{
+    const page=await context.newPage();page.setDefaultTimeout(20000);page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
+    await preparePage(page);await observeEntry(page);
+    await page.addInitScript(()=>{
+     window.__paintCompileGate={released:false,supported:null,polls:0,first:null};
+     const parameter=WebGL2RenderingContext.prototype.getProgramParameter;
+     WebGL2RenderingContext.prototype.getProgramParameter=function(program:WebGLProgram,pname:number){
+      const actual=parameter.call(this,program,pname);
+      if(this.canvas instanceof HTMLCanvasElement&&this.canvas.parentElement?.id==='stage'){
+       const extension=this.getExtension('KHR_parallel_shader_compile'),gate=window.__paintCompileGate;gate.supported=extension!==null;
+       if(extension&&pname===extension.COMPLETION_STATUS_KHR){gate.polls++;return gate.released?actual:false;}
+      }
+      return actual;
+     };
+     const frame=requestAnimationFrame.bind(window);
+     window.requestAnimationFrame=callback=>frame(time=>{
+      const before=window.__paintEntry.draws;callback(time);const gate=window.__paintCompileGate,studio=window.studioProto;
+      if(gate.first||!studio||studio.state.step!==1||window.__paintEntry.draws===before)return;
+      const {layer,camera}=studio.view.stage,groups=layer.children;
+      if(groups.length!==4||!groups.every(group=>group.visible&&Math.abs(group.scale.x-1)<.001))return;
+      const canvas=studio.view.canvas,gl=canvas.getContext('webgl2');if(!gl)return;
+      const foreground=groups.map(group=>{
+       const point=group.position.clone().setFromMatrixPosition(group.matrixWorld).project(camera),x=Math.round((point.x*.5+.5)*canvas.width);
+       if(x<0||x>=canvas.width)return 0;
+       const pixels=new Uint8Array(canvas.height*4);gl.readPixels(x,0,1,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+       let opaque=0;for(let i=3;i<pixels.length;i+=4)if(pixels[i]!>200)opaque++;return opaque;
+      });gate.first={root:studio.view.root.visible,foreground};
+     });
+    });
+    if(entry==='direct'){await page.goto(fixture.url+'/paint');paint=page;}
+    else{
+     await page.goto(fixture.url+'/');await page.waitForSelector('body[data-home-ready=true]');
+     await page.locator('[data-duck="paint"]').click();await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck="paint"]')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false');
+     await page.locator('[data-duck="paint"]').click();await page.frameLocator('#module-frame').locator('#steps').waitFor();paint=required(page.frame({url:fixture.url+'/paint'}));
+    }
+    await paint.waitForFunction(()=>window.__paintCompileGate.polls>0||window.__paintCompileGate.first!==null);
+    const pending=await paint.evaluate(()=>({supported:window.__paintCompileGate.supported,polls:window.__paintCompileGate.polls,first:window.__paintCompileGate.first,root:window.studioProto?.view.root.visible??false,draws:window.__paintEntry.draws,loading:!!document.querySelector('#loading')&&getComputedStyle(document.querySelector('#loading')!).display!=='none'}));
+    await page.screenshot({path:join(output,entry+'-compiler-pending.png')});
+    if(pending.supported!==true){skipped='Real KHR_parallel_shader_compile is unavailable; asynchronous readiness was not exercised';rows.push({entry,pending});t.skip(skipped);return;}
+    checks.push({name:entry+': real KHR_parallel_shader_compile extension is available',pass:pending.supported===true,detail:pending});
+    checks.push({name:entry+': startup polls real shader completion before drawing the lineup',pass:pending.polls>0,detail:pending});
+    checks.push({name:entry+': loading remains with no model draw while compilation is held',pass:pending.loading&&!pending.root&&pending.draws===0&&pending.first===null,detail:pending});
+    await paint.evaluate(()=>{window.__paintCompileGate.released=true;});await paint.waitForFunction(()=>window.__paintCompileGate.first!==null);
+    const completed=await paint.evaluate(()=>({gate:window.__paintCompileGate,loading:!!document.querySelector('#loading')}));
+    checks.push({name:entry+': release presents four actual ducks and clears loading',pass:!!completed.gate.first&&!completed.gate.first.root&&completed.gate.first.foreground.length===4&&completed.gate.first.foreground.every(pixels=>pixels>8)&&!completed.loading,detail:completed});
+    rows.push({entry,pending,completed});await page.screenshot({path:join(output,entry+'-compiler-ready.png')});
+   }finally{
+    if(paint)await paint.evaluate(()=>{if(window.__paintCompileGate)window.__paintCompileGate.released=true;}).catch(()=>{});
+    for(const pid of await browserPids(browser))owned.add(pid);await context.close();
+   }
+  }
+  assert.deepEqual(errors,[],'parallel preparation causes no page errors');assert.deepEqual(consoleErrors,[],'parallel preparation causes no console errors');
+  assert.deepEqual(checks.filter(check=>!check.pass),[],'shader readiness requires a real supported extension; absence is not a simulated pass');
+ }catch(error){thrown=error;}
+ finally{
+  try{await browser?.close();}finally{await fixture.close();}
+  await writeFile(join(output,'parallel-compile-receipt.json'),JSON.stringify({checks,rows,errors,consoleErrors,pids:[...owned],browserClosed:true,fixtureClosed:true,...(skipped?{skipped}:{}),...(thrown?{failure:failure(thrown)}:{})},null,2));
+ }
+ if(thrown)throw thrown;
+});
+
+test('Paint presents four real ducks when parallel shader compilation is unavailable',async()=>{
+ const output=resolve(process.env.DUCK_PAINT_EVIDENCE??'.ryugi/sdd/paint-entry-20261029');await mkdir(output,{recursive:true});
+ const fixture=await createBrowserFixture({mode:'preparation'});
+ let browser:Awaited<ReturnType<typeof launchBrowser>>|undefined,thrown:unknown;
+ const owned=new Set<number>(),errors:string[]=[],consoleErrors:string[]=[],rows:{entry:string;probe:CompileFallback;loading:boolean}[]=[];
+ try{
+  browser=await launchBrowser({headless:true,...(process.env.DUCK_PAINT_NATIVE_COMPILE==='1'?{channel:'chromium'}:{})});for(const pid of await browserPids(browser))owned.add(pid);
+  for(const entry of ['direct','home']as const){
+   const context=await browser.newContext({viewport:{width:1440,height:900},locale:'zh-CN'});
+   try{
+    const page=await context.newPage();page.setDefaultTimeout(20000);page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')consoleErrors.push(message.text());});
+    await preparePage(page);await observeEntry(page);
+    await page.addInitScript(()=>{
+     window.__paintCompileFallback={requests:0,realAvailable:false,first:null};
+     const getExtension=WebGL2RenderingContext.prototype.getExtension;
+     WebGL2RenderingContext.prototype.getExtension=function(this:WebGL2RenderingContext,name:string){
+      const actual:unknown=Reflect.apply(getExtension,this,[name]);
+      if(name==='KHR_parallel_shader_compile'){const probe=window.__paintCompileFallback;probe.requests++;probe.realAvailable||=actual!==null;return null;}
+      return actual;
+     }as typeof getExtension;
+     const frame=requestAnimationFrame.bind(window);
+     window.requestAnimationFrame=callback=>frame(time=>{
+      const before=window.__paintEntry.draws;callback(time);const probe=window.__paintCompileFallback,studio=window.studioProto;
+      if(probe.first||!studio||studio.state.step!==1||window.__paintEntry.draws===before)return;
+      const {layer,camera}=studio.view.stage,groups=layer.children;
+      if(groups.length!==4||!groups.every(group=>group.visible&&Math.abs(group.scale.x-1)<.001))return;
+      const canvas=studio.view.canvas,gl=canvas.getContext('webgl2');if(!gl)return;
+      const foreground=groups.map(group=>{
+       const point=group.position.clone().setFromMatrixPosition(group.matrixWorld).project(camera),x=Math.round((point.x*.5+.5)*canvas.width);
+       if(x<0||x>=canvas.width)return 0;
+       const pixels=new Uint8Array(canvas.height*4);gl.readPixels(x,0,1,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+       let opaque=0;for(let i=3;i<pixels.length;i+=4)if(pixels[i]!>200)opaque++;return opaque;
+      });probe.first={root:studio.view.root.visible,foreground};
+     });
+    });
+    let paint:Page|Frame=page;
+    if(entry==='direct')await page.goto(fixture.url+'/paint');
+    else{
+     await page.goto(fixture.url+'/');await page.waitForSelector('body[data-home-ready=true]');
+     await page.locator('[data-duck="paint"]').click();await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck="paint"]')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false');
+     await page.locator('[data-duck="paint"]').click();await page.frameLocator('#module-frame').locator('#steps').waitFor();paint=required(page.frame({url:fixture.url+'/paint'}));
+    }
+    await paint.waitForFunction(()=>window.__paintCompileFallback.first!==null);
+    rows.push({entry,...await paint.evaluate(()=>({probe:window.__paintCompileFallback,loading:!!document.querySelector('#loading')}))});
+    await page.screenshot({path:join(output,entry+'-compiler-fallback.png')});
+   }finally{for(const pid of await browserPids(browser))owned.add(pid);await context.close();}
+  }
+  for(const row of rows){
+   assert.ok(row.probe.requests>0,row.entry+': real KHR extension requests are delegated before being hidden');
+   if(process.env.DUCK_PAINT_NATIVE_COMPILE==='1')assert.equal(row.probe.realAvailable,true,row.entry+': native run exercises loss of an otherwise available extension');
+   assert.ok(row.probe.first&&!row.probe.first.root&&row.probe.first.foreground.length===4&&row.probe.first.foreground.every(pixels=>pixels>8),row.entry+': fallback first frame contains four actual full-size ducks');
+   assert.equal(row.loading,false,row.entry+': fallback clears loading');
+  }
+  assert.deepEqual(errors,[],'unavailable parallel compilation causes no page errors');assert.deepEqual(consoleErrors,[],'unavailable parallel compilation causes no console errors');
+ }catch(error){thrown=error;}
+ finally{
+  try{await browser?.close();}finally{await fixture.close();}
+  await writeFile(join(output,'parallel-compile-fallback-receipt.json'),JSON.stringify({rows,errors,consoleErrors,pids:[...owned],browserClosed:true,fixtureClosed:true,...(thrown?{failure:failure(thrown)}:{})},null,2));
  }
  if(thrown)throw thrown;
 });

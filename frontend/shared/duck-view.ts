@@ -90,7 +90,34 @@ export function createDuckView(data:DuckData) {
 
   let revision=0;
   const schedule=demandLoop(animate),invalidate=()=>{revision++;schedule();};
-  const draw=adaptiveDraw(renderer,scene,camera);let finishState='';
+  const draw=adaptiveDraw(renderer,scene,camera);let finishState='',preparingLineup=false;
+  async function prepareLineup() {
+    if(!renderer.extensions.has('KHR_parallel_shader_compile'))return;
+    preparingLineup=true;
+    try {
+      const opaque=new THREE.Group();let transmission=false;
+      layer.traverse(object=>{
+        if(!(object instanceof THREE.Mesh)||Array.isArray(object.material))return;
+        const material=object.material;
+        if(material instanceof THREE.MeshPhysicalMaterial&&material.transmission>0)transmission=true;
+        else if(!material.transparent)opaque.add(new THREE.Mesh(object.geometry,material));
+      });
+      if(transmission){
+        // Transmission first draws opaque meshes into a linear background, then the sRGB main pass.
+        const target=new THREE.WebGLRenderTarget(1,1,{colorSpace:THREE.LinearSRGBColorSpace});
+        try {
+          const ready=(()=>{
+            const previous=renderer.getRenderTarget(),toneMapping=renderer.toneMapping;
+            try {renderer.setRenderTarget(target);renderer.toneMapping=THREE.NoToneMapping;return renderer.compileAsync(opaque,camera,scene);}
+            finally {renderer.setRenderTarget(previous);renderer.toneMapping=toneMapping;}
+          })();
+          await ready;
+        } finally {target.dispose();}
+      }
+      // Keep phases sequential: Three polls each material's current program.
+      await renderer.compileAsync(layer,camera,scene);
+    } finally {preparingLineup=false;invalidate();}
+  }
   const originalMeshes:Set<THREE.Object3D>=new Set(objects);
   function depthAllowed(){
     if(layout!=='assembly'||side.group.visible||selected.size||hovered.size)return false;
@@ -206,7 +233,7 @@ export function createDuckView(data:DuckData) {
   // ---- loop ----
   // Resizing clears the canvas after this frame was drawn, so draw again at once: a stage that grows or shrinks
   // with the panel stays visible instead of flashing blank.
-  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();if(wipe)renderWipe();else if (split) renderSplit();else draw(depthAllowed(), finishState);}
+  function resize() {invalidate();if (!host) return;const w = host.clientWidth,h = host.clientHeight;if (w <= 0 || h <= 0) return;renderer.setSize(w, h);camera.aspect = w / h;camera.updateProjectionMatrix();if(preparingLineup)return;if(wipe)renderWipe();else if (split) renderSplit();else draw(depthAllowed(), finishState);}
   function mount(el:HTMLElement, { view: name = 'hero', preserveView=false }:{view?:string;preserveView?:boolean} = {}) {host = el;observer?.disconnect();el.prepend(renderer.domElement);observer = new ResizeObserver(resize);observer.observe(el);resize();if(!preserveView)placeCamera(name);}
   const ray = new THREE.Raycaster(),pointer = new THREE.Vector2();
   function pick(clientX:number, clientY:number):string|null {
@@ -226,7 +253,7 @@ export function createDuckView(data:DuckData) {
   controls.addEventListener('change', invalidate);
   renderer.domElement.addEventListener('webglcontextrestored',invalidate);
   function animate() {
-    if(!renderer.domElement.isConnected)return false;
+    if(!renderer.domElement.isConnected||preparingLineup)return false;
     if (tween) {const t = Math.min(1, (performance.now() - tween.start) / 560),e = 1 - (1 - t) ** 3;camera.position.lerpVectors(tween.from, tween.to, e);controls.target.lerpVectors(tween.tFrom, tween.tTo, e);if (t >= 1) tween = null;}
     stepLayout();stepColors();
     let hooked = false;for (const hook of frameHooks) hooked = !!hook(performance.now()) || hooked;
@@ -283,7 +310,7 @@ export function createDuckView(data:DuckData) {
   }
   return { invalidate, mount, setColors, setFinishes, setHighlight, pick, pickAsync, view, orbitBy, focus, snapshot, still, thumbnail, createShowcase, exportThumbnails, canvas: renderer.domElement,
     setLayout, get layout() {return layout;}, setPose, get pose() {return { ...pose };}, beakPosition: () => root.worldToLocal(beak.getWorldPosition(new THREE.Vector3())), root, joints, debug: () => ({ cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), aspect: camera.aspect }),
-    stage: { layer, camera, controls, root, shadow, meshes, hardware, onFrame: (hook:(time:number)=>boolean|void) => {frameHooks.add(hook);invalidate();} },
+    stage: { layer, camera, controls, root, shadow, meshes, hardware, prepareLineup, onFrame: (hook:(time:number)=>boolean|void) => {frameHooks.add(hook);invalidate();} },
     setSideCopy, setSplit: (colors:Record<string,string>|null) => {split = colors || null;invalidate();},
     setWipe: (colors:Record<string,string>|null,at=1) => {wipe=colors?{colors,at}:null;if(wipe)tween=null;invalidate();},
     setTurntable: (on:boolean) => {invalidate();if (layout === 'arrange') on = false;turntable = on;if (!on) root.rotation.y = root.rotation.y % (Math.PI * 2);}, resetSpin: () => {root.rotation.y = 0;invalidate();},
