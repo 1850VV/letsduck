@@ -1,8 +1,8 @@
-# 桌面端与离线浏览器包
+# 客户端打包与验收
 
 Electron 窗口使用 `duck://app`、默认 `letsduck` profile 和一套共享 `@letsduck/host`。它直接服务主线 `frontend/dist`；个人数据库、设备控制、耗材规则和导出都来自 `packages/`。源码运行与打包需要 Node 24.20+（24.x）。用户包内已带运行时。
 
-桌面安装包和随附 Node 的浏览器包只维护 Windows x64（`win32/x64`）与 Apple 芯片 Mac（`darwin/arm64`）。Intel Mac 包停止维护，不再纳入交付或验收；Rosetta 运行结果不扩大支持范围。Linux 继续使用 Node CLI 或服务器版。
+桌面安装包和随附 Node 的浏览器包只维护 Windows x64（`win32/x64`）与 Apple 芯片 Mac（`darwin/arm64`）。Intel Mac 包停止维护，不再纳入交付或验收；Rosetta 运行结果不扩大支持范围。不提供 Linux 或其他平台客户端。桌面安装包与浏览器包是同一客户端版的两种启动方式；服务器版独立部署。
 
 ## 开发
 

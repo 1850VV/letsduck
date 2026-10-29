@@ -10,9 +10,14 @@ A painting, servo debugging and 3D assembly tool for the XGO Duck V2. Choose col
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Switching palettes in the painting studio"></p>
 
-## Three entry points
+## Two editions
 
-On the personal home page, drag the three ducks sideways or use the arrow keys. Click a side duck to bring it to the centre, then click the centre duck to open its tool.
+- **Client edition (primary)**: painting, debugging and assembly on your own computer. Available only for **Apple silicon Macs (arm64)** and **Windows x64**. No Intel Mac, Linux or other client platforms are provided.
+- **Server edition**: self-hosted palette sharing, ratings and remixes. Optimisation and adaptation remain limited; see the brief server section below.
+
+## Client edition
+
+On the client home page, drag the three ducks sideways or use the arrow keys. Click a side duck to bring it to the centre, then click the centre duck to open its tool.
 
 | Entry | Features | Requirements |
 | --- | --- | --- |
@@ -35,7 +40,7 @@ Studio animations are screen previews. Device actions in Debug affect real hardw
 
 Export targets a fixed project with 35 parts and 6 print plates. Display poses and exploded views do not alter manufacturing meshes. Arbitrary 3MF import, automatic slicing and printer control are outside the project. Screen colours do not guarantee physical colour accuracy, and model previews do not validate assembly tolerances.
 
-Mobile painting supports bottom panels, pinch zoom, double-tap focus and long-press comparison. Painting and community screens have 12 language dictionaries; newer debug and assembly screens still contain Chinese. See [translation maintenance](docs/i18n.md).
+The interface has 12 language dictionaries; some debug and assembly content remains in Chinese. See [translation maintenance](docs/i18n.md).
 
 ### Servo preparation and assembly
 
@@ -46,68 +51,42 @@ Mobile painting supports bottom panels, pinch zoom, double-tap focus and long-pr
 - Assembly includes material quantities, enlarged rotatable items, direct main/secondary horn selection and pickup records. Keep the tray in its fixed three-by-five arrangement; leave removed positions empty.
 - IDs, parameters and mechanical zero are separate. Software cannot fix reversed or jammed hardware. Cable specifications and some installation orientations still need manufacturer and physical checks; a completed page is not physical acceptance.
 
-## Choose an edition
+### Install and launch
 
-| | Personal | Server |
-| --- | --- | --- |
-| Use | Local painting, debugging and assembly | Sharing palettes, ratings and remixes with friends |
-| Runtime | Node.js 24.20+ (24.x) | Docker Compose: nginx + Node.js + MySQL 8.4 |
-| Data | Local SQLite; drafts and preferences in the browser | MySQL; anonymous drafts in the browser |
-| Accounts and gallery | None | Nickname accounts, private schemes, publishing, ratings and remix families |
-| USB device control | Local only | Unavailable |
+The client has two launch options built on the same code: a **desktop installer** opens an application window; a **browser archive** runs locally in your browser after extraction and a double-click on its launcher. Both bundle their runtime, so users do not need to install Node.js or Python. See [client packaging](apps/desktop/README.md) for builds.
 
-The personal, server and Electron desktop entries share the TypeScript renderer, validation, storage and 3MF exporter. The instructions below cover the source personal edition and Docker server edition. Desktop installers and browser archives with bundled Node support Windows x64 (`win32/x64`) and Apple silicon Macs (`darwin/arm64`) only. Intel Mac packages are no longer provided. See [desktop and offline packaging](apps/desktop/README.md) for builds and acceptance checks. Linux Node CLI and server support remains available. Installation, updates, signing and physical devices have separate acceptance checks.
+The files currently in [Releases](https://github.com/1850VV/letsduck/releases) are historical test candidates; no formal client release is available yet. Candidate packages do not establish full product acceptance. Full functionality still requires assets you are entitled to use; see [local assets](docs/local-assets.md).
 
-## Run locally
+To run the client from source, install Node.js 24.20+ (24.x):
 
 ```sh
 git clone https://github.com/1850VV/letsduck.git
 cd letsduck
 npm ci
+npm run setup:electron
 npm run import:assets -- /path/to/authorized/assets
 npm run import:assembly -- /path/to/authorized/assembly/assets
-npm run start:local
+npm run start:desktop
 ```
 
-Source development requires Node.js 24.20 or newer in the 24.x series. Assembly asset import can be deferred; assembly and the home page's model previews need those files. See [asset requirements](docs/local-assets.md).
+For the local browser option, replace the last command with `npm run start:local`. Source launchers `启动来做鸭.command` (Mac) and `启动来做鸭.bat` (Windows) also use this option. The default URL is `http://127.0.0.1:8876/`, trying the next port if occupied. For development, use `npm run start:local -- --port 8880 --no-open` to choose a port and suppress browser launch.
 
-You can also double-click `启动来做鸭.command` on macOS or `启动来做鸭.bat` on Windows. Install Node 24.20+ (24.x) and run `npm ci` first. On macOS, use Finder's right-click → Open for the first launch if blocked.
+Named schemes, numbering verification and pickup progress are stored outside the application folder:
 
-The browser opens `http://127.0.0.1:8876/`, trying the next port if occupied. Use `npm run start:local -- --port 8880 --no-open` to choose a port and suppress browser launch. Stop the launcher process to exit.
+| Platform | Database |
+| --- | --- |
+| Apple silicon Mac | `~/Library/Application Support/DoodleDuck/personal.db` |
+| Windows x64 | `%APPDATA%\DoodleDuck\personal.db` |
 
-The personal server listens locally. Named schemes, numbering verification and pickup progress live outside the application folder:
+Override the path with `DUCK_PERSONAL_DB`. Back up the database before updating. Desktop and browser drafts, languages and preferences are stored separately and do not transfer with the database.
 
-- macOS: `~/Library/Application Support/DoodleDuck/personal.db`
-- Windows: `%APPDATA%\DoodleDuck\personal.db`
-- Linux: `~/.local/share/doodleduck/personal.db`
+## Server edition
 
-Override the location with `DUCK_PERSONAL_DB`. Back up this file before updating; browser drafts and preferences are stored separately.
+The server provides accounts, private schemes, a palette gallery, ratings and remixes, without USB device control. It uses Docker Compose (nginx + Node.js + MySQL 8.4). Optimisation and adaptation remain limited; development focuses on the client experience. See [server deployment](docs/deployment.md) for setup, HTTPS, migration and backups.
 
-## Deploy the server
-
-Prepare an authorised painting asset pack, then configure database passwords:
-
-```sh
-npm run import:assets -- /path/to/authorized/assets
-cp .env.example .env
-# Edit .env and set two different long random passwords.
-docker compose up -d --build
-```
-
-The default address is `http://<server-address>:8080/`. nginx serves the frontend and proxies `/api/`; the backend and MySQL stay on the container network. Assets are mounted read-only; the source 3MF has no public static endpoint.
-
-The gallery supports popular, recent and top-rated sorting, filters, ratings, remixes and family trees. Accounts, works and ratings in these screenshots are sample data.
-
-![Example gallery](docs/media/en/05-gallery.jpg)
-
-For public deployment, follow [deployment instructions](docs/deployment.md) for HTTPS, domains and backups. An optional Caddy configuration is included. Share links and poster QR codes require a public HTTPS domain in `DUCK_PUBLIC_URL`. See [.env.example](.env.example) for bind address, port, database and export concurrency settings.
-
-## Develop and verify
-
-Active application, renderer, tools and ordinary tests use strict TypeScript. Vite builds `frontend/` into `frontend/dist/`, which both Node hosts serve. The personal home page contains three entry points; the server's `/` is the paint studio.
+## Development and documentation
 
 ```sh
-npm ci
 npm run build
 npm run typecheck
 npm test
@@ -116,40 +95,10 @@ npm run audit:typescript
 npm run audit:publication
 ```
 
-Shared packages provide contracts, domain rules and lossless JSON, export workers, SQLite/MySQL storage, device controllers and Cordis/Fastify composition. `apps/local`, `apps/server` and `apps/desktop` are the host entry points. Source launchers build before starting. The server can serve the renderer with `npm run start:server -- --static frontend/dist --port 8880`.
+See [development and verification](docs/development.md) and [client packaging and acceptance](apps/desktop/README.md) for asset, MySQL, browser and installation requirements. Technical checks do not replace human interaction or physical-device acceptance.
 
-Tests use disposable databases and fake devices. Asset-dependent files that cannot run are listed explicitly; they require a separately authorized model pack. Full migration source checks use `npm run verify:phase7` with that pack; actual desktop and installation checks are listed in the desktop packaging guide. MySQL contracts require an isolated `duck_test_*` database via `DUCK_TEST_DATABASE_URL`; otherwise they report skips. Every owned source, test and configuration remains covered by strict type checks.
-
-Install Playwright's matching managed Chromium, then set `DUCK_TEST_BROWSER=1` for the actual browser lifecycle checks. nginx protocol tests report a skip when native nginx is unavailable. Visual review, native controls, installers and physical-device acceptance are separate checks.
-
-For development, use `npm run start:local -- --port 0 --no-open` with `DUCK_PERSONAL_DB` set to a development database. The source audit protects TypeScript, pinned vendor files and explicitly archived tools. Publication scanning checks private-data boundaries and requires review.
-
-`npm run migrate:database -- SOURCE.db --backup COPY.db` reads the source and creates a consistent backup. It writes the configured target, which must be empty or an unchanged copy of the same snapshot.
-
-`npm run baseline:capture -- --assets /path/to/authorized/assets --output output/baseline --browser` measures an owned Node host with temporary data. Keep environment, request/response and ZIP evidence private. Compare only identical inputs and environments.
-
-Ordinary build, test and tool paths need no Python. Synthetic historical Python results are frozen oracles. `npm run test:historical -- --list` lists optional replay suites; select the old interpreter with `--python /path/to/legacy/python`. The runner extracts a fixed Git reference to a read-only temporary tree and owns all data/services. `baseline:capture -- --engine historical ...` labels old-engine measurements separately. Fetch the reference first in shallow clones.
-
-For explicit cross-platform assembly diagnosis, run `npx tsx tooling/test/assembly-diagnostic.ts .`. Node compares the fixed historical MJS and current TS poses, order and numeric values, then removes the temporary reference. It needs no Python and is outside ordinary tests.
-
-## Source and documentation
-
-```text
-frontend/   Home, painting, debug, assembly, gallery and shared modules
-apps/       Personal and server entry points
-packages/   Shared contracts, domain, storage, devices, exporter and HTTP hosts
-deploy/     Optional HTTPS configuration
-scripts/    Asset import, display model packing and publication checks
-tests/      TypeScript Node and browser checks
-assets/     Separately supplied local assets; do not commit
-```
-
-- [Project structure and boundaries](docs/project.md)
-- [Local assets and reproduction requirements](docs/local-assets.md)
-- [Deployment, migration and backups](docs/deployment.md)
-- [Third-party sources and licences](THIRD_PARTY_NOTICES.md)
-- [Publication scope](docs/publication.md)
-- [Contributing](CONTRIBUTING.md) · [Security reports](SECURITY.md)
+- [Project structure](docs/project.md) · [Local assets](docs/local-assets.md) · [Translations](docs/i18n.md)
+- [Contributing](CONTRIBUTING.md) · [Security reports](SECURITY.md) · [Publication scope](docs/publication.md)
 
 ## Licence
 
