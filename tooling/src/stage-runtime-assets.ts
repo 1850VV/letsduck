@@ -76,7 +76,7 @@ async function resolveDependency(name:string,from:string):Promise<string>{
 }
 export async function stageProductionApp(options:{root:string;target:string;entry:'desktop'|'browser'}):Promise<StageReceipt>{
  const root=await realpath(options.root),entry=options.entry==='desktop'?'desktop':'local',source=join(root,'apps',entry),target=await newStageTarget(options.target,[join(source,'dist'),join(root,'packages'),join(root,'node_modules')]);
- const main=await packageData(source),files=await tree(join(source,'dist'),'apps/'+entry+'/dist'),registry=new Map<string,string>(),mirrors=new Set<string>();
+ const main=await packageData(source),files=await tree(join(source,'dist'),'apps/'+entry+'/dist'),registry=new Map<string,string>();
  const workspacePrefix=join(root,'packages')+sep;
  async function dependency(name:string,from:string,parentTarget:string,optionalDependency:boolean):Promise<void>{
   let location:string;try{location=await resolveDependency(name,from);}catch(error){if(optionalDependency&&error instanceof Error&&error.message.startsWith('Missing production dependency'))return;throw error;}
@@ -85,7 +85,6 @@ export async function stageProductionApp(options:{root:string;target:string;entr
   const metadata=await packageData(location);
   if(location.startsWith(workspacePrefix)){
    const compiled=await tree(join(location,'dist'),destination+'/dist');files.push(await planned(join(location,'package.json'),destination+'/package.json'),...compiled);
-   const mirror='packages/'+basename(location);if(!mirrors.has(mirror)){mirrors.add(mirror);files.push(await planned(join(location,'package.json'),mirror+'/package.json'),...compiled.map(file=>({...file,path:mirror+'/dist'+file.path.slice((destination+'/dist').length)})));}
   }else files.push(...await tree(location,destination,new Set(['node_modules','.git','.github','test','tests','__tests__'])));
   for(const [child]of Object.entries({...metadata.dependencies,...metadata.optionalDependencies}))await dependency(child,location,destination,Object.hasOwn(metadata.optionalDependencies,child));
  }

@@ -1,4 +1,4 @@
-// Transitional snapshots are checked against the legacy entries until those move.
+// Shared device definitions also produce the public servo-map and servo-leads JSON.
 export const servoMap = {
   "version": "tutorial-reference-1",
   "bindings": [

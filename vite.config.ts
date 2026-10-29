@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
 import { transform } from 'esbuild';
+import { servoMap, servoLeads } from './packages/contracts/src/devices.js';
 const frontend = resolve(import.meta.dirname, 'frontend');
 function synchronousPrepaint(): Plugin {
   return {
@@ -26,9 +27,9 @@ function synchronousPrepaint(): Plugin {
 function publicServoMaps(): Plugin {
   return {
     name: 'duck-public-servo-maps',
-    async generateBundle() {
-      for (const fileName of ['assemble/servo-map.json', 'assemble/servo-leads.json', 'shared/servo-map.json']) {
-        this.emitFile({ type: 'asset', fileName, source: await readFile(resolve(frontend, fileName === 'shared/servo-map.json' ? 'assemble/servo-map.json' : fileName)) });
+    generateBundle() {
+      for (const [fileName, data] of [['assemble/servo-map.json', servoMap], ['assemble/servo-leads.json', servoLeads], ['shared/servo-map.json', servoMap]] as const) {
+        this.emitFile({ type: 'asset', fileName, source: JSON.stringify(data, null, 2) + '\n' });
       }
     },
   };

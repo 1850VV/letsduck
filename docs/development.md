@@ -12,17 +12,14 @@
 
 ```sh
 npm ci
-npm run build
-npm run typecheck
-npm test
-npm run probe:runtime
-npm run audit:typescript
-npm run audit:publication
+npm run verify
 ```
 
 `typecheck` 检查前端、全部测试、工具和构建配置，禁止用 JS 绕过严格检查。`audit:typescript` 检查活跃自有代码的语言、类型抑制及固定 vendor 指纹；厂商 JS 与 `tools/history/` 的归档工具有明确保留用途。`audit:publication` 检查跟踪文件中的私有路径、资产、凭据与生成物。扫描是启发式检查，不能代替人工核查。
 
-`npm test` 使用临时数据库和假设备，包含桌面单元测试。缺少独立授权资产时，会逐文件列出未执行的资产测试；几何包测试也会明确跳过。完整迁移源码检查使用已有合法资产运行 `npm run verify:phase7`，桌面真实运行与安装专项见[打包说明](../apps/desktop/README.md)；不能把资产缺失的源代码 CI 当作完整产品验收。MySQL 测试需要专用 `duck_test_*` 库的 `DUCK_TEST_DATABASE_URL`，未配置时明确跳过；测试按序运行。
+`npm test` 先构建一次，再顺序运行 TypeScript、Web 和桌面单元测试，使用临时数据库和假设备。`test:typescript` 与 `test:desktop` 单独运行时仍自动构建；对应的 `:built` 命令只运行测试，供已构建的流程复用。缺少资产时，`npm test` 会逐文件列出未执行的资产测试；几何包测试也会明确跳过。
+
+`npm run verify` 是完整源码验证入口，包含类型检查、一次构建、三组测试、运行时探针和两项审计，并要求资产齐全。原迁移阶段命令 `verify:phase0`–`verify:phase7` 统一使用 `verify`；`test:legacy` 使用 `test:web`，独立的 `test:historical` 历史回放继续保留。桌面真实运行与安装专项见[打包说明](../apps/desktop/README.md)；不能把资产缺失的源代码 CI 当作完整产品验收。MySQL 测试需要专用 `duck_test_*` 库的 `DUCK_TEST_DATABASE_URL`，未配置时明确跳过；测试按序运行。
 
 浏览器检查使用 Playwright 托管 Chromium。安装匹配版本后，设置 `DUCK_TEST_BROWSER=1` 可运行浏览器生命周期专项；需 nginx 的协议检查在没有本机 nginx 时明确跳过。原生控件、人工视觉、真实设备与安装包验收分别报告。
 

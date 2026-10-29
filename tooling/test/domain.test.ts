@@ -1,7 +1,6 @@
 import {frozenOracle} from './fixtures/frozen-oracle.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildSync } from 'esbuild';
 import * as domain from '@letsduck/domain';
@@ -106,8 +105,11 @@ test('Unicode case folding excludes the same support products as Python', () => 
 
 test('shared device definitions exactly preserve current mapping and unresolved lead requirements', () => {
   const d = required();
-  assert.deepEqual(d.servoMap, JSON.parse(readFileSync(resolve(root, 'frontend/assemble/servo-map.json'), 'utf8')));
-  assert.deepEqual(d.servoLeads, JSON.parse(readFileSync(resolve(root, 'frontend/assemble/servo-leads.json'), 'utf8')));
+  assert.equal(d.servoMap.version, 'tutorial-reference-1');
+  assert.deepEqual(d.servoMap.bindings.map(binding => binding.id), [10,11,12,13,14,20,21,22,23,24,30,31,32,33,34]);
+  assert.deepEqual(d.servoLeads.reportedRequirement, { source: 'setup-notes', servosRequiringLongLead: 3, regionHint: 'head-neck', regionConfirmed: false, ids: null, lengthMm: null, connectionEndpoints: null });
+  assert.deepEqual(Object.keys(d.servoLeads.requirements), ['10','11','12','13','14','20','21','22','23','24','30','31','32','33','34']);
+  assert.ok(Object.values(d.servoLeads.requirements).every(requirement => requirement.connections === null));
   assert.equal(d.SERVO_BINDINGS.length, 15);
   assert.equal(d.SERVO_IDS.t_motor20, 10);
   assert.equal(d.SERVO_IDS.t_motor10, 20);

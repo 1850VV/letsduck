@@ -70,7 +70,7 @@ test('servo lead labels translate at display time while the preparation catalog 
   const {resolveServoMap,deriveServoPreparation}=await import('../frontend/assemble/servo-map.js');
   const {readServoMap}=await import('./fixtures/source-data.js');
   const {setLocale}=await import('../frontend/shared/i18n.js');
-  const map=resolveServoMap(readServoMap(new URL('../frontend/assemble/servo-map.json',import.meta.url)),{actors:ACTORS,steps:STEPS});
+  const map=resolveServoMap(readServoMap(),{actors:ACTORS,steps:STEPS});
   const preparation=deriveServoPreparation(map,{requirements:{32:{connections:[{key:'a',cableClass:'long',lengthMm:200,to:'example-A',sourceStatus:'confirmed'}]}}});
   const item=preparation.byId.get(32)!;setLocale('en');assert.equal(displayLeadLabel(item),'Long cable · 200 mm');assert.equal(item.leadLabel,'长线 · 200 mm');setLocale('zh-Hans');
 });
