@@ -32,18 +32,3 @@ export function deriveServoStatus(data:SetupUiState,map:HistoryMap,now=Date.now(
    const readback=t.readings?.[id];return readback?{id,readback,observedAt:t.observedAt}:null;
   }};
 }
-
-/** Presentation never changes a device task; only an explicit start releases manual inspection. */
-export class ServoSelection{
- ids:number[];selected:number;labelTarget:number|null;view:string;manual:boolean;initialized:boolean;previous:number|null|undefined;
- constructor(ids:number[]){this.ids=ids;this.selected=ids[0]!;this.labelTarget=null;this.view='robot';this.manual=false;this.initialized=false;this.previous=null;}
- apply(data:Pick<SetupUiState,'currentId'|'targetId'>&Partial<Pick<SetupUiState,'phase'>>){
-  if(!this.initialized){this.selected=this.ids.includes(data.currentId!)?data.currentId!:this.ids.includes(data.targetId!)?data.targetId!:this.selected;this.initialized=true;}
-  else if(!this.manual&&this.ids.includes(data.currentId!)&&data.currentId!==this.previous)this.selected=data.currentId!;
-  this.previous=data.currentId;
- }
- choose(id:number){if(!this.ids.includes(id))return;this.selected=id;this.labelTarget=id;this.manual=true;}
- begin(){this.manual=false;}
- toggle(){this.view=this.view==='robot'?'tray':'robot';}
- sequential(data:Pick<SetupUiState,'targetId'>){this.manual=false;this.labelTarget=null;this.selected=this.ids.includes(data.targetId!)?data.targetId!:this.selected;}
-}
