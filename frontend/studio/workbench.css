@@ -1,0 +1,90 @@
+/* B v1 keeps the existing paint controls, state and renderer. */
+.top{height:64px;min-height:64px;gap:12px;padding:0 20px;background:var(--ui-surface-2)}
+.top .brand{gap:7px;font-size:14px}.top .brand .logo{width:30px;height:30px}
+.top .brand .wordmark{display:flex;align-items:baseline;gap:4px;line-height:1.3}.top .brand .wordmark small{font-size:9px;letter-spacing:0}
+.top .edition-badge{display:none}
+.scheme{width:190px}.scheme-btn{padding:6px 10px;gap:7px}.scheme-name{font-size:13px}.scheme-btn small{background:transparent;padding:0;font-size:10px}
+.steps{gap:2px;background:var(--ui-surface-0);padding:3px;border-radius:10px;min-width:0}
+.steps button{gap:8px;padding:7px 12px;border-radius:8px;min-height:34px;min-width:0}.steps button>span{font-size:12px;min-width:0}.steps button>span>span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.steps button small,.steps .step-line{display:none}
+.steps button em{width:18px;height:18px;font-size:10px;background:#17243c08;box-shadow:none}
+.steps button.on{background:var(--ui-surface-2);box-shadow:var(--ui-shadow)}.steps button.on em{background:var(--blue);color:#fff;box-shadow:none}
+.top-actions{gap:6px}.top-actions .icon{width:32px;height:32px;border-radius:8px;font-size:15px}.top-actions .ghost{padding:8px 10px;border-radius:8px;font-size:11px;background:var(--ui-surface-2)}
+body.embedded-paint .top{padding-inline-end:54px}
+body:not(.phone) .studio{display:grid;min-height:0;padding:12px;gap:0;transition:none}
+body:not(.phone) .studio[data-step="1"]{grid-template-columns:minmax(0,1fr)}
+body:not(.phone) .studio[data-step="2"]{grid-template-columns:192px minmax(0,1fr) 320px;gap:12px}
+body:not(.phone) .studio[data-step="3"]{grid-template-columns:minmax(0,1fr) 320px;gap:12px}
+body:not(.phone) .studio:not([data-step="2"]) .rail,body:not(.phone) .studio[data-step="1"] .panel{display:none}
+body:not(.phone) .rail{padding:10px 0;background:transparent;border:0}
+.rail-head{font-size:11px;padding:4px 12px 18px}.rail-head small{font-size:10px}
+.zone{border-radius:9px;margin-bottom:3px}.zone-main{padding:11px 28px 11px 12px;border-radius:9px;min-height:52px}
+.zone-name{font-size:12px;font-weight:500}.zone-name small{font-size:10px}.zone.on .zone-main{border-color:transparent;background:var(--blue-soft)}
+.zone-chips{grid-template-columns:repeat(2,7px);gap:1px}.zone-chips i{width:7px;height:14px;border-radius:2px}
+.zone-lock{top:13px;opacity:.25}.zone-lock:hover,.zone-lock.on{opacity:1}
+body:not(.phone) .stage{margin:0;border-radius:14px}
+.stage[data-bg="soft"]{background:radial-gradient(ellipse at 50% 40%,#fbfcff,#edf0f7)}
+.tools{top:14px;padding:4px;border:0;border-radius:10px;background:#ffffffed;box-shadow:var(--ui-shadow);gap:2px}
+.tools button{font-size:11px;padding:6px 8px;border-radius:7px;min-height:30px}.tools button.on,.tools button.active{background:var(--blue-soft);color:var(--blue)}
+.tools kbd{font-size:9px}.tools .tools-sep{margin:0 4px}.tools .seg{padding:2px;border-radius:7px}
+.dock{bottom:20px;padding:5px;border:0;border-radius:11px;background:#fffffff0;box-shadow:var(--ui-shadow);gap:7px}
+.seg{padding:2px;border-radius:8px;background:var(--ui-surface-0)}.seg button{height:28px;border-radius:6px;font-size:11px}.seg button.on{color:var(--ink);box-shadow:0 1px 3px #17243c0d}
+.toggle,.hold{font-size:11px;height:32px;border-radius:8px}.hold{border-color:transparent}.bgs{border:0;padding-left:0}
+.bgs>button{width:22px;height:22px}.studio[data-step="2"] .hint{font-size:11px;color:var(--muted);bottom:78px}
+.panel{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--ui-surface-2)}
+.panel-head,.panel-head.compact{padding:20px 20px 16px;border-bottom:0}.panel-head h2,.panel-head.compact h2{font-size:19px;letter-spacing:-.3px}.panel-head p{font-size:11px}
+.panel-body{padding:4px 20px 18px}.panel-foot{padding:14px 20px}.primary{border-radius:8px;font-size:12px;box-shadow:none;padding:12px;background:var(--blue)}.primary:hover{background:#3d59e7}
+.panel input,.panel select{border-radius:8px}.panel .scope button{border-radius:7px}
+.sm-current{padding:14px}.sm-current input{border-radius:7px;background:var(--ui-surface-1)}.sm-btns button{border-radius:8px}.sm-list{padding:6px}.sm-row{border-radius:8px}
+.tools{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 24px)}
+.panel-toggle{position:absolute;right:12px;top:64px;z-index:3;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:8px;background:var(--ui-surface-2);box-shadow:var(--ui-shadow);color:var(--muted);padding:7px}
+.panel-toggle svg{width:18px;height:18px}
+body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template-columns:192px minmax(0,1fr)}
+.dock-tabs{margin:0 20px;padding:3px;gap:3px;border:0;border-radius:9px;background:var(--ui-surface-0)}
+.dock-tabs button{padding:8px 4px;min-height:31px;border-radius:7px;font-size:12px;font-weight:500}
+.dock-tabs .ink{display:none}.cdock[data-tab="filament"] [data-tab="filament"],.cdock[data-tab="free"] [data-tab="free"]{background:var(--ui-surface-2);box-shadow:0 1px 4px #17243c0d}
+.dock-body{padding:20px;gap:14px}.scope button{font-size:11px}.panel-head.compact .scope button.on{background:var(--blue-soft);color:var(--blue)}
+@media(min-width:761px) and (max-width:1200px){.top{gap:8px;padding-inline:12px}.scheme{width:150px}.top .brand .wordmark small{display:none}.steps button{padding-inline:9px;gap:5px}.top-actions .ghost{padding-inline:7px}.tools kbd{display:none}.tools button{padding-inline:6px}body:not(.phone) .studio[data-step="2"]{grid-template-columns:164px minmax(0,1fr) 290px}}
+@media(min-width:761px) and (max-width:1000px){body:not(.phone) .studio[data-step="2"]{grid-template-columns:minmax(0,1fr) 290px}body:not(.phone) .studio .rail{display:none}.top .brand .wordmark{display:none}.scheme{width:130px}.top-actions .ghost{font-size:10px}.language-trigger{font-size:11px;max-width:135px}.steps button{padding-inline:7px}}
+@media(min-width:761px) and (max-width:900px){.top{height:auto;min-height:94px;padding-block:6px}}
+@media(min-width:761px) and (max-width:900px){body:not(.phone) .stage .tools{left:12px;right:12px;width:auto;max-width:none;transform:none;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}}
+@media(min-width:1001px) and (max-width:1200px){body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template-columns:164px minmax(0,1fr)}}
+@media(min-width:761px) and (max-width:1000px){body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.studio,.rail,.stage{transition:none!important}}
+/* Steps share the phone header; existing draggable sheet and gestures remain. */
+@media(max-width:760px){
+ :root{--ph-top:calc(56px + env(safe-area-inset-top));--ph-tab:0px}
+ body.phone .top{height:var(--ph-top)!important;gap:5px!important;box-shadow:none;background:var(--ui-surface-2);padding-inline:10px!important}
+ body.phone.embedded-paint .top{padding-inline-end:44px!important}
+ body.phone .top .brand .logo{width:27px;height:27px}
+ body.phone .top-actions .icon{width:30px;height:30px;border-radius:8px}
+ body.phone .top-actions #undo,body.phone .top-actions #redo{display:none}
+ body.phone .top .steps{position:static;flex:1;height:auto;margin:0 3px;padding:3px;gap:1px;min-width:0;background:var(--ui-surface-0);border:0;border-radius:9px;box-shadow:none;order:0;flex-basis:auto}
+ body.phone .steps button{flex-direction:row;min-height:30px;padding:5px!important;border-radius:7px;gap:0}
+ body.phone .steps button em{display:none}body.phone .steps button>span{font-size:10px!important}
+ body.phone .steps button.on{background:var(--ui-surface-2);box-shadow:0 1px 3px #17243c0d}
+ body.phone .stage .tools{top:10px!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;flex-direction:row;gap:2px;padding:4px!important;border-radius:10px;max-width:calc(100% - 24px)!important;overflow-x:auto!important;scrollbar-width:none;box-shadow:var(--ui-shadow)}
+ body.phone .stage .tools button{width:auto;height:28px;min-width:28px;flex:none;padding:4px 6px!important;border-radius:6px;font-size:10px!important;gap:3px}
+ body.phone .stage .tools button b{font-size:14px}body.phone .stage .tools [data-tool] span{display:inline!important}
+ body.phone .stage .tools .tools-seg{display:flex!important;flex:none;padding:0;background:var(--ui-surface-0)}
+ body.phone .stage .tools button.on,body.phone .stage .tools button.active,body.phone .stage .tools button[aria-pressed=true]{color:var(--blue);background:var(--blue-soft)}
+ body.phone .stage .dock{top:auto!important;bottom:14px!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;flex-direction:row;gap:4px;padding:4px!important;border-radius:11px;max-width:calc(100% - 24px);box-shadow:var(--ui-shadow)}
+ body.phone .dock #views{display:flex;gap:0;background:var(--ui-surface-0);border-radius:7px;padding:2px!important}
+ body.phone .dock #views button{display:block;width:auto!important;min-width:25px;height:26px!important;border-radius:5px;font-size:10px;font-weight:400;padding:3px}
+ body.phone .dock #views button.on{box-shadow:0 1px 3px #17243c0d}
+ body.phone .dock .toggle,body.phone .dock .hold{width:auto!important;height:28px!important;border-radius:7px;padding:3px 6px!important;min-width:28px}
+ body.phone .dock .hold{font-size:10px!important}body.phone .dock .hold::before{display:none}
+ body.phone .dock .bgs>button.custom{width:24px;height:24px;flex:none}
+ body.phone .panel{border-radius:15px 15px 0 0;box-shadow:0 -1px 0 var(--line);padding-top:16px;padding-bottom:env(safe-area-inset-bottom)}
+ body.phone .studio[data-step="2"] .rail{bottom:calc(var(--ph-sheet) - 57px);left:12px;right:12px;z-index:25;padding:0!important;gap:5px;height:32px;align-items:center}
+ body.phone .rail .zone{border-radius:7px;box-shadow:none;background:var(--ui-surface-0)}
+ body.phone .rail .zone-main{min-height:30px;padding:5px 8px!important;border-radius:7px;font-size:11px}
+ body.phone .rail .zone.on .zone-main{background:var(--blue-soft);color:var(--blue)}body.phone .rail .zone.on .zone-name{color:var(--blue)}
+ body.phone .panel-head.compact{padding-top:42px!important;padding-bottom:10px!important}
+ body.phone .panel-head.compact .sel-line{display:none}
+ body.phone .panel .dock-tabs button{min-height:28px;padding:6px 4px;font-size:11px}
+ body.phone .dock-body{padding:14px 16px}.ph-grip i{height:3px;width:32px}
+ body.phone .scheme-menu{position:fixed;top:calc(var(--ph-top) + 10px);left:10px;right:10px;width:auto;max-height:calc(100dvh - var(--ph-top) - 20px);overflow:auto}
+ .ph-menu{border:0;border-radius:12px;box-shadow:var(--ui-popover-shadow)}.ph-menu .scheme{width:100%}.ph-menu .scheme-btn{width:100%;justify-content:space-between}.ph-menu #save-scheme{justify-content:center;min-height:36px}
+ .ph-menu .icon{justify-content:center;gap:8px;min-height:36px}.ph-menu .icon::after{content:attr(aria-label);font-size:12px}
+ body.phone .panel-toggle{display:none!important}
+}

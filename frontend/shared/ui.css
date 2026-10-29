@@ -1,0 +1,14 @@
+/* Shared surfaces and controls for the home and paint workspace. */
+:root{--ink:#17243c;--muted:#6e7b91;--line:#17243c14;--blue:#4d6bfe;--blue-soft:#eef1ff;--bg:#f5f6fa;--ui-surface-0:#f5f6fa;--ui-surface-1:#f9fafe;--ui-surface-2:#fff;--ui-surface-3:#fff;--ui-shadow:0 4px 16px #17243c0a,0 0 0 .5px #17243c14;--ui-popover-shadow:0 12px 36px #17243c1f,0 0 0 1px var(--line);font-synthesis:none}
+button,input,select{font:inherit}
+button{transition:background-color 120ms ease,box-shadow 120ms ease,transform 120ms ease}
+:is(.primary,.ghost,.icon,.language-trigger,.scheme-btn,.steps button,.tools button,.dock button,.sm-btns button):active:not(:disabled){transform:scale(.98)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.language-trigger{border-color:var(--line);border-radius:8px;color:var(--ink);background:var(--ui-surface-2);font-weight:400}
+.language-trigger:hover{background:var(--ui-surface-0)}
+.language-trigger[aria-expanded=true]{background:var(--blue-soft);color:var(--blue)}
+.language-menu,.scheme-menu,.cmp-menu,.bg-pop{border:0;border-radius:12px;background:var(--ui-surface-3);box-shadow:var(--ui-popover-shadow)}
+.language-list button,.language-auto,.cmp-menu button{border-radius:8px}
+.language-list button[aria-pressed=true]{border-color:transparent}
+.language-list button:hover,.cmp-menu button:hover{background:var(--ui-surface-0)}
+@media(prefers-reduced-motion:reduce){button,.language-menu,.scheme-menu,.cmp-menu,.bg-pop{transition:none!important;animation:none!important}}

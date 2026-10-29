@@ -48,6 +48,9 @@ function renderEdition() {
   $<HTMLButtonElement>('#import-code').hidden = !personal;
   const brand = $<HTMLAnchorElement>('[data-brand-slot]');brand.href = personal ? './' : './gallery/';
   brand.title = personal ? brandName() : _t('text.0614');
+  const frame=window.frameElement,close=personal&&frame?.id==='module-frame'?frame.ownerDocument.getElementById('close-module'):null;
+  document.body.classList.toggle('embedded-paint',Boolean(close));
+  brand.onclick=close?event=>{event.preventDefault();close.click();}:null;
   if (personal) {
     $('#steps [data-step="3"] [data-i18n]').dataset.i18n = 'personal.show';
     $('#steps [data-step="3"] [data-i18n]').textContent = _t('personal.show');
@@ -101,6 +104,16 @@ function persist() {
 }
 
 let step = 1,stepsDone = new Set<number>(),slots = slotsFromDesign(products, design.assignments, themeSlots(products, required(THEMES[0]))),showTab = 'move';
+let inspectorCollapsed=false;
+const inspectorDesktop=matchMedia('(min-width:761px)');
+function syncInspector(){
+ const collapsed=inspectorDesktop.matches&&step===2&&inspectorCollapsed,button=$<HTMLButtonElement>('#panel-toggle');
+ $('#studio').dataset.panelCollapsed=String(collapsed);$('#panel').hidden=collapsed;
+ button.hidden=step!==2||!inspectorDesktop.matches;button.setAttribute('aria-expanded',String(!collapsed));
+ button.dataset.i18nAriaLabel=collapsed?'ui.showColors':'ui.hideColors';button.setAttribute('aria-label',_t(button.dataset.i18nAriaLabel));
+}
+$('#panel-toggle').onclick=()=>{inspectorCollapsed=!inspectorCollapsed;syncInspector();};
+inspectorDesktop.addEventListener('change',syncInspector);_onLocale(syncInspector);
 let sel:{zone:string;scope:string;part:string|null;mirror:boolean} = { zone: 'head-shell', scope: 'all', part: null, mirror: true },tool = 'select',brush:string|null = null,search = '',replaceFrom:string|null = null,finder = '#FF8A3D',takeFrom = 'original',source = 'bambu',dockTab = 'filament',freeFinish:Finish = 'basic',freeAuto = true,pickToFree = false,brushMirror = true,brushKind = 'PLA',brushHover:string|null = null,toolBefore = 'select';
 let freeHsv = hexToHsv('#FF8A3D'),bgPref = 'auto',bgCustom = '#2B3A55';bgPref = read(KEY + '-bg') || 'auto';bgCustom = read(KEY + '-bgc') || bgCustom;
 if (!['auto', 'soft', 'sand', 'sage', 'night', 'custom'].includes(bgPref)) bgPref = 'auto';
@@ -164,7 +177,7 @@ async function saveScheme(asNew:boolean) {
     if (!old && schemes.length >= 30) {toast(_message('text.0066'));return false;}
     const candidate = {id: old ? old.id : newId(), name: asNew && activeId ? _t('text.0067', {v0:name}) : name,
       design: clone(design), provenance, voiceSalt};
-    savingScheme = true;$('#scheme-state').textContent = _t('personal.saving');
+    savingScheme = true;$<HTMLButtonElement>('#save-scheme').disabled=true;$('#scheme-state').textContent = _t('personal.saving');
     const result = await personalWrite('PUT', candidate.id, schemeBody(candidate));
     savingScheme = false;
     if (!result) {renderHeader();return false;}
@@ -190,7 +203,12 @@ function renderMenu() {
   <div class="sm-paste"><label>${_t(personal ? 'personal.code' : "text.0089")}<span><input id="sm-code" placeholder="${_attr(personal ? 'v1.…' : _t("text.0090"))}" autocomplete="off"><button id="sm-import">${_t("text.0091")}</button></span></label></div>
   <p class="sm-foot">${personal ? _t('personal.storage') : _t("text.0092", { v7: account.user ? _t("text.0085") : _t("text.0086") })}</p>`;
 }
-$<HTMLButtonElement>('#scheme-btn').onclick = (e) => {e.stopPropagation();menuOpen = !menuOpen;pendingOpen = null;renderMenu();};
+$<HTMLButtonElement>('#scheme-btn').onclick = (e) => {e.stopPropagation();menuOpen = !menuOpen;pendingOpen = null;renderMenu();if(menuOpen)$<HTMLInputElement>('#sm-name').focus();};
+$<HTMLButtonElement>('#save-scheme').onclick=()=>{void saveScheme(false);};
+$('#scheme').addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||!menuOpen)return;
+ event.preventDefault();event.stopPropagation();menuOpen=false;pendingOpen=null;renderMenu();$('#scheme-btn').focus();
+});
 $<HTMLButtonElement>('#import-code').onclick = e => {e.stopPropagation();menuOpen = true;pendingOpen = null;renderMenu();$<HTMLInputElement>('#sm-code').focus();};
 document.addEventListener('click', (e) => {if (menuOpen && !eventWithin(e, $('#scheme'))) {menuOpen = false;renderMenu();}if (!eventElement(e).closest<HTMLElement>('.compare')) $('#cmp-menu').hidden = true;});
 $('#scheme-menu').addEventListener('click', async (e) => {
@@ -268,7 +286,7 @@ const closeness = (d:number) => d < 6 ? _t("text.0102") : d < 15 ? _t("text.0103
 const used = () => [...new Set(parts.map((p) => keyOf(p.id)))];
 const countOf = (k:string) => parts.filter((p) => keyOf(p.id) === k).length;
 function chips(ids:string[]) {return [...new Set(ids.map((id) => design.colors[id]))].slice(0, 4).map((c) => `<i style="--c:${c}"></i>`).join('');}
-function renderHeader() {$('#scheme-name').textContent = name;$('#scheme-state').textContent = (activeId ? dirty() ? _t("text.0106") : _t("text.0107") : _t("text.0108")) + (provenance ? _t("text.0084") : '');$('#scheme-state').className = activeId && !dirty() ? 'ok' : '';}
+function renderHeader() {$('#scheme-name').textContent = name;$('#scheme-state').textContent = (activeId ? dirty() ? _t("text.0106") : _t("text.0107") : _t("text.0108")) + (provenance ? _t("text.0084") : '');$('#scheme-state').className = activeId && !dirty() ? 'ok' : '';const save=$<HTMLButtonElement>('#save-scheme');save.disabled=savingScheme;save.dataset.i18n=activeId?'text.0079':'text.0080';save.textContent=_t(save.dataset.i18n);}
 function renderRail() {
   $('#rail').innerHTML = `<div class="rail-head"><span class="eyebrow">${_t("text.0109")}</span><small>${_t("text.0110")}</small></div>` + ZONES.map((z) => {
     const on = sel.zone === z.id,locked = z.ids.every((id) => locks.has(id)),part = on && sel.part && sel.scope === 'one' ? knownPart(sel.part) : null;
@@ -499,6 +517,7 @@ function renderPanel() {
 }
 function renderSteps() {$$('#steps button').forEach((b) => {const n = Number(b.dataset.step);b.classList.toggle('on', n === step);b.classList.toggle('done', stepsDone.has(n) && n !== step);});$('#studio').dataset.step = String(step);}
 function renderStage() {
+  syncInspector();
   const ids = step === 2 && tool === 'select' ? replaceFrom ? parts.filter((p) => keyOf(p.id) === replaceFrom).map((p) => p.id) : targetIds() : [];if (!brushHover) view.setHighlight(ids, []);
   $('#stage').style.setProperty('--brush-cursor', tool === 'brush' && brush ? cursorFor(keyHex(brush)) : 'crosshair');
   $$('#tools [data-tool]').forEach((b) => b.classList.toggle('on', b.dataset.tool === tool));

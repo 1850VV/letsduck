@@ -47,11 +47,12 @@ function positionModels(angle=carousel.angle,current=focus){
 function layoutLabels(){camera.updateMatrixWorld();for(const e of entries){const obj=models.get(e.id),p=new THREE.Vector3(0,-9,e.id==='debug'?175:95);if(obj){obj.updateMatrixWorld(true);p.applyMatrix4(obj.matrixWorld);}else p.add(new THREE.Vector3(...placements.get(e.id)!));p.project(camera);const b=buttons.get(e.id)!;b.hidden=!ready||p.z>1;const spread=host.clientWidth<700?1.2:1;b.style.left=(p.x*.5*spread+.5)*host.clientWidth+'px';b.style.top=Math.min((-p.y*.5+.5)*host.clientHeight,host.clientHeight-b.offsetHeight-12)+'px';}experiment.position();}
 function persist(id:string){if(!valid(id))return;try{localStorage.setItem(KEY,id);}catch{}lastUsed=id;}
 function open(id:string){if(!ready||!valid(id)||experiment.suppressed)return;if(access.locked(id)){experiment.show(id);return;}if(id==='assemble'&&!readNumberingReadiness().ready){id='debug';carousel.jump(id);if(access.locked(id)){experiment.show(id);return;}}experiment.hide();carousel.jump(id);opened=id;persist(id);positionModels();
+ $('module-window').dataset.module=id;
  $('module-title').textContent=entries.find(e=>e.id===id)!.name;
  $<HTMLIFrameElement>('module-frame').title=t('hub.frame.named',{name:entries.find(e=>e.id===id)!.name});
  $('window-note').textContent='';
  $<HTMLIFrameElement>('module-frame').src=id==='debug'?'/debug/?embedded=1':id==='assemble'?'/assemble/':'/paint';
- $('module-window').hidden=false;document.body.classList.add('module-open');$('close-module').focus();
+ $('module-window').hidden=false;document.body.classList.add('module-open');$(id==='paint'?'close-x':'close-module').focus();
 }
 function close(){if(!opened)return;updatePaint();persist(opened);opened=null;$('module-window').hidden=true;$<HTMLIFrameElement>('module-frame').src='about:blank';document.body.classList.remove('module-open');positionModels();resize();buttons.get(focus)!.focus();}
 $('close-module').onclick=close;$('close-x').onclick=close;

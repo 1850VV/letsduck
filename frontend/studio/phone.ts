@@ -1,6 +1,6 @@
-import {query as $,queryAll as $$,required,eventElement} from '../lib/browser.js';
+import {query as $,required,eventElement} from '../lib/browser.js';
 // Phone layout (portrait, up to 760px wide): the duck fills the screen between a slim top bar and a
-// draggable bottom sheet that holds the step panel; the three steps live in a bottom tab bar; paint and
+// draggable bottom sheet that holds the step panel; the three steps share the top bar; paint and
 // view tools float on the stage; touch gestures replace hover and keyboard. Desktop never runs this.
 // Everything here drives the studio through its own controls, so the studio logic stays in studio.mjs.
 const PHONE = matchMedia('(max-width: 760px)');
@@ -8,13 +8,13 @@ const root = document.documentElement, body = document.body, studio = $('#studio
 const buzz = (ms = 8) => {try {navigator.vibrate?.(ms);} catch {}};
 
 // ---------- bottom sheet: three snap heights, dragged by the grip or the panel header, flicked to snap ----------
-const PEEK:Record<string,number> = {1: 262, 2: 268, 3: 282};       // tall enough for each step's first useful row
+const PEEK:Record<string,number> = {1: 262, 2: 346, 3: 282};       // room for the color grid in the default bottom editor
 const MINI = 112;                            // a sliver: the duck gets almost the whole screen
 type Snap='mini'|'peek'|'full';
 let snap:Snap = 'peek', dragging:{y:number;h:number;t:number;moved:boolean;id:number;from:EventTarget|null;v?:number}|null = null;
 const px = (name:string) => parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0;
 // Measured, not read from the CSS variables: those hold calc(... + env(safe-area-inset-*)) text.
-const room = () => innerHeight - $('.top').getBoundingClientRect().height - $('#steps').getBoundingClientRect().height;
+const room = () => innerHeight - $('.top').getBoundingClientRect().height;
 function heightOf(name:Snap) {
   const max = room() - 24;
   if (name === 'mini') return Math.min(MINI, max);
@@ -105,14 +105,6 @@ function release(e:PointerEvent) {
 }
 stage.addEventListener('pointerup', release);stage.addEventListener('pointercancel', (e) => {if (press && e.pointerId === press.id) {clearTimeout(press.timer);if (press.fired) {body.classList.remove('ph-holding');$('#hold').dispatchEvent(new Event('compare-end'));}press = null;}});
 
-// The view button shows the current angle; tapping it moves to the next one.
-stage.addEventListener('click', (e) => {
-  const b = body.classList.contains('phone') && eventElement(e).closest<HTMLElement>('#views button');
-  if (!b || !b.classList.contains('on')) return;
-  e.stopPropagation();e.preventDefault();
-  const all = $$('#views button');required(all[(all.indexOf(b) + 1) % all.length]).click();buzz();
-}, true);
-
 // Light haptics where the browser offers them: steps, colours, parts, cards and moves.
 document.addEventListener('click', (e) => {if (body.classList.contains('phone') && eventElement(e).closest<HTMLElement>('#steps button,[data-key],[data-zone],[data-start],[data-act],[data-tool],[data-scope]')) buzz();});
 
@@ -121,7 +113,7 @@ function enter() {
   body.classList.add('phone');
   const actions = $('.top-actions');
   if (!more.isConnected) actions.append(more);
-  for (const el of [document.querySelector<HTMLElement>('.language'), document.querySelector<HTMLElement>('#profile-slot'), document.querySelector<HTMLElement>('.top-actions a.ghost'), document.querySelector<HTMLElement>('#import-code')]) {
+  for (const el of [document.querySelector<HTMLElement>('#scheme'), document.querySelector<HTMLElement>('#save-scheme'), document.querySelector<HTMLElement>('#undo'), document.querySelector<HTMLElement>('#redo'), document.querySelector<HTMLElement>('.language'), document.querySelector<HTMLElement>('#profile-slot'), document.querySelector<HTMLElement>('.top-actions a.ghost'), document.querySelector<HTMLElement>('#import-code')]) {
     if (el && el.parentElement !== menu) {moved.push([el, required(el.parentElement), el.nextSibling]);menu.append(el);}
   }
   if (!menu.isConnected) document.body.append(menu);

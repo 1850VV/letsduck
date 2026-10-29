@@ -96,6 +96,7 @@ npm test
 npm run probe:runtime
 npm run audit:typescript
 npm run audit:publication
+node --import tsx tests/browser/ui-system.ts
 ```
 
 完整测试所需的资产、MySQL、浏览器及安装验收条件，见[开发与验证](docs/development.md)和[客户端打包与验收](apps/desktop/README.md)。技术检查不代替人工交互与实物验收。
