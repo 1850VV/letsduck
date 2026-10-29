@@ -1,9 +1,4 @@
-# Local assets have separate redistribution terms. Never publish them here.
-/assets/source.3mf
-/assets/geometry.bin
-/assets/model.json
-/assets/catalog.json
-/assets/export-schema.json
+# Required project assets are included in assets/; their own terms still apply.
 
 *.3mf
 *.stl
@@ -48,7 +43,16 @@ storage-state*.json
 /assets/*.gz
 /assets/*.tmp
 /.venv
-/assets/assembly/
+
+# Bundled resources used by the normal build and client packaging.
+!/assets/
+!/assets/source.3mf
+!/assets/geometry.bin
+!/assets/geometry.pack.bin
+!/assets/geometry.positions.bin
+!/assets/assembly/full-assembly.bin
+!/assets/assembly/*.mp4
+!/assets/assembly/horn-reference/*.jpg
 
 # Desktop staging may contain separately licensed assets and generated installers.
 /apps/desktop/build/

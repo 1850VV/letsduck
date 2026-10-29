@@ -1,5 +1,7 @@
 # 客户端打包与验收
 
+本文面向源码开发、打包与验收。仓库的 `assets/` 已带齐所需资源，打包程序直接读取该目录。普通客户端下载包已包含模型、资源和运行时，安装或解压后即可使用，无需另备素材或另装 Node.js、Python。
+
 Electron 窗口使用 `duck://app`、默认 `letsduck` profile 和一套共享 `@letsduck/host`。它直接服务主线 `frontend/dist`；个人数据库、设备控制、耗材规则和导出都来自 `packages/`。源码运行与打包需要 Node 24.20+（24.x）。用户包内已带运行时。
 
 桌面安装包和随附 Node 的浏览器包只维护 Windows x64（`win32/x64`）与 Apple 芯片 Mac（`darwin/arm64`）。Intel Mac 包停止维护，不再纳入交付或验收；Rosetta 运行结果不扩大支持范围。不提供 Linux 或其他平台客户端。桌面安装包与浏览器包是同一客户端版的两种启动方式；服务器版独立部署。
@@ -12,7 +14,7 @@ npm run setup:electron
 npm run start:desktop
 ```
 
-先按根 README 导入有权使用的素材。`DUCK_ASSETS`、`DUCK_FRONTEND`、`DUCK_ASSEMBLY_MANIFEST` 可指定资源；默认使用工作区内的素材、构建前端及组装清单。`DUCK_DESKTOP_DATA` 只改桌面 profile 目录。正式数据库继续使用根 README 中的 `DoodleDuck/personal.db`，`DUCK_PERSONAL_DB` 可显式覆盖。测试必须使用自有临时目录与数据库。浏览器 `http://127.0.0.1:8876` 与桌面 `duck://app` 的草稿、语言和偏好属于各自来源，不会随 SQLite 自动互转。
+默认使用仓库 `assets/`、构建前端及组装清单，无需导入步骤。`DUCK_ASSETS`、`DUCK_FRONTEND`、`DUCK_ASSEMBLY_MANIFEST` 可用于显式选择其他资源；`DUCK_DESKTOP_DATA` 只改桌面 profile 目录。正式数据库继续使用根 README 中的 `DoodleDuck/personal.db`，`DUCK_PERSONAL_DB` 可显式覆盖。测试必须使用自有临时目录与数据库。浏览器 `http://127.0.0.1:8876` 与桌面 `duck://app` 的草稿、语言和偏好属于各自来源，不会随 SQLite 自动互转。
 
 开发与打包环境若设置了 `ELECTRON_SKIP_BINARY_DOWNLOAD=1`，需清空该变量再运行 `setup:electron`。服务器和前端 Docker 构建不下载桌面二进制。
 
@@ -67,7 +69,7 @@ node --import tsx apps/desktop/scripts/installed-smoke.ts --installer /path/to/c
 
 `installed-upgrade.ts` 的真实 Windows A→B 验收需要隔离 Actions runner 和可匿名下载的已发布版本；它不模拟升级，也不发布安装包。`benchmark.ts` 默认使用共享 Node 基线采集，只有显式历史模式才调用旧 Python 对照。
 
-`Desktop and portable candidates` 工作流可手动启用 `full_software_acceptance`，使用固定校验的既有素材包执行完整模型安装流程。常规 push/PR 仍使用源码候选；手动验收不发布素材或安装包。该历史素材包缺少较新的可选耗材数据，不能据此宣称完整耗材数据验收。Windows 专项 `native-input-smoke.ts` 只在隔离 Actions runner 使用 Win32 原生输入检查首页 iframe、下拉菜单、键盘和真实剪贴板；`portable-browser-smoke.ts` 检查真实 BAT 启动、完整模型浏览器流程、同库重启和实际控制台 Ctrl+C 退出。这些结果不能替代用户电脑、GPU或人工视觉验收。
+`Desktop and portable candidates` 工作流的两平台安装包和浏览器包均使用仓库 `assets/`，不再下载额外的历史素材包。手动启用 `full_software_acceptance` 可执行完整模型安装流程；常规 push/PR 保留合成场景 smoke，不能据此宣称完整软件验收通过。Windows 专项 `native-input-smoke.ts` 只在隔离 Actions runner 使用 Win32 原生输入检查首页 iframe、下拉菜单、键盘和真实剪贴板；`portable-browser-smoke.ts` 检查真实 BAT 启动、完整模型浏览器流程、同库重启和实际控制台 Ctrl+C 退出。这些结果不能替代用户电脑、GPU或人工视觉验收。
 
 Windows x64 与 Apple 芯片 Mac 分别报告桌面安装包及浏览器包的安装或解压启动、保存、3MF/BOM、海报、剪贴板、视频、重启和退出结果。签名、公证、自动更新、完整进程组 CPU/RSS、下载/安装大小、真实菜单和设备检查各自保留证据，普通单元测试不能替代这些验收。运行上述命令不表示这些条件已经通过。
 

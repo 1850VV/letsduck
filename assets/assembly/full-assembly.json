@@ -1,0 +1,905 @@
+{
+  "parts": [
+    {
+      "id": "p_motor",
+      "sourceId": "right_knee_0",
+      "sourceName": "right_knee_0",
+      "positionOffset": 0,
+      "vertexCount": 482,
+      "indexOffset": 5784,
+      "indexCount": 2940,
+      "size": [
+        29.00008773803711,
+        34.00047302246094,
+        20.00046157836914
+      ]
+    },
+    {
+      "id": "motor",
+      "sourceId": "right_knee_0",
+      "sourceName": "right_knee_0",
+      "positionOffset": 17544,
+      "vertexCount": 482,
+      "indexOffset": 23328,
+      "indexCount": 2940,
+      "size": [
+        29.00008773803711,
+        34.00047302246094,
+        20.00046157836914
+      ]
+    },
+    {
+      "id": "foot",
+      "sourceId": "P2-03",
+      "sourceName": "右脚",
+      "positionOffset": 35088,
+      "vertexCount": 3892,
+      "indexOffset": 81792,
+      "indexCount": 23460,
+      "size": [
+        40.29635238647461,
+        29.91192054748535,
+        54.69855499267578
+      ]
+    },
+    {
+      "id": "shank",
+      "sourceId": "P6-04",
+      "sourceName": "右小腿",
+      "positionOffset": 175632,
+      "vertexCount": 1553,
+      "indexOffset": 194268,
+      "indexCount": 9402,
+      "size": [
+        7.0126190185546875,
+        58.001014709472656,
+        20.02417755126953
+      ]
+    },
+    {
+      "id": "bearing",
+      "sourceId": "right_knee_1",
+      "sourceName": "right_knee_1",
+      "positionOffset": 231876,
+      "vertexCount": 1136,
+      "indexOffset": 245508,
+      "indexCount": 6816,
+      "size": [
+        3.0002479553222656,
+        14.998390197753906,
+        14.995162963867188
+      ]
+    },
+    {
+      "id": "axle",
+      "sourceId": "P2-05",
+      "sourceName": "右踝轴",
+      "positionOffset": 272772,
+      "vertexCount": 116,
+      "indexOffset": 274164,
+      "indexCount": 696,
+      "size": [
+        10.057758331298828,
+        3.825101852416992,
+        10.185487747192383
+      ],
+      "rotationZ": -1.5707963267948966
+    },
+    {
+      "id": "l_motor",
+      "sourceId": "left_knee_0",
+      "sourceName": "left_knee_0",
+      "positionOffset": 276948,
+      "vertexCount": 482,
+      "indexOffset": 282732,
+      "indexCount": 2940,
+      "size": [
+        29.000076293945312,
+        34.00030517578125,
+        20.00054359436035
+      ]
+    },
+    {
+      "id": "l_foot",
+      "sourceId": "P2-04",
+      "sourceName": "左脚",
+      "positionOffset": 294492,
+      "vertexCount": 1410,
+      "indexOffset": 311412,
+      "indexCount": 8568,
+      "size": [
+        40.28416442871094,
+        29.211233139038086,
+        54.71918487548828
+      ]
+    },
+    {
+      "id": "l_shank",
+      "sourceId": "P6-05",
+      "sourceName": "左小腿",
+      "positionOffset": 345684,
+      "vertexCount": 1553,
+      "indexOffset": 364320,
+      "indexCount": 9402,
+      "size": [
+        7.004405975341797,
+        58.000633239746094,
+        20.00510597229004
+      ]
+    },
+    {
+      "id": "l_bearing",
+      "sourceId": "left_knee_2",
+      "sourceName": "left_knee_2",
+      "positionOffset": 401928,
+      "vertexCount": 1136,
+      "indexOffset": 415560,
+      "indexCount": 6816,
+      "size": [
+        3.000211715698242,
+        15.000017166137695,
+        14.987873077392578
+      ]
+    },
+    {
+      "id": "l_axle",
+      "sourceId": "P2-07",
+      "sourceName": "左踝轴",
+      "positionOffset": 442824,
+      "vertexCount": 116,
+      "indexOffset": 444216,
+      "indexCount": 696,
+      "size": [
+        10.052322387695312,
+        3.662189483642578,
+        10.149210929870605
+      ],
+      "rotationZ": 1.5707963267948966
+    },
+    {
+      "id": "r_upperMotor",
+      "sourceId": "right_hip_pitch_2",
+      "sourceName": "right_hip_pitch_2",
+      "positionOffset": 447000,
+      "vertexCount": 754,
+      "indexOffset": 456048,
+      "indexCount": 4572,
+      "size": [
+        30.00008773803711,
+        20.001983642578125,
+        34.00101852416992
+      ]
+    },
+    {
+      "id": "r_lowerMotor",
+      "sourceId": "right_hip_pitch_3",
+      "sourceName": "right_hip_pitch_3",
+      "positionOffset": 474336,
+      "vertexCount": 754,
+      "indexOffset": 483384,
+      "indexCount": 4572,
+      "size": [
+        30.000083923339844,
+        34.00130081176758,
+        20.001697540283203
+      ]
+    },
+    {
+      "id": "r_support",
+      "sourceId": "P5-04",
+      "sourceName": "右大腿支撑",
+      "positionOffset": 501672,
+      "vertexCount": 804,
+      "indexOffset": 511320,
+      "indexCount": 4884,
+      "size": [
+        1.4334869384765625,
+        47.89161682128906,
+        57.77592468261719
+      ]
+    },
+    {
+      "id": "r_lowerBearing",
+      "sourceId": "right_hip_pitch_0",
+      "sourceName": "right_hip_pitch_0",
+      "positionOffset": 530856,
+      "vertexCount": 692,
+      "indexOffset": 539160,
+      "indexCount": 4152,
+      "size": [
+        4.000301361083984,
+        21.990177154541016,
+        21.998830795288086
+      ]
+    },
+    {
+      "id": "r_topLink",
+      "sourceId": "P3-04",
+      "sourceName": "右 Roll 舵机输出",
+      "positionOffset": 555768,
+      "vertexCount": 2098,
+      "indexOffset": 580944,
+      "indexCount": 12672,
+      "size": [
+        32.00712585449219,
+        19.02825927734375,
+        34.00518798828125
+      ]
+    },
+    {
+      "id": "r_topBearing",
+      "sourceId": "right_hip_roll_0",
+      "sourceName": "right_hip_roll_0",
+      "positionOffset": 631632,
+      "vertexCount": 692,
+      "indexOffset": 639936,
+      "indexCount": 4152,
+      "size": [
+        4.0000762939453125,
+        21.997879028320312,
+        21.992351531982422
+      ]
+    },
+    {
+      "id": "r_sole",
+      "sourceId": "P1-03",
+      "sourceName": "右脚底软垫",
+      "positionOffset": 656544,
+      "vertexCount": 2628,
+      "indexOffset": 688080,
+      "indexCount": 15804,
+      "size": [
+        40.6446533203125,
+        11.084002494812012,
+        54.44354248046875
+      ]
+    },
+    {
+      "id": "l_upperMotor",
+      "sourceId": "left_hip_pitch_0",
+      "sourceName": "left_hip_pitch_0",
+      "positionOffset": 751296,
+      "vertexCount": 754,
+      "indexOffset": 760344,
+      "indexCount": 4572,
+      "size": [
+        30.000049591064453,
+        20.001815795898438,
+        34.0010986328125
+      ]
+    },
+    {
+      "id": "l_lowerMotor",
+      "sourceId": "left_hip_pitch_4",
+      "sourceName": "left_hip_pitch_4",
+      "positionOffset": 778632,
+      "vertexCount": 754,
+      "indexOffset": 787680,
+      "indexCount": 4572,
+      "size": [
+        30.000049591064453,
+        34.00113296508789,
+        20.001779556274414
+      ]
+    },
+    {
+      "id": "l_support",
+      "sourceId": "P5-05",
+      "sourceName": "左大腿支撑",
+      "positionOffset": 805968,
+      "vertexCount": 804,
+      "indexOffset": 815616,
+      "indexCount": 4884,
+      "size": [
+        1.4438552856445312,
+        47.883670806884766,
+        57.77672576904297
+      ]
+    },
+    {
+      "id": "l_lowerBearing",
+      "sourceId": "left_hip_pitch_3",
+      "sourceName": "left_hip_pitch_3",
+      "positionOffset": 835152,
+      "vertexCount": 692,
+      "indexOffset": 843456,
+      "indexCount": 4152,
+      "size": [
+        4.00018310546875,
+        21.989688873291016,
+        21.99899673461914
+      ]
+    },
+    {
+      "id": "l_topLink",
+      "sourceId": "P3-05",
+      "sourceName": "左 Roll 舵机输出",
+      "positionOffset": 860064,
+      "vertexCount": 2098,
+      "indexOffset": 885240,
+      "indexCount": 12672,
+      "size": [
+        32.02783966064453,
+        19.036865234375,
+        33.99932861328125
+      ]
+    },
+    {
+      "id": "l_topBearing",
+      "sourceId": "left_hip_roll_1",
+      "sourceName": "left_hip_roll_1",
+      "positionOffset": 935928,
+      "vertexCount": 692,
+      "indexOffset": 944232,
+      "indexCount": 4152,
+      "size": [
+        4.000171661376953,
+        21.989715576171875,
+        21.998991012573242
+      ]
+    },
+    {
+      "id": "l_sole",
+      "sourceId": "P1-04",
+      "sourceName": "左脚底软垫",
+      "positionOffset": 960840,
+      "vertexCount": 2628,
+      "indexOffset": 992376,
+      "indexCount": 15804,
+      "size": [
+        40.62548065185547,
+        10.307251930236816,
+        54.354942321777344
+      ]
+    },
+    {
+      "id": "t_motor10",
+      "sourceId": "trunk_base_0",
+      "sourceName": "trunk_base_0",
+      "positionOffset": 1055592,
+      "vertexCount": 754,
+      "indexOffset": 1064640,
+      "indexCount": 4572,
+      "size": [
+        19.999999523162842,
+        30,
+        34.000000953674316
+      ]
+    },
+    {
+      "id": "t_motor20",
+      "sourceId": "trunk_base_4",
+      "sourceName": "trunk_base_4",
+      "positionOffset": 1082928,
+      "vertexCount": 754,
+      "indexOffset": 1091976,
+      "indexCount": 4572,
+      "size": [
+        19.999999523162842,
+        30,
+        34.000000953674316
+      ]
+    },
+    {
+      "id": "t_support",
+      "sourceId": "P6-09",
+      "sourceName": "髋部 Yaw 支撑",
+      "positionOffset": 1110264,
+      "vertexCount": 408,
+      "indexOffset": 1115160,
+      "indexCount": 2568,
+      "size": [
+        57.089385986328125,
+        1.0080642700195312,
+        38.134278774261475
+      ]
+    },
+    {
+      "id": "t_backplate",
+      "sourceId": "P4-03",
+      "sourceName": "身体背板",
+      "positionOffset": 1125432,
+      "vertexCount": 1022,
+      "indexOffset": 1137696,
+      "indexCount": 6288,
+      "size": [
+        59.01608657836914,
+        78.63794326782227,
+        9.050659719854593
+      ]
+    },
+    {
+      "id": "t_yawR",
+      "sourceId": "P6-06",
+      "sourceName": "右 Yaw 连接件",
+      "positionOffset": 1162848,
+      "vertexCount": 2789,
+      "indexOffset": 1196316,
+      "indexCount": 16842,
+      "size": [
+        23.045713424682617,
+        26.001564025878906,
+        26.26339864730835
+      ]
+    },
+    {
+      "id": "t_yawBearingR",
+      "sourceId": "trunk_base_3",
+      "sourceName": "trunk_base_3",
+      "positionOffset": 1263684,
+      "vertexCount": 692,
+      "indexOffset": 1271988,
+      "indexCount": 4152,
+      "size": [
+        21.99897050857544,
+        4,
+        21.989699363708496
+      ]
+    },
+    {
+      "id": "t_motor11",
+      "sourceId": "right_hip_yaw_3",
+      "sourceName": "right_hip_yaw_3",
+      "positionOffset": 1288596,
+      "vertexCount": 754,
+      "indexOffset": 1297644,
+      "indexCount": 4572,
+      "size": [
+        20.000083923339844,
+        34.00016784667969,
+        30.000047206878662
+      ]
+    },
+    {
+      "id": "t_coverR",
+      "sourceId": "P6-02",
+      "sourceName": "右 Roll 舵机盖板",
+      "positionOffset": 1315932,
+      "vertexCount": 520,
+      "indexOffset": 1322172,
+      "indexCount": 3168,
+      "size": [
+        23.037043571472168,
+        40.021175384521484,
+        1.4607410430908203
+      ]
+    },
+    {
+      "id": "t_legBearingR",
+      "sourceId": "right_hip_yaw_0",
+      "sourceName": "right_hip_yaw_0",
+      "positionOffset": 1334844,
+      "vertexCount": 692,
+      "indexOffset": 1343148,
+      "indexCount": 4152,
+      "size": [
+        21.998981475830078,
+        21.989715576171875,
+        4.000171661376953
+      ]
+    },
+    {
+      "id": "t_yawL",
+      "sourceId": "P6-07",
+      "sourceName": "左 Yaw 连接件",
+      "positionOffset": 1359756,
+      "vertexCount": 2789,
+      "indexOffset": 1393224,
+      "indexCount": 16842,
+      "size": [
+        23.04970073699951,
+        25.990638732910156,
+        26.262882232666016
+      ]
+    },
+    {
+      "id": "t_yawBearingL",
+      "sourceId": "trunk_base_6",
+      "sourceName": "trunk_base_6",
+      "positionOffset": 1460592,
+      "vertexCount": 692,
+      "indexOffset": 1468896,
+      "indexCount": 4152,
+      "size": [
+        21.99897050857544,
+        4,
+        21.989699363708496
+      ]
+    },
+    {
+      "id": "t_motor21",
+      "sourceId": "left_hip_yaw_1",
+      "sourceName": "left_hip_yaw_1",
+      "positionOffset": 1485504,
+      "vertexCount": 754,
+      "indexOffset": 1494552,
+      "indexCount": 4572,
+      "size": [
+        20.000083923339844,
+        34.00016784667969,
+        30.000047206878662
+      ]
+    },
+    {
+      "id": "t_coverL",
+      "sourceId": "P6-03",
+      "sourceName": "左 Roll 舵机盖板",
+      "positionOffset": 1512840,
+      "vertexCount": 520,
+      "indexOffset": 1519080,
+      "indexCount": 3168,
+      "size": [
+        23.094970703125,
+        40.05434036254883,
+        1.4590740203857422
+      ]
+    },
+    {
+      "id": "t_legBearingL",
+      "sourceId": "left_hip_yaw_2",
+      "sourceName": "left_hip_yaw_2",
+      "positionOffset": 1531752,
+      "vertexCount": 692,
+      "indexOffset": 1540056,
+      "indexCount": 4152,
+      "size": [
+        21.99898099899292,
+        21.989715576171875,
+        4.000171661376953
+      ]
+    },
+    {
+      "id": "h_motor32",
+      "sourceId": "head_yaw_2",
+      "sourceName": "head_yaw_2",
+      "positionOffset": 1556664,
+      "vertexCount": 754,
+      "indexOffset": 1565712,
+      "indexCount": 4572,
+      "size": [
+        34.00017070770264,
+        30.00006103515625,
+        20.000083923339844
+      ]
+    },
+    {
+      "id": "h_yawSupport",
+      "sourceId": "P6-08",
+      "sourceName": "头部 Yaw 支架",
+      "positionOffset": 1584000,
+      "vertexCount": 4636,
+      "indexOffset": 1639632,
+      "indexCount": 27936,
+      "size": [
+        34.00774574279785,
+        22.524673461914062,
+        35.9122200012207
+      ]
+    },
+    {
+      "id": "h_pitchSupport",
+      "sourceId": "P6-01",
+      "sourceName": "头部俯仰支架",
+      "positionOffset": 1751376,
+      "vertexCount": 2105,
+      "indexOffset": 1776636,
+      "indexCount": 12846,
+      "size": [
+        35.014102935791016,
+        28.260574340820312,
+        18.04362678527832
+      ]
+    },
+    {
+      "id": "h_bearingFront",
+      "sourceId": "head_yaw_1",
+      "sourceName": "head_yaw_1",
+      "positionOffset": 1828020,
+      "vertexCount": 692,
+      "indexOffset": 1836324,
+      "indexCount": 4152,
+      "size": [
+        21.99563980102539,
+        21.995452880859375,
+        4.0000762939453125
+      ]
+    },
+    {
+      "id": "h_bearingBack",
+      "sourceId": "head_yaw_3",
+      "sourceName": "head_yaw_3",
+      "positionOffset": 1852932,
+      "vertexCount": 692,
+      "indexOffset": 1861236,
+      "indexCount": 4152,
+      "size": [
+        21.999370574951172,
+        21.988235473632812,
+        4.0000762939453125
+      ]
+    },
+    {
+      "id": "h_bearingCrown",
+      "sourceId": "head_yaw_1",
+      "sourceName": "head_yaw_1",
+      "positionOffset": 1877844,
+      "vertexCount": 692,
+      "indexOffset": 1886148,
+      "indexCount": 4152,
+      "size": [
+        21.99563980102539,
+        21.995452880859375,
+        4.0000762939453125
+      ]
+    },
+    {
+      "id": "h_motor33",
+      "sourceId": "head_roll_2",
+      "sourceName": "head_roll_2",
+      "positionOffset": 1902756,
+      "vertexCount": 754,
+      "indexOffset": 1911804,
+      "indexCount": 4572,
+      "size": [
+        34.00014877319336,
+        20.00042724609375,
+        30.000044345855713
+      ]
+    },
+    {
+      "id": "h_platform",
+      "sourceId": "P2-02",
+      "sourceName": "头部平台",
+      "positionOffset": 1930092,
+      "vertexCount": 3898,
+      "indexOffset": 1976868,
+      "indexCount": 23400,
+      "size": [
+        88.3307113647461,
+        16.119766235351562,
+        118.94145584106445
+      ]
+    },
+    {
+      "id": "h_mouthMotor",
+      "sourceId": "head_roll_0",
+      "sourceName": "head_roll_0",
+      "positionOffset": 2070468,
+      "vertexCount": 482,
+      "indexOffset": 2076252,
+      "indexCount": 2940,
+      "size": [
+        29.000038146972656,
+        20.00042724609375,
+        34.00014877319336
+      ]
+    },
+    {
+      "id": "h_jaw",
+      "sourceId": "P2-01",
+      "sourceName": "下巴",
+      "positionOffset": 2088012,
+      "vertexCount": 1162,
+      "indexOffset": 2101956,
+      "indexCount": 7020,
+      "size": [
+        88.08563995361328,
+        30.260971069335938,
+        67.75006103515625
+      ]
+    },
+    {
+      "id": "h_servoSupport",
+      "sourceId": "P4-02",
+      "sourceName": "头部舵机固定件",
+      "positionOffset": 2130036,
+      "vertexCount": 516,
+      "indexOffset": 2136228,
+      "indexCount": 3144,
+      "size": [
+        68.5584716796875,
+        18.93701171875,
+        60.506686210632324
+      ]
+    },
+    {
+      "id": "h_motor30",
+      "sourceId": "neck_pitch_3",
+      "sourceName": "neck_pitch_3",
+      "positionOffset": 2148804,
+      "vertexCount": 754,
+      "indexOffset": 2157852,
+      "indexCount": 4572,
+      "size": [
+        30.000021934509277,
+        34.00006103515625,
+        20.000207901000977
+      ]
+    },
+    {
+      "id": "h_motor31",
+      "sourceId": "neck_pitch_1",
+      "sourceName": "neck_pitch_1",
+      "positionOffset": 2176140,
+      "vertexCount": 754,
+      "indexOffset": 2185188,
+      "indexCount": 4572,
+      "size": [
+        30.000021934509277,
+        34.00006103515625,
+        20.000207901000977
+      ]
+    },
+    {
+      "id": "h_neckA",
+      "sourceId": "P3-02",
+      "sourceName": "颈部连接板 A",
+      "positionOffset": 2203476,
+      "vertexCount": 424,
+      "indexOffset": 2208564,
+      "indexCount": 2580,
+      "size": [
+        2.0088205337524414,
+        10.005722045898438,
+        20.0030574798584
+      ]
+    },
+    {
+      "id": "h_neckB",
+      "sourceId": "P3-03",
+      "sourceName": "颈部连接板 B",
+      "positionOffset": 2218884,
+      "vertexCount": 424,
+      "indexOffset": 2223972,
+      "indexCount": 2580,
+      "size": [
+        2.0052194595336914,
+        10.006179809570312,
+        20.003206253051758
+      ]
+    },
+    {
+      "id": "h_shell",
+      "sourceId": "P4-01",
+      "sourceName": "头盖",
+      "positionOffset": 2234292,
+      "vertexCount": 11772,
+      "indexOffset": 2375556,
+      "indexCount": 70644,
+      "size": [
+        88.0413703918457,
+        48.029876708984375,
+        124.16083908081055
+      ]
+    },
+    {
+      "id": "h_eyeShell",
+      "sourceId": "P2-06",
+      "sourceName": "眼睛外壳",
+      "positionOffset": 2658132,
+      "vertexCount": 1742,
+      "indexOffset": 2679036,
+      "indexCount": 10452,
+      "size": [
+        30.001699447631836,
+        29.836212158203125,
+        11.642524719238281
+      ]
+    },
+    {
+      "id": "h_eyes",
+      "sourceId": "P3-01",
+      "sourceName": "眼睛",
+      "positionOffset": 2720844,
+      "vertexCount": 1406,
+      "indexOffset": 2737716,
+      "indexCount": 8424,
+      "size": [
+        17.374869346618652,
+        17.374832153320312,
+        7.51019287109375
+      ]
+    },
+    {
+      "id": "h_upperPad",
+      "sourceId": "P1-02",
+      "sourceName": "上嘴软垫",
+      "positionOffset": 2771412,
+      "vertexCount": 467,
+      "indexOffset": 2777016,
+      "indexCount": 2790,
+      "size": [
+        84.33105087280273,
+        2.5334320068359375,
+        27.295326232910156
+      ]
+    },
+    {
+      "id": "h_lowerPad",
+      "sourceId": "P1-01",
+      "sourceName": "下嘴软垫",
+      "positionOffset": 2788176,
+      "vertexCount": 2088,
+      "indexOffset": 2813232,
+      "indexCount": 12516,
+      "size": [
+        80.63471221923828,
+        7.120574951171875,
+        29.17717742919922
+      ]
+    },
+    {
+      "id": "f_batteryTray",
+      "sourceId": "P5-03",
+      "sourceName": "电池仓",
+      "positionOffset": 2863296,
+      "vertexCount": 4864,
+      "indexOffset": 2921664,
+      "indexCount": 29376,
+      "size": [
+        53.77802085876465,
+        71.57326889038086,
+        28.021233558654785
+      ]
+    },
+    {
+      "id": "f_sideR",
+      "sourceId": "P5-06",
+      "sourceName": "身体右外壳",
+      "positionOffset": 3039168,
+      "vertexCount": 21381,
+      "indexOffset": 3295740,
+      "indexCount": 128370,
+      "size": [
+        33.17067217826843,
+        41.78627014160156,
+        70.81584739685059
+      ]
+    },
+    {
+      "id": "f_sideL",
+      "sourceId": "P5-07",
+      "sourceName": "身体左外壳",
+      "positionOffset": 3809220,
+      "vertexCount": 20054,
+      "indexOffset": 4049868,
+      "indexCount": 120408,
+      "size": [
+        32.19159026443958,
+        41.755523681640625,
+        70.80431938171387
+      ]
+    },
+    {
+      "id": "f_thighR",
+      "sourceId": "P5-01",
+      "sourceName": "大腿右外壳",
+      "positionOffset": 4531500,
+      "vertexCount": 479,
+      "indexOffset": 4537248,
+      "indexCount": 2886,
+      "size": [
+        27.29918670654297,
+        51.54622268676758,
+        61.40657043457031
+      ]
+    },
+    {
+      "id": "f_thighL",
+      "sourceId": "P5-02",
+      "sourceName": "大腿左外壳",
+      "positionOffset": 4548792,
+      "vertexCount": 1318,
+      "indexOffset": 4564608,
+      "indexCount": 7920,
+      "size": [
+        26.898418426513672,
+        52.68925857543945,
+        61.437936782836914
+      ]
+    }
+  ],
+  "sourceModelSha256": "d9959076f4a9ee912f15a2751d88fa6b305b29dfb061ea5d013953e2cb2ea2b5",
+  "sourceGeometrySha256": "1a6ce0c95a25147929c4652da1142ed0bff63d269d3db752ac5019e82a4a8e68",
+  "scope": "Local independent full-robot teaching prototype; geometry reused, physical fit and electrical topology unverified"
+}

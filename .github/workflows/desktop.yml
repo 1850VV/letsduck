@@ -2,13 +2,13 @@ name: Desktop and portable candidates
 on:
   push:
     branches: [main]
-    paths: ['apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
+    paths: ['assets/**', 'apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
   pull_request:
-    paths: ['apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
+    paths: ['assets/**', 'apps/**', 'packages/**', 'frontend/**', 'scripts/**', 'tooling/**', 'package*.json', 'tsconfig*.json', '.gitattributes', '.github/workflows/desktop.yml']
   workflow_dispatch:
     inputs:
       full_software_acceptance:
-        description: 'Check full-model installers using the existing asset bundle; do not publish'
+        description: 'Check the full-model journey using repository assets; do not publish'
         type: boolean
         default: false
       windows_scope:
@@ -47,7 +47,7 @@ jobs:
       CSC_FOR_PULL_REQUEST: 'true'
       DUCK_BUILD_ARCH: ${{ matrix.arch }}
       DUCK_RELEASE_VERSION: '0.1.0-beta.4'
-      DUCK_PACKAGE_WITHOUT_ASSETS: '1'
+      DUCK_DISTRIBUTABLE_ASSETS: '${{ github.workspace }}/assets'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -62,21 +62,6 @@ jobs:
           DUCK_QA_FULL: ${{ inputs.full_software_acceptance }}
         run: node -e 'const scope=process.env.DUCK_QA_SCOPE;if(!["all","native","portable"].includes(scope)||scope!=="all"&&process.env.DUCK_QA_FULL!=="true")throw new Error("Windows subsets require full_software_acceptance");'
       - run: npm ci
-      - name: Prepare the existing full-model acceptance bundle
-        if: github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance
-        env:
-          DUCK_ACCEPTANCE_ARCHIVE: ${{ runner.temp }}/letsduck-assets.zip
-          DUCK_ACCEPTANCE_ASSETS: ${{ runner.temp }}/letsduck-acceptance-assets
-        run: |
-          curl --fail --location --retry 3 https://github.com/1850VV/letsduck/releases/download/desktop-assets-20261025/letsduck-assets.zip --output "$DUCK_ACCEPTANCE_ARCHIVE"
-          node --input-type=module -e 'import{readFileSync}from"node:fs";import{createHash}from"node:crypto";import assert from"node:assert/strict";assert.equal(createHash("sha256").update(readFileSync(process.env.DUCK_ACCEPTANCE_ARCHIVE)).digest("hex"),"d91f56074787702eff7e82625f17e6fa957b02c3cac0eb783b1ace36b3d24162");'
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            pwsh -NoProfile -NonInteractive -Command 'Expand-Archive -LiteralPath $env:DUCK_ACCEPTANCE_ARCHIVE -DestinationPath $env:DUCK_ACCEPTANCE_ASSETS'
-          else
-            unzip -q "$DUCK_ACCEPTANCE_ARCHIVE" -d "$DUCK_ACCEPTANCE_ASSETS"
-          fi
-          echo "DUCK_DISTRIBUTABLE_ASSETS=$DUCK_ACCEPTANCE_ASSETS" >> "$GITHUB_ENV"
-          echo "DUCK_PACKAGE_WITHOUT_ASSETS=0" >> "$GITHUB_ENV"
       - name: Install the pinned official Electron binary
         run: ELECTRON_SKIP_BINARY_DOWNLOAD= npm run setup:electron
       - name: Strict desktop, tooling and renderer checks
@@ -115,12 +100,7 @@ jobs:
           fi
       - name: Build the portable browser archive
         if: inputs.windows_scope != 'native'
-        run: |
-          if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
-            npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --assets "$DUCK_DISTRIBUTABLE_ASSETS" --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
-          else
-            npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --without-assets --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
-          fi
+        run: npm run package:browser -- --node-dir output/node-runtime --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --output output/letsduck-browser-${{ matrix.platform }}-${{ matrix.arch }}.zip
       - name: Windows portable launch, full-model UI and console shutdown
         id: portable_browser
         if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch' && inputs.full_software_acceptance && inputs.windows_scope != 'native'

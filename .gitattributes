@@ -1,4 +1,6 @@
 # Preserve vendored bytes on every platform; pinned hashes include line endings.
 frontend/vendor/** -whitespace -text
+# Resource manifests and meshes require identical bytes on Windows and macOS.
+assets/** -text
 *.bat text eol=crlf
 *.command text eol=lf
