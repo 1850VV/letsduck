@@ -1,20 +1,22 @@
 # 部署、数据迁移与回退
 
-来做鸭分两个版本，代码和部署方式分开：
+来做鸭分客户端版与服务器版，主要面向客户端使用。服务器版尚未做充分的优化与适配；本文保留自行部署所需的操作说明：
 
 | 版本 | 代码 | 启动 | 数据库 |
 | --- | --- | --- | --- |
-| 个人版 | `apps/local/`、共享 TypeScript packages | Node.js 24.20+（24.x），源码启动器或 `npm run start:local` | 本机 SQLite |
+| 客户端版 | `apps/local/`、共享 TypeScript packages | Node.js 24.20+（24.x），源码启动器或 `npm run start:local` | 本机 SQLite |
 | 服务器版 | `apps/server/`、共享 TypeScript packages | `docker compose up -d --build` | MySQL 8.4（`mysql-data` 卷） |
 
 两个 Node 入口共用构建后的 `frontend/dist/`，以及 `packages/domain`（校验）、`packages/exporter`（3MF 导出）和 `packages/storage`（数据访问）。前端读 `/api/site` 的 `edition` 决定是否显示登录、配色广场和发布。运行都需要自行合法持有完整资产包，见 `local-assets.md`。
 
-## 个人使用版
+## 客户端版
 
-- 源码启动器 `启动来做鸭.command` / `.bat` 检查 Node.js 24.20+（24.x），执行当前 TypeScript/Vite 构建后启动个人版。首次运行先 `npm ci` 并导入合法资产。
+客户端仅提供 Apple 芯片 Mac 和 Windows x64；安装包与浏览器包见[客户端打包](../apps/desktop/README.md)。不提供 Intel Mac、Linux 或其他平台客户端。
+
+- 源码启动器 `启动来做鸭.command` / `.bat` 检查 Node.js 24.20+（24.x），执行当前 TypeScript/Vite 构建后启动客户端版。首次运行先 `npm ci` 并导入合法资产。
 - 命令行入口使用 Node.js 24.20+、24.x：先 `npm ci && npm run build`，再 `node apps/local/dist/main.js` 或 `npm run start:local`。普通运行和工具不需要 Python；旧引擎验证通过固定 Git 参考和显式历史回放完成。
 - 只监听 `127.0.0.1`，默认端口 8876，被占用时依次尝试后面 20 个端口。`--host`、`--port`、`--no-open` 可调整。
-- 方案文件：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，Linux `~/.local/share/doodleduck/personal.db`，或环境变量 `DUCK_PERSONAL_DB`。它不在应用文件夹里，升级时解压新版本覆盖即可。备份：关闭来做鸭后复制这个文件。
+- 方案文件：macOS `~/Library/Application Support/DoodleDuck/personal.db`，Windows `%APPDATA%\DoodleDuck\personal.db`，或环境变量 `DUCK_PERSONAL_DB`。它不在应用文件夹里，升级时解压新版本覆盖即可。备份：关闭来做鸭后复制这个文件。
 - 接口：`/api/health`、`/api/site`、`/api/catalog`、`/api/schemes`（无需登录）、`/api/plan`、`/api/export`；账号、作品和评分接口返回 404，`/gallery/` 跳回首页。错误格式和校验码与服务器版相同。
 - 首次启动时，若旧版个人模式数据库（`backend/data/doodleduck.db` 或 `DUCK_DB`）里有个人方案，只读地带入一次。
 
