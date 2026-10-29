@@ -53,7 +53,10 @@ async function exercise(binary:string,entry:string,runtime:string,owned:string,e
  const startup=entryKind==='desktop'?`const {app,utilityProcess}=await import('electron');app.setPath('userData',${JSON.stringify(join(owned,'electron-profile'))});let utility;app.whenReady().then(()=>{utility=utilityProcess.fork(${JSON.stringify(entry)},[],{stdio:'pipe',env:process.env});utility.stdout.on('data',bytes=>process.stdout.write(bytes));utility.stderr.on('data',bytes=>process.stderr.write(bytes));utility.on('message',message=>{if(message.kind==='ready')console.log(message.url);else if(message.kind==='failed')console.error(message.message);});utility.on('exit',code=>app.exit(code));}).catch(error=>{console.error(error);app.exit(1);});`:`const {main}=await import(${JSON.stringify(pathToFileURL(entry).href)});await main(['--port','0','--no-open']);`;
  const stop=entryKind==='desktop'?"utility.postMessage({kind:'stop'});":"process.emit('SIGTERM');";
  await writeFile(harness,`import cp from 'node:child_process';import fs from 'node:fs';import {syncBuiltinESMExports} from 'node:module';const execFile=cp.execFile;cp.execFile=function(file,...args){if(file===${JSON.stringify(fakeAdb)})fs.appendFileSync(${JSON.stringify(adbLog)},JSON.stringify(args.slice(0,1))+'\\n');return execFile.call(this,file,...args);};syncBuiltinESMExports();${startup}process.on('message',message=>{if(message==='stop'){${stop}process.disconnect();}});`);
- const child=spawn(binary,[harness],{cwd:owned,env:{...process.env,PATH:'',NODE_OPTIONS:'',NODE_PATH:'',DUCK_ASSETS:join(runtime,'assets'),DUCK_FRONTEND:join(runtime,'frontend'),DUCK_ASSEMBLY_MANIFEST:join(runtime,'assembly-assets.json'),DUCK_PERSONAL_DB:join(owned,'personal.db'),DUCK_DB:legacy,DUCK_LEGACY_DB:legacy,DUCK_ADB:fakeAdb,ELECTRON_RUN_AS_NODE:electron&&entryKind!=='desktop'?'1':''},stdio:['ignore','pipe','pipe','ipc']});
+ const env:NodeJS.ProcessEnv={...process.env,PATH:'',NODE_OPTIONS:'',NODE_PATH:'',DUCK_ASSETS:join(runtime,'assets'),DUCK_FRONTEND:join(runtime,'frontend'),DUCK_ASSEMBLY_MANIFEST:join(runtime,'assembly-assets.json'),DUCK_PERSONAL_DB:join(owned,'personal.db'),DUCK_DB:legacy,DUCK_LEGACY_DB:legacy,DUCK_ADB:fakeAdb};
+ delete env.ELECTRON_RUN_AS_NODE;
+ if(electron&&entryKind!=='desktop')env.ELECTRON_RUN_AS_NODE='1';
+ const child=spawn(binary,[harness],{cwd:owned,env,stdio:['ignore','pipe','pipe','ipc']});
  assert.ok(child.stdout&&child.stderr);
  let output='',error='',closed=false;child.stdout.on('data',(bytes:Buffer)=>output+=String(bytes));child.stderr.on('data',(bytes:Buffer)=>error+=String(bytes));const exited=new Promise<number|null>((accept,reject)=>{child.once('error',reject);child.once('close',code=>{closed=true;accept(code);});});
  try{
@@ -83,16 +86,16 @@ test('unpacked browser ZIP uses bundled Node with empty PATH to save, export and
   await exercise(join(extracted,folder,'node',binary),join(extracted,folder,'app/apps/local/dist/main.js'),join(extracted,folder,'runtime'),owned);
  }finally{await rm(owned,{recursive:true,force:true});}
 });
-test('real ASAR production closure runs local and desktop utility hosts without workspace mirrors',{skip:!electronBinary&&'Desktop CI installs Electron and runs this real ASAR gate'},async()=>{
+test('real ASAR production closure runs without workspace mirrors',{skip:!electronBinary&&'Desktop CI installs Electron and runs this real ASAR gate'},async(t)=>{
  // Match Electron's resolved utility module URL, including macOS /var symlinks.
  const owned=await realpath(await mkdtemp(join(tmpdir(),'duck-asar-runtime-test-'))),root=resolve(import.meta.dirname,'../..');
  try{
   const source=join(owned,'synthetic'),runtime=join(owned,'runtime');await mkdir(source);writeSyntheticAssets(source);await writeFile(join(source,'geometry.bin'),'synthetic geometry');await stageRuntimeAssets({root,source,target:runtime});
   assert.ok(electronBinary);
-  for(const entry of ['browser','desktop'] as const){
+  for(const entry of ['browser','desktop'] as const)await t.test(entry==='browser'?'local host in Electron Node mode':'desktop host through real utility IPC',{skip:entry==='desktop'&&!portableHost&&'Desktop clients target macOS arm64 and Windows x64; local ASAR coverage remains enabled'},async()=>{
    const app=join(owned,entry+'-app'),asar=join(owned,entry+'.asar');await stageProductionApp({root,target:app,entry});await createPackage(app,asar);
    assert.ok(!listPackage(asar,{isPack:false}).some(name=>/^packages(?:\/|$)/.test(name.replaceAll('\\','/').replace(/^\//,''))),'ASAR contains one production dependency closure');
    await exercise(electronBinary,join(asar,entry==='desktop'?'apps/desktop/dist/host.js':'apps/local/dist/main.js'),runtime,join(owned,entry+'-run'),true,entry);
-  }
+  });
  }finally{await rm(owned,{recursive:true,force:true});}
 });
