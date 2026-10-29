@@ -52,7 +52,7 @@ function open(id:string){if(!ready||!valid(id)||experiment.suppressed)return;if(
  $<HTMLIFrameElement>('module-frame').title=t('hub.frame.named',{name:entries.find(e=>e.id===id)!.name});
  $('window-note').textContent='';
  $<HTMLIFrameElement>('module-frame').src=id==='debug'?'/debug/?embedded=1':id==='assemble'?'/assemble/':'/paint';
- $('module-window').hidden=false;document.body.classList.add('module-open');$('close-module').focus();
+ $('module-window').hidden=false;document.body.classList.add('module-open');$(id==='paint'?'close-x':'close-module').focus();
 }
 function close(){if(!opened)return;updatePaint();persist(opened);opened=null;$('module-window').hidden=true;$<HTMLIFrameElement>('module-frame').src='about:blank';document.body.classList.remove('module-open');positionModels();resize();buttons.get(focus)!.focus();}
 $('close-module').onclick=close;$('close-x').onclick=close;

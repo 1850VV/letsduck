@@ -8,9 +8,9 @@
 .steps button{gap:8px;padding:7px 12px;border-radius:8px;min-height:34px;min-width:0}.steps button>span{font-size:12px;min-width:0}.steps button>span>span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.steps button small,.steps .step-line{display:none}
 .steps button em{width:18px;height:18px;font-size:10px;background:#17243c08;box-shadow:none}
 .steps button.on{background:var(--ui-surface-2);box-shadow:var(--ui-shadow)}.steps button.on em{background:var(--blue);color:#fff;box-shadow:none}
-.top-actions{gap:6px;margin-inline-start:auto}.top-actions .icon{width:32px;height:32px;border-radius:8px;font-size:15px}.top-actions .ghost{padding:8px 10px;border-radius:8px;font-size:11px;background:var(--ui-surface-2)}
+.top-actions{gap:6px}.top-actions .icon{width:32px;height:32px;border-radius:8px;font-size:15px}.top-actions .ghost{padding:8px 10px;border-radius:8px;font-size:11px;background:var(--ui-surface-2)}
 body.embedded-paint .top{padding-inline-end:54px}
-body:not(.phone) .studio{padding:12px;gap:0;transition:none}
+body:not(.phone) .studio{display:grid;min-height:0;padding:12px;gap:0;transition:none}
 body:not(.phone) .studio[data-step="1"]{grid-template-columns:minmax(0,1fr)}
 body:not(.phone) .studio[data-step="2"]{grid-template-columns:192px minmax(0,1fr) 320px;gap:12px}
 body:not(.phone) .studio[data-step="3"]{grid-template-columns:minmax(0,1fr) 320px;gap:12px}
@@ -44,7 +44,8 @@ body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template
 .dock-tabs .ink{display:none}.cdock[data-tab="filament"] [data-tab="filament"],.cdock[data-tab="free"] [data-tab="free"]{background:var(--ui-surface-2);box-shadow:0 1px 4px #17243c0d}
 .dock-body{padding:20px;gap:14px}.scope button{font-size:11px}.panel-head.compact .scope button.on{background:var(--blue-soft);color:var(--blue)}
 @media(min-width:761px) and (max-width:1200px){.top{gap:8px;padding-inline:12px}.scheme{width:150px}.top .brand .wordmark small{display:none}.steps button{padding-inline:9px;gap:5px}.top-actions .ghost{padding-inline:7px}.tools kbd{display:none}.tools button{padding-inline:6px}body:not(.phone) .studio[data-step="2"]{grid-template-columns:164px minmax(0,1fr) 290px}}
-@media(min-width:761px) and (max-width:1000px){body:not(.phone) .studio[data-step="2"]{grid-template-columns:minmax(0,1fr) 290px}body:not(.phone) .rail{display:none}.top .brand .wordmark{display:none}.scheme{width:130px}.top-actions .ghost{font-size:10px}.language-trigger{font-size:11px;max-width:135px}.steps button{padding-inline:7px}}
+@media(min-width:761px) and (max-width:1000px){body:not(.phone) .studio[data-step="2"]{grid-template-columns:minmax(0,1fr) 290px}body:not(.phone) .studio .rail{display:none}.top .brand .wordmark{display:none}.scheme{width:130px}.top-actions .ghost{font-size:10px}.language-trigger{font-size:11px;max-width:135px}.steps button{padding-inline:7px}}
+@media(min-width:761px) and (max-width:900px){.top{height:auto;min-height:94px;padding-block:6px}}
 @media(min-width:1001px) and (max-width:1200px){body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template-columns:164px minmax(0,1fr)}}
 @media(min-width:761px) and (max-width:1000px){body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.studio,.rail,.stage{transition:none!important}}

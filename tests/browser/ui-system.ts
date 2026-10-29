@@ -21,6 +21,7 @@ try{
  page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))receipt.writes.push({method:r.method(),url:r.url()});});
  await page.goto(fixture.url+'/');await page.waitForFunction(()=>document.querySelector('body')?.dataset.homeReady==='true');await page.screenshot({path:out+'/home.png'});
  await page.getByRole('button',{name:'将来涂鸭转到前面',exact:true}).click();await page.getByRole('button',{name:'进入来涂鸭',exact:true}).click();
+ check('opening paint moves focus to the visible close control',await page.locator('#close-x').evaluate(e=>document.activeElement===e));
  await page.frameLocator('#module-frame').locator('#steps').waitFor();
  const paint=checks.required(page.frame({url:fixture.url+'/paint'}));await paint.waitForFunction(()=>Boolean(window.studioProto));
  check('starting lineup receives a usable stage',await paint.locator('#stage').evaluate(e=>e.clientWidth>600&&e.clientHeight>500));
@@ -62,8 +63,9 @@ try{
    if(await paint.locator('#language-menu').isHidden())await paint.locator('#language-trigger').click();
    await paint.locator(`[data-locale="${locale}"]`).click();
    await paint.waitForFunction(code=>document.documentElement.lang===code,locale);
-   const layout=await paint.evaluate(()=>{const nav=document.querySelector('#steps')!.getBoundingClientRect(),actions=document.querySelector('.top-actions')!.getBoundingClientRect();return {width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,overlap:Math.min(nav.right,actions.right)-Math.max(nav.left,actions.left)>1&&Math.min(nav.bottom,actions.bottom)-Math.max(nav.top,actions.top)>1,nav:nav.toJSON(),actions:actions.toJSON()};});
-   check(`${width}/${locale}: step tabs and actions remain separate`,!layout.overflow&&!layout.overlap,layout);
+   const layout=await paint.evaluate(()=>{const nav=document.querySelector('#steps')!.getBoundingClientRect(),actions=document.querySelector('.top-actions')!.getBoundingClientRect(),header=document.querySelector('.top')!.getBoundingClientRect();return {width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+1,inside:nav.left>=0&&nav.right<=innerWidth+1&&nav.bottom<=header.bottom+1&&actions.left>=0&&actions.right<=innerWidth+1,overlap:Math.min(nav.right,actions.right)-Math.max(nav.left,actions.left)>1&&Math.min(nav.bottom,actions.bottom)-Math.max(nav.top,actions.top)>1,nav:nav.toJSON(),actions:actions.toJSON(),header:header.toJSON()};});
+   check(`${width}/${locale}: step tabs fit header without covering actions`,!layout.overflow&&!layout.overlap&&layout.inside,layout);
+   if(width===1440&&['pt-BR','ar'].includes(locale))await page.screenshot({path:out+`/desktop-${locale}.png`});
   }
   if(await paint.locator('#language-trigger').isHidden())await paint.locator('.ph-more').click();await paint.locator('#language-trigger').click();await paint.locator('[data-locale="zh-Hans"]').click();await page.setViewportSize({width:1440,height:900});
  }
