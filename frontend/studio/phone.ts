@@ -1,6 +1,6 @@
 import {query as $,required,eventElement} from '../lib/browser.js';
 // Phone layout (portrait, up to 760px wide): the duck fills the screen between a slim top bar and a
-// draggable bottom sheet that holds the step panel; the three steps live in a bottom tab bar; paint and
+// draggable bottom sheet that holds the step panel; the three steps share the top bar; paint and
 // view tools float on the stage; touch gestures replace hover and keyboard. Desktop never runs this.
 // Everything here drives the studio through its own controls, so the studio logic stays in studio.mjs.
 const PHONE = matchMedia('(max-width: 760px)');
