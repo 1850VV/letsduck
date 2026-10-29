@@ -39,15 +39,16 @@ async function boot(){
   if(quitting)return;event.preventDefault();quitting=true;updates?.dispose();session.defaultSession.flushStorageData();
   void activity.wait().then(()=>{if(!exited)child.postMessage({kind:'stop'});return finished;}).then(()=>{if(childStatus===0)app.quit();else app.exit(1);});
  });
- const backend=await new Promise<string|undefined>((resolve,reject)=>{
+ // The window opens while the local service starts; duck:// requests wait for it instead of the window.
+ const backend=new Promise<string|undefined>((resolve,reject)=>{
   const timeout=setTimeout(()=>{if(quitting)return;reject(new Error('Local service did not become ready'));if(!exited)child.postMessage({kind:'stop'});},30_000);
   const message=(value:unknown)=>{const reply=parseHostReply(value);if(reply?.kind==='ready'){clearTimeout(timeout);child.removeListener('message',message);resolve(reply.url);}if(reply?.kind==='failed'){clearTimeout(timeout);child.removeListener('message',message);reject(new Error(reply.message));}};
   child.on('message',message);child.once('exit',code=>{clearTimeout(timeout);if(quitting&&code===0)resolve(undefined);else reject(new Error('Local service exited: '+code));});
  }).catch(async(error:unknown)=>{if(!exited)child.postMessage({kind:'stop'});await finished;throw error;});
- if(backend===undefined||quitting)return;
  child.on('message',(value:unknown)=>{const reply=parseHostReply(value);if(reply?.kind!=='busy')return;const request=pending.get(reply.id);if(request){clearTimeout(request.timer);pending.delete(reply.id);request.resolve(reply.busy);}});
  const hostBusy=()=>exited?Promise.resolve(true):new Promise<boolean>(resolve=>{const id=++sequence;const timer=setTimeout(()=>{pending.delete(id);resolve(true);},5_000);pending.set(id,{resolve,timer});child.postMessage({kind:'busy',id});});
- protocol.handle('duck',createProtocolHandler({backend,panel:()=>readFile(paths.panel,'utf8'),copy:()=>readFile(paths.copy,'utf8'),accepting:()=>!quitting,write:delta=>{writes+=delta;activity.change(delta);}}));
+ const proxy=backend.then(url=>url===undefined?undefined:createProtocolHandler({backend:url,panel:()=>readFile(paths.panel,'utf8'),copy:()=>readFile(paths.copy,'utf8'),accepting:()=>!quitting,write:delta=>{writes+=delta;activity.change(delta);}}),()=>undefined);
+ protocol.handle('duck',async request=>{const handle=await proxy;return handle?handle(request):new Response('Local service unavailable',{status:503});});
  session.defaultSession.setPermissionRequestHandler((contents,permission,callback,details)=>callback(contents===window?.webContents&&localPermission(details.requestingUrl||contents.getURL(),permission)));
  session.defaultSession.setPermissionCheckHandler((contents,permission,origin)=>contents===window?.webContents&&localPermission(origin,permission));
  const downloads=new Set<Electron.DownloadItem>(),reserved=new Set<string>();
@@ -80,7 +81,8 @@ async function boot(){
  app.on('second-instance',()=>{if(!window)openWindow();if(window!.isMinimized())window!.restore();window!.focus();});
  app.on('activate',()=>{if(!window)openWindow();});
  app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
- child.on('exit',code=>{if(!quitting){const copy=stoppedServiceCopy(locale,brand,code);dialog.showErrorBox(copy.title,copy.message);app.quit();}});
  if(!quitting)openWindow();
+ if(await backend===undefined||quitting)return;
+ child.on('exit',code=>{if(!quitting){const copy=stoppedServiceCopy(locale,brand,code);dialog.showErrorBox(copy.title,copy.message);app.quit();}});
  if(app.isPackaged&&existsSync(join(process.resourcesPath,'app-update.yml')))updates.start();
 }
