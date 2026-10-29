@@ -57,6 +57,13 @@ try{
   await page.screenshot({path:out+'/phone.png'});
   await paint.locator('.ph-more').click();check('phone undo and redo remain reachable',await paint.locator('#undo').isVisible()&&await paint.locator('#redo').isVisible());await paint.locator('#scheme-btn').click();check('phone scheme menu fits viewport',await paint.locator('#scheme-menu').evaluate(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight}));await page.keyboard.press('Escape');
   await page.setViewportSize({width:1440,height:900});
+  for(const width of [761,800,900]){
+   await page.setViewportSize({width,height:900});
+   const bounds=checks.required(await paint.locator('#stage').boundingBox()),first=checks.required(await paint.locator('#tools [data-tool="select"]').boundingBox());
+   check(`${width}: paint tools stay inside the model area`,first.x>=bounds.x&&first.x+first.width<=bounds.x+bounds.width,{stage:bounds,tool:first});
+   await paint.locator('#tools [data-tool="brush"]').click();check(`${width}: brush accepts an actual click`,await paint.locator('#tools [data-tool="brush"]').evaluate(e=>e.classList.contains('on')));
+   await paint.locator('#pose-toggle').click();check(`${width}: last toolbar control remains reachable`,await paint.locator('#pose-panel').isVisible());await paint.locator('#pose-toggle').click();await paint.locator('#tools [data-tool="select"]').click();
+  }
   for(const width of [1440,1251,1024,761,390])for(const locale of ['zh-Hans','en','pt-BR','ru','ar']){
    await page.setViewportSize({width,height:900});
    if(await paint.locator('#language-trigger').isHidden())await paint.locator('.ph-more').click();

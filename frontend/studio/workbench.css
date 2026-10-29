@@ -46,6 +46,7 @@ body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template
 @media(min-width:761px) and (max-width:1200px){.top{gap:8px;padding-inline:12px}.scheme{width:150px}.top .brand .wordmark small{display:none}.steps button{padding-inline:9px;gap:5px}.top-actions .ghost{padding-inline:7px}.tools kbd{display:none}.tools button{padding-inline:6px}body:not(.phone) .studio[data-step="2"]{grid-template-columns:164px minmax(0,1fr) 290px}}
 @media(min-width:761px) and (max-width:1000px){body:not(.phone) .studio[data-step="2"]{grid-template-columns:minmax(0,1fr) 290px}body:not(.phone) .studio .rail{display:none}.top .brand .wordmark{display:none}.scheme{width:130px}.top-actions .ghost{font-size:10px}.language-trigger{font-size:11px;max-width:135px}.steps button{padding-inline:7px}}
 @media(min-width:761px) and (max-width:900px){.top{height:auto;min-height:94px;padding-block:6px}}
+@media(min-width:761px) and (max-width:900px){body:not(.phone) .stage .tools{left:12px;right:12px;width:auto;max-width:none;transform:none;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}}
 @media(min-width:1001px) and (max-width:1200px){body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template-columns:164px minmax(0,1fr)}}
 @media(min-width:761px) and (max-width:1000px){body:not(.phone) .studio[data-step="2"][data-panel-collapsed=true]{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.studio,.rail,.stage{transition:none!important}}
