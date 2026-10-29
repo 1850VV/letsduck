@@ -9,6 +9,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import type {ElectronApplication,Page} from 'playwright';
 import {root,desktop,desktopScope,failure,resizeWindow,required,seedSimulatedAssembly,assemblyReady} from './check-support.js';
 import {windowsNativeInput,windowsPowerShell} from './windows-native-input.js';
+import {experimentalAccessState,unlockExperimentalHome} from './experimental-access-check.js';
 
 assert.equal(process.platform,'win32','This native acceptance requires Windows');
 assert.equal(process.arch,'x64');
@@ -53,6 +54,9 @@ try{
  await resizeWindow(app,page,{width,height});const window=await app.browserWindow(page);
  try{hwnd=await window.evaluate(window=>window.getNativeWindowHandle().readBigUInt64LE().toString());await window.evaluate((window,area)=>{window.setPosition(area.x+10,area.y+10);window.show();window.focus();},identity.workArea);}finally{await window.dispose();}
  const active=await native('activate');check('owned application is in the foreground',active.foreground===hwnd,active);
+ await unlockExperimentalHome(page,'debug',input,check);await unlockExperimentalHome(page,'assemble',input,check);
+ await page.reload();await page.waitForFunction(()=>document.body.dataset.homeReady==='true');
+ check('native homepage retains both acknowledgements after reload',JSON.stringify(await experimentalAccessState(page))===JSON.stringify({debug:true,assemble:true}));
  await page.waitForFunction(()=>document.body.dataset.homeReady==='true');const paint=page.locator('[data-duck="paint"]');
  if(await paint.getAttribute('data-c-position')!=='true'){await click(paint);await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck="paint"]')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false');}
  await click(paint);await page.locator('#module-frame').waitFor({state:'visible'});

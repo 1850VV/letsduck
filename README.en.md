@@ -22,7 +22,7 @@ On the client home page, drag the three ducks sideways or use the arrow keys. Cl
 | Entry | Features | Requirements |
 | --- | --- | --- |
 | Paint `/paint` | Palettes, part colours, poses, posters, saved schemes, 3MF + BOM export | Complete painting asset pack |
-| Debug `/debug/` | Connection status, live feedback, scanning, servo ID and parameter checks and writes, jogging and zero calibration | Local USB connection to UNO Q, installed ADB and compatible Duck Runtime |
+| Debug `/debug/` | Connection status, live feedback, automatic numbering and next-servo queue, scanning, ID and parameter checks and writes, jogging and zero calibration | Local USB connection to UNO Q, installed ADB and compatible Duck Runtime |
 | Assemble `/assemble/` | Chapter materials, pickup positions, 3D installation steps and reference videos | Assembly asset pack; the home entry unlocks after all 15 installation IDs pass read-back verification |
 
 Studio animations are screen previews. Device actions in Debug affect real hardware and require clicking the corresponding control. Opening Debug only reads status.
@@ -40,11 +40,12 @@ Studio animations are screen previews. Device actions in Debug affect real hardw
 
 Export targets a fixed project with 35 parts and 6 print plates. Display poses and exploded views do not alter manufacturing meshes. Arbitrary 3MF import, automatic slicing and printer control are outside the project. Screen colours do not guarantee physical colour accuracy, and model previews do not validate assembly tolerances.
 
-The interface has 12 language dictionaries; some debug and assembly content remains in Chinese. See [translation maintenance](docs/i18n.md).
+The home, paint, debug and assembly interfaces use the existing 12 language dictionaries. See [translation maintenance](docs/i18n.md) for coverage and review status.
 
 ### Servo preparation and assembly
 
 - Follow the [manufacturer's instructions](https://www.xgorobot.com/duck.html#software) to set up Arduino App Lab, Duck OS and the board. letsduck reuses installed ADB; set `DUCK_ADB` for a custom executable path.
+- Use Debug's **Automatic numbering** tab for the automatic flow. Explicitly start scanning and configuration, add or remove the next servo, pause with progress retained, and resume after a power swap. Assembly keeps tutorials, materials and pickup.
 - Connect one servo at a time for initial numbering. Target IDs are `10–14`, `20–24` and `30–34`. The tool matches the runtime profile and verifies writes by reading them back. Duplicate-ID servos must be connected separately.
 - Use safe shutdown before changing connections. Wait at least 15 seconds and confirm the board has stopped, then disconnect USB and battery power. Do not reconnect servos while powered.
 - Saved numbering verification and current online status are separate. Disconnecting preserves progress; ID changes or unconfirmed writes recalculate readiness. An online count is not a verified-ID count.

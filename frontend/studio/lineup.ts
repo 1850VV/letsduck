@@ -112,6 +112,8 @@ export function createLineup(view:DuckView, { tags, onPick, onStart }:{tags:HTML
   // Shows a squad: from the studio duck the four pop up in turn; a squad already standing drops out duck by duck,
   // each one changing colours while it is hidden.
   function show(looks:Look[]) {
+    const initial=!shown;
+    if(initial)narrow=host.clientWidth<640||host.clientWidth/host.clientHeight<.9;
     if (!ducks.length) build();clear();count = looks.length;
     if (!active || leaving) {
       // The page opens straight onto the lineup; coming back from painting, the camera flies out to it.
@@ -123,7 +125,8 @@ export function createLineup(view:DuckView, { tags, onPick, onStart }:{tags:HTML
         d.filled = !!look;if (look) paint(d, look);const [x, y] = slot(i);
         if (d.s.v < .05) {d.x.v = x;d.y.v = y - 30;}d.x.goal = x;d.y.goal = y;d.s.goal = look ? 1 : 0;d.spin = null;
       };
-      if (d.filled && d.s.v > .05) {d.s.goal = 0;d.y.goal = slot(i)[1] - 30;later(swap, 150 + i * 70);} else later(swap, i * 70);
+      if(initial){swap();d.x.v=d.x.goal;d.y.v=d.y.goal;d.s.v=d.s.goal;}
+      else if (d.filled && d.s.v > .05) {d.s.goal = 0;d.y.goal = slot(i)[1] - 30;later(swap, 150 + i * 70);} else later(swap, i * 70);
     });
     view.invalidate();
   }

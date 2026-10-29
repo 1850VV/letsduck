@@ -1,3 +1,4 @@
+import {assemblyText} from './i18n.js';
 import type {FocusState,MagnifierState} from './types.js';
 import {byId as $} from './dom.js';
 import * as THREE from '../vendor/three.module.js';
@@ -30,8 +31,8 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
       const automatic=!!focus.fine&&focus.detailActive!==false;
       const enabled=available&&(saved.value==='2'||saved.value!=='0'&&automatic);
       toggle.toggleAttribute('disabled',!available);if(toggle.dataset.active!==String(enabled))toggle.dataset.active=String(enabled);
-      const button=toggle.querySelector('button');if(button){if(button.getAttribute('aria-pressed')!==String(enabled))button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label','局部放大');button.title=available?'本步可手动开关；换步后，小部位自动开启，大部位默认关闭':'本步暂无需要放大的装配细节';}
-      const label=$('focus-zoom-toggle-label'),text='局部放大 · '+(enabled?'开':'关');if(label&&label.textContent!==text)label.textContent=text;
+      const button=toggle.querySelector('button');if(button){if(button.getAttribute('aria-pressed')!==String(enabled))button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',assemblyText("assemble.ui.0082"));button.title=available?assemblyText("assemble.ui.0083"):assemblyText("assemble.ui.0084");}
+      const label=$('focus-zoom-toggle-label'),text=assemblyText("assemble.ui.0085")+(enabled?assemblyText("assemble.ui.0008"):assemblyText("assemble.ui.0009"));if(label&&label.textContent!==text)label.textContent=text;
       if(!available||!enabled){panel.hidden=true;leader.toggleAttribute('hidden',true);context='';initialized=false;details={visible:false,available,automatic,choice:saved.value};return;}
       const current=focus.boxes!.find(b=>b.id===focus.detailId&&b.role!=='moving')||focus.boxes!.find(b=>b.role==='target')||focus.boxes!.at(-1),id=current!.id;
       panel.hidden=false;leader.toggleAttribute('hidden',false);
@@ -73,8 +74,8 @@ export function createAssemblyMagnifier({renderer,scene,camera,stage,host,render
       const offset=lens.position.clone().sub(lens.userData.target);if(offset.length()>maxDistance)lens.position.copy(lens.userData.target).add(offset.setLength(maxDistance));
       lens.lookAt(lens.userData.target);updateAssemblyCameraDepth(lens,lens.userData.target);lens.updateProjectionMatrix();lens.updateMatrixWorld();
       const lensScale=h/(2*lens.position.distanceTo(lens.userData.target)*Math.tan(THREE.MathUtils.degToRad(16))),zoom=lensScale/mainScale;
-      $('focus-zoom-factor').textContent=zoom.toFixed(1)+'×';$('focus-zoom-title').textContent=(focus.detailTitle||'接头放大')+(stepId==='head-shell-fix'?' · 剖视':'');$('focus-zoom-status').textContent=focus.detailStatus||(focus.phase==='completed'?'已接合':'对准接口');panel.dataset.phase=focus.detailPhase||focus.phase;
-      panel.setAttribute('aria-label',(focus.detailTitle||'接头放大')+'窗口');view.setAttribute('aria-label','当前装配部位的实时三维放大画面');
+      $('focus-zoom-factor').textContent=zoom.toFixed(1)+'×';$('focus-zoom-title').textContent=(focus.detailTitle||assemblyText("assemble.ui.0079"))+(stepId==='head-shell-fix'?assemblyText("assemble.ui.0086"):'');$('focus-zoom-status').textContent=focus.detailStatus||(focus.phase==='completed'?assemblyText("assemble.ui.0069"):assemblyText("assemble.ui.0087"));panel.dataset.phase=focus.detailPhase||focus.phase;
+      panel.setAttribute('aria-label',(focus.detailTitle||assemblyText("assemble.ui.0079"))+assemblyText("assemble.ui.0088"));view.setAttribute('aria-label',assemblyText("assemble.ui.0089"));
       const shadowAutoUpdate=renderer.shadowMap.autoUpdate;
       renderer.shadowMap.autoUpdate=false;renderer.autoClear=false;renderer.setScissor(x,y,w,h);renderer.setViewport(x,y,w,h);renderer.setScissorTest(true);renderer.setClearColor(0xf1f5fc,1);renderer.clear(true,true,false);if(stepId==='head-shell-fix')withDetailSection(renderer,center,approach,6,()=>renderView(scene,lens));else renderView(scene,lens);
       renderer.shadowMap.autoUpdate=shadowAutoUpdate;

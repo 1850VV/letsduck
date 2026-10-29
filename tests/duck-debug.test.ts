@@ -1,4 +1,6 @@
-import {test} from 'node:test';
+import {setLocale} from '../frontend/shared/i18n.js';
+import {test,beforeEach} from 'node:test';
+beforeEach(()=>setLocale('zh-Hans'));
 import assert from 'node:assert/strict';
 import {IDS,ACTORS,role,createState,mergeStatus,parameterErrors,legPlan,mappingError} from '../frontend/debug/state.js';
 import {motionFromInput,canControl} from '../frontend/debug/control.js';

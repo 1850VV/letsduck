@@ -1,0 +1,47 @@
+import assert from 'node:assert/strict';
+import type {Page} from 'playwright';
+import {preparePage,browserUrl,chooseLocale} from './browser/checks.js';
+import {ACCESS_KEY} from '../frontend/home/experimental-access.js';
+import {mkdir} from 'node:fs/promises';
+
+export default async(page:Page)=>{
+ await preparePage(page,{firstUse:true});await page.setViewportSize({width:1440,height:900});
+ const base=browserUrl(),checks:string[]=[],errors:string[]=[],writes:string[]=[];
+ page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/api/duck-debug/'))writes.push(r.url());});
+ const check=(name:string,ok:boolean)=>{assert.ok(ok,name);checks.push(name);};
+ const button=(id:string)=>page.locator('[data-duck='+id+']'),tip=page.locator('#beta-tip');
+ const home=async()=>{await page.goto(base+'/');await page.waitForSelector('body[data-home-ready=true]');};
+ const front=async(id:string)=>{await page.waitForFunction(id=>document.querySelector<HTMLElement>('[data-duck='+id+']')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false',id);};
+ const hold=async(id:string)=>{const b=await button(id).boundingBox();assert.ok(b);await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForFunction(id=>document.querySelector<HTMLElement>('[data-duck='+id+']')?.dataset.betaLocked==='false',id,{timeout:4000});await page.mouse.up();await front(id);};
+ await mkdir('output/home-experimental',{recursive:true});await home();
+ check('first visit locks debug and assembly',await button('debug').getAttribute('data-beta-locked')==='true'&&await button('assemble').getAttribute('data-beta-locked')==='true');
+ await page.screenshot({path:'output/home-experimental/first-use.png'});
+ await page.mouse.click(535.4782693603406,384.5215966339462);await front('paint');check('paint leg margin rotates to front',true);
+ await button('paint').click();await page.frameLocator('#module-frame').locator('#steps').waitFor();check('paint remains available from actual home iframe',true);await page.locator('#close-module').click();
+ await button('debug').click();await front('debug');await button('debug').click();check('short click shows compact hint only',await tip.isVisible()&&await page.locator('#module-window').isHidden());
+ await button('debug').dblclick({delay:45});check('double click cannot bypass first-use lock',await page.locator('#module-window').isHidden()&&await button('debug').getAttribute('data-beta-locked')==='true');
+ await tip.waitFor({state:'hidden',timeout:4500});check('hint disappears after idle time',true);
+ const b=await button('debug').boundingBox();assert.ok(b);await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();await page.waitForTimeout(250);await page.mouse.up();await page.waitForTimeout(2100);check('short hold does not unlock',await button('debug').getAttribute('data-beta-locked')==='true');
+ await hold('debug');check('acknowledgement is saved',await page.evaluate(key=>JSON.parse(localStorage.getItem(key)??'{}').debug===true,ACCESS_KEY));check('hold unlocks debug without entering',await page.locator('#module-window').isHidden()&&await button('assemble').getAttribute('data-beta-locked')==='true');
+ await page.screenshot({path:'output/home-experimental/debug-unlocked.png'});
+ await page.locator('#tip-close').click();await button('debug').click();await page.frameLocator('#module-frame').locator('#scan-servos').waitFor();check('next click enters real debug iframe',true);await page.locator('#close-module').click();
+ await home();check('refresh retains only the unlocked duck',await button('debug').getAttribute('data-beta-locked')==='false'&&await button('assemble').getAttribute('data-beta-locked')==='true');
+ await page.goto(base+'/assemble/');await page.waitForURL('**/home.html?unlock=assemble');await page.waitForSelector('body[data-home-ready=true]');check('locked direct assembly returns to homepage hint',await tip.isVisible());
+ await button('assemble').press('Space');check('keyboard short press remains locked',await button('assemble').getAttribute('data-beta-locked')==='true');
+ await hold('assemble');await page.locator('#tip-close').click();await button('assemble').click();await page.frameLocator('#module-frame').locator('#playback-rate select').waitFor();await page.frame({url:base+'/assemble/'})!.waitForFunction(()=>document.documentElement.dataset.ready==='true',undefined,{timeout:60000});check('assembly opens real iframe after unlock and numbering',true);await page.locator('#close-module').click();
+ await page.route('**/api/duck-debug/numbering',async r=>{const response=await r.fetch(),data=await response.json();data.ready=false;data.verifiedIds=[];data.missingIds=data.expectedIds;await r.fulfill({response,json:data});});
+ await page.route('**/api/duck-debug/status',async r=>{const response=await r.fetch(),data=await response.json();data.numbering.ready=false;data.numbering.verifiedIds=[];data.numbering.missingIds=data.numbering.expectedIds;await r.fulfill({response,json:data});});
+ await page.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck=assemble]')?.dataset.numberingReady==='false');await button('assemble').click();await page.frameLocator('#module-frame').locator('#scan-servos').waitFor();check('unlocked assembly still obeys missing-numbering redirect',true);await page.locator('#close-module').click();
+ await page.unrouteAll({behavior:'wait'});
+ await page.route('**/api/site',r=>r.fulfill({json:{edition:'server'}}));await home();
+ check('server overrides saved local debug unlock',await button('debug').getAttribute('data-beta-permanent')==='true'&&await button('debug').getAttribute('data-beta-locked')==='true');
+ await button('debug').click();await front('debug');await button('debug').click();check('server displays local-client-only notice',(await tip.innerText()).includes('仅本地客户端可用'));
+ await button('debug').focus();await page.keyboard.down('Space');await page.waitForTimeout(2200);await page.keyboard.up('Space');check('server cannot unlock through keyboard hold',await button('debug').getAttribute('data-beta-locked')==='true'&&await page.locator('#module-window').isHidden());
+ await page.goto(base+'/debug/');await page.waitForURL('**/home.html?unlock=debug');await page.waitForSelector('body[data-home-ready=true]');check('server direct debug cannot bypass homepage restriction',true);
+ await page.screenshot({path:'output/home-experimental/server-disabled.png'});
+ await page.setViewportSize({width:390,height:844});await home();await button('debug').click();await front('debug');await button('debug').click();const bounds=await tip.boundingBox();check('narrow hint stays within viewport',!!bounds&&bounds.x>=0&&bounds.x+bounds.width<=390&&bounds.y>=0&&bounds.y+bounds.height<=844);await page.screenshot({path:'output/home-experimental/narrow.png'});
+ await page.locator('.duck-stage').press('Escape');check('Escape dismisses hint',await tip.isHidden());
+ for(const locale of ['en','de','ru','ar','hi','ja','ko','fr','es','pt-BR','zh-Hant','zh-Hans']){await chooseLocale(page,locale);await button('debug').click();const r=await tip.boundingBox();check(locale+' compact translated hint fits narrow viewport',!!r&&r.x>=0&&r.x+r.width<=390&&r.y>=0&&r.y+r.height<=844&&r.width<=225);}
+ check('no device writes from entry gestures',writes.length===0);check('no page errors',errors.length===0);
+ return {pass:true,checks,errors,writes};
+};

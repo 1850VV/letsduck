@@ -51,6 +51,7 @@ npm run package:browser -- --node-dir output/node-runtime-win32-x64 --platform w
 ```sh
 npm run verify:phase7
 node --import tsx apps/desktop/test/shell.browser.ts
+node --import tsx apps/desktop/test/experimental-access.browser.ts
 node --import tsx --test apps/desktop/test/assembly-ready.browser.ts
 node --import tsx apps/desktop/test/safe-trace.browser.ts
 node --import tsx apps/desktop/scripts/smoke.ts
@@ -59,6 +60,8 @@ node --import tsx apps/desktop/scripts/installed-smoke.ts --installer /path/to/c
 ```
 
 完整 smoke 需要已授权素材。公共 CI 使用 `installed-smoke.ts --synthetic`，只验证协议、保存、profile、重启和退出子集，明确列出未执行的真实模型、海报、视频等检查。各脚本使用自有 profile/数据库，并清理所属进程；不会连接真实设备。ADB 仍使用共享宿主的 `DUCK_ADB`、系统 PATH 或 Arduino App Lab 工具查找规则。终端可找到 ADB 不能证明安装版 GUI 的设备功能可用。
+
+`experimental-access.browser.ts` 使用真实 Electron 窗口检查首次长按、鼠标与键盘、真实功能窗口及重启保留。它使用独立 profile、模拟编号记录和阻断的 ADB；可用 `DUCK_APP_EXECUTABLE` 检查指定候选，不能作为实机验收。首次确认在各浏览器来源和桌面 profile 中独立保存。
 
 两个显式browser专项分别检查组装加载完成前的截图门槛，以及真实Electron启动和生成trace的环境隔离。它们使用自有数据并关闭所属进程；`safe-trace.browser.ts`需要先完成`build:desktop`。普通`test:desktop`只自动运行`*.test.ts`，不暗中启动这些GUI专项。
 

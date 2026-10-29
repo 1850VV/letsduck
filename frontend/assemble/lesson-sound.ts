@@ -1,11 +1,13 @@
+import {assemblyText} from './i18n.js';
+import {onLocale} from '../shared/i18n.js';
 import type {PlaybackState} from './types.js';
 import {assemblyAssetUrl} from '../shared/url.js';
 import {byId as $} from './dom.js';
 import {shouldPlayCompletion} from './sound-policy.js';
 
 const tracks:Record<string,{file:string;label:string}>={
-  satie:{file:'piano-satie-gymnopedie.mp3',label:'萨蒂 · 第一号吉姆诺佩蒂'},
-  mozart:{file:'piano-mozart-andante.mp3',label:'莫扎特 · K.545 行板'}
+  satie:{file:'piano-satie-gymnopedie.mp3',get label(){return assemblyText('assemble.ui.0090');}},
+  mozart:{file:'piano-mozart-andante.mp3',get label(){return assemblyText('assemble.ui.0091');}}
 };
 
 
@@ -17,7 +19,7 @@ export function createLessonSound(){
   music.volume=0;cue.volume=volume*.35;
 
   function status(){
-    const audible=volume>0&&(enabled||effects),text=error||(!audible?'已静音':referenceAudio?'原片打开中 · 背景音乐暂停':enabled?(needsGesture?'点一下页面开始音乐':music.paused?'正在准备钢琴曲…':'正在播放 · '+tracks[track]!.label):effects?'仅播放完成提示音':'声音已关闭');
+    const audible=volume>0&&(enabled||effects),text=(error?assemblyText(error):'')||(!audible?assemblyText("assemble.ui.0092"):referenceAudio?assemblyText("assemble.ui.0093"):enabled?(needsGesture?assemblyText("assemble.ui.0094"):music.paused?assemblyText("assemble.ui.0095"):assemblyText("assemble.ui.0096")+tracks[track]!.label):effects?assemblyText("assemble.ui.0097"):assemblyText("assemble.ui.0098"));
     $('sound-status').textContent=text;$('sound-volume-label').textContent=Math.round(volume*100)+'%';
     details.dataset.active=String(audible);details.dataset.pending=String(enabled&&needsGesture);
     details.querySelector('summary')!.title=text;
@@ -42,7 +44,7 @@ export function createLessonSound(){
     }catch(e){
       if(token!==request)return;
       needsGesture=e instanceof Error&&e.name==='NotAllowedError';
-      if(!(e instanceof Error&&e.name==='AbortError')&&!needsGesture)error='钢琴曲暂时无法播放，可切换曲目重试';
+      if(!(e instanceof Error&&e.name==='AbortError')&&!needsGesture)error='assemble.ui.0099';
       status();
     }
   }
@@ -78,9 +80,9 @@ export function createLessonSound(){
     status();
   });
   music.addEventListener('playing',status);music.addEventListener('pause',status);
-  music.addEventListener('error',()=>{error='钢琴曲暂时无法播放，可切换曲目重试';status();});
+  music.addEventListener('error',()=>{error='assemble.ui.0099';status();});
   window.addEventListener('pagehide',()=>{++request;cancelFade();music.pause();cue.pause();});
-  status();startMusic();
+  onLocale(status);status();startMusic();
   return{
     setReferenceAudio(active:boolean){
       if(referenceAudio===active)return;

@@ -1,4 +1,5 @@
-export const MODE_NAMES: Record<string,string>={off:'全部卸载',servo_debug:'舵机设置',shadow:'只推理',hold:'默认姿态',policy:'行走 / 起身',calibrate:'中位校准'};
+import {t} from './i18n.js';
+export const MODE_NAMES: Record<string,string>={get off(){return t('debug.mode.off');},get servo_debug(){return t('debug.mode.servo_debug');},get shadow(){return t('debug.mode.shadow');},get hold(){return t('debug.mode.hold');},get policy(){return t('debug.mode.policy');},get calibrate(){return t('debug.mode.calibrate');}};
 export function motionFromInput(roller: boolean,left={x:0,y:0},right:{x:number;y?:number}={x:0},keys: ReadonlySet<string>=new Set()): [number,number,number] {
  const dz=(n: number)=>Math.abs(n)<=.15?0:n,axis=(a: string,b: string)=>Number(keys.has(a))-Number(keys.has(b));
  const forward=dz(left.y),limit=roller?{back:.4,side:0,yaw:.25,key:[.4,0,.25] as const}:{back:.2,side:.3,yaw:1,key:[.2,.15,.5] as const};

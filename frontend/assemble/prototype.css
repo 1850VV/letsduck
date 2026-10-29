@@ -160,7 +160,7 @@ html,body{height:100%;overflow:hidden}
 @media(max-width:880px){.quality-control>span{display:none}}
 @media(max-width:420px){.quality-control{position:absolute;right:85px;top:0}.quality-control>ryugi-select{font-size:10px}}
 @media(max-width:600px){:root{--view-font:10px;--view-pad:3px}h1{white-space:nowrap}}
-@media(max-width:500px){.view-tools{gap:2px}.section-heading .view-dock{padding:2px}.quality-control>ryugi-select{width:64px!important}}
+@media(max-width:500px){.view-tools{gap:2px}.section-heading .view-dock{padding:2px}.quality-control>ryugi-select{width:90px!important}}
 
 /* Direct horn selection keeps the existing part card and leader. */
 #part-tooltip[data-horn]{top:60px;z-index:12;padding:10px 12px;border-color:var(--horn-color);color:var(--horn-color);font-size:14px;min-width:104px}
@@ -168,3 +168,29 @@ html,body{height:100%;overflow:hidden}
 #part-tooltip[data-horn] #part-name:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--horn-color);margin-right:7px}
 body.preparing #part-tooltip[data-horn]:not([hidden]){display:grid!important}
 @media(max-width:600px){body.preparing #part-tooltip[data-horn]{top:calc(48% + 10px)}}
+
+/* Longer localized titles and controls keep their existing rows and wrap within them. */
+#step-list{grid-template-rows:repeat(var(--visible-step-count,9),minmax(min-content,1fr));overflow:auto}
+.section-heading{flex-wrap:wrap}
+.section-heading>div:first-child{min-width:0;flex:1 1 240px}
+.section-heading h1{overflow-wrap:anywhere}
+.view-tools{max-width:100%;min-width:0;flex-wrap:wrap}
+.top .brand{flex:none}
+.top .header-name{min-width:0;overflow-wrap:anywhere}
+.top>#desk-toggle,.top>#overview,.top>#reference-toggle{flex:0 1 auto;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.15;height:auto!important;min-height:26px}
+@media(max-width:800px){.top>#overview{margin-right:0}.top{gap:8px}}
+@media(max-width:600px){
+  .top{padding:0 8px;gap:6px}
+  header.top>.scheme-tag{max-width:90px;min-width:0;flex:0 1 auto}
+}
+@media(max-width:680px){
+  .workspace{grid-template-rows:auto minmax(0,1fr) auto}
+  .section-heading{flex-direction:column;align-items:stretch;gap:5px}
+  .section-heading>div:first-child{flex:none;padding-top:0}
+  .section-heading h1{white-space:normal}
+  .view-tools{display:flex;margin:0;gap:4px}
+  .quality-control,#focus-zoom-toggle,.section-heading .view-dock{position:static;transform:none}
+  .section-heading .view-dock{margin-inline-start:auto;margin-inline-end:0}
+}
+@media(max-height:500px) and (min-width:681px){.workspace{grid-template-rows:auto minmax(0,1fr) auto}}
+@media(max-width:420px){.player-buttons>#start,.player-buttons>#start>button{white-space:normal;overflow-wrap:anywhere;line-height:1.05}}

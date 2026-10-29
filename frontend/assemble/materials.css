@@ -1,10 +1,10 @@
 #step-materials{top:18px;right:18px;height:36px}
 body.preparing #canvas-host{left:340px}
-body.preparing .kit{width:314px;left:14px;top:14px;bottom:14px;padding:16px;gap:10px;overflow:hidden;z-index:6}
+body.preparing .kit{width:314px;left:14px;top:14px;bottom:14px;padding:16px;gap:10px;overflow-x:hidden;overflow-y:auto;z-index:6}
 body.preparing .desk-caption,body.preparing .guard-card,body.preparing .animation-state,body.preparing #action-indicator,body.preparing .part-tooltip{display:none!important}
 body.preparing .kit h2{font-size:21px;line-height:1.35}
 body.preparing .kit-eyebrow{font-size:12px}
-body.preparing .kit #kit-parts{overflow:auto;min-height:0;flex:1;gap:6px;align-content:start;padding:1px}
+body.preparing .kit #kit-parts{overflow:auto;min-height:64px;flex:1;gap:6px;align-content:start;padding:1px}
 body.preparing .kit-parts li{display:block}
 .material-row{position:relative;display:grid;grid-template-columns:25px minmax(0,1fr) auto;column-gap:8px;row-gap:2px;width:100%;text-align:left;padding:8px;border:1px solid #e0e6f2;border-radius:11px;background:#fff;color:#33415f;font:12px/1.5 system-ui;cursor:pointer}
 .material-row .ordinal{font:650 11px/25px ui-monospace,monospace;text-align:center;width:25px;height:25px;background:#eff2f8;border-radius:7px;color:#74829d;grid-row:1/3}

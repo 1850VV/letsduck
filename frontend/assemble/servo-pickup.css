@@ -1,3 +1,7 @@
+.servo-leads{border:1px solid #ecd9ae;border-radius:9px;background:#fff9ed;padding:10px 11px;margin:0 0 13px;line-height:1.65;color:#967131;font-size:11px}
+.servo-leads b,.servo-leads span,.servo-leads small{display:block}
+.servo-leads b{font-size:12px;margin-bottom:4px}.servo-leads span{font-size:10px;color:#9c8866}.servo-leads small{font-size:9px;color:#a29174;margin-top:4px}
+.servo-leads.known{border-color:#dce4f3;background:#f5f8fd;color:#567297}
 .servo-pickup[hidden],.sp-summary[hidden],.sp-model-label[hidden]{display:none!important}
 .servo-pickup{position:absolute;right:18px;top:58px;width:288px;max-width:calc(100% - 36px);max-height:calc(100% - 88px);overflow:auto;z-index:13;background:#fffffff5;border:1px solid #dbe3f3;border-radius:13px;padding:14px;box-shadow:0 9px 32px #2c45651c;backdrop-filter:blur(10px);font-family:inherit;color:#5b6e8a}
 .servo-pickup button{font-family:inherit;cursor:pointer}.sp-heading{display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-bottom:10px}.sp-heading button{border:0;background:none;color:#9aa5b5;font-size:19px;padding:0;line-height:1}.sp-position{display:flex;gap:8px;align-items:baseline}.sp-position strong{font-size:19px;color:#3858df}.sp-position span{font-size:10px;color:#798ba8}.sp-history{font-size:9px;color:#8797af;margin:5px 0 10px}.servo-pickup .servo-leads{padding:7px 9px;margin-bottom:10px}.servo-pickup .servo-leads b{font-size:10px}.servo-pickup .servo-leads span,.servo-pickup .servo-leads small{font-size:8px;line-height:1.6}

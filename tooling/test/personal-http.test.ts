@@ -29,6 +29,7 @@ async function fixture(options: { exporter?: HostExporter | null; uiOrigin?: str
   let ready = false, debugFailure: Error | undefined, setupFailure: Error | undefined;
   const snapshot = { phase: 'idle', running: false, records: [], telemetry: {} };
   const setup = {
+    snapshot: () => { observed.push({ action: 'snapshot' }); return snapshot; },
     inspect: () => { observed.push({ action: 'inspect' }); return snapshot; },
     start: (input: unknown) => { if (setupFailure) throw setupFailure; observed.push({ action: 'start', input }); return snapshot; },
     pause: () => { observed.push({ action: 'pause' }); return snapshot; },
@@ -39,6 +40,7 @@ async function fixture(options: { exporter?: HostExporter | null; uiOrigin?: str
     queue: (input: unknown) => { observed.push({ action: 'queue', input }); return snapshot; },
   };
   const debug = {
+    invalidateReadbacks: () => { observed.push({ action: 'invalidate-readbacks' }); },
     numbering: () => ({ ready, verifiedIds: ready ? [10] : [], records: [] }),
     status: () => { observed.push({ action: 'status' }); return { connected: false, transport: 'usb', error: null, devices: [], numbering: { ready } }; },
     action: (input: Record<string, unknown>) => { if (debugFailure) throw debugFailure; observed.push({ action: 'debug', input }); return { ok: true, input }; },
@@ -88,12 +90,12 @@ test('device routes use socket peers, guard Origin before bodies, and preserve w
   const f = await fixture({ uiOrigin: 'duck://app' });
   try {
     for (const url of ['/api/duck-debug/status', '/api/duck-debug/unknown', '/api/servo-setup', '/api/servo-setup/unknown', '/api/servo-preparation']) {
-      const reply = await f.app.inject({ url, remoteAddress: '192.168.10.20', headers: { 'x-forwarded-for': '127.0.0.1' } }); assert.equal(reply.statusCode, 403); assert.deepEqual(Object.keys(reply.json()), ['error']);
+      const reply = await f.app.inject({ url, remoteAddress: '192.168.10.20', headers: { 'x-forwarded-for': '127.0.0.1' } }); assert.equal(reply.statusCode, 403);const expected=url.startsWith('/api/duck-debug/')?{error:'请在连接 UNO Q 的这台电脑上打开调试鸭。',code:'device.access.debug_local',params:{}}:url.startsWith('/api/servo-setup')?{error:'请在连接 UNO Q 的这台电脑上打开组装台。',code:'device.access.setup_local',params:{}}:{error:'请在本机组装台记录取件。',code:'device.access.preparation_local',params:{}};assert.deepEqual(reply.json(),expected);
     }
     const remoteSite = await f.app.inject({ url: '/api/site', remoteAddress: '192.168.10.20' }); assert.equal(remoteSite.json().servoSetup, false);
     const site = await f.app.inject('/api/site'); assert.equal(site.json().servoSetup, true); assert.equal(site.json().assembly, true);
     for (const url of ['/api/duck-debug/action', '/api/servo-setup/start', '/api/servo-preparation']) {
-      const denied = await f.app.inject({ method: 'POST', url, payload: 'bad', headers: { origin: 'http://evil.test', host: 'evil.test', 'content-type': 'bad' } }); assert.equal(denied.statusCode, 403); assert.deepEqual(Object.keys(denied.json()), ['error']);
+      const denied = await f.app.inject({ method: 'POST', url, payload: 'bad', headers: { origin: 'http://evil.test', host: 'evil.test', 'content-type': 'bad' } }); assert.equal(denied.statusCode, 403);const expected=url.startsWith('/api/duck-debug/')?{error:'请从本机调试鸭执行操作。',code:'device.access.debug_origin',params:{}}:url.startsWith('/api/servo-setup')?{error:'请从本机组装台执行此操作。',code:'device.access.setup_origin',params:{}}:{error:'请从本机组装台记录取件。',code:'device.access.preparation_origin',params:{}};assert.deepEqual(denied.json(),expected);
     }
     const started = await f.app.inject({ method: 'POST', url: '/api/servo-setup/start', payload: '{"targetId":10.0}', headers: { origin: 'duck://app', 'content-type': 'application/json' } }); assert.equal(started.statusCode, 200);
     assert.ok(f.observed.find(row => row.action === 'start')?.input instanceof JsonNumericValue);
@@ -101,8 +103,8 @@ test('device routes use socket peers, guard Origin before bodies, and preserve w
     for (const action of ['pause', 'halt', 'refresh', 'audit', 'repair', 'queue']) assert.equal((await f.app.inject({ method: 'POST', url: '/api/servo-setup/' + action, payload: '{"id":10}', headers: { 'content-type': 'application/json' } })).statusCode, 200);
     assert.equal((await f.app.inject('/api/servo-setup')).json().phase, 'idle'); assert.equal((await f.app.inject('/api/duck-debug/status')).json().connected, false);
     f.debugFailure(new DebugError('不允许', { reply: { reason: 'sample' }, completed: [10], remaining: [11] }));
-    const failure = await f.app.inject({ method: 'POST', url: '/api/duck-debug/action', payload: '{}', headers: { 'content-type': 'application/json' } }); assert.deepEqual(failure.json(), { error: '不允许', reply: { reason: 'sample' }, completed: [10], remaining: [11] }); assert.equal(failure.statusCode, 422);
-    f.setupFailure(new SetupError('请先扫描')); const setup = await f.app.inject({ method: 'POST', url: '/api/servo-setup/start', payload: '{}', headers: { 'content-type': 'application/json' } }); assert.deepEqual(setup.json(), { error: '请先扫描', code: 'request.invalid', params: {} });
+    const failure = await f.app.inject({ method: 'POST', url: '/api/duck-debug/action', payload: '{}', headers: { 'content-type': 'application/json' } }); assert.deepEqual(failure.json(), { error: '不允许', reply: { reason: 'sample' }, completed: [10], remaining: [11],code:'device.diagnostic',params:{detail:'不允许'} }); assert.equal(failure.statusCode, 422);
+    f.setupFailure(new SetupError('请先扫描')); const setup = await f.app.inject({ method: 'POST', url: '/api/servo-setup/start', payload: '{}', headers: { 'content-type': 'application/json' } }); assert.deepEqual(setup.json(), { error: '请先扫描', code: 'request.invalid', params: {},messageCode:'device.diagnostic',messageParams:{detail:'请先扫描'} });
   } finally { await f.close(); }
 });
 
@@ -112,7 +114,7 @@ test('preparation persistence validates independently without touching device AP
     const result = await f.app.inject({ method: 'POST', url: '/api/servo-preparation', payload: { ids: [10], state: 'picked' } }); assert.equal(result.statusCode, 200); assert.equal(result.json().records[0].state, 'picked');
     assert.deepEqual((await f.app.inject('/api/servo-preparation')).json(), result.json());
     assert.deepEqual((await f.app.inject('/api/servo-setup/records')).json(), { records: [] }); assert.equal(f.observed.length, 0);
-    const invalid = await f.app.inject({ method: 'POST', url: '/api/servo-preparation', payload: '{"ids":[10.0],"state":"installed"}', headers: { 'content-type': 'application/json' } }); assert.equal(invalid.statusCode, 422); assert.equal(invalid.json().code, 'request.invalid');
+    const invalid = await f.app.inject({ method: 'POST', url: '/api/servo-preparation', payload: '{"ids":[10.0],"state":"installed"}', headers: { 'content-type': 'application/json' } }); assert.equal(invalid.statusCode, 422); assert.equal(invalid.json().code, 'request.invalid');assert.equal(invalid.json().messageCode,'device.preparation.001');assert.deepEqual(invalid.json().messageParams,{});
     assert.equal(f.store.servoPreparationRecords()[0]?.state, 'picked');
   } finally { await f.close(); }
 });
@@ -202,7 +204,7 @@ test('browser Origin uses the bound port and configured listener instead of Host
       const result = await rawCall(port, `POST /api/servo-setup/start HTTP/1.1\r\nHost: forged.invalid\r\nOrigin: ${origin}\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}`); assert.equal(result.status, 200);
     }
     for (const origin of ['http://forged.invalid', `http://127.0.0.1:${port + 1}`]) {
-      const result = await rawCall(port, `POST /api/servo-setup/start HTTP/1.1\r\nHost: forged.invalid\r\nOrigin: ${origin}\r\nX-Forwarded-Host: 127.0.0.1:${port}\r\nContent-Type: bad\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad`); assert.equal(result.status, 403); assert.deepEqual(Object.keys(JSON.parse(result.body)), ['error']);
+      const result = await rawCall(port, `POST /api/servo-setup/start HTTP/1.1\r\nHost: forged.invalid\r\nOrigin: ${origin}\r\nX-Forwarded-Host: 127.0.0.1:${port}\r\nContent-Type: bad\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad`); assert.equal(result.status, 403); assert.deepEqual(JSON.parse(result.body),{error:'请从本机组装台执行此操作。',code:'device.access.setup_origin',params:{}});
     }
     const traversal = await rawCall(port, 'GET /assets/../source.3mf HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n'); assert.equal(traversal.status, 404); assert.equal(JSON.parse(traversal.body).code, 'request.asset_missing');
     assert.deepEqual(await Promise.all(Array.from({ length: 60 }, async () => (await fetch(`http://127.0.0.1:${port}/module.mjs`)).status)), Array(60).fill(200));
@@ -265,7 +267,15 @@ test('frozen Python handler and TypeScript HTTP agree on synthetic routes, error
       const expected=expectedRows[index]!;const actual=await rawCall(address.port,request);
       assert.equal(actual.status, expected.status, method + ' ' + item.path);
       for (const name of ['content-type', 'cache-control', 'x-content-type-options', 'location', 'content-range', 'accept-ranges', 'last-modified']) assert.equal(actual.headers[name], expected.headers[name], method + ' ' + item.path + ' ' + name);
-      if (method !== 'HEAD' && expected.headers['content-type']?.startsWith('application/json')) assert.deepEqual(JSON.parse(actual.body), JSON.parse(expected.body), method + ' ' + item.path);
+      if (method !== 'HEAD' && expected.headers['content-type']?.startsWith('application/json')) {
+        const value=JSON.parse(actual.body);
+        if(method==='POST'&&item.path==='/api/servo-preparation'){
+          const {messageCode,messageParams,...legacy}=value;
+          assert.equal(messageCode,'device.preparation.001');assert.deepEqual(messageParams,{});
+          // Compare every original field, including request.invalid and its params.
+          assert.deepEqual(legacy,JSON.parse(expected.body),method+' '+item.path);
+        }else assert.deepEqual(value,JSON.parse(expected.body),method+' '+item.path);
+      }
       else assert.equal(actual.body, expected.body, method + ' ' + item.path);
     }
     assert.equal(snapshot.stderr, '');

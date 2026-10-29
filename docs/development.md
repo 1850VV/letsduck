@@ -24,6 +24,8 @@ npm run audit:publication
 
 浏览器检查使用 Playwright 托管 Chromium。安装匹配版本后，设置 `DUCK_TEST_BROWSER=1` 可运行浏览器生命周期专项；需 nginx 的协议检查在没有本机 nginx 时明确跳过。原生控件、人工视觉、真实设备与安装包验收分别报告。
 
+涂装首帧专项使用 `node --import tsx --test tests/paint_startup.browser.ts`，需要已授权模型素材及已构建前端。它用临时数据库检查首页和直接进入、延迟方案读取、旧单鸭静态图、窄屏四鸭布局，以及登录后的方案和配色码直达；不连接真实设备。
+
 客户端版开发可使用 `npm run start:local -- --port 0 --no-open`，并显式给 `DUCK_PERSONAL_DB` 指定开发库。源码启动器会先构建。服务保留 `--host`、`--port`、`--no-open`，停止后排空自有请求、导出线程和服务，不把开发操作指向已有用户数据库。
 
 数据库迁移：`npm run migrate:database -- SOURCE.db --backup COPY.db`。它只读源库并建立一致性备份；目标必须为空，或仍是未经修改的同一快照。该命令会写入所配置的目标，使用前核对 `DUCK_DATABASE_URL` / `DUCK_DB_ENGINE` / `DUCK_DB`。普通测试不会迁移个人或生产库。

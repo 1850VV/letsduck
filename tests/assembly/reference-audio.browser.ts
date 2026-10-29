@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 test('audible reference holds music and cues until close, retaining manual audio choices',{skip:!process.env.ASSEMBLY_TEST_URL,timeout:90000},async()=>{
  const browser=await browserChecks.launchBrowser({headless:false});
  try{
-  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors:string[]=[];
+  const page=await browser.newPage({locale:'zh-CN',viewport:{width:1440,height:1000}}),errors:string[]=[];
   page.on('pageerror',e=>errors.push(e.message));
   const music=()=>page.evaluate(()=>({paused:window.__browserChecks.query<HTMLAudioElement>('#piano-audio').paused,time:window.__browserChecks.query<HTMLAudioElement>('#piano-audio').currentTime}));
   const change=async(id:string,value:number|boolean)=>page.locator('#'+id).evaluate((el,value)=>el.dispatchEvent(new CustomEvent('ryugi-change',{detail:{value}})),value);

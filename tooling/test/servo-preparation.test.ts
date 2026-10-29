@@ -48,8 +48,13 @@ test('preparation validation matches the original Python messages and complete u
   const cases = [{ ids: [10], state: 'picked' }, { ids: [12, 13], state: 'installed' }, { ids: [32], preparedLeads: [] }, { ids: [32], preparedLeads: ['x'] }, { ids: [12], state: 'bad' }, { ids: [true], state: 'picked' }, { ids: [12, 12], state: 'picked' }, { ids: [12] }, { ids: [14], preparedLeads: [1] }];
   const run=frozenOracle('servo-preparation',JSON.stringify(cases));assert.equal(run.status,0,run.stderr);
   const expected: unknown[] = JSON.parse(run.stdout);
+  const errorCodes:Record<number,string>={3:'device.preparation.004',4:'device.preparation.002',5:'device.preparation.001',6:'device.preparation.001',7:'device.preparation.005',8:'device.preparation.003'};
   for (const [index, body] of cases.entries()) {
-    let actual: unknown; try { actual = { value: m.validatedUpdates(body) }; } catch (error) { actual = { failure: errorPayload(error) }; }
+    let actual: unknown; try { actual = { value: m.validatedUpdates(body) }; } catch (error) {
+      assert.ok(error instanceof Error);assert.equal(Reflect.get(error,'messageCode'),errorCodes[index]);
+      assert.deepEqual(Reflect.get(error,'messageParams'),{});
+      actual = { failure:errorPayload(error) };
+    }
     assert.deepEqual(actual, expected[index]);
   }
 });

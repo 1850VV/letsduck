@@ -1,5 +1,6 @@
 import type { DesktopUpdateState } from './updates.js';
 import type { DesktopBridge } from './ipc.js';
+import {desktopText,resolveDesktopLocale} from './copy.js';
 declare global { interface Window { letsduckDesktop?: DesktopBridge } }
 const api = window.letsduckDesktop, brand = document.querySelector<HTMLElement>('header.top .brand, header.home-top .home-brand');
 if (api && brand) {
@@ -49,22 +50,22 @@ if (api && brand) {
   const required = <T>(value: T | null): T => { if (value === null) throw new Error('Missing desktop update controls'); return value; };
   const button = required(root.querySelector('button')), label = required(root.querySelector('.label')), progress = required(root.querySelector<HTMLElement>('.progress'));
   let state: DesktopUpdateState | undefined;
-  const text = (cn: string, en: string) => document.documentElement.lang.startsWith('en') ? en : cn;
   function render(next: DesktopUpdateState) {
     state = next;
     const version = 'v' + state.currentVersion, percent = Math.floor(state.percent || 0);
+    const locale=resolveDesktopLocale(document.documentElement.lang);
     const copy = {
       idle: version, checking: version,
-      available: text('有新版本待更新', 'Update available'),
-      downloading: text('下载中 ' + percent + '%', 'Downloading ' + percent + '%'),
-      error: text('更新失败 · 重试', 'Update failed · Retry'),
-      ready: text('重启更新', 'Restart and update'),
-      waiting: text('等待导出完成', 'Waiting for export'),
-      installing: text('重启中…', 'Restarting…'),
+      available: desktopText(locale,'update.available'),
+      downloading: desktopText(locale,'update.downloading',{percent}),
+      error: desktopText(locale,'update.error'),
+      ready: desktopText(locale,'update.ready'),
+      waiting: desktopText(locale,'update.waiting'),
+      installing: desktopText(locale,'update.installing'),
     };
     label.textContent = copy[state.phase]; button.dataset.phase = state.phase;
     button.disabled = !['available', 'error', 'ready'].includes(state.phase);
-    button.title = ['idle', 'checking'].includes(state.phase) ? text('当前版本 ', 'Current version ') + version : copy[state.phase];
+    button.title = ['idle', 'checking'].includes(state.phase) ? desktopText(locale,'update.current',{version}) : copy[state.phase];
     progress.style.width = state.phase === 'downloading' ? percent + '%' : '0%';
     button.hidden = false;
   }

@@ -1,3 +1,5 @@
+import {assemblyText} from './i18n.js';
+import {onLocale} from '../shared/i18n.js';
 // letsduck framing around the assembly prototype. Runs before prototype-v3.mjs builds the model, so the printed parts
 // wear the studio draft's colours and finishes in the studio's own material (or plain white, 白胚); servos, boards,
 // cables and screws keep their own.
@@ -18,11 +20,12 @@ for (const actor of Object.values(ACTORS)) {
 applyBrand();
 const tag = document.createElement('span');
 tag.className = 'scheme-tag';
-tag.title = draft ? '打印件用涂装台当前的配色，舵机、板子和螺丝保持原样' : '还没有涂色，打印件先用白色演示';
+tag.title = draft ? assemblyText("assemble.ui.0266") : assemblyText("assemble.ui.0267");
 const dots = draft ? [...new Set(['P4-01', 'P2-06', 'P5-06', 'P2-03'].map((id) => draft.colors[id]))] : [WHITE];
 tag.innerHTML = dots.map((hex) => `<i style="background:${hex}"></i>`).join('') + '<span></span>';
-tag.lastChild!.textContent = draft ? '配色 · ' + draft.name : '白胚';
+tag.lastChild!.textContent = draft ? assemblyText("assemble.ui.0268") + draft.name : assemblyText("assemble.ui.0269");
 document.querySelector('.header-name')!.after(tag);
+onLocale(()=>{tag.title=draft?assemblyText('assemble.ui.0266'):assemblyText('assemble.ui.0267');tag.lastChild!.textContent=draft?assemblyText('assemble.ui.0268')+draft.name:assemblyText('assemble.ui.0269');});
 
 // Fade the studio's picture (see index.html) once prototype-v3.mjs marks the model ready.
 const picture = document.querySelector('.handoff');

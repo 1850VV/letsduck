@@ -5,6 +5,7 @@ interface Spring{target:number;velocity:number;last:number;frame:number}
 export function createCarousel({stage,ids,initial,enabled,pick,render,activate}:CarouselOptions){
  const step=Math.PI*2/ids.length,centre=ids.indexOf('debug');
  let angle=(centre-ids.indexOf(initial))*step,down:Drag|null=null,spring:Spring|null=null;
+ let released:string|undefined,doubleTarget:string|undefined;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const focus=()=>ids[((centre-Math.round(angle/step))%ids.length+ids.length)%ids.length]!;
  function draw(){stage.dataset.settled=String(!spring&&!down);render(angle,focus());}
@@ -43,6 +44,8 @@ export function createCarousel({stage,ids,initial,enabled,pick,render,activate}:
  function end(event:PointerEvent,cancelled=false){
   if(!down||down.id!==event.pointerId)return;
   const drag=down;down=null;stage.classList.remove('dragging');
+  released=!drag.dragged&&!cancelled?drag.hit??undefined:undefined;
+  if(drag.dragged||cancelled)doubleTarget=undefined;
   if(stage.hasPointerCapture(event.pointerId))stage.releasePointerCapture(event.pointerId);
   if(drag.dragged){
    const sample=drag.samples[0]!,elapsed=performance.now()-sample.t;
@@ -57,7 +60,11 @@ export function createCarousel({stage,ids,initial,enabled,pick,render,activate}:
  stage.addEventListener('lostpointercapture',event=>end(event,true));
  stage.addEventListener('dragstart',event=>event.preventDefault());
  stage.addEventListener('click',event=>{
-  event.preventDefault();if(event.detail===0){const id=event.target instanceof Element?event.target.closest<HTMLElement>('[data-duck]')?.dataset.duck:undefined;if(id)select(id);}
+  event.preventDefault();
+  if(event.detail===1)doubleTarget=released;
+  else if(event.detail===2&&doubleTarget&&enabled()){
+   const id=doubleTarget;doubleTarget=undefined;jump(id);activate(id);
+  }else if(event.detail===0){doubleTarget=undefined;const id=event.target instanceof Element?event.target.closest<HTMLElement>('[data-duck]')?.dataset.duck:undefined;if(id)select(id);}
  });
  stage.addEventListener('keydown',event=>{
   if(!enabled())return;
@@ -65,6 +72,7 @@ export function createCarousel({stage,ids,initial,enabled,pick,render,activate}:
   else if(event.key==='Enter'&&event.target===stage){event.preventDefault();select(focus());}
  });
  function stop(){
+  released=undefined;doubleTarget=undefined;
   cancel();const pointerId=down?.id;down=null;stage.classList.remove('dragging');
   if(pointerId!==undefined&&stage.hasPointerCapture(pointerId))stage.releasePointerCapture(pointerId);
   angle=Math.round(angle/step)*step;draw();

@@ -10,6 +10,7 @@ const requirements:Readonly<Record<string,readonly string[]>>={
  'tests/test_workbench.ts':['assets/model.json','assets/catalog.json'],
  'tests/test_quick_style.ts':['assets/model.json','assets/catalog.json'],
  'tests/assembly/cable-clearance.test.ts':['assets/assembly/full-assembly.json','assets/assembly/full-assembly.bin'],
+ 'tests/assembly/part-geometry.test.ts':['assets/assembly/full-assembly.json','assets/assembly/full-assembly.bin'],
  'tests/assembly/hardware-models.test.ts':['assets/assembly/hardware-v2'],
 };
 const files=[...readdirSync(join(root,'tests')).filter(file=>file.endsWith('.test.ts')||/^test_.*\.ts$/.test(file)).map(file=>'tests/'+file),...readdirSync(join(root,'tests/assembly')).filter(file=>file.endsWith('.test.ts')).map(file=>'tests/assembly/'+file)].sort();

@@ -6,6 +6,7 @@ export type PersonalHttpServer = FastifyInstance & { waitRequests(): Promise<voi
 type Awaitable<T> = T | Promise<T>;
 /** Only the HTTP-facing surface is required; hardware ownership stays in the application. */
 export interface HttpServoSetup {
+  snapshot(): Awaitable<unknown>;
   inspect(): Awaitable<unknown>;
   start(target?: unknown): Awaitable<unknown>;
   pause(): Awaitable<unknown>;
@@ -16,6 +17,7 @@ export interface HttpServoSetup {
   queue(id: unknown): Awaitable<unknown>;
 }
 export interface HttpDuckDebug {
+  invalidateReadbacks(): void;
   numbering(): Awaitable<{ ready: boolean }>;
   status(): Awaitable<unknown>;
   action(body: Record<string, unknown>): Awaitable<unknown>;

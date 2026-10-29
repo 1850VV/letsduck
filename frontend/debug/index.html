@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>调试鸭</title><link rel="stylesheet" href="manager.css"></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title data-i18n="debug.copy.001">调试鸭</title><link rel="stylesheet" href="manager.css"></head>
 <body>
-<header class="top"><a class="brand" href="/" data-brand-slot></a><span class="nav-label">调试鸭</span></header>
+<header class="top"><a class="brand" href="/" data-brand-slot></a><span class="nav-label" data-i18n="debug.copy.001">调试鸭</span></header>
 <main class="workspace">
- <div class="heading"><div><p id="source-address">UNO Q · 正在连接</p><h1 id="work-title">舵机与连接</h1></div><div class="connection"><span id="board-state"><i class="dot"></i>UNO Q</span><b id="online-count"></b><button id="release-all">全部卸载</button></div></div>
- <div class="work-bar"><nav class="work-tabs" aria-label="调试功能"><button data-workbench="servo" aria-pressed="true">舵机设置</button><button data-workbench="control" aria-pressed="false">整机控制</button><button data-workbench="calibrate" aria-pressed="false">中位校准</button></nav><div id="runtime-metrics"></div></div>
+ <div class="heading"><div><p id="source-address" data-i18n="debug.connecting">UNO Q · 正在连接</p><h1 id="work-title" data-i18n="debug.copy.154">舵机与连接</h1></div><div class="connection"><span id="board-state"><i class="dot"></i>UNO Q</span><b id="online-count"></b><button id="release-all" data-i18n="debug.mode.off">全部卸载</button></div></div>
+ <div class="work-bar"><nav class="work-tabs" aria-label="调试功能" data-i18n-aria-label="debug.copy.176"><button data-workbench="servo" aria-pressed="true" data-i18n="debug.mode.servo_debug">舵机设置</button><button data-workbench="control" aria-pressed="false" data-i18n="debug.copy.120">整机控制</button><button data-workbench="calibrate" aria-pressed="false" data-i18n="debug.mode.calibrate">中位校准</button></nav><div id="runtime-metrics"></div></div>
  <div class="layout">
-  <section class="model-column" aria-label="舵机三维视窗">
-   <div class="view-bar"><div class="tabs" aria-label="3D展示方式"><button data-view="robot" aria-pressed="true">整机</button><button data-view="tray" aria-pressed="false">展开舵机</button><button data-view="circuit" aria-pressed="false">电路连接</button></div><button class="text-button" id="reset-camera">重置视角 ↗</button></div>
-   <div class="stage"><div id="viewport"></div><div id="labels"></div><div class="stage-top"><span id="stage-caption">按编号对应安装位</span><span class="legend"><i class="dot green"></i>当前在线 <i class="outline"></i>选中</span></div><div id="loading">正在载入现有3D模型…</div><div class="stage-bottom" id="stage-help">拖动旋转 · 滚轮缩放 · 点舵机查看参数</div></div>
-   <section class="inventory" aria-label="板卡与舵机卡槽"><div id="board-slots" class="board-slots"></div><div class="inventory-title"><b>舵机配置台</b><button id="scan-servos">扫描0–253</button><button id="stop-scan" hidden>停止扫描</button><span id="slot-count"></span></div><div id="scan-progress-box" hidden><progress id="scan-progress" max="254" value="0"></progress><span id="scan-status"></span></div><div id="slots"></div><div id="extra-devices" hidden></div><div class="inventory-actions"><span>绿色在线 · ✓ 编号已验证</span><button id="batch-swap">左右腿互换</button><button id="batch-custom">自定义改号</button></div><div class="numbering-progress"><span id="numbering-progress"></span><button id="verify-online">核验在线编号</button></div></section>
+  <section class="model-column" aria-label="舵机三维视窗" data-i18n-aria-label="debug.copy.177">
+   <div class="view-bar"><div class="tabs" aria-label="3D展示方式" data-i18n-aria-label="debug.copy.178"><button data-view="robot" aria-pressed="true" data-i18n="debug.copy.179">整机</button><button data-view="tray" aria-pressed="false" data-i18n="debug.copy.180">展开舵机</button><button data-view="circuit" aria-pressed="false" data-i18n="debug.copy.181">电路连接</button></div><button class="text-button" id="reset-camera" data-i18n="debug.copy.182">重置视角 ↗</button></div>
+   <div class="stage"><div id="viewport"></div><div id="labels"></div><div class="stage-top"><span id="stage-caption" data-i18n="debug.copy.067">按编号对应安装位</span><span class="legend"><i class="dot green"></i><span data-i18n="debug.copy.183">当前在线</span> <i class="outline"></i><span data-i18n="debug.copy.184">选中</span></span></div><div id="loading" data-i18n="debug.copy.185">正在载入现有3D模型…</div><div class="stage-bottom" id="stage-help" data-i18n="debug.copy.071">拖动旋转 · 滚轮缩放 · 点舵机查看参数</div></div>
+   <section class="inventory" aria-label="板卡与舵机卡槽" data-i18n-aria-label="debug.copy.186"><div id="board-slots" class="board-slots"></div><div class="inventory-title"><b data-i18n="debug.copy.187">舵机配置台</b><button id="scan-servos" data-i18n="debug.copy.188">扫描0–253</button><button id="stop-scan" hidden data-i18n="debug.copy.189">停止扫描</button><span id="slot-count"></span></div><div id="scan-progress-box" hidden><progress id="scan-progress" max="254" value="0"></progress><span id="scan-status"></span></div><div id="slots"></div><div id="extra-devices" hidden></div><div class="inventory-actions"><span data-i18n="debug.copy.190">绿色在线 · ✓ 编号已验证</span><button id="batch-swap" data-i18n="debug.copy.056">左右腿互换</button><button id="batch-custom" data-i18n="debug.copy.057">自定义改号</button></div><div class="numbering-progress"><span id="numbering-progress"></span><button id="verify-online" data-i18n="debug.copy.191">核验在线编号</button></div></section>
   </section>
-  <aside class="panel" id="panel" aria-label="选中舵机参数"></aside>
+  <aside class="panel" id="panel" aria-label="选中舵机参数" data-i18n-aria-label="debug.copy.192"></aside>
  </div>
  <div id="feedback" role="status" aria-live="polite"></div>
 </main>
-<script type="module" src="manager.ts"></script>
+<script type="module" src="entry.ts"></script>
 </body></html>

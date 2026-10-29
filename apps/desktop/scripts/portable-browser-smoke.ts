@@ -11,6 +11,8 @@ import {chromium,type Browser,type BrowserContext,type Page,type Frame,type Loca
 import {ZipArchive} from '@letsduck/exporter';
 import {root,required,seedSimulatedAssembly,failure,assemblyReady} from './check-support.js';
 import {windowsNativeInput,windowsPowerShell} from './windows-native-input.js';
+import {experimentalAccessState,unlockExperimentalHome} from './experimental-access-check.js';
+import {capturePortableFailure,observePortablePage} from './portable-browser-diagnostics.js';
 
 assert.equal(process.platform,'win32');assert.equal(process.arch,'x64');
 assert.equal(process.env.GITHUB_ACTIONS,'true','This acceptance owns a disposable Windows runner');
@@ -131,7 +133,7 @@ async function open(url:string){
  const windowSize={width:Math.min(1280,area.width-20),height:Math.min(800,area.height-20)};
  context=await chromium.launchPersistentContext(profile,{headless:false,viewport:null,locale:'zh-CN',acceptDownloads:true,args:[`--window-size=${windowSize.width},${windowSize.height}`,`--window-position=${area.x+10},${area.y+10}`]});
  await context.addInitScript('globalThis.__name = value => value');const browser=required(context.browser());for(const pid of await browserPids(browser))pids.add(pid);
- page=context.pages()[0]||await context.newPage();page.setDefaultTimeout(30_000);page.on('pageerror',error=>events.push({kind:'pageerror',message:error.message}));page.on('console',message=>{if(message.type()==='error')events.push({kind:'console',message:message.text()});});
+ page=context.pages()[0]||await context.newPage();page.setDefaultTimeout(30_000);observePortablePage(page,events);
  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:url});await page.goto(url);await page.waitForFunction(()=>document.body.dataset.homeReady==='true');
  const active=await input.native('activate'),viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,devicePixelRatio}));
  check('owned managed Chromium is foreground with a validated renderer HWND',active.foreground===active.root.handle,{browserPid:active.root.pid,hwnd:active.root.handle,rendererHwnd:active.contentHandle,viewport,client:active.client,desktop,windowSize});effectiveViewports.push({url,viewport,client:active.client,window:active.root,desktop});return page;
@@ -167,7 +169,9 @@ try{
  check('portable BAT has no npm/Python/system-runtime setup',! /\b(?:npm|npx|python|curl|wget)\b/i.test(await readFile(launcher,'utf8')));
  const nodeIdentity=JSON.parse((await run(binary,['-p','JSON.stringify({node:process.versions.node,platform:process.platform,arch:process.arch})'],{env:{...process.env,PATH:'',NODE_OPTIONS:'',NODE_PATH:''}})).stdout) as {node:string;platform:string;arch:string};check('extracted binary is native Node24.20.0 Windows x64',nodeIdentity.node==='24.20.0'&&nodeIdentity.platform==='win32'&&nodeIdentity.arch==='x64',nodeIdentity);
  await writeFile(wrapper,'@echo off\r\ncall "%DUCK_PORTABLE_LAUNCHER%" --port %DUCK_PORTABLE_PORT% --no-open > "%DUCK_PORTABLE_STDOUT%" 2> "%DUCK_PORTABLE_STDERR%"\r\nexit /b %errorlevel%\r\n');
- const url=await launch();await open(url);const paint=required(page).locator('[data-duck="paint"]');if(await paint.getAttribute('data-c-position')!=='true'){await input.click(paint);await page!.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck="paint"]')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false');}await input.click(paint);await page!.locator('#module-frame').waitFor({state:'visible'});
+ const url=await launch();await open(url);
+ await unlockExperimentalHome(required(page),'debug',input,check);await unlockExperimentalHome(required(page),'assemble',input,check);
+ const paint=required(page).locator('[data-duck="paint"]');if(await paint.getAttribute('data-c-position')!=='true'){await input.click(paint);await page!.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck="paint"]')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false');}await input.click(paint);await page!.locator('#module-frame').waitFor({state:'visible'});
  await page!.frameLocator('#module-frame').locator('#steps').waitFor();let frame=required(page!.frames().find(frame=>frame.url()===url+'/paint'));await frame.waitForFunction(()=>!!Reflect.get(window,'studioProto'));if(await frame.locator('#coach-go').isVisible())await input.click(frame.locator('#coach-go'));
  if(await frame.locator('#start-go').isVisible()){await input.click(frame.locator('[data-start="original"]'));await input.click(frame.locator('#start-go'));}
  check('portable homepage opens its real built paint iframe',frame.url()===url+'/paint');
@@ -197,7 +201,8 @@ try{
  check('restarted BAT retains SQLite save',reopenRows.some(row=>row.name===name&&JSON.stringify(row.design.colors)===JSON.stringify(savedColors)));
  await page!.goto(restartUrl+'/paint');await page!.waitForFunction(()=>!!Reflect.get(window,'studioProto'));
  const sameOrigin=new URL(url).origin===new URL(restartUrl).origin;check('same-origin Chromium profile survives real BAT and browser restart',sameOrigin&&await page!.evaluate(()=>localStorage.getItem('portable-retained'))==='yes',{sameOrigin,first:url,restart:restartUrl,storageScope:'first launch chooses a free ephemeral port; restarts reuse that owned port'});
- await page!.goto(restartUrl+'/assemble/');check('unverified assembly prerequisite redirects to debug',new URL(page!.url()).pathname==='/debug/');await closeBrowser();await stop();
+ check('portable retains both native first-use acknowledgements after BAT and browser restart',JSON.stringify(await experimentalAccessState(required(page)))===JSON.stringify({debug:true,assemble:true}));
+ await page!.goto(restartUrl+'/assemble/');await page!.waitForURL(restartUrl+'/debug/?from=assemble');check('unverified assembly prerequisite still redirects acknowledged users to debug',new URL(page!.url()).pathname==='/debug/');await closeBrowser();await stop();
  seedSimulatedAssembly(database);const mediaUrl=await launch();await open(mediaUrl);
  const assemble=page!.locator('[data-duck="assemble"]');if(await assemble.getAttribute('data-c-position')!=='true'){await input.click(assemble);await page!.waitForFunction(()=>document.querySelector<HTMLElement>('[data-duck="assemble"]')?.dataset.cPosition==='true'&&document.querySelector<HTMLElement>('.duck-stage')?.dataset.settled!=='false');}await input.click(assemble);await page!.locator('#module-frame').waitFor({state:'visible'});await page!.frameLocator('#module-frame').locator('#playback-rate select').waitFor();
  const assembly=required(page!.frames().find(frame=>frame.url()===mediaUrl+'/assemble/'));await assembly.waitForFunction(assemblyReady,undefined,{timeout:60_000});check('portable native assembly follows the real homepage iframe',assembly.url()===mediaUrl+'/assemble/');
@@ -209,7 +214,7 @@ try{
  await closeBrowser();await stop();
  check('no page errors in portable journeys',!events.some(item=>typeof item==='object'&&item!==null&&'kind'in item&&item.kind==='pageerror'),events);
  result={status:'passed',artifactIdentity,sourceCommit:process.env.GITHUB_SHA||null,archive:{path:archive,bytes:archiveBytes.length,sha256:sha(archiveBytes)},bundledNode:{...nodeIdentity,sha256:sha(await readFile(binary))},managedChromium:chromium.executablePath(),renderer:'default; no ANGLE override',clipboardText:{displaySelector:'.code-box code',buttonSelector:'#copy-code',expected:textCode,actual:copiedCode},checks,events,launches,assemblyPrerequisite:'15 explicitly simulated records in owned temporary SQLite; no hardware verification',nativeSelect:nativeCoverage,effectiveViewports,clipboardRestored:'not_run: this disposable Actions runner has no personal clipboard; existing PNG write/read assertion retained',physicalDevices:'not_run: invalid DUCK_ADB sentinel; no real personal database',visualApproval:'automated browser actions and private captures; no human visual approval'};
-}catch(error){result={status:'failed',artifactIdentity,error:failure(error),checks,events,launches,nativeSelect:nativeCoverage||{status:'not_verified',reason:'native journey did not complete; see error/native-evidence.json'},effectiveViewports};console.log(JSON.stringify(artifactIdentity));process.exitCode=1;console.error(failure(error));await page?.screenshot({path:join(output,'failure.png'),timeout:5000}).catch(()=>{});}
+}catch(error){const browserFailure=await capturePortableFailure(page,output);result={status:'failed',artifactIdentity,error:failure(error),browserFailure,checks,events,launches,nativeSelect:nativeCoverage||{status:'not_verified',reason:'native journey did not complete; see error/native-evidence.json'},effectiveViewports};console.log(JSON.stringify(artifactIdentity));process.exitCode=1;console.error(failure(error));}
 finally{
  let browserClosed=false,hostExited=false,temporaryRemoved=false;try{await closeBrowser();browserClosed=true;}catch(error){events.push({kind:'browserCleanup',error:String(error)});process.exitCode=1;}
  if(live){try{await stop();}catch(error){forcedCleanup=true;events.push({kind:'forcedOwnedCleanup',error:String(error)});await run('taskkill.exe',['/PID',String(live.rootPid),'/T','/F'],{timeout:20_000}).catch(()=>{});process.exitCode=1;}}

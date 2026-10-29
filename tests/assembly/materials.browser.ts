@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 test('chapter materials: quantities, one-piece inspection, persistence and step return',{skip:!process.env.ASSEMBLY_TEST_URL,timeout:120000},async()=>{
  const browser=await browserChecks.launchBrowser({headless:false});
  try{
-  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors:string[]=[];
+  const context=await browser.newContext({locale:'zh-CN',viewport:{width:1440,height:1000}}),page=await context.newPage(),errors:string[]=[];
   page.on('pageerror',e=>errors.push(e.message));
   await browserChecks.preparePage(page);await page.goto(`${process.env.ASSEMBLY_TEST_URL}/assemble/`);await page.waitForFunction(()=>window.anklePrototype?.state.ready&&window.anklePrototype.state.uiReady);
   await page.locator('#kit').waitFor({state:'visible'});
@@ -43,7 +43,7 @@ test('chapter materials: quantities, one-piece inspection, persistence and step 
 test('Space activates the focused material control without starting the chapter',{skip:!process.env.ASSEMBLY_TEST_URL,timeout:60000},async()=>{
  const browser=await browserChecks.launchBrowser({headless:false});
  try{
-  const page=await browser.newPage();await browserChecks.preparePage(page);await page.goto(`${process.env.ASSEMBLY_TEST_URL}/assemble/`);
+  const page=await browser.newPage({locale:'zh-CN'});await browserChecks.preparePage(page);await page.goto(`${process.env.ASSEMBLY_TEST_URL}/assemble/`);
   await page.waitForFunction(()=>window.anklePrototype?.state.ready&&window.anklePrototype.state.uiReady);
   const toggle=page.getByRole('switch',{name:'选中放大'});await toggle.focus();await page.keyboard.press('Space');
   assert.equal(await page.locator('#kit').isVisible(),true,'keyboard switch activation must leave preparation open');
@@ -57,7 +57,7 @@ test('Space activates the focused material control without starting the chapter'
 test('starting a prepared chapter preserves automatic playback',{skip:!process.env.ASSEMBLY_TEST_URL,timeout:60000},async()=>{
  const browser=await browserChecks.launchBrowser({headless:false});
  try{
-  const page=await browser.newPage();await browserChecks.preparePage(page);await page.goto(`${process.env.ASSEMBLY_TEST_URL}/assemble/`);
+  const page=await browser.newPage({locale:'zh-CN'});await browserChecks.preparePage(page);await page.goto(`${process.env.ASSEMBLY_TEST_URL}/assemble/`);
   await page.waitForFunction(()=>window.anklePrototype?.state.ready&&window.anklePrototype.state.uiReady);
   await page.locator('#phase-select').evaluate(el=>el.dispatchEvent(new CustomEvent('ryugi-change',{detail:{value:'1'}})));
   await page.locator('#kit-go').click();await page.locator('#next').click();await page.locator('#autoplay').click();
@@ -70,7 +70,7 @@ test('starting a prepared chapter preserves automatic playback',{skip:!process.e
 test('leaving a material tray saves the lesson camera rather than the display camera',{skip:!process.env.ASSEMBLY_TEST_URL,timeout:60000},async()=>{
  const browser=await browserChecks.launchBrowser({headless:false});
  try{
-  const page=await browser.newPage();await browserChecks.preparePage(page);await page.goto(`${process.env.ASSEMBLY_TEST_URL}/assemble/`);
+  const page=await browser.newPage({locale:'zh-CN'});await browserChecks.preparePage(page);await page.goto(`${process.env.ASSEMBLY_TEST_URL}/assemble/`);
   await page.waitForFunction(()=>window.anklePrototype?.state.ready&&window.anklePrototype.state.uiReady);
   await page.locator('#kit-go').click();await page.waitForFunction(()=>!window.anklePrototype.state.cameraTransition);
   await page.locator('#motion-progress').evaluate(el=>el.dispatchEvent(new CustomEvent('ryugi-change',{detail:{value:37}})));

@@ -33,7 +33,7 @@ export class RyugiSelect extends HTMLElement {
   connectedCallback() {
     if (this.select) return;
     const select = this.select = document.createElement('select');
-    for (const option of this.querySelectorAll('ryugi-option')) select.add(new Option((option.textContent||'').trim(), option.getAttribute('value')||''));
+    for (const option of this.querySelectorAll('ryugi-option')){const native=new Option((option.textContent||'').trim(),option.getAttribute('value')||'');for(const attr of option.attributes)if(attr.name.startsWith('data-assemble-i18n'))native.setAttribute(attr.name,attr.value);select.add(native);}
     label(this, select);this.replaceChildren(select);
     if (this.hasAttribute('value')) select.value = this.getAttribute('value')!;
     select.addEventListener('change', () => {this.setAttribute('value', select.value);changed(this, select.value);});
