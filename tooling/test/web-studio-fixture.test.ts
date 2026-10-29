@@ -41,11 +41,11 @@ test('preparation fixture retains missing numbering and explicit lead declaratio
  }finally{await f.close();assert.equal(f.app.server.address(),null);}
 });
 
-test('the normal product admission still redirects missing numbering, outside the preparation-only fixture override',async()=>{
+test('the assembly guide opens even when numbering is incomplete; the home page only suggests Debug Duck first',async()=>{
  const f=await createBrowserFixture({mode:'debug'});
  try{
   f.store.db.exec('DELETE FROM servo_setup WHERE id=34');assert.equal(f.debug.numbering().ready,false);
-  const response=await fetch(f.url+'/assemble/',{redirect:'manual'});assert.equal(response.status,303);assert.equal(response.headers.get('location'),'/debug/?from=assemble');
+  const response=await fetch(f.url+'/assemble/',{redirect:'manual'});assert.equal(response.status,200);assert.equal(response.headers.get('location'),null);
  }finally{await f.close();assert.equal(f.store.db.isOpen,false);assert.equal(f.runtime.closed,1);}
 });
 

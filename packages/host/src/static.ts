@@ -68,7 +68,7 @@ async function sendFile(request: FastifyRequest, reply: FastifyReply, target: st
   return sendBody(request, reply, 200, await readFile(target), mime(target, frontend), { 'last-modified': modified, ...(range ? { 'accept-ranges': 'bytes' } : {}) });
 }
 
-export function personalStatic(options: Pick<PersonalHttpOptions,'frontend'|'assets'|'assemblyManifest'>&{debug:Pick<PersonalHttpOptions['debug'],'numbering'>}) {
+export function personalStatic(options: Pick<PersonalHttpOptions,'frontend'|'assets'|'assemblyManifest'>) {
   const manifest = options.assemblyManifest ?? loadAssemblyManifest(resolve(options.frontend, '../scripts/assembly-assets.json'));
   const assemblyFiles = new Set(Object.keys(manifest?.files ?? {}));
   const allAssembly = new Set([...assemblyFiles, ...Object.keys(manifest?.optionalFiles ?? {})]);
@@ -78,7 +78,6 @@ export function personalStatic(options: Pick<PersonalHttpOptions,'frontend'|'ass
       return (await Promise.all([...assemblyFiles].map(name => fileStat(join(options.assets, 'assembly', name))))).every(info => info?.isFile());
     },
     async serve(request: FastifyRequest, reply: FastifyReply, path: string): Promise<FastifyReply> {
-      if (request.method === 'GET' && ['/assemble', '/assemble/index.html'].includes(path.replace(/\/+$/, '')) && !(await options.debug.numbering()).ready) return redirect(reply, 303, '/debug/?from=assemble');
       if (path.replace(/\/+$/, '') === '/gallery' || path.startsWith('/gallery/')) return redirect(reply, 303, '/');
       if (path === '/paint/') return redirect(reply, 308, '/paint');
       if (path.startsWith('/assets/') || path.startsWith('/assemble/assets/')) {

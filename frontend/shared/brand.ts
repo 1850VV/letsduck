@@ -1,5 +1,5 @@
 // Shared product identity. Storage names (dd-* keys, doodleduck databases) stay stable across renames.
-import { getLocale, onLocale, t, translate } from './i18n.js';
+import { getLocale, onLocale, translate } from './i18n.js';
 export const BRAND = Object.freeze({zh: '来做鸭', en: 'letsduck', tagline: '机器鸭涂装与配色社区'});
 export const brandName = (locale = getLocale()) => translate(locale,'brand.name');
 
@@ -10,15 +10,15 @@ export const MARK = "<metadata>MicroDuck product render, Pollen Robotics. Source
 
 export const logoSVG = () => `<svg class="logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${MARK}</svg>`;
 export const faviconURL = () => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${MARK}</svg>`);
-// The product name and workshop subtitle follow the selected interface language.
-export const brandHTML = () => `${logoSVG()}<span class="wordmark"><b>${brandName()}</b><small>${t('brand.subtitle')}</small></span>`;
+// The product name follows the selected interface language.
+export const brandHTML = () => `${logoSVG()}<span class="wordmark"><b>${brandName()}</b></span>`;
 
 // Fills every [data-brand-slot] and the tab icon; the name follows language changes.
 let following = false;
 export function applyBrand() {
   document.querySelectorAll('[data-brand-slot]').forEach((el) => {
     el.innerHTML = brandHTML();
-    el.setAttribute('aria-label', brandName() + ' · ' + t('brand.subtitle'));
+    el.setAttribute('aria-label', brandName());
     el.setAttribute('title',brandName());
   });
   if (!following) {following = true;onLocale(() => applyBrand());}
