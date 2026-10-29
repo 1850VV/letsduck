@@ -46,7 +46,7 @@ jobs:
       CSC_NAME: '-'
       CSC_FOR_PULL_REQUEST: 'true'
       DUCK_BUILD_ARCH: ${{ matrix.arch }}
-      DUCK_RELEASE_VERSION: '0.1.0-beta.4'
+      DUCK_RELEASE_VERSION: '0.1.0-beta.6'
       DUCK_DISTRIBUTABLE_ASSETS: '${{ github.workspace }}/assets'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -152,9 +152,9 @@ jobs:
       - name: State the candidate boundary
         run: |
           if [[ "${{ inputs.full_software_acceptance }}" == "true" ]]; then
-            echo "Full-model checks use the existing pinned bundle, which omits newer optional filament data. Native input, physical devices, signed updates and public-release acceptance remain separate. No assets, installers or screenshots are published."
+            echo "Full-model checks use repository assets. Native input, physical devices, signed updates and public-release acceptance remain separate. This candidate workflow does not publish a release."
           else
-            echo "Source-only installers and portable archives exclude licensed models. Synthetic installation checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."
+            echo "Installers and portable archives include repository assets. Synthetic checks do not establish full model/UI/hardware, signed updates or public-release acceptance. No release is published."
           fi
   console_signal:
     if: github.event_name == 'workflow_dispatch' && inputs.console_signal_diagnostic

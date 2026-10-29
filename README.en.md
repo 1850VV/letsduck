@@ -50,7 +50,7 @@ The home, paint, debug and assembly interfaces use the existing 12 language dict
 
 The client has two launch options built on the same code: a **desktop installer** opens an application window; a **browser archive** runs locally in your browser after extraction and a double-click on its launcher. Both include the required resources and runtime. Users do not need to install Node.js or Python, or import models or a 3MF separately. See [client packaging](apps/desktop/README.md) for builds.
 
-The files currently in [Releases](https://github.com/1850VV/letsduck/releases) are historical test candidates; no formal client release is available yet. Candidate packages do not establish full product acceptance. See each release's notes for its version and verified scope.
+[Releases](https://github.com/1850VV/letsduck/releases) provides internal test clients with the resources needed to run them. These are prereleases, not formal releases. See each release's notes for its version and verified scope.
 
 ### Run from source (developers)
 
