@@ -2,7 +2,7 @@
 :root{--ink:#17243c;--muted:#6e7b91;--line:#17243c14;--blue:#4d6bfe;--blue-soft:#eef1ff;--bg:#f5f6fa;--ui-surface-0:#f5f6fa;--ui-surface-1:#f9fafe;--ui-surface-2:#fff;--ui-surface-3:#fff;--ui-shadow:0 4px 16px #17243c0a,0 0 0 .5px #17243c14;--ui-popover-shadow:0 12px 36px #17243c1f,0 0 0 1px var(--line);font-synthesis:none}
 button,input,select{font:inherit}
 button{transition:background-color 120ms ease,box-shadow 120ms ease,transform 120ms ease}
-button:active:not(:disabled):not(.duck-choice){transform:scale(.98)}
+:is(.primary,.ghost,.icon,.language-trigger,.scheme-btn,.steps button,.tools button,.dock button,.sm-btns button):active:not(:disabled){transform:scale(.98)}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .language-trigger{border-color:var(--line);border-radius:8px;color:var(--ink);background:var(--ui-surface-2);font-weight:400}
 .language-trigger:hover{background:var(--ui-surface-0)}
