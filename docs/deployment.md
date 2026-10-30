@@ -1,17 +1,19 @@
 # 部署、数据迁移与回退
 
-来做鸭分客户端版与服务器版，主要面向客户端使用。服务器版尚未做充分的优化与适配；本文保留自行部署所需的操作说明：
+**服务器版自 2026-10-30 起暂停维护。** 当前只维护 Windows x64 EXE 和 Apple 芯片 Mac arm64 DMG 安装包。本文的服务器操作步骤保留为历史参考，不承诺随客户端更新适配；服务器专用开发、更新与部署须在项目所有者明确恢复后继续。客户端依赖的共用运行时继续维护。
+
+下表区分源码入口；不表示两个入口都在持续交付：
 
 | 版本 | 代码 | 启动 | 数据库 |
 | --- | --- | --- | --- |
 | 客户端版 | `apps/local/`、共享 TypeScript packages | Node.js 24.20+（24.x），源码启动器或 `npm run start:local` | 本机 SQLite |
-| 服务器版 | `apps/server/`、共享 TypeScript packages | `docker compose up -d --build` | MySQL 8.4（`mysql-data` 卷） |
+| 服务器版（暂停维护） | `apps/server/`、共享 TypeScript packages | 历史入口：`docker compose up -d --build` | MySQL 8.4（`mysql-data` 卷） |
 
 两个 Node 入口共用构建后的 `frontend/dist/`，以及 `packages/domain`（校验）、`packages/exporter`（3MF 导出）和 `packages/storage`（数据访问）。前端读 `/api/site` 的 `edition` 决定是否显示登录、配色广场和发布。运行都需要自行合法持有完整资产包，见 `local-assets.md`。
 
 ## 客户端版
 
-客户端仅提供 Apple 芯片 Mac 和 Windows x64；安装包与浏览器包见[客户端打包](../apps/desktop/README.md)。不提供 Intel Mac、Linux 或其他平台客户端。
+客户端仅提供 Apple 芯片 Mac DMG 和 Windows x64 EXE 安装包，见[客户端打包](../apps/desktop/README.md)。浏览器入口和相关脚本保留作源码开发工具，不独立承诺便携浏览器包的发行维护。不提供 Intel Mac、Linux 或其他平台客户端。
 
 - 源码启动器 `启动来做鸭.command` / `.bat` 检查 Node.js 24.20+（24.x），执行当前 TypeScript/Vite 构建后启动客户端版。首次运行先 `npm ci` 并导入合法资产。
 - 命令行入口使用 Node.js 24.20+、24.x：先 `npm ci && npm run build`，再 `node apps/local/dist/main.js` 或 `npm run start:local`。普通运行和工具不需要 Python；旧引擎验证通过固定 Git 参考和显式历史回放完成。
@@ -20,7 +22,7 @@
 - 接口：`/api/health`、`/api/site`、`/api/catalog`、`/api/schemes`（无需登录）、`/api/plan`、`/api/export`；账号、作品和评分接口返回 404，`/gallery/` 跳回首页。错误格式和校验码与服务器版相同。
 - 首次启动时，若旧版个人模式数据库（`backend/data/doodleduck.db` 或 `DUCK_DB`）里有个人方案，只读地带入一次。
 
-## 服务器版
+## 服务器版（历史参考）
 
 `docker-compose.yml` 启动三个容器：`mysql`（不映射宿主机端口）、`backend`（Node 24，1 个 API 进程 + 有上限的导出 worker threads）、`frontend`（nginx：静态文件、gzip、只读 `/assets/`、反代 `/api/`）。
 
