@@ -7,8 +7,15 @@ export default async (page:Page)=>{
  await page.route('**/api/duck-debug/action',async route=>{writes.push(route.request().postData());await route.fulfill({status:409,json:{error:'Read-only mapping verification'}});});
  const check=(name:string,ok:boolean|undefined)=>{if(!ok)throw Error(name);checks.push(name);};
  await page.setViewportSize({width:1440,height:1000});await browserChecks.preparePage(page);await page.goto((browserChecks.browserUrl())+'/debug/');await page.waitForSelector('body[data-model-ready=true]');
- const groups=await page.locator('.slot-group-title').allTextContents();
- check('卡槽10–14为左腿、20–24为右腿',browserChecks.required(groups[0]).includes('左腿')&&browserChecks.required(groups[0]).includes('10–14')&&browserChecks.required(groups[1]).includes('右腿')&&browserChecks.required(groups[1]).includes('20–24'));
+ const groups=page.locator('#slots > div');
+ check('固定盘位按右腿、左腿、头颈与鸭嘴分为三组',await groups.count()===3);
+ // Match the front-facing model without changing the physical ID-to-leg mapping.
+ for(const [index,name,range,ids] of [[0,'右腿','20–24',[20,21,22,23,24]],[1,'左腿','10–14',[10,11,12,13,14]],[2,'头颈与鸭嘴','30–34',[30,31,32,33,34]]] as const){
+  const group=groups.nth(index),title=await group.locator('.slot-group-title').innerText();
+  check(name+'标题与编号范围对应',title.includes(name)&&title.includes(range));
+  const actual=await group.locator('[data-slot]').evaluateAll(slots=>slots.map(slot=>slot.getAttribute('data-slot')));
+  check(name+'包含正确的五个编号',actual.join(',')===ids.join(','));
+ }
  for(const [id,name] of [[12,'左腿上端'],[14,'左脚踝'],[22,'右腿上端'],[24,'右脚踝']] as const){
   await page.locator(`[data-slot="${id}"]`).click();await page.locator(`[data-model="${id}"]`).waitFor({state:'visible'});
   check('ID'+id+'参数卡与3D选择对应',await page.locator('#panel').innerText().then(s=>s.includes(name))&&await page.locator(`[data-model="${id}"]`).evaluate(el=>el.classList.contains('selected')));
