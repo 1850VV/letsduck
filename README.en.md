@@ -14,10 +14,10 @@ A painting tool for the XGO Duck V2. Choose colours, make posters, and export a 
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Switching palettes in the painting studio"></p>
 
-## Two editions
+## Current maintenance scope
 
-- **Client edition (primary)**: painting, saved schemes and export on your own computer; Debug and Assemble are internal test previews only. Available only for **Apple silicon Macs (arm64)** and **Windows x64**. No Intel Mac, Linux or other client platforms are provided.
-- **Server edition**: self-hosted palette sharing, ratings and remixes. Optimisation and adaptation remain limited; see the brief server section below.
+- **Only two client installers are maintained**: **Apple silicon Mac (arm64) DMG** and **Windows x64 EXE**, for local painting, saved schemes and export. Debug and Assemble remain internal test previews. No Intel Mac, Linux or other client platforms are provided.
+- **Server maintenance is paused**: server development, adaptation, updates and deployment are on hold. Existing source and documentation remain available. Future client changes do not promise corresponding server support; resuming server maintenance requires a separate explicit decision.
 
 ## Client edition
 
@@ -77,9 +77,9 @@ Named schemes, numbering verification and pickup progress are stored outside the
 
 Override the path with `DUCK_PERSONAL_DB`. Back up the database before updating. Desktop and browser drafts, languages and preferences are stored separately and do not transfer with the database.
 
-## Server edition
+## Server edition (maintenance paused)
 
-The server provides accounts, private schemes, a palette gallery, ratings and remixes, without USB device control. It uses Docker Compose (nginx + Node.js + MySQL 8.4). Optimisation and adaptation remain limited; development focuses on the client experience. See [server deployment](docs/deployment.md) for setup, HTTPS, migration and backups.
+The existing accounts, private schemes, palette gallery, ratings, remixes and Docker Compose configuration remain in the repository. Server-specific features and deployment are no longer actively maintained. Shared frontend, storage and export code needed by the client remains maintained. Passing existing regression checks does not establish ongoing server support. Previous setup, HTTPS, migration and backup instructions are retained as [historical reference](docs/deployment.md).
 
 ## Development and documentation
 

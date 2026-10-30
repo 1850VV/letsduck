@@ -3,6 +3,7 @@
 This repository includes application source and the project resources in `assets/`. Private deployment data, profiles and credentials stay outside it. Use README.md as the current entry point. Historical paths are redacted placeholders.
 
 - Preserve user changes. Stage owned paths explicitly, never broad-add an unreviewed folder.
+- Maintenance and releases focus only on Windows x64 EXE and Apple silicon Mac arm64 DMG installers. Server-specific development, adaptation, updates and deployment are paused until the owner explicitly resumes them. Maintain shared code needed by the client; retain existing server code and regression checks without treating them as a server support commitment. This scope prevents client work from expanding into server delivery.
 - UI changes require a reviewable prototype and approval of its version/scope before implementation. Do not repeat approval for an already accepted scope.
 - After UI changes, exercise a basic user journey through the real entry and container, including homepage iframes. Test native dropdown opening, mouse/keyboard selection, cancel/reopen and focus. Programmatic `selectOption()` or value changes do not prove those interactions. Run relevant browser checks from README and state any coverage gaps.
 - Run README checks appropriate to each change. Report technical checks separately from human visual/interaction acceptance.
