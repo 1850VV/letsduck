@@ -121,11 +121,14 @@ export class PersonalStore {
 
   deleteScheme(id: string): void { this.statement('DELETE FROM schemes WHERE id=?').run(id); }
 
+  /** The board whose servo records changed most recently. */
+  lastServoBoard(): string | null {
+    const last = this.statement('SELECT board FROM servo_setup ORDER BY updated DESC LIMIT 1').get();
+    return last ? stringCell(last, 'board') : null;
+  }
+
   servoRecords(board?: string | null): ServoRecord[] {
-    if (board === undefined || board === null) {
-      const last = this.statement('SELECT board FROM servo_setup ORDER BY updated DESC LIMIT 1').get();
-      board = last ? stringCell(last, 'board') : '';
-    }
+    if (board === undefined || board === null) board = this.lastServoBoard() ?? '';
     return this.statement('SELECT record FROM servo_setup WHERE board=? ORDER BY id').all(board).map(row => jsonParse(stringCell(row, 'record')) as ServoRecord);
   }
 

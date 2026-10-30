@@ -9,7 +9,7 @@ export interface DuckRuntime {
   close(): Promise<void>;
 }
 
-export type DeviceStore = Pick<PersonalStore, 'servoRecords' | 'saveServoRecord' | 'servoPreparationRecords' | 'saveServoPreparation'>;
+export type DeviceStore = Pick<PersonalStore, 'servoRecords' | 'saveServoRecord' | 'servoPreparationRecords' | 'saveServoPreparation'> & Partial<Pick<PersonalStore, 'lastServoBoard'>>;
 export interface DeviceTiming {
   now(): number;
   monotonic(): number;

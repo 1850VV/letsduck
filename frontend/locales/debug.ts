@@ -959,6 +959,74 @@ const copyRows:readonly (readonly [string,string])[]=[
  [
   "操作未完成：{detail}",
   "Operation failed: {detail}"
+ ],
+ [
+  "1 分钟最低 {volt}",
+  "1-min low {volt}"
+ ],
+ [
+  "满电",
+  "Full"
+ ],
+ [
+  "正常",
+  "Normal"
+ ],
+ [
+  "偏低",
+  "Low"
+ ],
+ [
+  "该充电",
+  "Charge now"
+ ],
+ [
+  "掉线记录",
+  "Dropouts"
+ ],
+ [
+  "ID {ids} 掉线",
+  "ID {ids} dropped"
+ ],
+ [
+  "已自动卸载",
+  "Auto-unloaded"
+ ],
+ [
+  "正在搜索局域网…",
+  "Searching the local network…"
+ ],
+ [
+  "连接",
+  "Connect"
+ ],
+ [
+  "没有找到，请手动输入 IP",
+  "None found. Enter the IP manually."
+ ],
+ [
+  "USB 数据线",
+  "USB cable"
+ ],
+ [
+  "手动输入 IP",
+  "Enter IP manually"
+ ],
+ [
+  "电压",
+  "Voltage"
+ ],
+ [
+  "温度",
+  "Temperature"
+ ],
+ [
+  "已连接 {name}",
+  "Connected to {name}"
+ ],
+ [
+  "ID {ids} 掉线，已全部卸载",
+  "ID {ids} dropped; all servos unloaded"
  ]
 ];
 const allRows:Record<string,readonly [string,string]>={...rows};
@@ -1262,7 +1330,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "在3D中選擇 ID{id}",
   "debug.copy.220": "ID {id} · 在線",
   "debug.copy.221": "在3D中選擇 {name}",
-  "debug.copy.222": "操作未完成：{detail}"
+  "debug.copy.222": "操作未完成：{detail}",
+  "debug.copy.223": "1 分鐘最低 {volt}",
+  "debug.copy.224": "滿電",
+  "debug.copy.225": "正常",
+  "debug.copy.226": "偏低",
+  "debug.copy.227": "該充電",
+  "debug.copy.228": "掉線記錄",
+  "debug.copy.229": "ID {ids} 掉線",
+  "debug.copy.230": "已自動卸載",
+  "debug.copy.231": "正在搜尋區域網路…",
+  "debug.copy.232": "連線",
+  "debug.copy.233": "沒有找到，請手動輸入 IP",
+  "debug.copy.234": "USB 傳輸線",
+  "debug.copy.235": "手動輸入 IP",
+  "debug.copy.236": "電壓",
+  "debug.copy.237": "溫度",
+  "debug.copy.238": "已連線 {name}",
+  "debug.copy.239": "ID {ids} 掉線，已全部卸載"
  },
  "ja": {
   "debug.auto.queue.remove": "次のサーボをキューから削除",
@@ -1556,7 +1641,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "3D で ID{id} を選択してください",
   "debug.copy.220": "ID {id} · オンライン",
   "debug.copy.221": "3D で {name} を選択してください",
-  "debug.copy.222": "操作が完了していません: {detail}"
+  "debug.copy.222": "操作が完了していません: {detail}",
+  "debug.copy.223": "1 分間の最低 {volt}",
+  "debug.copy.224": "満充電",
+  "debug.copy.225": "正常",
+  "debug.copy.226": "低下",
+  "debug.copy.227": "要充電",
+  "debug.copy.228": "切断記録",
+  "debug.copy.229": "ID {ids} が切断",
+  "debug.copy.230": "自動で脱力しました",
+  "debug.copy.231": "ローカルネットワークを検索中…",
+  "debug.copy.232": "接続",
+  "debug.copy.233": "見つかりません。IP を手動で入力してください。",
+  "debug.copy.234": "USB ケーブル",
+  "debug.copy.235": "IP を手動入力",
+  "debug.copy.236": "電圧",
+  "debug.copy.237": "温度",
+  "debug.copy.238": "{name} に接続しました",
+  "debug.copy.239": "ID {ids} が切断。全サーボを脱力しました"
  },
  "ko": {
   "debug.auto.queue.remove": "대기열에서 다음 서보 제거",
@@ -1850,7 +1952,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "3D에서 ID{id} 선택",
   "debug.copy.220": "ID {id} · 온라인",
   "debug.copy.221": "3D에서 {name} 선택",
-  "debug.copy.222": "작업이 완료되지 않았습니다: {detail}"
+  "debug.copy.222": "작업이 완료되지 않았습니다: {detail}",
+  "debug.copy.223": "1분 최저 {volt}",
+  "debug.copy.224": "완충",
+  "debug.copy.225": "정상",
+  "debug.copy.226": "낮음",
+  "debug.copy.227": "충전 필요",
+  "debug.copy.228": "끊김 기록",
+  "debug.copy.229": "ID {ids} 끊김",
+  "debug.copy.230": "자동으로 힘을 풀었습니다",
+  "debug.copy.231": "로컬 네트워크 검색 중…",
+  "debug.copy.232": "연결",
+  "debug.copy.233": "찾지 못했습니다. IP를 직접 입력하세요.",
+  "debug.copy.234": "USB 케이블",
+  "debug.copy.235": "IP 직접 입력",
+  "debug.copy.236": "전압",
+  "debug.copy.237": "온도",
+  "debug.copy.238": "{name}에 연결됨",
+  "debug.copy.239": "ID {ids} 끊김, 모든 서보의 힘을 풀었습니다"
  },
  "fr": {
   "debug.auto.queue.remove": "Retirer le prochain servo de la file",
@@ -2144,7 +2263,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "Sélectionnez l'ID{id} en 3D",
   "debug.copy.220": "ID {id} · En ligne",
   "debug.copy.221": "Sélectionnez {name} en 3D",
-  "debug.copy.222": "Opération non terminée : {detail}"
+  "debug.copy.222": "Opération non terminée : {detail}",
+  "debug.copy.223": "Min. sur 1 min {volt}",
+  "debug.copy.224": "Pleine",
+  "debug.copy.225": "Normale",
+  "debug.copy.226": "Faible",
+  "debug.copy.227": "À recharger",
+  "debug.copy.228": "Déconnexions",
+  "debug.copy.229": "ID {ids} déconnecté",
+  "debug.copy.230": "Désactivé automatiquement",
+  "debug.copy.231": "Recherche sur le réseau local…",
+  "debug.copy.232": "Connecter",
+  "debug.copy.233": "Aucun trouvé. Saisissez l’IP manuellement.",
+  "debug.copy.234": "Câble USB",
+  "debug.copy.235": "Saisir l’IP",
+  "debug.copy.236": "Tension",
+  "debug.copy.237": "Température",
+  "debug.copy.238": "Connecté à {name}",
+  "debug.copy.239": "ID {ids} déconnecté ; tous les servos désactivés"
  },
  "de": {
   "debug.auto.queue.remove": "Nächsten Servo aus der Warteschlange entfernen",
@@ -2438,7 +2574,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "Wählen Sie ID{id} in 3D aus",
   "debug.copy.220": "ID {id} · Online",
   "debug.copy.221": "Wählen Sie {name} in 3D",
-  "debug.copy.222": "Vorgang nicht abgeschlossen: {detail}"
+  "debug.copy.222": "Vorgang nicht abgeschlossen: {detail}",
+  "debug.copy.223": "1-Min.-Tief {volt}",
+  "debug.copy.224": "Voll",
+  "debug.copy.225": "Normal",
+  "debug.copy.226": "Niedrig",
+  "debug.copy.227": "Jetzt laden",
+  "debug.copy.228": "Ausfälle",
+  "debug.copy.229": "ID {ids} ausgefallen",
+  "debug.copy.230": "Automatisch entlastet",
+  "debug.copy.231": "Lokales Netzwerk wird durchsucht…",
+  "debug.copy.232": "Verbinden",
+  "debug.copy.233": "Nichts gefunden. IP manuell eingeben.",
+  "debug.copy.234": "USB-Kabel",
+  "debug.copy.235": "IP manuell eingeben",
+  "debug.copy.236": "Spannung",
+  "debug.copy.237": "Temperatur",
+  "debug.copy.238": "Verbunden mit {name}",
+  "debug.copy.239": "ID {ids} ausgefallen; alle Servos entlastet"
  },
  "es": {
   "debug.auto.queue.remove": "Quitar el siguiente servo de la cola",
@@ -2732,7 +2885,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "Seleccionar ID{id} en 3D",
   "debug.copy.220": "ID {id} · En línea",
   "debug.copy.221": "Seleccione {name} en 3D",
-  "debug.copy.222": "Operación no completada: {detail}"
+  "debug.copy.222": "Operación no completada: {detail}",
+  "debug.copy.223": "Mín. en 1 min {volt}",
+  "debug.copy.224": "Llena",
+  "debug.copy.225": "Normal",
+  "debug.copy.226": "Baja",
+  "debug.copy.227": "Cargar ya",
+  "debug.copy.228": "Desconexiones",
+  "debug.copy.229": "ID {ids} desconectado",
+  "debug.copy.230": "Liberado automáticamente",
+  "debug.copy.231": "Buscando en la red local…",
+  "debug.copy.232": "Conectar",
+  "debug.copy.233": "No se encontró. Introduce la IP a mano.",
+  "debug.copy.234": "Cable USB",
+  "debug.copy.235": "Introducir IP a mano",
+  "debug.copy.236": "Voltaje",
+  "debug.copy.237": "Temperatura",
+  "debug.copy.238": "Conectado a {name}",
+  "debug.copy.239": "ID {ids} desconectado; todos los servos liberados"
  },
  "pt-BR": {
   "debug.auto.queue.remove": "Remover o próximo servo da fila",
@@ -3026,7 +3196,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "Selecione ID{id} em 3D",
   "debug.copy.220": "ID {id} · On-line",
   "debug.copy.221": "Selecione {name} em 3D",
-  "debug.copy.222": "Operação não concluída: {detail}"
+  "debug.copy.222": "Operação não concluída: {detail}",
+  "debug.copy.223": "Mín. em 1 min {volt}",
+  "debug.copy.224": "Cheia",
+  "debug.copy.225": "Normal",
+  "debug.copy.226": "Baixa",
+  "debug.copy.227": "Carregar agora",
+  "debug.copy.228": "Desconexões",
+  "debug.copy.229": "ID {ids} desconectado",
+  "debug.copy.230": "Liberado automaticamente",
+  "debug.copy.231": "Procurando na rede local…",
+  "debug.copy.232": "Conectar",
+  "debug.copy.233": "Nada encontrado. Digite o IP manualmente.",
+  "debug.copy.234": "Cabo USB",
+  "debug.copy.235": "Digitar IP manualmente",
+  "debug.copy.236": "Tensão",
+  "debug.copy.237": "Temperatura",
+  "debug.copy.238": "Conectado a {name}",
+  "debug.copy.239": "ID {ids} desconectado; todos os servos liberados"
  },
  "ru": {
   "debug.auto.queue.remove": "Убрать следующий сервопривод из очереди",
@@ -3320,7 +3507,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "Выберите ID {id} в 3D.",
   "debug.copy.220": "ID {id} · Онлайн",
   "debug.copy.221": "Выберите {name} в 3D.",
-  "debug.copy.222": "Операция не завершена: {detail}"
+  "debug.copy.222": "Операция не завершена: {detail}",
+  "debug.copy.223": "Мин. за 1 мин {volt}",
+  "debug.copy.224": "Полный",
+  "debug.copy.225": "Норма",
+  "debug.copy.226": "Низкий",
+  "debug.copy.227": "Зарядить",
+  "debug.copy.228": "Отключения",
+  "debug.copy.229": "ID {ids} отключился",
+  "debug.copy.230": "Нагрузка снята автоматически",
+  "debug.copy.231": "Поиск в локальной сети…",
+  "debug.copy.232": "Подключить",
+  "debug.copy.233": "Ничего не найдено. Введите IP вручную.",
+  "debug.copy.234": "USB-кабель",
+  "debug.copy.235": "Ввести IP вручную",
+  "debug.copy.236": "Напряжение",
+  "debug.copy.237": "Температура",
+  "debug.copy.238": "Подключено: {name}",
+  "debug.copy.239": "ID {ids} отключился; нагрузка со всех сервоприводов снята"
  },
  "ar": {
   "debug.auto.queue.remove": "إزالة المحرك التالي من قائمة الانتظار",
@@ -3614,7 +3818,24 @@ Object.assign(debugMessages,{
   "debug.copy.219": "حدد ID {id} ثلاثي الأبعاد",
   "debug.copy.220": "ID {id} · متصل",
   "debug.copy.221": "حدد {name} ثلاثي الأبعاد",
-  "debug.copy.222": "لم تكتمل العملية: {detail}"
+  "debug.copy.222": "لم تكتمل العملية: {detail}",
+  "debug.copy.223": "أدنى قيمة خلال دقيقة {volt}",
+  "debug.copy.224": "ممتلئة",
+  "debug.copy.225": "طبيعية",
+  "debug.copy.226": "منخفضة",
+  "debug.copy.227": "اشحن الآن",
+  "debug.copy.228": "سجل الانقطاع",
+  "debug.copy.229": "انقطع ID {ids}",
+  "debug.copy.230": "تم إرخاء المحركات تلقائيًا",
+  "debug.copy.231": "جارٍ البحث في الشبكة المحلية…",
+  "debug.copy.232": "اتصال",
+  "debug.copy.233": "لم يُعثر على شيء. أدخل عنوان IP يدويًا.",
+  "debug.copy.234": "كابل USB",
+  "debug.copy.235": "أدخل IP يدويًا",
+  "debug.copy.236": "الجهد",
+  "debug.copy.237": "الحرارة",
+  "debug.copy.238": "متصل بـ {name}",
+  "debug.copy.239": "انقطع ID {ids}؛ تم إرخاء جميع المحركات"
  },
  "hi": {
   "debug.auto.queue.remove": "अगले सर्वो को कतार से हटाएँ",
@@ -3908,6 +4129,23 @@ Object.assign(debugMessages,{
   "debug.copy.219": "3डी में ID{id} चुनें",
   "debug.copy.220": "ID {id} · ऑनलाइन",
   "debug.copy.221": "3डी में {name} चुनें",
-  "debug.copy.222": "ऑपरेशन पूरा नहीं हुआ: {detail}"
+  "debug.copy.222": "ऑपरेशन पूरा नहीं हुआ: {detail}",
+  "debug.copy.223": "1 मिनट में न्यूनतम {volt}",
+  "debug.copy.224": "पूरी",
+  "debug.copy.225": "सामान्य",
+  "debug.copy.226": "कम",
+  "debug.copy.227": "अभी चार्ज करें",
+  "debug.copy.228": "डिस्कनेक्ट रिकॉर्ड",
+  "debug.copy.229": "ID {ids} डिस्कनेक्ट",
+  "debug.copy.230": "अपने-आप ढीला किया गया",
+  "debug.copy.231": "स्थानीय नेटवर्क खोजा जा रहा है…",
+  "debug.copy.232": "कनेक्ट करें",
+  "debug.copy.233": "कुछ नहीं मिला। IP हाथ से दर्ज करें।",
+  "debug.copy.234": "USB केबल",
+  "debug.copy.235": "IP हाथ से दर्ज करें",
+  "debug.copy.236": "वोल्टेज",
+  "debug.copy.237": "तापमान",
+  "debug.copy.238": "{name} से कनेक्ट",
+  "debug.copy.239": "ID {ids} डिस्कनेक्ट; सभी सर्वो ढीले किए गए"
  }
 });

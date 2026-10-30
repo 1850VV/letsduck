@@ -7,14 +7,20 @@ export const IDS=SERVO_BINDINGS.map(binding=>binding.id);
 export const ROLES=SERVO_BINDINGS.map(binding=>binding.role);
 export const ACTORS=SERVO_BINDINGS.map(binding=>binding.actorId);
 export const role=(id:number)=>t(IDS.includes(id)?'debug.role.'+id:'debug.role.unassigned');
-export function createState():DebugState{return {devices:IDS.map(id=>({uid:'servo-'+id,id,kp:null,kd:null,pos:null,online:false,held:false,jogReady:false})),boards:{arduino:{connected:false},expansion:{connected:false}},selectedBoard:null,selected:'servo-12',view:'robot',mode:'single',batch:[],busy:false,draft:null,message:message('debug.status.reading'),status:{},transport:'usb'};}
-export function mergeStatus(s:DebugState,data:Pick<DebugSnapshot,'boards'|'status'>&Partial<Pick<DebugSnapshot,'transport'|'scan'>>&{devices:(Pick<Device,'id'|'online'|'pos'|'kp'|'kd'>&Partial<Device>)[]}){
+export function createState():DebugState{return {devices:IDS.map(id=>({uid:'servo-'+id,id,kp:null,kd:null,pos:null,online:false,held:false,jogReady:false})),boards:{arduino:{connected:false},expansion:{connected:false}},selectedBoard:null,selected:'servo-12',view:'robot',mode:'single',batch:[],busy:false,draft:null,message:message('debug.status.reading'),status:{},transport:'usb',host:null,dropouts:[],lostIds:[]};}
+export function mergeStatus(s:DebugState,data:Pick<DebugSnapshot,'boards'|'status'>&Partial<Pick<DebugSnapshot,'transport'|'scan'|'host'|'dropouts'|'lostIds'>>&{devices:(Pick<Device,'id'|'online'|'pos'|'kp'|'kd'>&Partial<Device>)[]}){
  const prior=new Map(s.devices.map(d=>[d.id,d]));
  s.devices=data.devices.map(d=>({...d,uid:'servo-'+d.id,jogReady:prior.get(d.id)?.jogReady??false}));
- s.boards=data.boards;s.transport=data.transport;s.status=data.status;if(data.scan)s.scan=data.scan;else delete s.scan;
+ s.boards=data.boards;s.transport=data.transport;s.host=data.host??null;s.dropouts=data.dropouts??[];s.lostIds=data.lostIds??[];s.status=data.status;if(data.scan)s.scan=data.scan;else delete s.scan;
  if(!s.devices.some(d=>d.uid===s.selected))s.selected=s.devices.find(d=>d.online)?.uid??s.devices[0]?.uid;
 }
 export const online=(s:DebugState)=>s.devices.filter(d=>d.online);
+/** Per-servo readings from the runtime arrive in IDS order; 0 means not read. */
+export const reading=(s:DebugState,key:'servo_voltage_v'|'servo_temp_c',id:number)=>{const v=s.status[key]?.[IDS.indexOf(id)];return v?v:null;};
+export const HOT_C=60;
+export const alert=(s:DebugState,id:number):'lost'|'hot'|null=>s.lostIds.includes(id)?'lost':(reading(s,'servo_temp_c',id)??0)>=HOT_C?'hot':null;
+/** Every servo sits on the battery rail; the median reading is the battery voltage. */
+export function battery(s:DebugState){const volts=IDS.map(id=>reading(s,'servo_voltage_v',id)).filter((v):v is number=>v!==null).sort((a,b)=>a-b);return volts.length?volts[Math.floor(volts.length/2)]!:null;}
 export const duplicate=(s:DebugState,id:number)=>online(s).filter(d=>d.id===id).length>1;
 export const selected=(s:DebugState)=>required(s.devices.find(d=>d.uid===s.selected),'Missing selected servo');
 export function parameterErrors(s:DebugState,uid:string|undefined,next:Partial<Parameters>){
