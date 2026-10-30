@@ -202,6 +202,8 @@ async function differential(t: Parameters<typeof temporary>[0], raw: string[]): 
     try {
       const result = body.action === '$status' ? await debug.status() : body.action === '$numbering' ? debug.numbering() : await debug.action(body);
       const pack = JSON.parse(jsonStringify(result)) as Record<string, unknown>;
+      // Wi-Fi and dropout fields are additive to the frozen oracle.
+      for (const key of ['host', 'dropouts', 'lostIds']) delete pack[key];
       const numberings = ['records' in pack ? pack : undefined, pack.numbering].filter(value => value !== undefined) as Record<string, unknown>[];
       for (const item of numberings) for (const record of item.records as Record<string, unknown>[]) {
         if ('verifiedAt' in record) record.verifiedAt = '<time>';
@@ -305,4 +307,29 @@ test('real setup and debug share one bus and runtime while manual ownership paus
   assert.equal(setup.writeRequested, true); const count = rt.calls.length; await setup.inspect();
   await new Promise(resolve => setImmediate(resolve)); assert.equal(rt.calls.length, count);
   assert.equal(writes(rt, 'reset_mid').length + writes(rt, 'set_gains').length + writes(rt, 'set_id').length, 0);
+});
+test('a servo lost while moving unloads at once and is logged once with the battery voltage', async t => {
+  const { rt, debug } = await harness(t);
+  rt.state.mode = 'policy'; rt.state.enabled = true; rt.state.servo_voltage_v = IDS.map(() => 7.4);
+  await debug.status();
+  rt.motors.delete(13);
+  const lost = await debug.status();
+  assert.deepEqual(lost.lostIds, [13]);
+  assert.deepEqual(lost.dropouts.map(e => [e.ids, e.voltage, e.unloaded]), [[[13], 7.4, true]]);
+  assert.deepEqual(rt.calls.filter(call => call.method === 'POST').map(call => [call.path, call.body?.mode]), [['/api/mode', 'off']]);
+  await debug.status();
+  assert.equal((await debug.status()).dropouts.length, 1, 'a servo that stays missing is not logged again');
+});
+test('a servo lost at rest is logged without sending any command', async t => {
+  const { rt, debug } = await harness(t);
+  await debug.status(); rt.motors.delete(12);
+  const status = await debug.status();
+  assert.deepEqual(status.dropouts.map(e => [e.ids, e.unloaded]), [[[12], false]]);
+  assert.ok(rt.calls.every(call => call.method === 'GET'));
+});
+test('Wi-Fi addresses stay on the local network', async () => {
+  const { lanHost } = await import('../../packages/devices/src/runtime.js');
+  assert.equal(lanHost(' 192.168.1.142 '), '192.168.1.142');
+  assert.equal(lanHost('duck.local'), 'duck.local');
+  for (const host of ['8.8.8.8', '192.168.1.300', 'example.com', 'localhost', 42]) assert.equal(lanHost(host), null);
 });

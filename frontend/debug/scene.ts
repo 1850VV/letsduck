@@ -14,10 +14,10 @@ function readParts(value:unknown):AssemblyPart[] {if(!isRecord(value)||!Array.is
 import * as THREE from 'three';
 import {OrbitControls} from '../vendor/OrbitControls.js';
 import {GLTFLoader} from '../vendor/GLTFLoader.js';
-import {IDS,ACTORS,online} from './state.js';
+import {IDS,ACTORS,online,alert} from './state.js';
 import {completePoses,actorQuaternion,assemblyActors} from './poses.js';
 
-const GREEN=0x2caf76,OFF=0x6b7d97;
+const GREEN=0x2caf76,OFF=0x6b7d97,ALERT={lost:0xd6453d,hot:0xe07a1f} as const;
 export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLElement;labelsHost:HTMLElement;onSelect(id:number):void;onBoardSelect(id:BoardId):void}){
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,.1,2500);
  const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
@@ -38,11 +38,12 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
  new ResizeObserver(resize).observe(host);
  function addLabel(text:string,position:THREE.Vector3,kind:string,id?:number){const button=document.createElement(id!==undefined?'button':'span');button.className=kind;button.textContent=text;if(id!==undefined){if(button instanceof HTMLButtonElement)button.type='button';button.dataset.model=String(id);button.setAttribute('aria-label',dt("在3D中选择 ID{id}",{id:String(id)}));button.onclick=()=>onSelect(id);}labelsHost.append(button);labels.push({el:button,position});return button;}
  function layoutLabels(){camera.updateMatrixWorld();for(const l of labels){const p=l.position.clone().project(camera);l.el.style.left=(p.x*.5+.5)*host.clientWidth+'px';l.el.style.top=(-p.y*.5+.5)*host.clientHeight+'px';l.el.hidden=p.z>1||p.z< -1||Math.abs(p.x)>1.12||Math.abs(p.y)>1.12;}}
- function paint(object:THREE.Object3D,connected:boolean,chosen:boolean,ghost=false){
+ function paint(object:THREE.Object3D,connected:boolean,chosen:boolean,ghost=false,warn:keyof typeof ALERT|null=null){
+  const solid=connected||warn!==null;
   object.traverse(o=>{if(!isMesh(o)||o.userData.selectionRing)return;for(const m of materials(o)){
-   if(hasColor(m))m.color.setHex(connected?GREEN:OFF);
-   m.transparent=!connected;m.opacity=connected?1:ghost?.16:.28;m.depthWrite=connected;
-   if(m instanceof THREE.MeshStandardMaterial){m.emissive.setHex(connected?0x0f5e37:0);m.emissiveIntensity=connected?.28:0;}
+   if(hasColor(m))m.color.setHex(warn?ALERT[warn]:connected?GREEN:OFF);
+   m.transparent=!solid;m.opacity=solid?1:ghost?.16:.28;m.depthWrite=solid;
+   if(m instanceof THREE.MeshStandardMaterial){m.emissive.setHex(connected&&!warn?0x0f5e37:0);m.emissiveIntensity=connected&&!warn?.28:0;}
   }});
   const ring=object.getObjectByName('selection-ring');if(ring){ring.visible=chosen;if(isMesh(ring))for(const material of materials(ring))if(hasColor(material))material.color.setHex(0x6d8af8);}
  }
@@ -100,8 +101,8 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
   if(currentView!==required(state).view){currentView=required(state).view;fit(required(state).view);}
   robot.visible=required(state).view==='robot';tray.visible=required(state).view==='tray';circuit.visible=required(state).view==='circuit';
   updateBoards();
-  for(const [id,obj] of robotObjects)paint(obj,active.has(id),id===chosen,true);
-  for(const [id,obj] of trayObjects)paint(obj,active.has(id),id===chosen);
+  for(const [id,obj] of robotObjects)paint(obj,active.has(id),id===chosen,true,alert(required(state),id));
+  for(const [id,obj] of trayObjects)paint(obj,active.has(id),id===chosen,false,alert(required(state),id));
   const signature=online(required(state)).map(d=>d.uid+':'+d.id).join(',')+':'+Number(required(state).boards.arduino.connected)+Number(required(state).boards.expansion.connected);
   if(required(state).view==='circuit'&&circuitSignature!==signature){rebuildCircuit();circuitSignature=signature;}
   for(const [uid,obj] of circuitObjects)paint(obj,true,uid===required(state).selected);

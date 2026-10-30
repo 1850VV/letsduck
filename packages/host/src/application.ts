@@ -1,5 +1,5 @@
 import { Context } from '@deepseek-ai/cordis';
-import { AdbRuntime, DuckDebug, ServoSetup } from '@letsduck/devices';
+import { AdbRuntime, DuckDebug, RuntimeSwitch, ServoSetup } from '@letsduck/devices';
 import type { DuckRuntime } from '@letsduck/devices';
 import { ExportManager } from '@letsduck/exporter';
 import { PersonalStore } from '@letsduck/storage';
@@ -72,7 +72,7 @@ export async function startHost(options: HostOptions) {
       ctx.provide('duckStore', store);
     } });
     await root.plugin({ name: 'duck-devices', inject: ['duckStore'], apply(ctx) {
-      const setup = new ServoSetup(ctx.duckStore, options.runtime ?? new AdbRuntime());
+      const setup = new ServoSetup(ctx.duckStore, options.runtime ?? new RuntimeSwitch(new AdbRuntime()));
       devices = { setup, debug: new DuckDebug(ctx.duckStore, setup) };
       ctx.provide('duckDevices', devices);
     } });
