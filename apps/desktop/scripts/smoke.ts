@@ -177,6 +177,7 @@ try {
     assert.deepEqual(await experimentalAccessState(page), { debug: true, assemble: true });
     // Incomplete numbering no longer redirects; the home page only suggests Debug Duck first.
     await page.goto('duck://app/assemble/'); await page.waitForURL('duck://app/assemble/');
+    await page.waitForFunction(assemblyReady, undefined, { timeout: 60_000 });
     await application.context().tracing.stop({ path: join(output, 'gate-session.zip') });
     milestone('gate-application-close'); await scope.close(application);
     // This explicit test fixture is not evidence of physical numbering or readiness.
@@ -192,7 +193,7 @@ try {
     await page.waitForFunction(() => { const video = document.querySelector('#reference-video'); return video instanceof HTMLVideoElement && video.currentTime > 11; });
     const video = await page.locator('#reference-video').evaluate(video => { if (!(video instanceof HTMLVideoElement)) throw new Error('Expected video'); return { width: video.videoWidth, duration: video.duration, playedAndSought: true }; });
     await page.screenshot({ path: join(output, 'video.png') }); await page.locator('#reference-close').click();
-    material = { ...material, video, initialAssemblyGate303: true, experimentalAccess: 'explicit returning-user localStorage fixture; no first-use input acceptance claimed', assemblyNumberingPrerequisite: '15 explicitly simulated ledger records; physical readiness not tested' };
+    material = { ...material, video, assemblyLoadsWithoutNumbering: true, experimentalAccess: 'explicit returning-user localStorage fixture; no first-use input acceptance claimed', assemblyNumberingPrerequisite: '15 explicitly simulated ledger records; physical readiness not tested' };
   }
   assert.deepEqual(errors, []);
   result = { identity, renderer, versions, synthetic, scope: synthetic ? 'actual candidate protocol/save/profile/relaunch/offline only' : 'actual candidate licensed UI journey; simulated assembly prerequisite', material, stableOriginPersistence: true, viewports, errors };
