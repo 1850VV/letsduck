@@ -174,6 +174,7 @@ const automaticTab=document.createElement('button');automaticTab.type='button';a
 const zeroCalibration=createZeroCalibration({getState:()=>state,api,poll,say,render,focus:choose});
 servoCheck=createServoCheck({getState:()=>state,api,poll,say,render,focus:choose});
 const checkTab=document.createElement('button');checkTab.type='button';checkTab.dataset.workbench='check';checkTab.textContent=dt('舵机质检');query<HTMLElement>('.work-tabs [data-workbench=calibrate]').after(checkTab);
+const simTab=document.createElement('a');simTab.href='/sim/';simTab.className='sim-link';simTab.textContent=dt('仿真');query<HTMLElement>('.work-tabs').append(simTab);
 deviceTools=createDeviceTools({getState:()=>state,render,say,canEdit,api,poll,run,automatic,zeroCalibration,servoCheck});render();
 scene=createScene({host:$('viewport'),labelsHost:$('labels'),onSelect:choose,onBoardSelect:chooseBoard});scene.update(state);
 scene.ready.then(()=>{$('loading').hidden=true;document.body.dataset.modelReady='true';render();}).catch(error=>{$('loading').textContent=dt("模型未加载，请检查组装素材");document.body.dataset.modelReady='failed';console.error(error);});

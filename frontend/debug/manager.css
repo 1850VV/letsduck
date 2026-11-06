@@ -39,3 +39,6 @@ body[data-embedded=true]>.top{display:none}
 .check-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}.check-dot.good{background:#22a86e}.check-dot.weak{background:#d99a12}.check-dot.bad{background:#d6453d}
 .check-rows{border-top:1px solid #eef1f6}.check-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid #eef1f6}.check-id{border:0;background:none;padding:0;text-align:left;min-width:0}.check-id b{display:block;font-size:12px;color:#3a577c}.check-id span{display:block;font-size:9px;color:#97a5b8;margin-top:2px}.check-row em{font-style:normal;font-size:10px;color:#62819c;font-variant-numeric:tabular-nums;white-space:nowrap}.check-row .secondary{width:auto;min-height:28px;padding:4px 9px;font-size:10px}
 .check-more{margin-top:8px}
+
+/* The simulation is its own page; its tab is a plain link. */
+.work-tabs .sim-link{border-radius:6px;padding:7px 14px;color:#8795ab;font-size:11px;white-space:nowrap;text-decoration:none}.work-tabs .sim-link:hover{color:#4d6bfe}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>仿真鸭</title><link rel="stylesheet" href="sim.css"></head>
+<body>
+<header class="top"><a class="back" href="/debug/">‹ 调试鸭</a><b>仿真鸭</b><span class="hint">官方训练模型 · MuJoCo</span></header>
+<main class="layout">
+ <section class="stage"><div id="viewport"></div><div id="loading">正在加载仿真…</div><p id="status" role="status">准备中</p></section>
+ <aside class="panel">
+  <h2>指令</h2>
+  <label>前进速度<output for="vx"></output><input id="vx" type="range" min="-0.2" max="0.35" step="0.01" value="0.2" data-unit=" m/s"></label>
+  <label>转向<output for="yaw"></output><input id="yaw" type="range" min="-1" max="1" step="0.05" value="0"></label>
+  <div class="row"><button id="pause">暂停</button><button id="restart" class="primary">重新开始</button></div>
+  <h2>舵机参数</h2>
+  <div class="seg"><button data-preset="training">官方训练</button><button data-preset="servos">我的舵机增益</button></div>
+  <label>KD（D 项）<output for="kd"></output><input id="kd" data-servo type="range" min="0" max="20" step="1" value="0"></label>
+  <label>指令延迟<output for="delay"></output><input id="delay" data-servo type="range" min="5" max="120" step="5" value="25" data-unit=" ms"></label>
+  <label>电池电压<output for="vin"></output><input id="vin" data-servo type="range" min="6.5" max="8.4" step="0.05" value="7.7" data-unit=" V"></label>
+  <label>左腿阻力<output for="left"></output><input id="left" data-servo type="range" min="1" max="5" step="0.25" value="1" data-unit=" ×"></label>
+  <label>右腿阻力<output for="right"></output><input id="right" data-servo type="range" min="1" max="5" step="0.25" value="1" data-unit=" ×"></label>
+  <p class="note">滑块即时生效。KD 的单位换算没有官方数据，按估计值换算；仿真用来比较“改了哪个参数更好或更差”，不等于真鸭子。</p>
+  <div id="policy-pick" hidden><p class="note">选择官方仓库里的 python/xgoduck_walk.onnx：</p><input id="policy-file" type="file" accept=".onnx"></div>
+ </aside>
+</main>
+<script type="module" src="main.ts"></script>
+</body></html>
