@@ -66,7 +66,7 @@ npm run setup:electron
 npm run start:desktop
 ```
 
-如需在本机浏览器中使用，最后一步改为 `npm run start:local`。源码启动器 `启动来做鸭.command`（Mac）和 `启动来做鸭.bat`（Windows）也使用浏览器入口。默认地址为 `http://127.0.0.1:8876/`；端口被占用时尝试下一个。开发时可用 `npm run start:local -- --port 8880 --no-open` 指定端口并关闭自动打开浏览器。
+如需在本机浏览器中使用，最后一步改为 `npm run start:local`。源码启动器 `启动来做鸭.command`（Mac）也使用浏览器入口。默认地址为 `http://127.0.0.1:8876/`；端口被占用时尝试下一个。开发时可用 `npm run start:local -- --port 8880 --no-open` 指定端口并关闭自动打开浏览器。
 
 命名方案、编号验证和取件进度保存在应用目录外：
 

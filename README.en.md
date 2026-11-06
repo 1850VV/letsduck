@@ -66,7 +66,7 @@ npm run setup:electron
 npm run start:desktop
 ```
 
-For the local browser option, replace the last command with `npm run start:local`. Source launchers `启动来做鸭.command` (Mac) and `启动来做鸭.bat` (Windows) also use this option. The default URL is `http://127.0.0.1:8876/`, trying the next port if occupied. For development, use `npm run start:local -- --port 8880 --no-open` to choose a port and suppress browser launch.
+For the local browser option, replace the last command with `npm run start:local`. The source launcher `启动来做鸭.command` (Mac) also uses this option. The default URL is `http://127.0.0.1:8876/`, trying the next port if occupied. For development, use `npm run start:local -- --port 8880 --no-open` to choose a port and suppress browser launch.
 
 Named schemes, numbering verification and pickup progress are stored outside the application folder:
 

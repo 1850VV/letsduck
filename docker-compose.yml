@@ -4,7 +4,7 @@
 # Fits a 1-core / 2 GB server (add swap, see README); raise DUCK_MYSQL_BUFFER_POOL on bigger hosts.
 # The repository includes ./assets (docs/local-assets.md); it is mounted read-only
 # and never baked into an image.
-# The personal edition does not use Docker: double-click 启动来做鸭.command / 启动来做鸭.bat instead.
+# The personal edition does not use Docker: double-click 启动来做鸭.command instead.
 services:
   mysql:
     image: mysql:8.4
