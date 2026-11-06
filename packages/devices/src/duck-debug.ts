@@ -42,6 +42,13 @@ function vector(item: unknown, bounds: readonly (readonly [number, number])[], n
   if (!Array.isArray(item) || item.length !== bounds.length) throw new DebugError(deviceMessage('device.debug.vector',{name}));
   item.forEach((_part, index) => number(readJsonField(item, String(index)), ...bounds[index]!, name));
 }
+/** A partial {servo id: degrees} map, the shape /api/pose and /api/trim take. */
+function idMap(item: unknown, ids: readonly number[], limit: number, name: string): JsonRecord {
+  if (!object(item) || Object.keys(item).some(key => !ids.includes(Number(key)))) throw new DebugError(deviceMessage('device.debug.vector',{name}));
+  return Object.fromEntries(Object.keys(item).map(key => [key, number(value(item, key), -limit, limit, name)]));
+}
+// Every joint but the mouth (34) can take a calibration pose and a zero trim.
+const ZERO_IDS = IDS.filter(id => id !== 34);
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
 const recordOrEmpty = (item: unknown): JsonRecord => object(item) ? item : {};
 /** Every servo sits on the battery rail, so their median reading is the battery voltage. */
@@ -235,9 +242,47 @@ export class DuckDebug {
     } catch (error) { if (!(error instanceof DebugError)) throw error; throw new DebugError(deviceMessage('device.debug.stopped_remap',{detail:deviceFailure(error)}), { completed, remaining: pending }); }
     return { ok: true, completed };
   }
+  /**
+   * Swing one servo ±8° about its standing angle, as a square wave of 0.5 s halves, and time how it follows:
+   * rise is seconds to cover 90% of a swing, err is degrees short when a half ends. The duck must be standing
+   * (hold); the person holds it in the air. Uses the runtime trim when the board has one, otherwise the
+   * official runtime's /api/swing patch; either is restored afterwards.
+   */
+  private async servoCheck(id: number): Promise<JsonRecord> {
+    const status = await this.request('GET', '/api/status');
+    if (status.mode !== 'hold') throw new DebugError(deviceMessage('device.debug.check_hold'));
+    const hasTrim = status.trim !== undefined, trims = recordOrEmpty(status.trim), base = Object.fromEntries(Object.keys(trims).map(key => [key, Number(numeric(value(trims, key)))]));
+    const ids = Array.isArray(status.servo_ids) ? status.servo_ids.map((_item, i) => recordId(readJsonField(status.servo_ids as unknown[], String(i)))) : [], index = ids.indexOf(id);
+    if (index < 0) throw new DebugError(deviceMessage('device.debug.025'));
+    const at = (s: JsonRecord, key: string) => { const list = Array.isArray(s[key]) ? s[key] as unknown[] : []; return Number(numeric(readJsonField(list, String(index)))); };
+    // The mouth rests closed against its stop, so it swings around 10° open.
+    const center = (base[id] ?? 0) + (id === 34 ? 10 : 0), halves: { t: number; a: number; tg: number }[][] = [];
+    let volts = Infinity;
+    try {
+      for (let half = 0; half < 6; half++) {
+        const deg = center + (half % 2 ? -8 : 8);
+        await (hasTrim ? this.request('POST', '/api/trim', { trim: { ...base, [id]: deg } }) : this.request('POST', '/api/swing', { id, deg }));
+        const start = this.timing.monotonic(), samples: { t: number; a: number; tg: number }[] = [];
+        while (this.timing.monotonic() - start < 500) {
+          const s = await this.request('GET', '/api/status'), trim = Number(numeric(value(recordOrEmpty(s.trim), String(id)))) || 0;
+          // Status reports angles with the trim taken off; add it back for the servo's own position.
+          samples.push({ t: (this.timing.monotonic() - start) / 1000, a: at(s, 'angles') + trim, tg: at(s, 'targets') + trim });
+          volts = Math.min(volts, at(s, 'servo_voltage_v') || Infinity);
+        }
+        halves.push(samples);
+      }
+    } finally { await (hasTrim ? this.request('POST', '/api/trim', { trim: base }) : this.request('POST', '/api/swing', { id, deg: 0 })); }
+    // The first half starts from rest at the centre, so only full swings count.
+    const swings = halves.slice(1).map((h, i) => {
+      const from = halves[i]!.at(-1)!.a, last = h.at(-1)!, span = last.tg - from;
+      return { rise: h.find(x => (x.a - from) / span >= .9)?.t ?? .5, err: Math.abs(last.a - last.tg), swing: Math.abs(last.a - from) };
+    });
+    const mean = (key: 'rise' | 'err' | 'swing') => Math.round(swings.reduce((sum, s) => sum + s[key], 0) / swings.length * 100) / 100;
+    return { ok: true, id, rise: mean('rise'), err: mean('err'), swing: mean('swing'), voltage: Number.isFinite(volts) ? volts : null };
+  }
   private validate(body: JsonRecord): { action: string; body: JsonRecord } {
     const a = body.action;
-    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave', 'connect', 'discover'];
+    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave', 'connect', 'discover', 'pose', 'trim', 'level', 'servo-check'];
     if (typeof a !== 'string' || !allowed.includes(a)) throw new DebugError(deviceMessage('device.debug.unknown_action'));
     const b = wireCopy(body);
     if (['read', 'inspect', 'parameters', 'jog', 'move', 'torque-off', 'reset-mid', 'cal-center'].includes(a)) b.id = integer(b.id, 0, 253, 'device.field.id');
@@ -257,6 +302,16 @@ export class DuckDebug {
       if (Object.hasOwn(b, 'head')) vector(b.head, Array.from({ length: 4 }, () => [-1, 1] as const), 'device.field.head');
       if (Object.hasOwn(b, 'mouth')) number(b.mouth, 0, 30, 'device.field.mouth');
     }
+    if (a === 'pose' && b.targets !== null) b.targets = idMap(b.targets, ZERO_IDS, 90, 'device.field.pose');
+    if (a === 'trim') {
+      b.trim = idMap(b.trim, ZERO_IDS, 20, 'device.field.trim');
+      if (Object.hasOwn(b, 'save') && typeof b.save !== 'boolean') throw new DebugError(deviceMessage('device.debug.vector',{name:'device.field.trim'}));
+      // The IMU's own mounting tilt, [roll, pitch] degrees.
+      if (Object.hasOwn(b, 'imu')) vector(b.imu, [[-25, 25], [-25, 25]], 'device.field.trim');
+      if (Object.hasOwn(b, 'gyro')) vector(b.gyro, [[-20, 20], [-20, 20], [-20, 20]], 'device.field.trim');
+    }
+    // The official runtime's IMU_BIAS_DEG, [roll, pitch] degrees, saved on the board.
+    if (a === 'level') vector(b.imu, [[-25, 25], [-25, 25]], 'device.field.imu_level');
     if (a === 'roller' && typeof b.enabled !== 'boolean') throw new DebugError(deviceMessage('device.debug.021'));
     if (a === 'action-scale') number(b.scale, 0, 2, 'device.field.action_scale');
     if (a === 'filter') for (const key of ['leg', 'head']) number(b[key], 0, .95, key);
@@ -269,6 +324,7 @@ export class DuckDebug {
       if (Object.hasOwn(b, 'enabled') && typeof b.enabled !== 'boolean') throw new DebugError(deviceMessage('device.debug.024'));
       if (Object.hasOwn(b, 'current_a')) number(b.current_a, 0, 425.9775, 'device.field.current');
     }
+    if (a === 'servo-check') { b.id = integer(b.id, 0, 253, 'device.field.id'); if (!IDS.includes(Number(b.id))) throw new DebugError(deviceMessage('device.debug.025')); }
     if (a === 'cal-center' && !IDS.includes(Number(b.id))) throw new DebugError(deviceMessage('device.debug.025'));
     if (a === 'connect' && b.host !== null && (b.host = lanHost(b.host)) === null) throw new DebugError(deviceMessage('device.debug.043'));
     return { action: a, body: b };
@@ -312,7 +368,8 @@ export class DuckDebug {
         if (['hold', 'policy'].includes(String(b.mode)) && (!DuckDebug.fresh(status) || status.control_ready !== true)) throw new DebugError(deviceMessage('device.debug.030'));
         const result = await this.request('POST', '/api/mode', { mode: b.mode }); this.calibrating = false; this.held.clear(); return result;
       }
-      const paths: Record<string, [string, string[]]> = { roller: ['/api/roller', ['enabled']], pick: ['/api/pick', []], roulade: ['/api/roulade', []], 'action-scale': ['/api/action-scale', ['scale']], filter: ['/api/filter', ['leg', 'head']], 'imu-filter': ['/api/imu-filter', ['gyro_alpha', 'gravity_tau_s']] };
+      const paths: Record<string, [string, string[]]> = { roller: ['/api/roller', ['enabled']], pick: ['/api/pick', []], roulade: ['/api/roulade', []], 'action-scale': ['/api/action-scale', ['scale']], filter: ['/api/filter', ['leg', 'head']], 'imu-filter': ['/api/imu-filter', ['gyro_alpha', 'gravity_tau_s']], pose: ['/api/pose', ['targets']], trim: ['/api/trim', ['trim', 'save', 'imu', 'gyro']], level: ['/api/level', ['imu']] };
+      if (a === 'servo-check') return this.servoCheck(Number(b.id));
       if (paths[a]) { const [path, keys] = paths[a]; return this.request('POST', path, Object.fromEntries(keys.filter(key => Object.hasOwn(b, key)).map(key => [key, b[key]]))); }
       if (['cal-enter', 'cal-exit', 'cal-center'].includes(a)) {
         if (a === 'cal-center' && !this.calibrating) throw new DebugError(deviceMessage('device.debug.031'));

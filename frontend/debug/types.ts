@@ -15,10 +15,11 @@ export interface MCUStatus {
  mode?:string;feedback_age_ms?:number;imu_ok?:boolean;control_ready?:boolean;feedback_hz?:number;inference_hz?:number;
  recovery?:{phase?:string};pick?:{active?:boolean};roulade?:{active?:boolean;remaining_s?:number};deployment?:RuntimeProfile;roller?:RuntimeProfile;
  head?:number[];mouth?:number;acc?:number[];gyro?:number[];gravity?:number[];angles?:number[];targets?:number[];
- active_model?:string;servo_voltage_v?:number[];servo_temp_c?:number[];mcu_command_seq?:number|bigint;sequence_gaps?:number|bigint;mcu_invalid_commands?:number|bigint;
+ active_model?:string;trim?:Record<string,number>;imu_level?:number[];servo_voltage_v?:number[];servo_temp_c?:number[];mcu_command_seq?:number|bigint;sequence_gaps?:number|bigint;mcu_invalid_commands?:number|bigint;
 }
 export interface DebugSnapshot {devices:Device[];boards:Record<BoardId,{connected:boolean}>;transport:'usb'|'lan';host:string|null;dropouts:Dropout[];lostIds:number[];status:MCUStatus;scan:DebugScanState;numbering:unknown;onlineIds:number[];error:string;errorCode?:string;errorParams?:Record<string,unknown>}
-export interface DebugState {devices:Device[];boards:Record<BoardId,{connected:boolean}>;selectedBoard:BoardId|null;selected:string|undefined;view:DebugView;mode:'single'|'swap'|'custom';batch:Mapping[];busy:boolean;draft:Parameters|null;message:DebugNotice;status:MCUStatus;transport:'usb'|'lan'|undefined;host:string|null;dropouts:Dropout[];lostIds:number[];scan?:DebugScanState}
+export type Grade='good'|'weak'|'bad';
+export interface DebugState {devices:Device[];boards:Record<BoardId,{connected:boolean}>;selectedBoard:BoardId|null;selected:string|undefined;view:DebugView;mode:'single'|'swap'|'custom';batch:Mapping[];busy:boolean;draft:Parameters|null;message:DebugNotice;status:MCUStatus;transport:'usb'|'lan'|undefined;host:string|null;dropouts:Dropout[];lostIds:number[];scan?:DebugScanState;grades?:Partial<Record<number,Grade>>|undefined}
 export type DebugAction=(action:string,values?:Record<string,unknown>)=>Promise<Record<string,unknown>>;
 export type DebugRun=(action:string,values?:Record<string,unknown>,message?:DebugNotice,after?:(data:Record<string,unknown>)=>void)=>Promise<Record<string,unknown>|null|undefined>;
 const numericArray=(value:unknown):number[]=>{if(!Array.isArray(value))return [];if(!value.every((item:unknown):item is number=>typeof item==='number'))throw displayError("控制器数组格式异常");return value;};
@@ -37,6 +38,10 @@ export function readMCUStatus(value:unknown):MCUStatus {
  for(const key of ['imu_ok','control_ready'] as const)if(typeof value[key]==='boolean')result[key]=value[key];
  for(const key of ['mcu_command_seq','sequence_gaps','mcu_invalid_commands'] as const)if(typeof value[key]==='number'||typeof value[key]==='bigint')result[key]=value[key];
  for(const key of ['head','acc','gyro','gravity','angles','targets','servo_voltage_v','servo_temp_c'] as const)if(Array.isArray(value[key]))result[key]=numericArray(value[key]);
+ if(Array.isArray(value.imu_level)&&value.imu_level.length===2&&value.imu_level.every(v=>typeof v==='number'))result.imu_level=value.imu_level;
+ // The official runtime reports the same [roll, pitch] as the first two of deployment.imu_bias_deg.
+ else if(isRecord(value.deployment)&&Array.isArray(value.deployment.imu_bias_deg)){const [r,p]=value.deployment.imu_bias_deg;if(typeof r==='number'&&typeof p==='number')result.imu_level=[r,p];}
+ if(isRecord(value.trim))result.trim=Object.fromEntries(Object.entries(value.trim).filter((entry):entry is [string,number]=>typeof entry[1]==='number'));
  if(isRecord(value.recovery)&&typeof value.recovery.phase==='string')result.recovery={phase:value.recovery.phase};
  if(isRecord(value.pick)&&typeof value.pick.active==='boolean')result.pick={active:value.pick.active};
  if(isRecord(value.roulade)){result.roulade={};if(typeof value.roulade.active==='boolean')result.roulade.active=value.roulade.active;if(typeof value.roulade.remaining_s==='number')result.roulade.remaining_s=value.roulade.remaining_s;}

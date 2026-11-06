@@ -11,10 +11,12 @@ import {createScene} from './scene.js';
 import {readNumberingReadiness,updateNumberingReadiness} from '../shared/numbering-readiness.js';
 import {createAutomaticNumbering} from './automatic.js';
 import {createDeviceTools} from './device-tools.js';
+import {createZeroCalibration} from './zero-calibration.js';
+import {createServoCheck} from './servo-check.js';
 applyBrand();
 if(new URLSearchParams(location.search).has('embedded'))document.body.dataset.embedded='true';
 function readView(value:string|undefined):DebugView {if(value==='robot'||value==='tray'||value==='circuit')return value;throw displayError('未知调试视图');}
-const state=createState();let step=1,scene:ReturnType<typeof createScene>|undefined,deviceTools:ReturnType<typeof createDeviceTools>,automatic:ReturnType<typeof createAutomaticNumbering>,polling=false,signature='';
+const state=createState();let step=1,scene:ReturnType<typeof createScene>|undefined,deviceTools:ReturnType<typeof createDeviceTools>,automatic:ReturnType<typeof createAutomaticNumbering>,servoCheck:ReturnType<typeof createServoCheck>|undefined,polling=false,signature='';
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>query<T>('#'+id),number=(input:HTMLInputElement)=>input.value.trim()===''?NaN:Number(input.value);
 function say(message:DebugNotice,error=false){state.message=message;$('feedback').textContent=String(message);$('feedback').classList.toggle('error',error);}
 const canEdit=(d:Device|undefined)=>!!d?.online&&!duplicate(state,d.id)&&!state.busy&&!automatic?.active;
@@ -39,7 +41,7 @@ function slots(){
  const active=new Set(online(state).map(d=>d.id)),d=selected(state),progress=automatic?.active?{verifiedIds:[...automatic.verified],ready:automatic.verified.size===15}:readNumberingReadiness();
  setLocalizedHTML($('board-slots'),(Object.entries(boardNames) as [keyof typeof boardNames,string][]).map(([id,name])=>{const live=state.boards[id].connected;return `<button class="board-slot ${live?'online':''} ${state.selectedBoard===id?'selected':''}" data-board-slot="${id}" aria-label="${escapeAttribute(dt('选择 {name}，{status}',{name,status:live?dt('已连接'):dt('未确认')}))}" aria-pressed="${state.selectedBoard===id}" ${state.busy||automatic?.active?'disabled':''}><i class="dot ${live?'green':''}"></i><strong>${name}</strong><small>${live?dt("已连接"):dt("未确认")}</small></button>`;}).join(''));
  // Same order as the front-facing model: the duck's right leg shows on screen left.
- setLocalizedHTML($('slots'),([[dt("右腿"),IDS.slice(5,10)],[dt("左腿"),IDS.slice(0,5)],[dt("头颈与鸭嘴"),IDS.slice(10)]] as const).map(([title,ids])=>`<div><div class="slot-group-title"><span>${title}</span><span>${ids[0]}–${ids.at(-1)}</span></div><div class="slot-row">${ids.map(id=>`<button class="slot ${active.has(id)?'online':''} ${!state.selectedBoard&&d?.id===id?'selected':''} ${alert(state,id)??''} ${duplicate(state,id)?'conflict':''} ${automatic?.active&&automatic.queuedTarget===id?'auto-queued':''}" data-slot="${id}" data-online="${active.has(id)}" aria-label="${escapeAttribute(dt('选择 ID{id}，{role}，{status}',{id:String(id),role:role(id),status:active.has(id)?dt('在线'):dt('离线')}))}" aria-pressed="${!state.selectedBoard&&d?.id===id}" ${state.busy?'disabled':''}>${id}<i class="slot-dot"></i>${progress.verifiedIds.includes(id)?`<span class="slot-verified" aria-label="${escapeAttribute(dt("编号已验证"))}">✓</span>`:''}</button>`).join('')}</div></div>`).join(''));
+ setLocalizedHTML($('slots'),([[dt("右腿"),IDS.slice(5,10)],[dt("左腿"),IDS.slice(0,5)],[dt("头颈与鸭嘴"),IDS.slice(10)]] as const).map(([title,ids])=>`<div><div class="slot-group-title"><span>${title}</span><span>${ids[0]}–${ids.at(-1)}</span></div><div class="slot-row">${ids.map(id=>`<button class="slot ${active.has(id)?'online':''} ${!state.selectedBoard&&d?.id===id?'selected':''} ${alert(state,id)??''} ${duplicate(state,id)?'conflict':''} ${automatic?.active&&automatic.queuedTarget===id?'auto-queued':''} ${servoCheck?.slotClass(id)??''}" data-slot="${id}" data-online="${active.has(id)}" aria-label="${escapeAttribute(dt('选择 ID{id}，{role}，{status}',{id:String(id),role:role(id),status:active.has(id)?dt('在线'):dt('离线')}))}" aria-pressed="${!state.selectedBoard&&d?.id===id}" ${state.busy?'disabled':''}>${id}<i class="slot-dot"></i>${progress.verifiedIds.includes(id)?`<span class="slot-verified" aria-label="${escapeAttribute(dt("编号已验证"))}">✓</span>`:''}</button>`).join('')}</div></div>`).join(''));
  const extra=state.devices.filter(d=>!IDS.includes(d.id));$('extra-devices').hidden=!extra.length;
  setLocalizedHTML($('extra-devices'),extra.length?dt('其他在线')+' '+extra.map(d=>`<button data-slot="${d.id}">ID ${d.id} · ${d.online?dt("在线"):dt("最近扫描")}</button>`).join(''):'');
  $('slot-count').textContent=dt("{count} 个编号在线 / 15 个固定盘位",{count:active.size});
@@ -106,6 +108,7 @@ function render(){
  const live=state.boards.arduino.connected,wifi=state.transport==='lan'?'WiFi '+state.host:'';
  setLocalizedHTML($('board-state'),`<i class="dot ${live?'green':''}"></i>UNO Q · ${wifi?(live?wifi:wifi+' · '+dt("未确认")):live?dt("USB已连接"):dt("未确认")} ▾`);renderBattery();renderDropouts();renderLink();
  for(const el of document.querySelectorAll<HTMLElement>('[data-view]'))el.setAttribute('aria-pressed',String(el.dataset.view===state.view));
+ for(const el of document.querySelectorAll<HTMLElement>('[data-camera]'))el.hidden=state.view!=='robot';
  $('stage-caption').textContent=state.view==='robot'?dt("按编号对应安装位"):state.view==='tray'?dt("十五只舵机 · 固定编号位置"):dt("逻辑连接示意 · 不是实物串联顺序");
  $('stage-help').textContent=state.view==='circuit'?dt("USB → UNO Q → 扩展板 → 舵机总线 · 供电另接电池"):dt("拖动旋转 · 滚轮缩放 · 点舵机查看参数");
  $<HTMLButtonElement>('release-all').disabled=!state.boards.arduino.connected||automatic?.active&&state.busy;$<HTMLButtonElement>('batch-swap').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('batch-custom').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('verify-online').disabled=state.busy||automatic?.active;
@@ -148,6 +151,7 @@ document.body.addEventListener('click',e=>{
   const tab=eventElement(e).closest<HTMLElement>('[data-link-tab]');if(tab){linkTab=tab.dataset.linkTab==='usb'?'usb':'lan';renderLink();if(linkTab==='lan'&&found===null)discover();return;}
  const board=eventElement(e).closest<HTMLElement>('[data-board-slot]');if(board){chooseBoard(board.dataset.boardSlot);return;}
  const slot=eventElement(e).closest<HTMLElement>('[data-slot]');if(slot){choose(Number(slot.dataset.slot));return;}
+ const camera=eventElement(e).closest<HTMLElement>('[data-camera]');if(camera){scene?.look(camera.dataset.camera==='side'?'side':'front');return;}
  const view=eventElement(e).closest<HTMLElement>('[data-view]');if(view){state.view=readView(view.dataset.view);render();return;}
  const stride=eventElement(e).closest<HTMLElement>('[data-step]');if(stride){step=Number(stride.dataset.step);render();return;}
  const button=eventElement(e).closest<HTMLElement>('[data-jog]');if(button){jog(Number(button.dataset.jog)*step);return;}
@@ -167,7 +171,10 @@ $('reset-camera').onclick=()=>scene?.fit();query<HTMLAnchorElement>('.brand').hr
 bindTranslations();
 automatic=createAutomaticNumbering({api,busy:()=>state.busy,setBusy(value){state.busy=value;},select(id){state.selected='servo-'+id;state.selectedBoard=null;state.draft=null;},render,poll:()=>poll(true)});
 const automaticTab=document.createElement('button');automaticTab.type='button';automaticTab.dataset.workbench='automatic';automaticTab.textContent=dt('自动编号');query<HTMLElement>('.work-tabs [data-workbench=servo]').after(automaticTab);
-deviceTools=createDeviceTools({getState:()=>state,render,say,canEdit,api,poll,run,automatic});render();
+const zeroCalibration=createZeroCalibration({getState:()=>state,api,poll,say,render,focus:choose});
+servoCheck=createServoCheck({getState:()=>state,api,poll,say,render,focus:choose});
+const checkTab=document.createElement('button');checkTab.type='button';checkTab.dataset.workbench='check';checkTab.textContent=dt('舵机质检');query<HTMLElement>('.work-tabs [data-workbench=calibrate]').after(checkTab);
+deviceTools=createDeviceTools({getState:()=>state,render,say,canEdit,api,poll,run,automatic,zeroCalibration,servoCheck});render();
 scene=createScene({host:$('viewport'),labelsHost:$('labels'),onSelect:choose,onBoardSelect:chooseBoard});scene.update(state);
 scene.ready.then(()=>{$('loading').hidden=true;document.body.dataset.modelReady='true';render();}).catch(error=>{$('loading').textContent=dt("模型未加载，请检查组装素材");document.body.dataset.modelReady='failed';console.error(error);});
 const inspectTimer=setInterval(()=>{const d=selected(state);if(!document.hidden&&!state.busy&&!state.scan?.active&&deviceTools.canInspect()&&d?.parametersLive&&!IDS.includes(d.id))api('inspect',{id:d.id}).catch(()=>{});},750);

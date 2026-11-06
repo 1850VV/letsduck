@@ -333,3 +333,11 @@ test('Wi-Fi addresses stay on the local network', async () => {
   assert.equal(lanHost('duck.local'), 'duck.local');
   for (const host of ['8.8.8.8', '192.168.1.300', 'example.com', 'localhost', 42]) assert.equal(lanHost(host), null);
 });
+test('servo check swings through /api/swing on the official runtime and clears it afterwards', async t => {
+  let clock = 0; const { rt, action } = await harness(t, undefined, { monotonic: () => (clock += 100) });
+  Object.assign(rt.state, { mode: 'hold', angles: [0, 0, 0], targets: [0, 0, 0] });
+  const result = await action('servo-check', { id: 12 });
+  assert.equal(result.id, 12);
+  assert.deepEqual(rt.calls.filter(call => call.path === '/api/swing').map(call => call.body), [8, -8, 8, -8, 8, -8, 0].map(deg => ({ id: 12, deg })));
+  assert.equal(rt.calls.some(call => call.path === '/api/trim'), false);
+});
