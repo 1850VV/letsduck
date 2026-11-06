@@ -17,7 +17,7 @@ import {GLTFLoader} from '../vendor/GLTFLoader.js';
 import {IDS,ACTORS,online,alert} from './state.js';
 import {completePoses,actorQuaternion,assemblyActors} from './poses.js';
 
-const GREEN=0x2caf76,OFF=0x6b7d97,ALERT={lost:0xd6453d,hot:0xe07a1f} as const;
+const GREEN=0x2caf76,OFF=0x6b7d97,ALERT={lost:0xd6453d,hot:0xe07a1f,bad:0xd6453d,weak:0xd99a12} as const;
 export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLElement;labelsHost:HTMLElement;onSelect(id:number):void;onBoardSelect(id:BoardId):void}){
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,.1,2500);
  const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
@@ -31,6 +31,11 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
  let ready=false,state:DebugState|undefined,pending=false,currentView:DebugView|''='',template:THREE.Group,center:THREE.Vector3,labels:{el:HTMLElement;position:THREE.Vector3}[]=[],circuitSignature:string|null=null,looseSignature='';
  const looseObjects=new Map<string,THREE.Object3D>(),boardObjects=new Map<BoardId,THREE.Group>();
  const modelIds=new Map(ACTORS.map((actor,i)=>[actor,required(IDS[i])]));
+ let body:{pivot:THREE.Vector3;forward:THREE.Vector3;left:THREE.Vector3;floor:number;points:Float32Array}|null=null;
+ const UP=new THREE.Vector3(0,1,0);
+ // A level floor under the duck: the model rests its lowest point on it, and the rim turns green when the body is level.
+ const floor=new THREE.Group(),rim=new THREE.Mesh(new THREE.RingGeometry(118,121,96),new THREE.MeshBasicMaterial({color:0x9fb0c8,side:THREE.DoubleSide}));
+ floor.add(new THREE.Mesh(new THREE.CircleGeometry(120,96),new THREE.MeshBasicMaterial({color:0xdfe7f2,transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide})),rim);floor.rotation.x=-Math.PI/2;floor.visible=false;scene.add(floor);
  const ownMaterials=(obj:THREE.Object3D)=>obj.traverse(mesh=>{if(isMesh(mesh)){mesh.material=Array.isArray(mesh.material)?mesh.material.map(m=>m.clone()):mesh.material.clone();for(const m of materials(mesh))if(hasColor(m))m.userData.baseColor=m.color.clone();}});
  function invalidate(){if(pending||document.hidden)return;pending=true;requestAnimationFrame(()=>{pending=false;controls.update();renderer.render(scene,camera);layoutLabels();});}
  controls.addEventListener('change',invalidate);document.addEventListener('visibilitychange',invalidate);
@@ -97,12 +102,29 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
   else{camera.position.set(185,400,475);controls.target.set(-70,10,4);}
   controls.update();invalidate();
  }
- function update(next:DebugState){state=next;if(!ready)return;const active=new Set(online(required(state)).map(d=>d.id)),d=required(state).devices.find(d=>d.uid===required(state).selected),chosen=required(state).selectedBoard?null:d?.id;
+ /** Look level at the floor disc, from the duck's front or its left side, so a gap under either foot shows. */
+ function look(side:'front'|'side'){
+  if(!body)return;const box=new THREE.Box3().setFromObject(robot),c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
+  controls.target.copy(c);camera.position.copy(c).addScaledVector(side==='front'?body.forward:body.left,Math.max(size.x,size.y,size.z)*1.8).setY(c.y+25);controls.update();invalidate();
+ }
+ /** Tilt the whole duck with the IMU: gravity (x forward, y left, z up) maps onto the model's own axes. */
+ function tilt(){
+  if(!body)return;const s=required(state).status,g=s.gravity,live=g?.length===3&&s.imu_ok===true&&typeof s.feedback_age_ms==='number'&&s.feedback_age_ms<500;
+  const q=new THREE.Quaternion();let level=false;
+  if(live){const [x,y,z]=g as [number,number,number],up=body.forward.clone().multiplyScalar(-x).addScaledVector(body.left,-y).addScaledVector(UP,-z);if(up.lengthSq()>1e-6){q.setFromUnitVectors(up.normalize(),UP);level=up.y>Math.cos(THREE.MathUtils.degToRad(1));}}
+  const e=new THREE.Matrix4().makeRotationFromQuaternion(q).elements,{pivot:c,points:v}=body;let low=Infinity;
+  for(let i=0;i<v.length;i+=3){const h=e[1]!*(v[i]!-c.x)+e[5]!*(v[i+1]!-c.y)+e[9]!*(v[i+2]!-c.z);if(h<low)low=h;}
+  robot.quaternion.copy(q);robot.position.copy(c).sub(c.clone().applyQuaternion(q));robot.position.y+=body.floor-c.y-low;robot.updateMatrixWorld(true);
+  rim.material.color.setHex(level?GREEN:0x9fb0c8);
+ }
+ function update(next:DebugState){state=next;if(!ready)return;tilt();const active=new Set(online(required(state)).map(d=>d.id)),d=required(state).devices.find(d=>d.uid===required(state).selected),chosen=required(state).selectedBoard?null:d?.id;
   if(currentView!==required(state).view){currentView=required(state).view;fit(required(state).view);}
-  robot.visible=required(state).view==='robot';tray.visible=required(state).view==='tray';circuit.visible=required(state).view==='circuit';
+  robot.visible=floor.visible=required(state).view==='robot';tray.visible=required(state).view==='tray';circuit.visible=required(state).view==='circuit';
   updateBoards();
-  for(const [id,obj] of robotObjects)paint(obj,active.has(id),id===chosen,true,alert(required(state),id));
-  for(const [id,obj] of trayObjects)paint(obj,active.has(id),id===chosen,false,alert(required(state),id));
+  // Servo check grades colour the weak and worst servos; a lost or hot servo still shows first.
+  const warn=(id:number)=>{const g=required(state).grades?.[id];return alert(required(state),id)??(g==='good'||!g?null:g);};
+  for(const [id,obj] of robotObjects)paint(obj,active.has(id),id===chosen,true,warn(id));
+  for(const [id,obj] of trayObjects)paint(obj,active.has(id),id===chosen,false,warn(id));
   const signature=online(required(state)).map(d=>d.uid+':'+d.id).join(',')+':'+Number(required(state).boards.arduino.connected)+Number(required(state).boards.expansion.connected);
   if(required(state).view==='circuit'&&circuitSignature!==signature){rebuildCircuit();circuitSignature=signature;}
   for(const [uid,obj] of circuitObjects)paint(obj,true,uid===required(state).selected);
@@ -164,8 +186,15 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
    const mesh=new THREE.Mesh(g,material);mesh.position.fromArray(info.pose.position);mesh.quaternion.copy(actorQuaternion(required(assemblyActors[part.id]),info.pose));robot.add(mesh);
    if(id!==undefined){mesh.userData.servoId=id;robotObjects.set(id,mesh);}
   }
+  const middle=(...ids:number[])=>ids.reduce((sum,id)=>sum.add(new THREE.Box3().setFromObject(required(robotObjects.get(id))).getCenter(new THREE.Vector3())),new THREE.Vector3()).divideScalar(ids.length);
+  // The head sits right above the hips, so the hip line (right 22 → left 12) sets the axes.
+  const pivot=middle(12,22),left=middle(12).sub(middle(22)).setY(0).normalize(),forward=left.clone().cross(UP);
+  robot.updateMatrixWorld(true);const points:number[]=[],p=new THREE.Vector3();
+  robot.traverse(o=>{if(!isMesh(o))return;const a=o.geometry.getAttribute('position');for(let i=0;i<a.count;i++){p.fromBufferAttribute(a,i).applyMatrix4(o.matrix);points.push(p.x,p.y,p.z);}});
+  const low=points.reduce((m,y,i)=>i%3===1&&y<m?y:m,Infinity);floor.position.set(pivot.x,low-.5,pivot.z);
+  body={pivot,forward,left,floor:low,points:new Float32Array(points)};
   ready=true;resize();if(state)update(state);return true;
  })();
  function inspect(){const greens=<K>(map:ReadonlyMap<K,THREE.Object3D>)=>[...map].filter(([,obj])=>{let green=false;obj.traverse(o=>{if(isMesh(o)&&!o.userData.selectionRing&&materials(o).some(m=>hasColor(m)&&m.color.getHex()===GREEN&&m.opacity===1))green=true;});return green;}).map(([id])=>id);return {ready,view:currentView,robotCount:robotObjects.size,trayCount:trayObjects.size,greenRobotIds:greens(robotObjects),greenTrayIds:greens(trayObjects),greenBoardIds:greens(boardObjects),boardCount:boardObjects.size,greenLooseIds:greens(looseObjects).map(uid=>required(required(state).devices.find(d=>d.uid===uid)).id),circuitCount:circuitObjects.size,camera:camera.position.toArray()};}
- return {update,refreshCopy,fit,ready:readyPromise,inspect};
+ return {update,refreshCopy,fit,look,ready:readyPromise,inspect};
 }

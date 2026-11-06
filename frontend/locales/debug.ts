@@ -565,8 +565,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Not started"
  ],
  [
-  "先卸载全部舵机，肉眼对齐支架孔位。设定中位会改变零点；普通微调不会。",
-  "Release all servos first and visually align the bracket holes. Setting a midpoint changes the zero position; ordinary adjustment does not."
+  "先卸载全部舵机，用手把腿和脖子摆到零点姿势，再逐个设定中位。设定中位会改变零点；细调不会。",
+  "Unload all servos, set the legs and neck to the zero pose by hand, then set each center. Setting a center moves the zero; fine tuning does not."
  ],
  [
   "重新卸载全部",
@@ -1027,6 +1027,118 @@ const copyRows:readonly (readonly [string,string])[]=[
  [
   "ID {ids} 掉线，已全部卸载",
   "ID {ids} dropped; all servos unloaded"
+ ],
+ [
+  "零点校准",
+  "Zero calibration"
+ ],
+ [
+  "正面",
+  "Front"
+ ],
+ [
+  "侧面",
+  "Side"
+ ],
+ [
+  "粗调 · 设中位",
+  "Coarse · set centers"
+ ],
+ [
+  "细调",
+  "Fine tune"
+ ],
+ [
+  "让鸭子蹲在平桌上，点“自动校准”，它会慢慢站起来再自己调平。",
+  "Let the duck crouch on a flat table and press Auto calibrate. It stands up slowly, then levels itself."
+ ],
+ [
+  "站好",
+  "Stand"
+ ],
+ [
+  "已保存。可以先试默认姿态，再试行走。",
+  "Saved. Try Default pose first, then Walk."
+ ],
+ [
+  "在 3D 或下方舵机条里点一个舵机，再用 ± 微调它。",
+  "Pick a servo in 3D or the slot row below, then nudge it with ±."
+ ],
+ [
+  "前后歪：调 12 / 22。左右歪：交给自动校准。",
+  "Leaning front–back: adjust 12 / 22. Side to side: leave it to Auto calibrate."
+ ],
+ [
+  "保存",
+  "Save"
+ ],
+ [
+  "不保存，恢复原样",
+  "Discard and restore"
+ ],
+ [
+  "IMU 没有读数",
+  "No IMU reading"
+ ],
+ [
+  "前后",
+  "Front–back"
+ ],
+ [
+  "左右",
+  "Side"
+ ],
+ [
+  "已经调了 15° 以上还没对齐。可能舵盘装偏了一个齿，建议拆下来重新对准。",
+  "Over 15° and still not aligned. The servo horn may be one tooth off; remount it first."
+ ],
+ [
+  "自动校准",
+  "Auto calibrate"
+ ],
+ [
+  "鸭子正在慢慢站起来…",
+  "The duck is standing up slowly…"
+ ],
+ [
+  "正在自己调平…",
+  "Leveling itself…"
+ ],
+ [
+  "身体看起来正了，就点“记为水平”。每只鸭子只需一次。",
+  "When the body looks level, press Mark as level. Once per duck."
+ ],
+ [
+  "记为水平",
+  "Mark as level"
+ ],
+ [
+  "已记为水平。",
+  "Marked as level."
+ ],
+ [
+  "调平了，可以保存。",
+  "Level. You can save now."
+ ],
+ [
+  "需要补偿超过 8°，请先用手粗调腿部关节。",
+  "More than 8° is needed. Coarse-set the leg joints by hand first."
+ ],
+ [
+  "鸭子倒了，已退回。",
+  "The duck fell over; changes undone."
+ ],
+ [
+  "左右调不动，只调了前后。",
+  "Side to side would not move; only front–back was leveled."
+ ],
+ [
+  "越调越歪，已停下并退回。",
+  "The tilt kept growing; stopped and stepped back."
+ ],
+ [
+  "没能完全调平，已保留最好的结果。",
+  "Could not level fully; kept the best result."
  ]
 ];
 const allRows:Record<string,readonly [string,string]>={...rows};
@@ -1232,7 +1344,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · 即時控制",
   "debug.copy.122": "校準中",
   "debug.copy.123": "未開始",
-  "debug.copy.124": "先卸載全部舵機，肉眼對齊支架孔位。設定中位數會改變零點；普通微調不會。",
+  "debug.copy.124": "先卸載全部舵機，用手把腿和脖子擺到零點姿勢，再逐個設定中位。設定中位會改變零點；細調不會。",
   "debug.copy.125": "重新卸載全部",
   "debug.copy.126": "開始校準 · 卸載全部",
   "debug.copy.127": "當前位置",
@@ -1347,7 +1459,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "電壓",
   "debug.copy.237": "溫度",
   "debug.copy.238": "已連線 {name}",
-  "debug.copy.239": "ID {ids} 掉線，已全部卸載"
+  "debug.copy.239": "ID {ids} 掉線，已全部卸載",
+  "debug.copy.240": "零點校準",
+  "debug.copy.241": "正面",
+  "debug.copy.242": "側面",
+  "debug.copy.243": "粗調 · 設中位",
+  "debug.copy.244": "細調",
+  "debug.copy.245": "讓鴨子蹲在平桌上，點「自動校準」，它會慢慢站起來再自己調平。",
+  "debug.copy.246": "站好",
+  "debug.copy.247": "已儲存。可以先試預設姿態，再試行走。",
+  "debug.copy.248": "在 3D 或下方舵機條裡點一個舵機，再用 ± 微調它。",
+  "debug.copy.249": "前後歪：調 12 / 22。左右歪：交給自動校準。",
+  "debug.copy.250": "儲存",
+  "debug.copy.251": "不儲存，恢復原樣",
+  "debug.copy.252": "IMU 沒有讀數",
+  "debug.copy.253": "前後",
+  "debug.copy.254": "左右",
+  "debug.copy.255": "已經調了 15° 以上還沒對齊。可能舵盤裝偏了一個齒，建議拆下來重新對準。",
+  "debug.copy.256": "自動校準",
+  "debug.copy.257": "鴨子正在慢慢站起來…",
+  "debug.copy.258": "正在自己調平…",
+  "debug.copy.259": "身體看起來正了，就點「記為水平」。每隻鴨子只需一次。",
+  "debug.copy.260": "記為水平",
+  "debug.copy.261": "已記為水平。",
+  "debug.copy.262": "調平了，可以儲存。",
+  "debug.copy.263": "需要補償超過 8°，請先用手粗調腿部關節。",
+  "debug.copy.264": "鴨子倒了，已退回。",
+  "debug.copy.265": "左右調不動，只調了前後。",
+  "debug.copy.266": "越調越歪，已停下並退回。",
+  "debug.copy.267": "沒能完全調平，已保留最好的結果。"
  },
  "ja": {
   "debug.auto.queue.remove": "次のサーボをキューから削除",
@@ -1543,7 +1683,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q・リアルタイム制御",
   "debug.copy.122": "校正中",
   "debug.copy.123": "未開始",
-  "debug.copy.124": "まずすべてのサーボを取り外し、ブラケットの穴を肉眼で合わせます。中立位置を設定するとゼロ点が変わります。通常のトリミングは行われません。",
+  "debug.copy.124": "まず全サーボを脱力し、手で脚と首をゼロ姿勢に合わせてから、1つずつ中位を設定します。中位設定はゼロ点を変えます。微調整は変えません。",
   "debug.copy.125": "すべて再アンインストール",
   "debug.copy.126": "キャリブレーションを開始 · すべてアンインストール",
   "debug.copy.127": "現在地",
@@ -1658,7 +1798,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "電圧",
   "debug.copy.237": "温度",
   "debug.copy.238": "{name} に接続しました",
-  "debug.copy.239": "ID {ids} が切断。全サーボを脱力しました"
+  "debug.copy.239": "ID {ids} が切断。全サーボを脱力しました",
+  "debug.copy.240": "ゼロ点キャリブレーション",
+  "debug.copy.241": "正面",
+  "debug.copy.242": "側面",
+  "debug.copy.243": "粗調整 · 中位設定",
+  "debug.copy.244": "微調整",
+  "debug.copy.245": "アヒルを平らな机にしゃがませて「自動キャリブレーション」を押すと、ゆっくり立ち上がって自分で水平にします。",
+  "debug.copy.246": "立つ",
+  "debug.copy.247": "保存しました。まずデフォルト姿勢、次に歩行を試してください。",
+  "debug.copy.248": "3D か下のサーボ列でサーボを選び、± で微調整します。",
+  "debug.copy.249": "前後の傾き：12 / 22 を調整。左右の傾き：自動キャリブレーションに任せます。",
+  "debug.copy.250": "保存",
+  "debug.copy.251": "保存せずに元に戻す",
+  "debug.copy.252": "IMU の読み取り値がありません",
+  "debug.copy.253": "前後",
+  "debug.copy.254": "左右",
+  "debug.copy.255": "15° 以上調整してもそろいません。サーボホーンが 1 歯ずれている可能性があります。外して付け直してください。",
+  "debug.copy.256": "自動キャリブレーション",
+  "debug.copy.257": "アヒルがゆっくり立ち上がっています…",
+  "debug.copy.258": "自分で水平にしています…",
+  "debug.copy.259": "体がまっすぐに見えたら「水平として記録」を押します。アヒルごとに一度だけです。",
+  "debug.copy.260": "水平として記録",
+  "debug.copy.261": "水平として記録しました。",
+  "debug.copy.262": "水平になりました。保存できます。",
+  "debug.copy.263": "8° を超える補正が必要です。先に手で脚の関節を粗調整してください。",
+  "debug.copy.264": "アヒルが倒れたので元に戻しました。",
+  "debug.copy.265": "左右は動かず、前後だけ調整しました。",
+  "debug.copy.266": "傾きが大きくなったので止めて戻しました。",
+  "debug.copy.267": "完全には水平にできず、最良の結果を残しました。"
  },
  "ko": {
   "debug.auto.queue.remove": "대기열에서 다음 서보 제거",
@@ -1854,7 +2022,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · 실시간 제어",
   "debug.copy.122": "교정 중",
   "debug.copy.123": "시작되지 않음",
-  "debug.copy.124": "먼저 모든 서보를 제거하고 육안으로 브래킷 구멍을 정렬합니다. 중립 위치를 설정하면 영점이 변경됩니다. 일반적인 트리밍은 그렇지 않습니다.",
+  "debug.copy.124": "먼저 모든 서보의 힘을 풀고, 손으로 다리와 목을 영점 자세로 맞춘 뒤 하나씩 중립을 설정하세요. 중립 설정은 영점을 바꾸고, 미세 조정은 바꾸지 않습니다.",
   "debug.copy.125": "모두 다시 제거",
   "debug.copy.126": "보정 시작 · 모두 제거",
   "debug.copy.127": "현재 위치",
@@ -1969,7 +2137,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "전압",
   "debug.copy.237": "온도",
   "debug.copy.238": "{name}에 연결됨",
-  "debug.copy.239": "ID {ids} 끊김, 모든 서보의 힘을 풀었습니다"
+  "debug.copy.239": "ID {ids} 끊김, 모든 서보의 힘을 풀었습니다",
+  "debug.copy.240": "영점 보정",
+  "debug.copy.241": "정면",
+  "debug.copy.242": "측면",
+  "debug.copy.243": "대략 조정 · 중립 설정",
+  "debug.copy.244": "미세 조정",
+  "debug.copy.245": "오리를 평평한 책상에 쪼그려 앉히고 '자동 보정'을 누르세요. 천천히 일어선 뒤 스스로 수평을 맞춥니다.",
+  "debug.copy.246": "서기",
+  "debug.copy.247": "저장했습니다. 먼저 기본 자세를, 그다음 걷기를 시험해 보세요.",
+  "debug.copy.248": "3D나 아래 서보 줄에서 서보를 고른 뒤 ±로 미세 조정하세요.",
+  "debug.copy.249": "앞뒤 기울기: 12 / 22 조정. 좌우 기울기: 자동 보정에 맡기세요.",
+  "debug.copy.250": "저장",
+  "debug.copy.251": "저장하지 않고 되돌리기",
+  "debug.copy.252": "IMU 값이 없습니다",
+  "debug.copy.253": "앞뒤",
+  "debug.copy.254": "좌우",
+  "debug.copy.255": "15° 이상 조정해도 맞지 않습니다. 서보 혼이 한 톱니 어긋났을 수 있으니 다시 장착하세요.",
+  "debug.copy.256": "자동 보정",
+  "debug.copy.257": "오리가 천천히 일어서는 중…",
+  "debug.copy.258": "스스로 수평을 맞추는 중…",
+  "debug.copy.259": "몸이 똑바로 보이면 '수평으로 기록'을 누르세요. 오리마다 한 번이면 됩니다.",
+  "debug.copy.260": "수평으로 기록",
+  "debug.copy.261": "수평으로 기록했습니다.",
+  "debug.copy.262": "수평이 맞았습니다. 저장하세요.",
+  "debug.copy.263": "8° 이상 보정이 필요합니다. 먼저 손으로 다리 관절을 대략 맞추세요.",
+  "debug.copy.264": "오리가 넘어져서 되돌렸습니다.",
+  "debug.copy.265": "좌우는 움직이지 않아 앞뒤만 맞췄습니다.",
+  "debug.copy.266": "기울기가 커져서 멈추고 되돌렸습니다.",
+  "debug.copy.267": "완전히 맞추지 못해 가장 좋은 결과를 남겼습니다."
  },
  "fr": {
   "debug.auto.queue.remove": "Retirer le prochain servo de la file",
@@ -2165,7 +2361,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · Contrôle en temps réel",
   "debug.copy.122": "Calibrage",
   "debug.copy.123": "Non démarré",
-  "debug.copy.124": "Désinstallez d'abord tous les servos et alignez les trous du support à l'œil nu. Le réglage de la position neutre modifiera le point zéro ; la coupe normale ne le fera pas.",
+  "debug.copy.124": "Désactivez tous les servos, placez jambes et cou en position zéro à la main, puis réglez chaque centre. Régler un centre déplace le zéro ; le réglage fin non.",
   "debug.copy.125": "Tout réinstaller",
   "debug.copy.126": "Démarrer l'étalonnage · Tout désinstaller",
   "debug.copy.127": "Localisation actuelle",
@@ -2280,7 +2476,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "Tension",
   "debug.copy.237": "Température",
   "debug.copy.238": "Connecté à {name}",
-  "debug.copy.239": "ID {ids} déconnecté ; tous les servos désactivés"
+  "debug.copy.239": "ID {ids} déconnecté ; tous les servos désactivés",
+  "debug.copy.240": "Calibration du zéro",
+  "debug.copy.241": "Face",
+  "debug.copy.242": "Profil",
+  "debug.copy.243": "Réglage grossier · centres",
+  "debug.copy.244": "Réglage fin",
+  "debug.copy.245": "Posez le canard accroupi sur une table plane et appuyez sur Calibrage auto. Il se relève lentement puis se met de niveau.",
+  "debug.copy.246": "Debout",
+  "debug.copy.247": "Enregistré. Essayez d'abord la posture par défaut, puis la marche.",
+  "debug.copy.248": "Choisissez un servo dans la vue 3D ou la rangée du bas, puis ajustez-le avec ±.",
+  "debug.copy.249": "Avant–arrière : réglez 12 / 22. Côté : laissez faire le calibrage auto.",
+  "debug.copy.250": "Enregistrer",
+  "debug.copy.251": "Ne pas enregistrer, restaurer",
+  "debug.copy.252": "Aucune mesure IMU",
+  "debug.copy.253": "Avant-arrière",
+  "debug.copy.254": "Latéral",
+  "debug.copy.255": "Plus de 15° et toujours pas aligné. Le palonnier est peut-être décalé d'une dent ; remontez-le.",
+  "debug.copy.256": "Calibrage auto",
+  "debug.copy.257": "Le canard se relève lentement…",
+  "debug.copy.258": "Mise à niveau en cours…",
+  "debug.copy.259": "Quand le corps paraît droit, appuyez sur Marquer de niveau. Une fois par canard.",
+  "debug.copy.260": "Marquer de niveau",
+  "debug.copy.261": "Niveau enregistré.",
+  "debug.copy.262": "De niveau. Vous pouvez enregistrer.",
+  "debug.copy.263": "Il faut plus de 8°. Réglez d'abord les articulations des jambes à la main.",
+  "debug.copy.264": "Le canard est tombé ; modifications annulées.",
+  "debug.copy.265": "Le côté ne bouge pas ; seul l'avant–arrière a été réglé.",
+  "debug.copy.266": "L'inclinaison augmentait ; arrêt et retour.",
+  "debug.copy.267": "Pas tout à fait de niveau ; meilleur résultat conservé."
  },
  "de": {
   "debug.auto.queue.remove": "Nächsten Servo aus der Warteschlange entfernen",
@@ -2476,7 +2700,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · Echtzeitsteuerung",
   "debug.copy.122": "Kalibrieren",
   "debug.copy.123": "Nicht gestartet",
-  "debug.copy.124": "Deinstallieren Sie zunächst alle Servos und richten Sie die Halterungslöcher mit bloßem Auge aus. Durch die Einstellung der Neutralstellung wird der Nullpunkt verändert; Beim normalen Trimmen ist dies nicht der Fall.",
+  "debug.copy.124": "Alle Servos entlasten, Beine und Hals von Hand in die Nullstellung bringen, dann jede Mitte setzen. Mitte setzen verschiebt den Nullpunkt; Feinabstimmung nicht.",
   "debug.copy.125": "Alles erneut deinstallieren",
   "debug.copy.126": "Kalibrierung starten · Alles deinstallieren",
   "debug.copy.127": "Aktueller Standort",
@@ -2591,7 +2815,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "Spannung",
   "debug.copy.237": "Temperatur",
   "debug.copy.238": "Verbunden mit {name}",
-  "debug.copy.239": "ID {ids} ausgefallen; alle Servos entlastet"
+  "debug.copy.239": "ID {ids} ausgefallen; alle Servos entlastet",
+  "debug.copy.240": "Nullpunktkalibrierung",
+  "debug.copy.241": "Vorne",
+  "debug.copy.242": "Seite",
+  "debug.copy.243": "Grob · Mitte setzen",
+  "debug.copy.244": "Feinabstimmung",
+  "debug.copy.245": "Lass die Ente auf einem ebenen Tisch hocken und drücke Auto-Kalibrierung. Sie steht langsam auf und richtet sich selbst aus.",
+  "debug.copy.246": "Stehen",
+  "debug.copy.247": "Gespeichert. Erst die Standardhaltung, dann das Gehen testen.",
+  "debug.copy.248": "Wähle einen Servo in 3D oder in der Leiste unten und justiere ihn mit ±.",
+  "debug.copy.249": "Vorne–hinten: 12 / 22 justieren. Seitlich: der Auto-Kalibrierung überlassen.",
+  "debug.copy.250": "Speichern",
+  "debug.copy.251": "Verwerfen und wiederherstellen",
+  "debug.copy.252": "Kein IMU-Messwert",
+  "debug.copy.253": "Vor/zurück",
+  "debug.copy.254": "Seitlich",
+  "debug.copy.255": "Über 15° und noch nicht ausgerichtet. Das Servohorn sitzt evtl. einen Zahn versetzt; neu montieren.",
+  "debug.copy.256": "Auto-Kalibrierung",
+  "debug.copy.257": "Die Ente steht langsam auf…",
+  "debug.copy.258": "Richtet sich selbst aus…",
+  "debug.copy.259": "Wenn der Körper gerade aussieht, drücke Als waagrecht merken. Einmal pro Ente.",
+  "debug.copy.260": "Als waagrecht merken",
+  "debug.copy.261": "Als waagrecht gemerkt.",
+  "debug.copy.262": "Waagrecht. Du kannst speichern.",
+  "debug.copy.263": "Mehr als 8° nötig. Stelle die Beingelenke zuerst von Hand grob ein.",
+  "debug.copy.264": "Die Ente ist umgefallen; zurückgesetzt.",
+  "debug.copy.265": "Seitlich bewegt sich nichts; nur vorne–hinten ausgerichtet.",
+  "debug.copy.266": "Die Neigung wurde größer; gestoppt und zurückgesetzt.",
+  "debug.copy.267": "Nicht ganz waagrecht; bestes Ergebnis behalten."
  },
  "es": {
   "debug.auto.queue.remove": "Quitar el siguiente servo de la cola",
@@ -2787,7 +3039,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · Control en tiempo real",
   "debug.copy.122": "Calibración",
   "debug.copy.123": "No iniciado",
-  "debug.copy.124": "Primero desinstale todos los servos y alinee los orificios del soporte a simple vista. Establecer la posición neutral cambiará el punto cero; el recorte normal no lo hará.",
+  "debug.copy.124": "Libera todos los servos, coloca a mano piernas y cuello en la posición cero y fija cada centro. Fijar un centro mueve el cero; el ajuste fino no.",
   "debug.copy.125": "Vuelva a desinstalar todo",
   "debug.copy.126": "Iniciar calibración · Desinstalar todo",
   "debug.copy.127": "Ubicación actual",
@@ -2902,7 +3154,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "Voltaje",
   "debug.copy.237": "Temperatura",
   "debug.copy.238": "Conectado a {name}",
-  "debug.copy.239": "ID {ids} desconectado; todos los servos liberados"
+  "debug.copy.239": "ID {ids} desconectado; todos los servos liberados",
+  "debug.copy.240": "Calibración del cero",
+  "debug.copy.241": "Frente",
+  "debug.copy.242": "Lado",
+  "debug.copy.243": "Ajuste grueso · centros",
+  "debug.copy.244": "Ajuste fino",
+  "debug.copy.245": "Deja el pato agachado en una mesa plana y pulsa Calibración automática. Se levanta despacio y se nivela solo.",
+  "debug.copy.246": "De pie",
+  "debug.copy.247": "Guardado. Prueba primero la postura por defecto y luego caminar.",
+  "debug.copy.248": "Elige un servo en 3D o en la fila de abajo y ajústalo con ±.",
+  "debug.copy.249": "Adelante–atrás: ajusta 12 / 22. Lateral: déjalo a la calibración automática.",
+  "debug.copy.250": "Guardar",
+  "debug.copy.251": "Descartar y restaurar",
+  "debug.copy.252": "Sin lectura de IMU",
+  "debug.copy.253": "Adelante-atrás",
+  "debug.copy.254": "Lateral",
+  "debug.copy.255": "Más de 15° y aún sin alinear. El brazo del servo puede estar desplazado un diente; vuelve a montarlo.",
+  "debug.copy.256": "Calibración automática",
+  "debug.copy.257": "El pato se está levantando despacio…",
+  "debug.copy.258": "Nivelándose solo…",
+  "debug.copy.259": "Cuando el cuerpo se vea recto, pulsa Marcar como nivelado. Una vez por pato.",
+  "debug.copy.260": "Marcar como nivelado",
+  "debug.copy.261": "Marcado como nivelado.",
+  "debug.copy.262": "Nivelado. Ya puedes guardar.",
+  "debug.copy.263": "Hace falta más de 8°. Ajusta primero a mano las articulaciones de las piernas.",
+  "debug.copy.264": "El pato se cayó; cambios deshechos.",
+  "debug.copy.265": "Lo lateral no se movió; solo se niveló adelante–atrás.",
+  "debug.copy.266": "La inclinación aumentaba; se detuvo y volvió atrás.",
+  "debug.copy.267": "No se niveló del todo; se guardó el mejor resultado."
  },
  "pt-BR": {
   "debug.auto.queue.remove": "Remover o próximo servo da fila",
@@ -3098,7 +3378,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · Controle em tempo real",
   "debug.copy.122": "Calibrando",
   "debug.copy.123": "Não iniciado",
-  "debug.copy.124": "Primeiro desinstale todos os servos e alinhe os furos do suporte a olho nu. Definir a posição neutra alterará o ponto zero; o corte normal não.",
+  "debug.copy.124": "Libere todos os servos, posicione à mão pernas e pescoço na posição zero e defina cada centro. Definir o centro muda o zero; o ajuste fino não.",
   "debug.copy.125": "Desinstale tudo novamente",
   "debug.copy.126": "Iniciar calibração · Desinstalar tudo",
   "debug.copy.127": "Localização atual",
@@ -3213,7 +3493,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "Tensão",
   "debug.copy.237": "Temperatura",
   "debug.copy.238": "Conectado a {name}",
-  "debug.copy.239": "ID {ids} desconectado; todos os servos liberados"
+  "debug.copy.239": "ID {ids} desconectado; todos os servos liberados",
+  "debug.copy.240": "Calibração do zero",
+  "debug.copy.241": "Frente",
+  "debug.copy.242": "Lado",
+  "debug.copy.243": "Ajuste grosso · centros",
+  "debug.copy.244": "Ajuste fino",
+  "debug.copy.245": "Deixe o pato agachado numa mesa plana e toque em Calibração automática. Ele se levanta devagar e se nivela sozinho.",
+  "debug.copy.246": "Em pé",
+  "debug.copy.247": "Salvo. Teste primeiro a postura padrão e depois a caminhada.",
+  "debug.copy.248": "Escolha um servo no 3D ou na fileira abaixo e ajuste com ±.",
+  "debug.copy.249": "Frente–trás: ajuste 12 / 22. Lateral: deixe para a calibração automática.",
+  "debug.copy.250": "Salvar",
+  "debug.copy.251": "Descartar e restaurar",
+  "debug.copy.252": "Sem leitura da IMU",
+  "debug.copy.253": "Frente-trás",
+  "debug.copy.254": "Lateral",
+  "debug.copy.255": "Mais de 15° e ainda desalinhado. O braço do servo pode estar um dente fora; remonte-o.",
+  "debug.copy.256": "Calibração automática",
+  "debug.copy.257": "O pato está se levantando devagar…",
+  "debug.copy.258": "Nivelando sozinho…",
+  "debug.copy.259": "Quando o corpo parecer reto, toque em Marcar como nivelado. Uma vez por pato.",
+  "debug.copy.260": "Marcar como nivelado",
+  "debug.copy.261": "Marcado como nivelado.",
+  "debug.copy.262": "Nivelado. Já pode salvar.",
+  "debug.copy.263": "São necessários mais de 8°. Ajuste primeiro à mão as articulações das pernas.",
+  "debug.copy.264": "O pato caiu; alterações desfeitas.",
+  "debug.copy.265": "O lateral não se moveu; só frente–trás foi nivelado.",
+  "debug.copy.266": "A inclinação aumentava; parou e voltou.",
+  "debug.copy.267": "Não nivelou totalmente; o melhor resultado foi mantido."
  },
  "ru": {
   "debug.auto.queue.remove": "Убрать следующий сервопривод из очереди",
@@ -3409,7 +3717,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · Управление в реальном времени",
   "debug.copy.122": "Калибровка",
   "debug.copy.123": "Не запущено",
-  "debug.copy.124": "Сначала снимите все сервоприводы и невооруженным глазом совместите отверстия кронштейнов. Установка нейтрального положения изменит нулевую точку; нормальной обрезки не будет.",
+  "debug.copy.124": "Отключите все серво, руками выставьте ноги и шею в нулевую позу, затем задайте центры по одному. Центр меняет ноль; точная подстройка — нет.",
   "debug.copy.125": "Переустановить все",
   "debug.copy.126": "Начать калибровку · Удалить все",
   "debug.copy.127": "Текущее местоположение",
@@ -3524,7 +3832,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "Напряжение",
   "debug.copy.237": "Температура",
   "debug.copy.238": "Подключено: {name}",
-  "debug.copy.239": "ID {ids} отключился; нагрузка со всех сервоприводов снята"
+  "debug.copy.239": "ID {ids} отключился; нагрузка со всех сервоприводов снята",
+  "debug.copy.240": "Калибровка нуля",
+  "debug.copy.241": "Спереди",
+  "debug.copy.242": "Сбоку",
+  "debug.copy.243": "Грубо · центры",
+  "debug.copy.244": "Точно",
+  "debug.copy.245": "Посадите утку на корточки на ровном столе и нажмите «Автокалибровка». Она медленно встанет и выровняется сама.",
+  "debug.copy.246": "Встать",
+  "debug.copy.247": "Сохранено. Сначала проверьте позу по умолчанию, затем ходьбу.",
+  "debug.copy.248": "Выберите серво в 3D или в ряду ниже и подстройте его кнопками ±.",
+  "debug.copy.249": "Вперёд–назад: подстройте 12 / 22. Вбок: оставьте автокалибровке.",
+  "debug.copy.250": "Сохранить",
+  "debug.copy.251": "Не сохранять, вернуть как было",
+  "debug.copy.252": "Нет данных IMU",
+  "debug.copy.253": "Вперёд-назад",
+  "debug.copy.254": "Вбок",
+  "debug.copy.255": "Больше 15°, а выровнять не удалось. Качалка сервопривода, возможно, сдвинута на зуб; переставьте её.",
+  "debug.copy.256": "Автокалибровка",
+  "debug.copy.257": "Утка медленно встаёт…",
+  "debug.copy.258": "Выравнивается сама…",
+  "debug.copy.259": "Когда корпус выглядит ровным, нажмите «Запомнить уровень». Один раз для каждой утки.",
+  "debug.copy.260": "Запомнить уровень",
+  "debug.copy.261": "Уровень запомнен.",
+  "debug.copy.262": "Ровно. Можно сохранить.",
+  "debug.copy.263": "Нужно больше 8°. Сначала грубо выставьте суставы ног руками.",
+  "debug.copy.264": "Утка упала; изменения отменены.",
+  "debug.copy.265": "Вбок не сдвинулось; выровнено только вперёд–назад.",
+  "debug.copy.266": "Наклон рос; остановлено и откачено.",
+  "debug.copy.267": "Не удалось выровнять полностью; оставлен лучший результат."
  },
  "ar": {
   "debug.auto.queue.remove": "إزالة المحرك التالي من قائمة الانتظار",
@@ -3720,7 +4056,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · التحكم في الوقت الحقيقي",
   "debug.copy.122": "معايرة",
   "debug.copy.123": "لم يبدأ",
-  "debug.copy.124": "قم أولاً بإلغاء تثبيت جميع الماكينات ومحاذاة فتحات القوس بالعين المجردة. سيؤدي ضبط الوضع المحايد إلى تغيير نقطة الصفر؛ التشذيب العادي لن.",
+  "debug.copy.124": "أرخِ كل المحركات، وضع الساقين والرقبة يدويًا في وضع الصفر، ثم اضبط كل منتصف. ضبط المنتصف يغيّر الصفر؛ الضبط الدقيق لا.",
   "debug.copy.125": "إعادة إلغاء الكل",
   "debug.copy.126": "بدء المعايرة · إلغاء تثبيت الكل",
   "debug.copy.127": "الموقع الحالي",
@@ -3835,7 +4171,35 @@ Object.assign(debugMessages,{
   "debug.copy.236": "الجهد",
   "debug.copy.237": "الحرارة",
   "debug.copy.238": "متصل بـ {name}",
-  "debug.copy.239": "انقطع ID {ids}؛ تم إرخاء جميع المحركات"
+  "debug.copy.239": "انقطع ID {ids}؛ تم إرخاء جميع المحركات",
+  "debug.copy.240": "معايرة نقطة الصفر",
+  "debug.copy.241": "أمام",
+  "debug.copy.242": "جانب",
+  "debug.copy.243": "ضبط تقريبي · المنتصف",
+  "debug.copy.244": "ضبط دقيق",
+  "debug.copy.245": "اجعل البطة جاثمة على طاولة مستوية واضغط «معايرة تلقائية». ستنهض ببطء ثم تستوي بنفسها.",
+  "debug.copy.246": "قِف",
+  "debug.copy.247": "تم الحفظ. جرّب الوضعية الافتراضية أولًا ثم المشي.",
+  "debug.copy.248": "اختر محركًا في العرض ثلاثي الأبعاد أو في الصف أدناه، ثم اضبطه بـ ±.",
+  "debug.copy.249": "أمام–خلف: اضبط 12 / 22. جانبي: اتركه للمعايرة التلقائية.",
+  "debug.copy.250": "حفظ",
+  "debug.copy.251": "تجاهل واستعادة الوضع السابق",
+  "debug.copy.252": "لا توجد قراءة من IMU",
+  "debug.copy.253": "أمام-خلف",
+  "debug.copy.254": "جانبي",
+  "debug.copy.255": "أكثر من 15° ولم تتم المحاذاة. قد يكون ذراع المحرك منزاحًا بسنّ واحدة؛ أعد تركيبه.",
+  "debug.copy.256": "معايرة تلقائية",
+  "debug.copy.257": "البطة تنهض ببطء…",
+  "debug.copy.258": "تستوي بنفسها…",
+  "debug.copy.259": "عندما يبدو الجسم مستقيمًا، اضغط «تعيين كمستوٍ». مرة واحدة لكل بطة.",
+  "debug.copy.260": "تعيين كمستوٍ",
+  "debug.copy.261": "تم التعيين كمستوٍ.",
+  "debug.copy.262": "أصبح مستويًا. يمكنك الحفظ.",
+  "debug.copy.263": "يلزم أكثر من 8°. اضبط مفاصل الساقين يدويًا أولًا.",
+  "debug.copy.264": "سقطت البطة؛ تم التراجع.",
+  "debug.copy.265": "لم يتحرك الجانبي؛ تمت تسوية الأمام–الخلف فقط.",
+  "debug.copy.266": "زاد الميل؛ توقفت وتراجعت.",
+  "debug.copy.267": "لم تتم التسوية بالكامل؛ تم الإبقاء على أفضل نتيجة."
  },
  "hi": {
   "debug.auto.queue.remove": "अगले सर्वो को कतार से हटाएँ",
@@ -4031,7 +4395,7 @@ Object.assign(debugMessages,{
   "debug.copy.121": "UNO Q · वास्तविक समय नियंत्रण",
   "debug.copy.122": "अंशांकन",
   "debug.copy.123": "प्रारंभ नहीं हुआ",
-  "debug.copy.124": "सबसे पहले सभी सर्वो को अनइंस्टॉल करें और ब्रैकेट छेद को नग्न आंखों से संरेखित करें। तटस्थ स्थिति निर्धारित करने से शून्य बिंदु बदल जाएगा; सामान्य ट्रिमिंग नहीं होगी.",
+  "debug.copy.124": "पहले सभी सर्वो ढीले करें, हाथ से पैर और गर्दन को शून्य मुद्रा में रखें, फिर एक-एक कर केंद्र सेट करें। केंद्र सेट करने से शून्य बदलता है; बारीक समायोजन से नहीं।",
   "debug.copy.125": "सभी को पुनः अनइंस्टॉल करें",
   "debug.copy.126": "अंशांकन प्रारंभ करें · सभी को अनइंस्टॉल करें",
   "debug.copy.127": "वर्तमान स्थान",
@@ -4146,6 +4510,34 @@ Object.assign(debugMessages,{
   "debug.copy.236": "वोल्टेज",
   "debug.copy.237": "तापमान",
   "debug.copy.238": "{name} से कनेक्ट",
-  "debug.copy.239": "ID {ids} डिस्कनेक्ट; सभी सर्वो ढीले किए गए"
+  "debug.copy.239": "ID {ids} डिस्कनेक्ट; सभी सर्वो ढीले किए गए",
+  "debug.copy.240": "शून्य बिंदु कैलिब्रेशन",
+  "debug.copy.241": "सामने",
+  "debug.copy.242": "बगल",
+  "debug.copy.243": "मोटा समायोजन · केंद्र",
+  "debug.copy.244": "बारीक समायोजन",
+  "debug.copy.245": "बत्तख को समतल मेज़ पर बैठा दें और 'स्वतः कैलिब्रेशन' दबाएँ। वह धीरे-धीरे खड़ी होकर खुद समतल हो जाएगी।",
+  "debug.copy.246": "खड़े हो",
+  "debug.copy.247": "सहेजा गया। पहले डिफ़ॉल्ट मुद्रा, फिर चलना आज़माएँ।",
+  "debug.copy.248": "3D में या नीचे की सर्वो पंक्ति में एक सर्वो चुनें, फिर ± से समायोजित करें।",
+  "debug.copy.249": "आगे–पीछे: 12 / 22 समायोजित करें। बगल: स्वतः कैलिब्रेशन पर छोड़ें।",
+  "debug.copy.250": "सहेजें",
+  "debug.copy.251": "न सहेजें, पहले जैसा करें",
+  "debug.copy.252": "IMU रीडिंग नहीं है",
+  "debug.copy.253": "आगे-पीछे",
+  "debug.copy.254": "बाएँ-दाएँ",
+  "debug.copy.255": "15° से ज़्यादा, फिर भी संरेखित नहीं। सर्वो हॉर्न एक दाँत खिसका हो सकता है; दोबारा लगाएँ।",
+  "debug.copy.256": "स्वतः कैलिब्रेशन",
+  "debug.copy.257": "बत्तख धीरे-धीरे खड़ी हो रही है…",
+  "debug.copy.258": "खुद समतल हो रही है…",
+  "debug.copy.259": "जब शरीर सीधा दिखे, 'समतल के रूप में दर्ज करें' दबाएँ। हर बत्तख के लिए एक बार।",
+  "debug.copy.260": "समतल के रूप में दर्ज करें",
+  "debug.copy.261": "समतल के रूप में दर्ज हो गया।",
+  "debug.copy.262": "समतल हो गया। अब सहेजें।",
+  "debug.copy.263": "8° से ज़्यादा सुधार चाहिए। पहले हाथ से पैरों के जोड़ मोटे तौर पर सेट करें।",
+  "debug.copy.264": "बत्तख गिर गई; बदलाव वापस लिए गए।",
+  "debug.copy.265": "बगल में हिला नहीं; केवल आगे–पीछे समतल हुआ।",
+  "debug.copy.266": "झुकाव बढ़ता गया; रोककर वापस किया।",
+  "debug.copy.267": "पूरी तरह समतल नहीं हुआ; सबसे अच्छा नतीजा रखा गया।"
  }
 });
