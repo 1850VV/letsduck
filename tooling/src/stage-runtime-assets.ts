@@ -74,8 +74,8 @@ async function resolveDependency(name:string,from:string):Promise<string>{
  for(;;){const candidate=join(directory,'node_modules',name);if(await info(join(candidate,'package.json')))return realpath(candidate);const parent=dirname(directory);if(parent===directory)break;directory=parent;}
  throw new Error('Missing production dependency '+name+' from '+from);
 }
-export async function stageProductionApp(options:{root:string;target:string;entry:'desktop'|'browser'}):Promise<StageReceipt>{
- const root=await realpath(options.root),entry=options.entry==='desktop'?'desktop':'local',source=join(root,'apps',entry),target=await newStageTarget(options.target,[join(source,'dist'),join(root,'packages'),join(root,'node_modules')]);
+export async function stageProductionApp(options:{root:string;target:string}):Promise<StageReceipt>{
+ const root=await realpath(options.root),entry='local',source=join(root,'apps',entry),target=await newStageTarget(options.target,[join(source,'dist'),join(root,'packages'),join(root,'node_modules')]);
  const main=await packageData(source),files=await tree(join(source,'dist'),'apps/'+entry+'/dist'),registry=new Map<string,string>();
  const workspacePrefix=join(root,'packages')+sep;
  async function dependency(name:string,from:string,parentTarget:string,optionalDependency:boolean):Promise<void>{

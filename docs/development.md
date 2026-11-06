@@ -1,14 +1,14 @@
 # 开发与验证
 
-[中文介绍](../README.md) · [English overview](../README.en.md) · [客户端打包与验收](../apps/desktop/README.md)
+[中文介绍](../README.md) · [English overview](../README.en.md)
 
 本文面向源码开发与自行构建。仓库的 `assets/` 已包含所需资源，直接使用下方构建程序即可，无需另备素材或导入 3MF；目录说明见[项目资源](local-assets.md)。普通客户端下载包已包含资源和运行时，无需执行开发命令。
 
-客户端版仅面向 Apple 芯片 Mac 和 Windows x64。桌面窗口与本机浏览器入口是同一客户端的两种启动方式；服务器版独立部署。Linux 上的 CI 和服务器检查不表示提供 Linux 客户端。
+本机版只面向 Apple 芯片 Mac，以本机服务加浏览器页面运行（`npm run start:local`）；服务器版独立部署。不使用 GitHub CI，检查都在本机按改动范围运行。
 
 应用源码、前端、工具和常规测试统一使用严格 TypeScript。`frontend/` 经 Vite 构建到 `frontend/dist/`，客户端版和服务器都服务构建产物。保留 `/paint`、`/assemble/`、`/debug/`、`/gallery/` 与各自版本的入口规则；服务器的 `/` 是涂装台，客户端版的 `/` 是三入口首页。
 
-工作区职责：`packages/contracts` 提供 schema 与类型；`domain` 提供浏览器/Node 共用规则和精确 JSON；`exporter` 提供 3MF、BOM、预检和有界 worker；`storage` 提供个人 SQLite 与服务器 SQLite/MySQL；`devices` 提供共享总线上的异步设备控制；`host` 用 Cordis 组合 Fastify、存储和服务生命周期。`apps/local`、`apps/server`、`apps/desktop` 是各自入口。桌面窗口只管理本机协议、下载、更新与进程，共用业务代码。
+工作区职责：`packages/contracts` 提供 schema 与类型；`domain` 提供浏览器/Node 共用规则和精确 JSON；`exporter` 提供 3MF、BOM、预检和有界 worker；`storage` 提供个人 SQLite 与服务器 SQLite/MySQL；`devices` 提供共享总线上的异步设备控制；`host` 用 Cordis 组合 Fastify、存储和服务生命周期。`apps/local`、`apps/server` 是各自入口，共用业务代码。
 
 ```sh
 npm ci
@@ -17,9 +17,9 @@ npm run verify
 
 `typecheck` 检查前端、全部测试、工具和构建配置，禁止用 JS 绕过严格检查。`audit:typescript` 检查活跃自有代码的语言、类型抑制及固定 vendor 指纹；厂商 JS 与 `tools/history/` 的归档工具有明确保留用途。`audit:publication` 检查跟踪文件中的私有路径、资产、凭据与生成物。扫描是启发式检查，不能代替人工核查。
 
-`npm test` 先构建一次，再顺序运行 TypeScript、Web 和桌面单元测试，使用临时数据库和假设备。`test:typescript` 与 `test:desktop` 单独运行时仍自动构建；对应的 `:built` 命令只运行测试，供已构建的流程复用。缺少资产时，`npm test` 会逐文件列出未执行的资产测试；几何包测试也会明确跳过。
+`npm test` 先构建一次，再顺序运行 TypeScript 和 Web 测试，使用临时数据库和假设备。`test:typescript` 单独运行时仍自动构建；对应的 `:built` 命令只运行测试，供已构建的流程复用。缺少资产时，`npm test` 会逐文件列出未执行的资产测试；几何包测试也会明确跳过。
 
-`npm run verify` 是完整源码验证入口，包含类型检查、一次构建、三组测试、运行时探针和两项审计，并要求资产齐全。原迁移阶段命令 `verify:phase0`–`verify:phase7` 统一使用 `verify`；`test:legacy` 使用 `test:web`，独立的 `test:historical` 历史回放继续保留。桌面真实运行与安装专项见[打包说明](../apps/desktop/README.md)；不能把资产缺失的源代码 CI 当作完整产品验收。MySQL 测试需要专用 `duck_test_*` 库的 `DUCK_TEST_DATABASE_URL`，未配置时明确跳过；测试按序运行。
+`npm run verify` 是完整源码验证入口，包含类型检查、一次构建、两组测试、运行时探针和两项审计，并要求资产齐全。原迁移阶段命令 `verify:phase0`–`verify:phase7` 统一使用 `verify`；`test:legacy` 使用 `test:web`，独立的 `test:historical` 历史回放继续保留。缺少资产时的测试结果不能当作完整产品验收。MySQL 测试需要专用 `duck_test_*` 库的 `DUCK_TEST_DATABASE_URL`，未配置时明确跳过；测试按序运行。
 
 浏览器检查使用 Playwright 托管 Chromium。安装匹配版本后，设置 `DUCK_TEST_BROWSER=1` 可运行浏览器生命周期专项；需 nginx 的协议检查在没有本机 nginx 时明确跳过。原生控件、人工视觉、真实设备与安装包验收分别报告。
 

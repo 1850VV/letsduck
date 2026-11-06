@@ -14,10 +14,5 @@ test('the selected stack can serve a typed response and release its HTTP listene
   assert.equal(result.listenerClosed, true);
   assert.equal(result.databaseReopened, true);
   assert.equal(result.mysqlDriver, 'loaded');
-  assert.equal(result.electron, null);
 });
 
-test('a requested missing Electron executable fails the compatibility check', () => {
-  const run = spawnSync(process.execPath, ['--import', 'tsx', 'tooling/src/runtime-probe.ts', '--electron', resolve(root, 'absent-electron')], { cwd: root, encoding: 'utf8', timeout: 15_000 });
-  assert.notEqual(run.status, 0);
-});

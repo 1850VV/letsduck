@@ -43,6 +43,6 @@ The 来做鸭 / letsduck mark (`frontend/shared/brand/logo.svg`, drawn inline by
 
 The position decoder in `frontend/vendor/meshopt_decoder.mjs` is from meshoptimizer 1.0.1 (MIT); see `frontend/vendor/MESHOPT-LICENSE.txt`. The encoder is a build-only npm dependency.
 
-## Desktop and bundled runtimes
+## Bundled runtimes
 
-Electron 45.0.0 and electron-updater 6.8.11 retain their upstream MIT licenses and dependency notices. electron-builder 26.18.0 and @electron/asar 3.4.1 are build/test dependencies. Portable browser packages include the official Node 24.20.0 binary with its complete upstream LICENSE file. These runtime licenses do not grant redistribution rights for the separate model and manufacturer assets described above.
+Portable browser packages include the official Node 24.20.0 binary with its complete upstream LICENSE file. These runtime licenses do not grant redistribution rights for the separate model and manufacturer assets described above.

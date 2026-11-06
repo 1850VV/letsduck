@@ -1,4 +1,4 @@
 {
-  "name": "@letsduck/local", "version": "0.0.0", "private": true, "type": "module",
+  "name": "@letsduck/local", "version": "0.1.0-beta.9", "private": true, "type": "module",
   "dependencies": { "@letsduck/host": "0.0.0" }
 }

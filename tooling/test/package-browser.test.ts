@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,readFile,readdir,rm,copyFile,chmod,stat,realpath} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,readFile,readdir,rm,copyFile,chmod,stat} from 'node:fs/promises';
 import {join,resolve,dirname} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,execFile} from 'node:child_process';
@@ -9,14 +9,10 @@ import {pathToFileURL} from 'node:url';
 import {setTimeout as delay} from 'node:timers/promises';
 import {unzipSync} from 'fflate';
 import {isJsonObject} from '@letsduck/domain';
-import {createPackage,listPackage} from '@electron/asar';
 import {PNG} from 'pngjs';
 import {packageBrowser} from '../src/package-browser.js';
-import {stageProductionApp,stageRuntimeAssets} from '../src/stage-runtime-assets.js';
 import {writeSyntheticAssets} from './synthetic-assets.js';
 
-let electronBinary:string|undefined;
-try{const loaded:unknown=await import('electron');if(isJsonObject(loaded)&&typeof loaded.default==='string'&&(await stat(loaded.default)).isFile())electronBinary=loaded.default;}catch{/* Source-only Node CI deliberately omits the Electron binary. */}
 
 test('retired Intel Mac browser delivery is refused before staging or runtime execution',async()=>{
  const root=await mkdtemp(join(tmpdir(),'duck-browser-retired-'));
@@ -41,7 +37,7 @@ test('a mismatched bundled runtime is rejected before an archive is written',asy
  const root=await mkdtemp(join(tmpdir(),'duck-browser-wrong-runtime-'));try{await assert.rejects(packageBrowser({root,nodeDirectory:join(root,'missing'),platform:'win32',arch:'x64',output:join(root,'wrong.zip'),withoutAssets:true}),/node|ENOENT|runtime/i);}finally{await rm(root,{recursive:true,force:true});}
 });
 
-async function exercise(binary:string,entry:string,runtime:string,owned:string,electron=false,entryKind:'browser'|'desktop'='browser'){
+async function exercise(binary:string,entry:string,runtime:string,owned:string){
  await mkdir(owned,{recursive:true});
  const {DatabaseSync}=await import('node:sqlite'),legacy=join(owned,'legacy.db'),legacyDesign={colors:{p0:'#112233'},assignments:{}};
  const old=new DatabaseSync(legacy);try{old.exec('CREATE TABLE schemes(id TEXT,user_id TEXT,name TEXT,design TEXT,provenance TEXT,voice_salt INTEGER,created INTEGER,updated INTEGER)');old.prepare('INSERT INTO schemes VALUES(?,?,?,?,?,?,?,?)').run('legacy','personal-owner','Imported packaged scheme',JSON.stringify(legacyDesign),null,7,1,2);}finally{old.close();}
@@ -49,13 +45,11 @@ async function exercise(binary:string,entry:string,runtime:string,owned:string,e
  const fakeAdb=join(owned,process.platform==='win32'?'fake-adb.exe':'fake-adb'),adbLog=join(owned,'fake-adb-calls.log');
  await writeFile(fakeAdb,process.platform==='win32'?'Owned non-executable PE fixture; no device access.':`#!/bin/sh\nprintf '%s\\n' "$*" >> '${adbLog.replaceAll("'","'\\''")}'\nexit 1\n`);await chmod(fakeAdb,0o755);
  const harness=join(owned,'stop-harness.mjs');
- if(entryKind==='desktop')await mkdir(join(owned,'electron-profile'));
- const startup=entryKind==='desktop'?`const {app,utilityProcess}=await import('electron');app.setPath('userData',${JSON.stringify(join(owned,'electron-profile'))});let utility;app.whenReady().then(()=>{utility=utilityProcess.fork(${JSON.stringify(entry)},[],{stdio:'pipe',env:process.env});utility.stdout.on('data',bytes=>process.stdout.write(bytes));utility.stderr.on('data',bytes=>process.stderr.write(bytes));utility.on('message',message=>{if(message.kind==='ready')console.log(message.url);else if(message.kind==='failed')console.error(message.message);});utility.on('exit',code=>app.exit(code));}).catch(error=>{console.error(error);app.exit(1);});`:`const {main}=await import(${JSON.stringify(pathToFileURL(entry).href)});await main(['--port','0','--no-open']);`;
- const stop=entryKind==='desktop'?"utility.postMessage({kind:'stop'});":"process.emit('SIGTERM');";
+ const startup=`const {main}=await import(${JSON.stringify(pathToFileURL(entry).href)});await main(['--port','0','--no-open']);`;
+ const stop="process.emit('SIGTERM');";
  await writeFile(harness,`import cp from 'node:child_process';import fs from 'node:fs';import {syncBuiltinESMExports} from 'node:module';const execFile=cp.execFile;cp.execFile=function(file,...args){if(file===${JSON.stringify(fakeAdb)})fs.appendFileSync(${JSON.stringify(adbLog)},JSON.stringify(args.slice(0,1))+'\\n');return execFile.call(this,file,...args);};syncBuiltinESMExports();${startup}process.on('message',message=>{if(message==='stop'){${stop}process.disconnect();}});`);
  const env:NodeJS.ProcessEnv={...process.env,PATH:'',NODE_OPTIONS:'',NODE_PATH:'',DUCK_ASSETS:join(runtime,'assets'),DUCK_FRONTEND:join(runtime,'frontend'),DUCK_ASSEMBLY_MANIFEST:join(runtime,'assembly-assets.json'),DUCK_PERSONAL_DB:join(owned,'personal.db'),DUCK_DB:legacy,DUCK_LEGACY_DB:legacy,DUCK_ADB:fakeAdb};
  delete env.ELECTRON_RUN_AS_NODE;
- if(electron&&entryKind!=='desktop')env.ELECTRON_RUN_AS_NODE='1';
  const child=spawn(binary,[harness],{cwd:owned,env,stdio:['ignore','pipe','pipe','ipc']});
  assert.ok(child.stdout&&child.stderr);
  let output='',error='',closed=false;child.stdout.on('data',(bytes:Buffer)=>output+=String(bytes));child.stderr.on('data',(bytes:Buffer)=>error+=String(bytes));const exited=new Promise<number|null>((accept,reject)=>{child.once('error',reject);child.once('close',code=>{closed=true;accept(code);});});
@@ -84,18 +78,5 @@ test('unpacked browser ZIP uses bundled Node with empty PATH to save, export and
   const help=process.platform==='win32'?await execute(process.env.ComSpec??join(process.env.SystemRoot??'C:\\Windows','System32/cmd.exe'),['/d','/s','/c',`""${launcher}" --help"`],{windowsVerbatimArguments:true,env:{...process.env,PATH:''}}):await execute(launcher,['--help'],{env:{...process.env,PATH:''}});
   assert.match(help.stdout,/letsduck personal edition/);if(process.platform==='darwin'){assert.ok((await stat(launcher)).mode&0o100);assert.ok((await stat(join(extracted,folder,'node/bin/node'))).mode&0o100);}
   await exercise(join(extracted,folder,'node',binary),join(extracted,folder,'app/apps/local/dist/main.js'),join(extracted,folder,'runtime'),owned);
- }finally{await rm(owned,{recursive:true,force:true});}
-});
-test('real ASAR production closure runs without workspace mirrors',{skip:!electronBinary&&'Desktop CI installs Electron and runs this real ASAR gate'},async(t)=>{
- // Match Electron's resolved utility module URL, including macOS /var symlinks.
- const owned=await realpath(await mkdtemp(join(tmpdir(),'duck-asar-runtime-test-'))),root=resolve(import.meta.dirname,'../..');
- try{
-  const source=join(owned,'synthetic'),runtime=join(owned,'runtime');await mkdir(source);writeSyntheticAssets(source);await writeFile(join(source,'geometry.bin'),'synthetic geometry');await stageRuntimeAssets({root,source,target:runtime});
-  assert.ok(electronBinary);
-  for(const entry of ['browser','desktop'] as const)await t.test(entry==='browser'?'local host in Electron Node mode':'desktop host through real utility IPC',{skip:entry==='desktop'&&!portableHost&&'Desktop clients target macOS arm64 and Windows x64; local ASAR coverage remains enabled'},async()=>{
-   const app=join(owned,entry+'-app'),asar=join(owned,entry+'.asar');await stageProductionApp({root,target:app,entry});await createPackage(app,asar);
-   assert.ok(!listPackage(asar,{isPack:false}).some(name=>/^packages(?:\/|$)/.test(name.replaceAll('\\','/').replace(/^\//,''))),'ASAR contains one production dependency closure');
-   await exercise(electronBinary,join(asar,entry==='desktop'?'apps/desktop/dist/host.js':'apps/local/dist/main.js'),runtime,join(owned,entry+'-run'),true,entry);
-  });
  }finally{await rm(owned,{recursive:true,force:true});}
 });

@@ -55,8 +55,4 @@ storage-state*.json
 !/assets/assembly/horn-reference/*.jpg
 
 # Desktop staging may contain separately licensed assets and generated installers.
-/apps/desktop/build/
-/apps/desktop/release/
-/apps/desktop/dist-config/
-/apps/desktop/dist-scripts/
 !frontend/sim/model/assets/*.stl
