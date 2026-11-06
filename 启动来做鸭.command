@@ -1,8 +1,8 @@
 #!/bin/zsh
 # 来做鸭 letsduck 源码启动器（macOS）。先安装 Node.js 24.20+（24.x）并运行 npm ci。
 cd -- "$(dirname -- "$0")" || exit 1
-for duck_candidate in node /opt/homebrew/bin/node /usr/local/bin/node; do
-  if command -v "$duck_candidate" >/dev/null 2>&1 && "$duck_candidate" -e 'const [major,minor]=process.versions.node.split(".").map(Number);process.exit(major!==24||minor<20)' >/dev/null 2>&1; then
+for duck_candidate in node "$HOME/.local/node/bin/node" /opt/homebrew/bin/node /usr/local/bin/node; do
+  if command -v "$duck_candidate" >/dev/null 2>&1 && "$duck_candidate" -e 'const [major,minor]=process.versions.node.split(".").map(Number);process.exit(major!==24||minor<20?1:0)' >/dev/null 2>&1; then
     duck_node_path=$(command -v "$duck_candidate")
     export PATH="${duck_node_path:h}:$PATH"
     if [[ ! -d node_modules ]]; then
