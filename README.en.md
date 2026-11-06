@@ -10,22 +10,22 @@ A painting tool for the XGO Duck V2. Choose colours, make posters, and export a 
 > **Debug and Assemble are currently internal test previews. Their functionality is not yet available for use.**
 > **Do not follow Assemble's tutorials or use Debug with real hardware.** For actual debugging, use the [manufacturer's official debugging software (downloads)](https://downloads.xgorobot.com/xgoduck/).
 
-**Client installers include the models, resources and runtime needed to run the application. Install the client to get started; no separate asset pack or 3MF is required.**
+**Runs in your local browser: the repository already includes the models and resources it needs. Double-click the launcher; no separate asset pack or 3MF is required.**
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="Switching palettes in the painting studio"></p>
 
 ## Current maintenance scope
 
-- **Only two client installers are maintained**: **Apple silicon Mac (arm64) DMG** and **Windows x64 EXE**, for local painting, saved schemes and export. Debug and Assemble remain internal test previews. No Intel Mac, Linux or other client platforms are provided.
-- **Server maintenance is paused**: server development, adaptation, updates and deployment are on hold. Existing source and documentation remain available. Future client changes do not promise corresponding server support; resuming server maintenance requires a separate explicit decision.
+- **Only the local browser edition is maintained** (Apple silicon Mac): a local service plus browser pages for painting, saved schemes, export, Debug and the simulator. Desktop installers are no longer provided; Windows, Intel Mac and Linux are not maintained.
+- **Server maintenance is paused**: server development, adaptation, updates and deployment are on hold. Existing source and documentation remain available. Future local-edition changes do not promise corresponding server support; resuming server maintenance requires a separate explicit decision.
 
-## Client edition
+## Local edition
 
-On the client home page, drag the three ducks sideways or use the arrow keys. Click a side duck to bring it to the centre, then click the centre duck to open its tool.
+On the home page, drag the three ducks sideways or use the arrow keys. Click a side duck to bring it to the centre, then click the centre duck to open its tool.
 
 | Entry | Features and current status | Usage |
 | --- | --- | --- |
-| Paint `/paint` | Palettes, part colours, poses, posters, saved schemes, 3MF + BOM export | Required resources are included in the client |
+| Paint `/paint` | Palettes, part colours, poses, posters, saved schemes, 3MF + BOM export | Required resources are included in the repository |
 | Debug `/debug/` | Internal test preview; functionality not yet available for use | Do not use with real hardware; use the manufacturer's official debugging software instead |
 | Assemble `/assemble/` | Internal test preview; functionality not yet available for use | Do not follow the assembly tutorials |
 
@@ -48,38 +48,22 @@ The home, paint, debug and assembly interfaces use the existing 12 language dict
 
 ### Install and launch
 
-Internal test Releases provide only two installers: **Apple silicon Mac DMG** and **Windows x64 EXE**. Both include the required resources and runtime; users do not need to install Node.js or Python, or import models or a 3MF separately. The browser entry remains available from source as described below. See [client packaging](apps/desktop/README.md) for builds.
-
-[Releases](https://github.com/1850VV/letsduck/releases) provides internal test clients with the resources needed to run them. These are prereleases, not formal releases. See each release's notes for its version and verified scope.
-
-### Run from source (developers)
-
-The repository includes the required resources in `assets/`. Use the included build tools; no separate asset pack or 3MF import is needed. See [project resources](docs/local-assets.md) for the directory contents. Users who download the client do not need the following development commands.
-
-To run the client from source, install Node.js 24.20+ (24.x):
+Requires Node.js 24.20+ (24.x). The repository's `assets/` already contains the required resources; see [local assets](docs/local-assets.md).
 
 ```sh
 git clone https://github.com/1850VV/letsduck.git
 cd letsduck
 npm ci
-npm run setup:electron
-npm run start:desktop
+npm run start:local
 ```
 
-For the local browser option, replace the last command with `npm run start:local`. The source launcher `启动来做鸭.command` (Mac) also uses this option. The default URL is `http://127.0.0.1:8876/`, trying the next port if occupied. For development, use `npm run start:local -- --port 8880 --no-open` to choose a port and suppress browser launch.
+Afterwards, double-click `启动来做鸭.command`: it builds the pages, starts the local service and opens the browser. The default URL is `http://127.0.0.1:8876/`; if the port is taken, the next one is tried. During development, `npm run start:local -- --port 8880 --no-open` chooses a port and skips opening the browser. To update, `git pull` and double-click the launcher again.
 
-Named schemes, numbering verification and pickup progress are stored outside the application folder:
-
-| Platform | Database |
-| --- | --- |
-| Apple silicon Mac | `~/Library/Application Support/DoodleDuck/personal.db` |
-| Windows x64 | `%APPDATA%\DoodleDuck\personal.db` |
-
-Override the path with `DUCK_PERSONAL_DB`. Back up the database before updating. Desktop and browser drafts, languages and preferences are stored separately and do not transfer with the database.
+Named schemes, numbering verification and pick progress are stored in `~/Library/Application Support/DoodleDuck/personal.db`; override the path with `DUCK_PERSONAL_DB`. Drafts, language, servo check results and other preferences are stored in the browser.
 
 ## Server edition (maintenance paused)
 
-The existing accounts, private schemes, palette gallery, ratings, remixes and Docker Compose configuration remain in the repository. Server-specific features and deployment are no longer actively maintained. Shared frontend, storage and export code needed by the client remains maintained. Passing existing regression checks does not establish ongoing server support. Previous setup, HTTPS, migration and backup instructions are retained as [historical reference](docs/deployment.md).
+The existing accounts, private schemes, palette gallery, ratings, remixes and Docker Compose configuration remain in the repository. Server-specific features and deployment are no longer actively maintained. Shared frontend, storage and export code needed by the local edition remains maintained. Passing existing regression checks does not establish ongoing server support. Previous setup, HTTPS, migration and backup instructions are retained as [historical reference](docs/deployment.md).
 
 ## Development and documentation
 
@@ -87,7 +71,7 @@ The existing accounts, private schemes, palette gallery, ratings, remixes and Do
 npm run verify
 ```
 
-See [development and verification](docs/development.md) and [client packaging and acceptance](apps/desktop/README.md) for asset, MySQL, browser and installation requirements. Technical checks do not replace human interaction or physical-device acceptance.
+See [development and verification](docs/development.md) for asset, MySQL and browser requirements. Technical checks do not replace human interaction or physical-device acceptance.
 
 - [Project structure](docs/project.md) · [Local assets](docs/local-assets.md) · [Translations](docs/i18n.md)
 - [Contributing](CONTRIBUTING.md) · [Security reports](SECURITY.md) · [Publication scope](docs/publication.md)

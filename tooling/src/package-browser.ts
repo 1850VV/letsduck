@@ -24,12 +24,12 @@ export async function packageBrowser(options:BrowserPackageOptions):Promise<Brow
  const temporary=await mkdtemp(join(tmpdir(),'duck-browser-package-'));
  try{
   const app=join(temporary,'app'),runtime=join(temporary,'runtime');
-  const application=await stageProductionApp({root,target:app,entry:'browser'}),resources=await stageRuntimeAssets({root,target:runtime,source,...(options.withoutAssets===undefined?{}:{withoutAssets:options.withoutAssets})});
+  const application=await stageProductionApp({root,target:app}),resources=await stageRuntimeAssets({root,target:runtime,source,...(options.withoutAssets===undefined?{}:{withoutAssets:options.withoutAssets})});
   const binary=options.platform==='win32'?'node/node.exe':'node/bin/node';await mkdir(dirname(join(temporary,binary)),{recursive:true});await copyFile(nodeSource,join(temporary,binary));await chmod(join(temporary,binary),0o755);await copyFile(join(options.nodeDirectory,'LICENSE'),join(temporary,'node/LICENSE'));
   const command=`#!/bin/sh\nCDPATH= cd -P -- "\${0%/*}" || exit 1\nexport DUCK_ASSETS="$PWD/runtime/assets"\nexport DUCK_FRONTEND="$PWD/runtime/frontend"\nexport DUCK_ASSEMBLY_MANIFEST="$PWD/runtime/assembly-assets.json"\nexec "$PWD/node/bin/node" "$PWD/app/apps/local/dist/main.js" "$@"\n`;
   const batch='@echo off\r\nset "DUCK_ASSETS=%~dp0runtime\\assets"\r\nset "DUCK_FRONTEND=%~dp0runtime\\frontend"\r\nset "DUCK_ASSEMBLY_MANIFEST=%~dp0runtime\\assembly-assets.json"\r\n"%~dp0node\\node.exe" "%~dp0app\\apps\\local\\dist\\main.js" %*\r\nexit /b %errorlevel%\r\n';
   const launcher=options.platform==='win32'?'启动来做鸭.bat':'启动来做鸭.command';await writeFile(join(temporary,launcher),options.platform==='win32'?batch:command);await chmod(join(temporary,launcher),0o755);
-  const versionPath=await stat(join(root,'apps/desktop/package.json')).then(()=>join(root,'apps/desktop/package.json'),error=>{if(error instanceof Error&&'code'in error&&error.code==='ENOENT')return join(root,'apps/local/package.json');throw error;});
+  const versionPath=join(root,'apps/local/package.json');
   const manifest:unknown=JSON.parse(await readFile(versionPath,'utf8'));if(!isJsonObject(manifest)||typeof manifest.version!=='string')throw new Error('Missing application package version');
   const folder='letsduck-'+manifest.version+'-browser-'+options.platform+'-'+options.arch,entries:Zippable={};
   async function archive(directory:string,prefix:string):Promise<void>{for(const entry of await readdir(directory,{withFileTypes:true})){const path=join(directory,entry.name),name=prefix+'/'+entry.name;if(entry.isDirectory())await archive(path,name);else{const mode=(await stat(path)).mode&0o777;entries[name]=[await readFile(path),{level:/\.(?:3mf|mp3|mp4|jpg|png|br|gz)$/.test(name)?0:6,os:3,attrs:((0o100000|mode)<<16)>>>0}];}}}

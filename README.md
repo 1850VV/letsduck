@@ -10,22 +10,22 @@
 > **调试鸭和组装鸭目前均为内测版本，功能尚不可用，仅供预览。**
 > **请勿参考组装鸭的教程，也不要使用调试鸭调试真实设备。** 实际调试推荐使用[厂商官方调试程序（下载页）](https://downloads.xgorobot.com/xgoduck/)。
 
-**客户端安装包已包含运行所需的模型、资源和运行时。安装后即可使用，无需另外准备资产包或 3MF。**
+**在本机浏览器里使用：仓库已包含运行所需的模型和资源，双击启动器即可，无需另外准备资产包或 3MF。**
 
 <p align="center"><img src="docs/media/outfits.gif" width="560" alt="在涂装台切换机器鸭配色"></p>
 
 ## 当前维护范围
 
-- **仅维护两个客户端安装包**：**Apple 芯片 Mac（arm64）DMG** 和 **Windows x64 EXE**，用于本机涂装、保存方案与导出；调试鸭和组装鸭仅供内测预览。不提供 Intel Mac、Linux 或其他平台客户端。
-- **服务器版暂停维护**：暂不开发、适配、更新或部署服务器版。历史源码与说明保留，后续客户端更新不承诺同步适配服务器版；恢复维护需另行明确决定。
+- **只维护本机浏览器版**（Apple 芯片 Mac）：本机服务加浏览器页面，用于涂装、保存方案、导出，以及调试鸭、仿真鸭。不再提供桌面安装包，也不维护 Windows、Intel Mac 和 Linux。
+- **服务器版暂停维护**：暂不开发、适配、更新或部署服务器版。历史源码与说明保留，后续更新不承诺同步适配服务器版；恢复维护需另行明确决定。
 
-## 客户端版
+## 本机版
 
-客户端首页可以左右拖动三只鸭，也可以用方向键切换。点侧面的鸭子先转到中间，再点中间的鸭子进入功能。
+首页可以左右拖动三只鸭，也可以用方向键切换。点侧面的鸭子先转到中间，再点中间的鸭子进入功能。
 
 | 入口 | 功能与当前状态 | 使用说明 |
 | --- | --- | --- |
-| 来涂鸭 `/paint` | 选配色、细调零件、摆姿势、制作海报、保存方案、导出 3MF + BOM | 所需资源已随客户端提供 |
+| 来涂鸭 `/paint` | 选配色、细调零件、摆姿势、制作海报、保存方案、导出 3MF + BOM | 所需资源已在仓库中 |
 | 调试鸭 `/debug/` | 内测版本，功能尚不可用，仅供预览 | 请勿用于真实设备调试；实际调试请使用厂商官方程序 |
 | 组装鸭 `/assemble/` | 内测版本，功能尚不可用，仅供预览 | 请勿参考其中的组装教程 |
 
@@ -48,38 +48,22 @@
 
 ### 安装与启动
 
-内测 Release 只提供 **Apple 芯片 Mac DMG** 和 **Windows x64 EXE** 两个安装包。所需资源和运行时均已内置，无需另装 Node.js 或 Python，也无需单独导入模型或 3MF。浏览器入口可按下方开发说明从源码运行；构建说明见[客户端打包](apps/desktop/README.md)。
-
-[Releases](https://github.com/1850VV/letsduck/releases) 提供客户端内测包，已包含运行所需资源。内测包尚非正式发行；版本与已验收范围请以各条目的说明为准。
-
-### 从源码运行（开发者）
-
-仓库的 `assets/` 已包含构建所需资源，使用仓库自带的构建程序即可，无需另找素材或导入 3MF。资源目录说明见[项目资源](docs/local-assets.md)。下载客户端的用户无需执行以下开发命令。
-
-从源码启动客户端，需要 Node.js 24.20+（24.x）：
+需要 Node.js 24.20+（24.x）。仓库的 `assets/` 已包含所需资源，资源目录说明见[项目资源](docs/local-assets.md)。
 
 ```sh
 git clone https://github.com/1850VV/letsduck.git
 cd letsduck
 npm ci
-npm run setup:electron
-npm run start:desktop
+npm run start:local
 ```
 
-如需在本机浏览器中使用，最后一步改为 `npm run start:local`。源码启动器 `启动来做鸭.command`（Mac）也使用浏览器入口。默认地址为 `http://127.0.0.1:8876/`；端口被占用时尝试下一个。开发时可用 `npm run start:local -- --port 8880 --no-open` 指定端口并关闭自动打开浏览器。
+之后双击 `启动来做鸭.command` 即可：它构建页面、启动本机服务并打开浏览器。默认地址为 `http://127.0.0.1:8876/`；端口被占用时尝试下一个。开发时可用 `npm run start:local -- --port 8880 --no-open` 指定端口并关闭自动打开浏览器。更新：`git pull` 后重新双击启动器。
 
-命名方案、编号验证和取件进度保存在应用目录外：
-
-| 平台 | 数据库 |
-| --- | --- |
-| Apple 芯片 Mac | `~/Library/Application Support/DoodleDuck/personal.db` |
-| Windows x64 | `%APPDATA%\DoodleDuck\personal.db` |
-
-可用 `DUCK_PERSONAL_DB` 指定位置。更新前备份数据库；桌面窗口与浏览器各自保存草稿、语言和偏好，不会随数据库自动互转。
+命名方案、编号验证和取件进度保存在 `~/Library/Application Support/DoodleDuck/personal.db`，可用 `DUCK_PERSONAL_DB` 指定位置。草稿、语言、舵机质检结果等偏好保存在浏览器里。
 
 ## 服务器版（暂停维护）
 
-服务器版原有账号、私有方案、配色广场、评分与改编功能及 Docker Compose 配置保留。服务器专用功能与部署现已暂停维护；客户端需要的共用前端、存储和导出代码继续维护。现有回归检查通过不代表服务器版获得持续支持。原部署、HTTPS、迁移与备份步骤仅作为[历史参考](docs/deployment.md)。
+服务器版原有账号、私有方案、配色广场、评分与改编功能及 Docker Compose 配置保留。服务器专用功能与部署现已暂停维护；本机版需要的共用前端、存储和导出代码继续维护。现有回归检查通过不代表服务器版获得持续支持。原部署、HTTPS、迁移与备份步骤仅作为[历史参考](docs/deployment.md)。
 
 ## 开发与文档
 
@@ -88,7 +72,7 @@ npm run verify
 node --import tsx tests/browser/ui-system.ts
 ```
 
-完整测试所需的资产、MySQL、浏览器及安装验收条件，见[开发与验证](docs/development.md)和[客户端打包与验收](apps/desktop/README.md)。技术检查不代替人工交互与实物验收。
+完整测试所需的资产、MySQL 与浏览器条件，见[开发与验证](docs/development.md)。技术检查不代替人工交互与实物验收。
 
 - [项目结构](docs/project.md) · [本地资产](docs/local-assets.md) · [翻译维护](docs/i18n.md)
 - [贡献指南](CONTRIBUTING.md) · [安全报告](SECURITY.md) · [公开发行范围](docs/publication.md)

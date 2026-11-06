@@ -2,7 +2,7 @@
 
 来做鸭 letsduck 面向 XGO Duck V2，提供涂装、展示与分享，以及个人版的舵机调试和 3D 组装教程。不支持任意机器人或任意 3MF 导入。
 
-当前只维护 Windows x64 EXE 与 Apple 芯片 Mac arm64 DMG 两个客户端安装包。服务器专用功能与部署暂停维护，相关代码和历史说明保留。下表是源码结构，不是各模块的持续支持承诺；客户端依赖的共用模块仍随客户端维护与验证。
+当前只维护本机浏览器版（Apple 芯片 Mac），不再提供桌面安装包，也不维护 Windows。服务器专用功能与部署暂停维护，相关代码和历史说明保留。下表是源码结构，不是各模块的持续支持承诺；客户端依赖的共用模块仍随客户端维护与验证。
 
 | 入口 | 职责 |
 | --- | --- |
@@ -19,8 +19,7 @@
 | `frontend/shared/poster.ts` | 分享海报与配色码 |
 | `frontend/lib/` | 配色规则：分区、套色与配色码、色彩工具、超进化动画 |
 | `apps/local/` · `启动来做鸭.command` · `.bat` | Node 个人版启动、资产检查与自有服务生命周期 |
-| `apps/desktop/` | Electron 窗口、duck 协议、受限 preload、下载与更新；复用同一宿主与前端 |
-| `tooling/src/stage-runtime-assets.ts` · `package-browser.ts` | 桌面/离线浏览器包共用资源暂存与生产依赖闭包 |
+| `tooling/src/stage-runtime-assets.ts` · `package-browser.ts` | 离线浏览器包的资源暂存与生产依赖闭包 |
 | `apps/server/` · `packages/host/` | Node/Fastify 路由、版本组合与静态服务 |
 | `packages/contracts/` · `packages/domain/` | 两版及浏览器共用的类型、精确 JSON 与规则 |
 | `packages/storage/` | SQLite/MySQL、账号、方案、作品、评分与只读源库迁移 |
