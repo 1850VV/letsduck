@@ -20,7 +20,7 @@ export class DuckSim {
  params:ServoParams={...TRAINING,friction:[...TRAINING.friction]};
  command=[0,0,0];time=0;fell:number|null=null;
  private readonly qadr:number[];private readonly vadr:number[];private readonly imu:number;private readonly gyro:number;
- private queue:number[][]=[];private target:number[]=[];private readonly frictionDof:number;
+ private queue:number[][]=[];private target:number[]=[];private readonly frictionDof:number;private pin:Float64Array|null=null;
  constructor(private readonly mj:MainModule,files:ModelFiles,onnx:Uint8Array,private readonly bam=files.bam){
   const vfs=new mj.MjVFS();
   try{
@@ -87,6 +87,43 @@ export class DuckSim {
    this.m.dof_frictionloss[v]=loss*(p.friction[i]??1);this.m.dof_damping[v]=b.friction_viscous;
   });
   this.mj.mj_step(this.m,d);
+  if(this.pin){d.qpos.set(this.pin,0);d.qvel.fill(0,0,6);}
+ }
+ /**
+  * The debug duck's servo check (duck-debug.ts servoCheck) on joint i: the trunk is held still in the air in the
+  * standing pose and the joint swings ±8° about its standing angle as a square wave of 0.5 s halves. rise is seconds
+  * to cover 90% of a swing (0.5 when it never gets there), err is degrees short when a half ends, both averaged over five swings.
+  */
+ servoCheck(i:number):{rise:number;err:number}{
+  const home=this.policy.targets(new Float32Array(14)).map(v=>v*RAD),d=this.d;
+  this.mj.mj_resetDataKeyframe(this.m,d,0);d.qpos[2]+=.1;this.qadr.forEach((a,k)=>d.qpos[a]=home[k]!);this.mj.mj_forward(this.m,d);
+  this.pin=d.qpos.slice(0,7);this.queue=[[...home]];
+  const halves:{t:number;a:number;tg:number}[][]=[];
+  try{
+   for(let half=0;half<6;half++){
+    const goal=[...home];goal[i]=goal[i]!+(half%2?-8:8)*RAD;this.target=goal;
+    const samples:{t:number;a:number;tg:number}[]=[];
+    // The board samples /api/status about every 20 ms.
+    for(let k=1;k<=100;k++){this.step();if(k%4===0)samples.push({t:k*PHYS_DT,a:d.qpos[this.qadr[i]!]/RAD,tg:goal[i]!/RAD});}
+    halves.push(samples);
+   }
+  }finally{this.pin=null;this.reset();}
+  const swings=halves.slice(1).map((h,n)=>{const from=halves[n]!.at(-1)!.a,last=h.at(-1)!,span=last.tg-from;return {rise:h.find(x=>(x.a-from)/span>=.9)?.t??.5,err:Math.abs(last.a-last.tg)};});
+  const mean=(k:'rise'|'err')=>swings.reduce((s,x)=>s+x[k],0)/swings.length;
+  return {rise:mean('rise'),err:mean('err')};
  }
  dispose(){this.d.delete();this.m.delete();}
+}
+
+const FRICTIONS=[.15,.25,.35,.5,.65,.8,1,1.25,1.5,2,2.5,3,4,6];
+/** Friction multiplier on joint i whose simulated servo check comes closest to a measured one (rise in 0.05 s ≈ err in 0.5°). */
+export function fitFriction(sim:DuckSim,i:number,real:{rise:number;err:number}):{friction:number;rise:number;err:number}{
+ const saved=sim.params.friction[i]!;let best={friction:1,rise:0,err:0,cost:Infinity};
+ try{
+  for(const f of FRICTIONS){
+   sim.params.friction[i]=f;const r=sim.servoCheck(i),cost=((r.rise-real.rise)/.05)**2+((r.err-real.err)/.5)**2;
+   if(cost<best.cost)best={friction:f,...r,cost};
+  }
+ }finally{sim.params.friction[i]=saved;}
+ return {friction:best.friction,rise:best.rise,err:best.err};
 }
