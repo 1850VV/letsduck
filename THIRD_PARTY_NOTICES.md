@@ -17,6 +17,12 @@ The project resources in `assets/` are included with the repository owner's conf
 - **Assembly preview assets** (`assets/assembly/`): tutorial videos are clips of the owner's recordings; the Arduino UNO Q model is converted from Arduino's official STEP under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); other hardware models are hand-built approximations. The piano pieces are Kevin MacLeod's *Gymnopedie No. 1* ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)) and a public-domain rendering of Mozart K.545. Keep `assets/assembly/hardware-v2/ATTRIBUTION.txt` and the credits at `frontend/assemble/audio-credits.html`.
 - **Other robot repositories:** unrelated models and design assets are outside this bundle. Their software licences do not automatically cover design assets.
 
+## Simulation (`frontend/sim/`)
+
+- **MuJoCo 4.0.0** (`@mujoco/mujoco`, Google DeepMind) is bundled as WebAssembly under the [Apache License 2.0](https://github.com/google-deepmind/mujoco/blob/main/LICENSE).
+- **XGO Duck simulation model** (`frontend/sim/model/`): `robot_walk.xml`, `scene_walk.xml`, meshes and the HLS1910 servo parameters are copied unchanged from Luwu Dynamics' [xgoduck_rl](https://github.com/LuwuDynamics/xgoduck_rl) under the Apache License 2.0 (`frontend/sim/model/LICENSE`). The servo friction model in `frontend/sim/duck.ts` follows BAM (Marc Duclusaud & Grégoire Passault, Apache License 2.0) as vendored there.
+- The walking policy `xgoduck_walk.onnx` is **not** included: the official runtime repository grants no redistribution terms for its ONNX files, so the page downloads it from that repository at run time.
+
 ## Credits
 
 XGO-Duck by Luwu Dynamics builds on the MicroDuck ecosystem by Pollen Robotics. The workspace references Bambu Lab product color identifiers. The blue-white-black design uses a DeepSeek brand-blue reference. These names identify compatibility and inspiration, not endorsement, affiliation, or trademark permission.

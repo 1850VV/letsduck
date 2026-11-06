@@ -52,7 +52,7 @@ export default defineConfig({
   publicDir: false,
   input: {
     paint: resolve(frontend, 'index.html'), home: resolve(frontend, 'home.html'),
-    assemble: resolve(frontend, 'assemble/index.html'), debug: resolve(frontend, 'debug/index.html'),
+    assemble: resolve(frontend, 'assemble/index.html'), debug: resolve(frontend, 'debug/index.html'), sim: resolve(frontend, 'sim/index.html'),
     gallery: resolve(frontend, 'gallery/index.html'), credits: resolve(frontend, 'assemble/audio-credits.html'),
   },
   resolve: { alias: [

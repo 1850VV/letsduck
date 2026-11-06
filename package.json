@@ -53,6 +53,7 @@
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",
     "@electron/asar": "3.4.1",
+    "@mujoco/mujoco": "4.0.0",
     "@types/node": "24.19.2",
     "@types/pngjs": "6.0.5",
     "@types/three": "0.180.0",
