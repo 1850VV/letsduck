@@ -26,14 +26,13 @@ test('automatic numbering hands off manual control, queues explicitly, resumes a
  const evidence=process.env.DUCK_AUTO_EVIDENCE;if(evidence)await mkdir(evidence,{recursive:true});
  try{
   await preparePage(page);await page.goto(fixture.url+'/debug/');await page.waitForSelector('body[data-model-ready=true]');
-  assert.equal(await page.locator('[data-workbench=servo]').getAttribute('aria-pressed'),'true','manual remains the default');
+  assert.equal(await page.locator('.work-tabs [data-workbench=control]').getAttribute('aria-pressed'),'true','control is the default page');
   assert.equal(await page.locator('[data-workbench=automatic]').count(),1,'approved automatic entry exists');
-  await page.locator('[data-workbench=automatic]').focus();await page.keyboard.press('Home');assert.equal(await page.locator('[data-workbench=servo]').evaluate(element=>element===document.activeElement),true,'Home returns tab focus to the existing first workbench');
-  await page.keyboard.press('End');await page.waitForFunction(()=>document.querySelector('[data-workbench=calibrate]')?.getAttribute('aria-pressed')==='true');
-  await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>document.querySelector('[data-workbench=control]')?.getAttribute('aria-pressed')==='true');
-  await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>document.querySelector('[data-workbench=automatic]')?.getAttribute('aria-pressed')==='true');
+  await page.locator('.work-tabs [data-workbench=control]').focus();await page.keyboard.press('End');await page.waitForFunction(()=>document.querySelector(".settings-tabs [data-workbench=servo]")?.getAttribute('aria-pressed')==='true');
+  await page.locator('.work-tabs [data-workbench=servo]').focus();await page.keyboard.press('ArrowLeft');await page.waitForFunction(()=>document.querySelector('[data-workbench=check]')?.getAttribute('aria-pressed')==='true');
+  await page.keyboard.press('Home');await page.waitForFunction(()=>document.querySelector('[data-workbench=control]')?.getAttribute('aria-pressed')==='true');
   await page.locator('[data-workbench=control]').click();await page.locator('[data-controller-mode=policy]').click();await until(()=>runtime.state.mode==='policy');
-  await page.locator('[data-workbench=automatic]').click();await page.locator('#auto-start').waitFor();
+  await page.locator('.work-tabs [data-workbench=servo]').click();await page.locator('[data-workbench=automatic]').click();await page.locator('#auto-start').waitFor();
   const entered=runtime.calls.length;await delay(180);assert.equal(runtime.calls.slice(entered).filter(call=>call.method==='POST').length,0,'idle automatic tab never scans or continues manual sending');
   assert.equal(runtime.state.mode,'policy','opening automatic retains existing leave semantics');
   assert.ok(!requests.some(request=>request.path==='/api/servo-setup'),'legacy implicit scan endpoint is unused');
@@ -54,8 +53,8 @@ test('automatic numbering hands off manual control, queues explicitly, resumes a
   await until(()=>Date.now()-(fixture.setup.snapshot().shutdownAt??Date.now())>=15010,18000);
   runtime.motors=new Map([[1,{kp:32,kd:40,pos:392}]]);runtime.offline=false;
   await until(()=>blocked&&writeNumber===2);assert.equal(fixture.setup.snapshot().activeTarget,20,'explicit queued target survives shutdown and power swap');
-  await page.locator('[data-workbench=servo]').click();assert.equal(await page.locator('[data-workbench=automatic]').getAttribute('aria-pressed'),'true','manual cannot activate before pause drains in-flight I/O');
-  unblock();await page.waitForFunction(()=>document.querySelector('[data-workbench=servo]')?.getAttribute('aria-pressed')==='true');
+  await page.locator('.settings-tabs [data-workbench=servo]').click();assert.equal(await page.locator('[data-workbench=automatic]').getAttribute('aria-pressed'),'true','manual cannot activate before pause drains in-flight I/O');
+  unblock();await page.waitForFunction(()=>document.querySelector('.settings-tabs [data-workbench=servo]')?.getAttribute('aria-pressed')==='true');
   assert.equal(fixture.setup.snapshot().running,false);const stopped=runtime.calls.length;await delay(120);assert.equal(runtime.calls.slice(stopped).filter(call=>['reset_mid','set_gains','set_id'].includes(String(call.body?.action))).length,0);
   assert.equal(runtime.halted,1);assert.equal(runtime.closed,0);
   runtime.before=undefined;await page.locator('[data-workbench=automatic]').click();await page.locator('[data-slot="21"]').click();await page.locator('#auto-queue').click();await until(()=>fixture.setup.snapshot().queuedTarget===21);await page.locator('#auto-clear').click();await until(()=>fixture.setup.snapshot().queuedTarget===null);await page.locator('[data-slot="20"]').click();await page.locator('#auto-start').click();await until(()=>fixture.setup.snapshot().phase==='success'&&fixture.setup.snapshot().currentId===20);
@@ -67,7 +66,7 @@ test('automatic numbering hands off manual control, queues explicitly, resumes a
   await page.setViewportSize({width:1440,height:1000});await page.goto(fixture.url+'/');await page.waitForFunction(()=>document.body.dataset.homeReady==='true');
   const duck=page.locator('[data-duck=debug]');await duck.click();if(!await page.locator('#module-window').isVisible())await duck.click();
   const embedded=required(await required(await page.locator('#module-frame').elementHandle()).contentFrame());await embedded.waitForSelector('body[data-model-ready=true]');
-  assert.equal(await embedded.locator('[data-workbench=servo]').getAttribute('aria-pressed'),'true');await embedded.locator('[data-workbench=automatic]').click();await embedded.locator('#auto-start').waitFor();
+  assert.equal(await embedded.locator('.work-tabs [data-workbench=control]').getAttribute('aria-pressed'),'true');await embedded.locator('.work-tabs [data-workbench=servo]').click();await embedded.locator('[data-workbench=automatic]').click();await embedded.locator('#auto-start').waitFor();
   assert.match(await embedded.locator('#auto-progress').innerText(),/2\/15/,'iframe shows shared persisted progress');
   await page.locator('#close-module').click();await until(()=>!fixture.setup.snapshot().running);
   assert.deepEqual(errors,[]);assert.ok(!requests.some(request=>request.path==='/api/servo-setup'));
@@ -79,7 +78,7 @@ test('completed automatic numbering presents all fifteen records and returns to 
  const fixture=await createBrowserFixture({mode:'debug',...(process.env.DUCK_FRONTEND_DIST?{frontend:process.env.DUCK_FRONTEND_DIST}:{})}),browser=await launchBrowser({headless:true});
  const context=await browser.newContext({viewport:{width:1440,height:1000},locale:'zh-CN'}),page=await context.newPage();
  try{
-  await preparePage(page);await page.goto(fixture.url+'/debug/');await page.waitForSelector('body[data-model-ready=true]');await page.locator('[data-workbench=automatic]').click();await page.waitForFunction(()=>document.querySelector('#auto-progress')?.textContent?.includes('15/15'));
+  await preparePage(page);await page.goto(fixture.url+'/debug/?bench=servo');await page.waitForSelector('body[data-model-ready=true]');await page.locator('[data-workbench=automatic]').click();await page.waitForFunction(()=>document.querySelector('#auto-progress')?.textContent?.includes('15/15'));
   assert.equal(await page.locator('#auto-complete').count(),1,'completed records receive an explicit completion summary');
   assert.match(await page.locator('#auto-progress').innerText(),/15\/15/);assert.equal(await page.locator('#auto-complete [data-auto-group]').count(),3);
   assert.equal(await page.locator('#auto-complete').innerText().then(text=>text.includes('编号完成不代表机械零位已校准。')),true);
@@ -117,11 +116,11 @@ test('pending head mode acknowledgement prevents automatic navigation and cannot
  try{
   await preparePage(page);await page.goto(fixture.url+'/debug/');await page.waitForSelector('body[data-model-ready=true]');await page.locator('[data-workbench=control]').click();await page.locator('[data-control-tab=head]').click();
   await page.locator('#control-head-0').press('ArrowRight');await until(()=>blocked);
-  const automatic=page.locator('[data-workbench=automatic]'),disabled=await automatic.isDisabled(),box=required(await automatic.boundingBox());
+  const automatic=page.locator('.work-tabs [data-workbench=servo]'),disabled=await automatic.isDisabled(),box=required(await automatic.boundingBox());
   await page.mouse.click(box.x+box.width/2,box.y+box.height/2);await delay(40);const moved=await automatic.getAttribute('aria-pressed');
   unblock();await until(()=>runtime.calls.some(call=>call.path==='/api/command'));
   assert.equal(disabled,true,'mode→command must hold existing busy; nav moved='+moved);assert.equal(moved,'false');
-  await automatic.click();await page.locator('#auto-start').waitFor();const count=runtime.calls.filter(call=>call.path==='/api/command').length;
+  await automatic.click();await page.locator('[data-workbench=automatic]').click();await page.locator('#auto-start').waitFor();const count=runtime.calls.filter(call=>call.path==='/api/command').length;
   await delay(180);assert.equal(runtime.calls.filter(call=>call.path==='/api/command').length,count,'late mode response never rearms automatic tab');assert.equal(fixture.debug.owned,false);
  }finally{unblock();await context.close();await browser.close();await fixture.close();}
 });
@@ -141,7 +140,7 @@ test('resuming a discovery paused before pending exists finishes its current tar
  const {fixture,runtime}=await numberingFixture(),browser=await launchBrowser({headless:true}),context=await browser.newContext({locale:'zh-CN'}),page=await context.newPage();let unblock=()=>{},blocked=false;
  runtime.before=async(_method,_path,body)=>{if(!blocked&&body&&typeof body==='object'&&'action'in body&&body.action==='ping'){blocked=true;await new Promise<void>(resolve=>{unblock=resolve;});}};
  try{
-  await preparePage(page);await page.goto(fixture.url+'/debug/');await page.waitForSelector('body[data-model-ready=true]');await page.locator('[data-workbench=automatic]').click();await page.locator('[data-slot="14"]').click();await page.locator('#auto-start').click();await until(()=>blocked);
+  await preparePage(page);await page.goto(fixture.url+'/debug/?bench=servo');await page.waitForSelector('body[data-model-ready=true]');await page.locator('[data-workbench=automatic]').click();await page.locator('[data-slot="14"]').click();await page.locator('#auto-start').click();await until(()=>blocked);
   await page.locator('#auto-pause').click();unblock();await until(()=>fixture.setup.snapshot().phase==='paused');assert.equal(fixture.setup.snapshot().records.length,0);assert.equal(fixture.setup.snapshot().activeTarget,14);
   await page.locator('[data-slot="20"]').click();await page.locator('#auto-queue').click();await until(()=>fixture.setup.snapshot().queuedTarget===20);
   runtime.before=undefined;await page.locator('#auto-start').click();await until(()=>fixture.setup.snapshot().phase==='success');

@@ -6,7 +6,7 @@ export default async (page:Page)=>{
  const errors:string[]=[],writes:(string|null)[]=[],checks:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/duck-debug/action',async route=>{writes.push(route.request().postData());await route.fulfill({status:409,json:{error:'Read-only mapping verification'}});});
  const check=(name:string,ok:boolean|undefined)=>{if(!ok)throw Error(name);checks.push(name);};
- await page.setViewportSize({width:1440,height:1000});await browserChecks.preparePage(page);await page.goto((browserChecks.browserUrl())+'/debug/');await page.waitForSelector('body[data-model-ready=true]');
+ await page.setViewportSize({width:1440,height:1000});await browserChecks.preparePage(page);await page.goto((browserChecks.browserUrl())+'/debug/?bench=servo');await page.waitForSelector('body[data-model-ready=true]');
  const groups=page.locator('#slots > div');
  check('固定盘位按右腿、左腿、头颈与鸭嘴分为三组',await groups.count()===3);
  // Match the front-facing model without changing the physical ID-to-leg mapping.

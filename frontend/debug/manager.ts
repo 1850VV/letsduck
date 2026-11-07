@@ -22,48 +22,42 @@ const canEdit=(d:Device|undefined)=>!!d?.online&&!duplicate(state,d.id)&&!state.
 const LINK_KEY='letsduck.debug.link',volts:{at:number;v:number}[]=[];let found:string[]|null=null,linkTab:'lan'|'usb'='lan',lastDropout='';
 function savedHost(){try{return localStorage.getItem(LINK_KEY);}catch{return null;}}
 function remember(host:string|null){try{if(host)localStorage.setItem(LINK_KEY,host);else localStorage.removeItem(LINK_KEY);}catch{/* Without storage the choice lasts until the page closes. */}}
-const boardNames={arduino:'Arduino UNO Q',get expansion(){return dt('舵机扩展板');}};
-function chooseBoard(id:string|undefined){if(id!=='arduino'&&id!=='expansion')return;if(state.busy||automatic?.active)return;deviceTools?.selectDevice('board');state.selectedBoard=id;state.mode='single';state.draft=null;render();}
-function choose(id:number){if(state.busy)return;const d=state.devices.find(d=>d.id===id);if(!d)return;if(automatic?.active){automatic.choose(id);return;}deviceTools?.selectDevice('servo');state.selectedBoard=null;state.selected=d.uid;state.mode='single';state.draft=null;render();}
+function choose(id:number){if(state.busy)return;const d=state.devices.find(d=>d.id===id);if(!d)return;if(automatic?.active){automatic.choose(id);return;}state.selected=d.uid;state.mode='single';state.draft=null;render();}
 export async function api(action:string,values:Record<string,unknown>={}){
  const r=await fetch('/api/duck-debug/action',{method:'POST',headers:{'Content-Type':'application/json'},body:jsonStringify({action,...values})});
  const data=await parseResponseJson(r);if(!isRecord(data))throw displayError("控制器返回格式异常");if(!r.ok)throw Object.assign(Error(typeof data.error==='string'?data.error:dt("操作未完成")),{details:data,code:data.code,params:data.params,messageCode:data.messageCode,messageParams:data.messageParams});return data;
 }
 async function run(action:string,values:Record<string,unknown>={},message:DebugNotice=dm("操作完成"),after?:(data:Record<string,unknown>)=>void){
  if(state.busy||automatic?.active)return;
- state.busy=true;state.message=dm("正在执行并等待读回…");render();
+ state.busy=true;state.message=dm("正在执行…");render();
  try{const data=await api(action,values);after?.(data);await poll(true);say(message);return data;}
  catch(error){await poll(true);say(debugFailure(error),true);return null;}
  finally{state.busy=false;state.draft=null;render();}
 }
 function slots(){
  const active=new Set(online(state).map(d=>d.id)),d=selected(state),progress=automatic?.active?{verifiedIds:[...automatic.verified],ready:automatic.verified.size===15}:readNumberingReadiness();
- setLocalizedHTML($('board-slots'),(Object.entries(boardNames) as [keyof typeof boardNames,string][]).map(([id,name])=>{const live=state.boards[id].connected;return `<button class="board-slot ${live?'online':''} ${state.selectedBoard===id?'selected':''}" data-board-slot="${id}" aria-label="${escapeAttribute(dt('选择 {name}，{status}',{name,status:live?dt('已连接'):dt('未确认')}))}" aria-pressed="${state.selectedBoard===id}" ${state.busy||automatic?.active?'disabled':''}><i class="dot ${live?'green':''}"></i><strong>${name}</strong><small>${live?dt("已连接"):dt("未确认")}</small></button>`;}).join(''));
  // Same order as the front-facing model: the duck's right leg shows on screen left.
- setLocalizedHTML($('slots'),([[dt("右腿"),IDS.slice(5,10)],[dt("左腿"),IDS.slice(0,5)],[dt("头颈与鸭嘴"),IDS.slice(10)]] as const).map(([title,ids])=>`<div><div class="slot-group-title"><span>${title}</span><span>${ids[0]}–${ids.at(-1)}</span></div><div class="slot-row">${ids.map(id=>`<button class="slot ${active.has(id)?'online':''} ${!state.selectedBoard&&d?.id===id?'selected':''} ${alert(state,id)??''} ${duplicate(state,id)?'conflict':''} ${automatic?.active&&automatic.queuedTarget===id?'auto-queued':''} ${servoCheck?.slotClass(id)??''}" data-slot="${id}" data-online="${active.has(id)}" aria-label="${escapeAttribute(dt('选择 ID{id}，{role}，{status}',{id:String(id),role:role(id),status:active.has(id)?dt('在线'):dt('离线')}))}" aria-pressed="${!state.selectedBoard&&d?.id===id}" ${state.busy?'disabled':''}>${id}<i class="slot-dot"></i>${progress.verifiedIds.includes(id)?`<span class="slot-verified" aria-label="${escapeAttribute(dt("编号已验证"))}">✓</span>`:''}</button>`).join('')}</div></div>`).join(''));
+ setLocalizedHTML($('slots'),([[dt("右腿"),IDS.slice(5,10)],[dt("左腿"),IDS.slice(0,5)],[dt("头颈与鸭嘴"),IDS.slice(10)]] as const).map(([title,ids])=>`<div><div class="slot-group-title"><span>${title}</span><span>${ids[0]}–${ids.at(-1)}</span></div><div class="slot-row">${ids.map(id=>`<button class="slot ${active.has(id)?'online':''} ${d?.id===id?'selected':''} ${alert(state,id)??''} ${duplicate(state,id)?'conflict':''} ${automatic?.active&&automatic.queuedTarget===id?'auto-queued':''} ${servoCheck?.slotClass(id)??''}" data-slot="${id}" data-online="${active.has(id)}" aria-label="${escapeAttribute(dt('选择 ID{id}，{role}，{status}',{id:String(id),role:role(id),status:active.has(id)?dt('在线'):dt('离线')}))}" aria-pressed="${d?.id===id}" ${state.busy?'disabled':''}>${id}<i class="slot-dot"></i>${progress.verifiedIds.includes(id)?`<span class="slot-verified" aria-label="${escapeAttribute(dt("编号已验证"))}">✓</span>`:''}</button>`).join('')}</div></div>`).join(''));
  const extra=state.devices.filter(d=>!IDS.includes(d.id));$('extra-devices').hidden=!extra.length;
  setLocalizedHTML($('extra-devices'),extra.length?dt('其他在线')+' '+extra.map(d=>`<button data-slot="${d.id}">ID ${d.id} · ${d.online?dt("在线"):dt("最近扫描")}</button>`).join(''):'');
- $('slot-count').textContent=dt("{count} 个编号在线 / 15 个固定盘位",{count:active.size});
+ $('slot-count').textContent=dt("{count}/15 只在线",{count:active.size});
  $('numbering-progress').textContent=dt("编号已验证 {count}/15 · {status}",{count:progress.verifiedIds.length,status:progress.ready?dt('组装鸭已解锁'):dt('完成后解锁组装鸭')});
  $<HTMLButtonElement>('verify-online').disabled=state.busy||!online(state).length||automatic?.active;
 }
-function panelBoard(){const id=required(state.selectedBoard),live=state.boards[id].connected;
- const upstream=id==='arduino'?(state.transport==='lan'?dt("Mac · 网络"):'Mac · USB'):'Arduino UNO Q';
- setLocalizedHTML($('panel'),`<div class="panel-heading"><h2 style="font-size:22px">${boardNames[id]}</h2><span class="live-badge ${live?'':'off'}"><i class="dot ${live?'green':''}"></i>${live?dt("已连接"):dt("未确认")}</span></div><p class="role">${id==='arduino'?dt("主控板"):dt("舵机总线与独立供电")}</p><dl class="board-detail"><div><dt>${dt("通信状态")}</dt><dd>${live?dt("已确认连通"):dt("尚未确认")}</dd></div><div><dt>${dt("连接上游")}</dt><dd>${upstream}</dd></div><div><dt>${dt("下游设备")}</dt><dd>${id==='arduino'?dt("舵机扩展板"):dt("{count} 只舵机在线",{count:online(state).length})}</dd></div><div><dt>${dt("实测供电电压")}</dt><dd>${battery(state)?.toFixed(2).concat(' V')??dt("未读取")}</dd></div></dl><button class="primary" data-action="probe-board">${dt("重新检测连接")}</button><p class="board-note">${dt("连接状态与绿色模型同步。主控链路与舵机独立供电分开确认。")}</p><div class="panel-grow"></div><div class="panel-bottom">${dt("板卡外形为示意模型")}</div>`);
-}
-function field(key:string,label:string,value:unknown,disabled:boolean,extra=''){return `<label class="field ${key==='id'?'id-field':''}">${label}<input id="edit-${key}" aria-label="${escapeAttribute(label)}" aria-describedby="error-${key}" type="number" step="1" min="0" max="${key==='id'?253:255}" value="${value??''}" ${disabled?'disabled':''} ${extra}><span class="field-error" id="error-${key}"></span></label>`;}
+function field(key:string,label:string,value:unknown,disabled:boolean,extra='',term=''){return `<label class="field ${key==='id'?'id-field':''}"><span>${label}${term?` <small class="term">${term}</small>`:''}</span><input id="edit-${key}" aria-label="${escapeAttribute(label)}" aria-describedby="error-${key}" type="number" step="1" min="0" max="${key==='id'?253:255}" value="${value??''}" ${disabled?'disabled':''} ${extra}><span class="field-error" id="error-${key}"></span></label>`;}
+// Raw servo position (0–4095, 2048 = zero) shown as degrees from zero.
+const degrees=(pos:unknown)=>typeof pos==='number'&&Number.isFinite(pos)?((pos-2048)*360/4096).toFixed(1)+'°':'—';
 function panelSingle(){
- const d=selected(state),live=d?.online,editable=canEdit(d),conflict=live&&duplicate(state,d.id),draft=state.draft??d;
+ const d=selected(state),live=d?.online,editable=canEdit(d),conflict=live&&duplicate(state,d.id),draft=state.draft??d,unit=360/4096;
  setLocalizedHTML($('panel'),`<div class="panel-heading"><h2>ID ${d.id}</h2><span class="live-badge ${live?'':'off'}"><i class="dot ${live?'green':''}"></i>${live?dt("在线"):dt("离线")}</span></div><p class="role">${role(d.id)}</p>
- ${conflict?`<div class="inline-alert">${dt("相同地址存在冲突。相同编号无法分别寻址，需要分开连接后改号。")}</div>`:!live?`<div class="inline-alert">${dt("当前未在线。保留编号位置，连接后再读取和修改。")}</div>`:''}
- <div class="readback"><div><span>${dt("当前位置 · 原始值")}</span><b id="current-position">${live?(d.readbackPending?dt("待读回"):d.pos??'—'):'—'}</b></div><div><span>${dt("输出状态")}</span><b class="torque">${live?(d.held?dt("保持当前位置"):dt("已卸载")):'—'}</b></div><div><span>${dt("电压")}</span><b id="current-voltage">${volt(d)}</b></div><div><span>${dt("温度")}</span><b id="current-temp">${temp(d)}</b></div></div>
- <div class="section-label"><span>${dt("编号与参数")}</span><button data-action="read" ${!state.boards.arduino.connected||state.busy?'disabled':''}>${dt("重新读取 ↻")}</button></div>
- <div class="form-grid">${field('id',dt("舵机编号"),draft.id,!editable)}${field('kp',d.parametersLive?'KP':dt("KP · 上次读回"),live?draft.kp:'',!editable,`placeholder="${escapeAttribute(dt("未在线"))}"`)}${field('kd',d.parametersLive?'KD':dt("KD · 上次读回"),live?draft.kd:'',!editable,`placeholder="${escapeAttribute(dt("未在线"))}"`)}</div>
- <button id="write-parameters" class="primary write-button" data-action="write" ${!editable?'disabled':''}>${state.busy?dt("正在写入并读回…"):dt("写入编号与参数")}</button><p class="saved-note">${dt("改号与参数写入保留中位")}</p>
- <section class="micro"><div class="micro-title"><span>${dt("位置微调")}</span><button data-action="hold" ${!editable?'disabled':''}>${d.jogReady?dt("关闭微调"):dt("开启微调")}</button></div><div class="step-row"><span>${dt("步幅")}</span>${[1,5,10].map(n=>`<button data-step="${n}" aria-pressed="${step===n}" ${!editable?'disabled':''}>${n} · ${(n*360/4095).toFixed(2)}°</button>`).join('')}</div>
- <div class="jog-row"><button class="secondary" data-jog="-1" ${!editable||!d.jogReady?'disabled':''}>− ${dt('{step} 单位',{step})}</button><button class="secondary" data-jog="1" ${!editable||!d.jogReady?'disabled':''}>＋ ${dt('{step} 单位',{step})}</button></div>
- <div class="target-row"><input id="target-position" aria-label="${escapeAttribute(dt("目标位置"))}" type="number" min="0" max="4095" step="1" placeholder="${escapeAttribute(dt("目标位置 · 单次±10"))}" ${!editable||!d.jogReady?'disabled':''}><button data-action="move" class="secondary" ${!editable||!d.jogReady?'disabled':''}>${dt("移动")}</button></div><p class="micro-caption">${dt("单次最多10单位；动作约0.25秒后自动卸载。主、副舵盘属于同一只舵机。")}</p></section>
- <div class="panel-grow"></div><div class="panel-bottom">${dt("只操作所选编号 · 串联中的其他舵机保持原设置")}</div>`);
+ ${conflict?`<div class="inline-alert">${dt("有两只舵机用了同一个编号，请分开连接后改号。")}</div>`:!live?`<div class="inline-alert">${dt("这只舵机没在线。")}</div>`:''}
+ <div class="readback"><div><span>${dt("当前角度")}</span><b id="current-position">${live?(d.readbackPending?dt("读取中"):degrees(d.pos)):'—'}</b></div><div><span>${dt("是否用力")}</span><b class="torque">${live?(d.held?dt("用力保持"):dt("已放松")):'—'}</b></div><div><span>${dt("电压")}</span><b id="current-voltage">${volt(d)}</b></div><div><span>${dt("温度")}</span><b id="current-temp">${temp(d)}</b></div></div>
+ <div class="section-label"><span>${dt("编号与参数")}</span><button data-action="read" ${!state.boards.arduino.connected||state.busy?'disabled':''}>${dt("刷新 ↻")}</button></div>
+ <div class="form-grid">${field('id',dt("舵机编号"),draft.id,!editable)}${field('kp',dt("力度"),live?draft.kp:'',!editable,`placeholder="${escapeAttribute(dt("未在线"))}"`,'KP')}${field('kd',dt("阻尼"),live?draft.kd:'',!editable,`placeholder="${escapeAttribute(dt("未在线"))}"`,'KD')}</div>
+ <button id="write-parameters" class="primary write-button" data-action="write" ${!editable?'disabled':''}>${state.busy?dt("正在保存…"):dt("保存到舵机")}</button>
+ <section class="micro"><div class="micro-title"><span>${dt("位置微调")}</span><button data-action="hold" ${!editable?'disabled':''}>${d.jogReady?dt("关闭微调"):dt("开启微调")}</button></div><div class="step-row"><span>${dt("步幅")}</span>${[1,5,10].map(n=>`<button data-step="${n}" aria-pressed="${step===n}" ${!editable?'disabled':''}>${(n*unit).toFixed(1)}°</button>`).join('')}</div>
+ <div class="jog-row"><button class="secondary" data-jog="-1" ${!editable||!d.jogReady?'disabled':''}>− ${(step*unit).toFixed(1)}°</button><button class="secondary" data-jog="1" ${!editable||!d.jogReady?'disabled':''}>＋ ${(step*unit).toFixed(1)}°</button></div>
+ <p class="micro-caption">${dt("每次动一下，约 0.25 秒后自动放松。")}</p></section>`);
  if(!isRefreshingCopy())for(const key of ['id','kp','kd'])$<HTMLInputElement>('edit-'+key).addEventListener('input',validateForm);
 }
 const volt=(d:Device)=>{const v=d.online?reading(state,'servo_voltage_v',d.id):null;return v?v.toFixed(2)+' V':'—';};
@@ -75,7 +69,7 @@ function renderBattery(){
 }
 function renderDropouts(){
  const el=$('dropouts');el.hidden=!state.dropouts.length;if(!state.dropouts.length)return;
- setLocalizedHTML(el,`<b>${dt('掉线记录')}</b><ul>${state.dropouts.slice(0,8).map(e=>`<li><time>${new Date(e.at).toLocaleTimeString()}</time><span>${dt('ID {ids} 掉线',{ids:e.ids.join(', ')})}</span><em>${[e.voltage===null?'':e.voltage.toFixed(2)+' V',e.unloaded?dt('已自动卸载'):''].filter(Boolean).join(' · ')}</em></li>`).join('')}</ul>`);
+ setLocalizedHTML(el,`<b>${dt('掉线记录')}</b><ul>${state.dropouts.slice(0,8).map(e=>`<li><time>${new Date(e.at).toLocaleTimeString()}</time><span>${dt('ID {ids} 掉线',{ids:e.ids.join(', ')})}</span><em>${[e.voltage===null?'':e.voltage.toFixed(2)+' V',e.unloaded?dt('已自动放松'):''].filter(Boolean).join(' · ')}</em></li>`).join('')}</ul>`);
 }
 function renderLink(){
  const pop=$('link-pop');if(pop.hidden)return;
@@ -91,12 +85,12 @@ function validateForm(){
  for(const key of ['id','kp','kd']){$('error-'+key).textContent=errors[key]??'';$<HTMLInputElement>('edit-'+key).classList.toggle('invalid',!!errors[key]);}
  $<HTMLButtonElement>('write-parameters').disabled=state.busy||Object.keys(errors).length>0;return {values,errors};
 }
-function openBatch(mode:'swap'|'custom'){if(state.busy||automatic?.active)return;state.selectedBoard=null;state.mode=mode;state.draft=null;state.batch=mode==='swap'?legPlan(state):online(state).map(d=>({uid:d.uid,from:d.id,to:d.id}));render();}
+function openBatch(mode:'swap'|'custom'){if(state.busy||automatic?.active)return;state.mode=mode;state.draft=null;state.batch=mode==='swap'?legPlan(state):online(state).map(d=>({uid:d.uid,from:d.id,to:d.id}));render();}
 function panelBatch(){
  const error=mappingError(state,state.batch),changes=state.batch.filter(p=>p.to!==p.from).length;
- setLocalizedHTML($('panel'),`<button class="back-link" data-action="back" ${state.busy?'disabled':''}>${dt("← 返回所选舵机")}</button><h2>${state.mode==='swap'?dt("左右腿互换"):dt("自定义改号")}</h2><p class="batch-intro">${dt('只修改当前在线的 {count} 只。中位和 KP/KD 保持不变。',{count:state.batch.length})}</p>
+ setLocalizedHTML($('panel'),`<button class="back-link" data-action="back" ${state.busy?'disabled':''}>${dt("← 返回所选舵机")}</button><h2>${state.mode==='swap'?dt("左右腿互换"):dt("自定义改号")}</h2><p class="batch-intro">${dt('只改在线的 {count} 只，零点、力度和阻尼不变。',{count:state.batch.length})}</p>
  ${state.batch.length?`<table class="batch-table"><thead><tr><th>${dt("当前编号")}</th><th></th><th>${dt("目标编号")}</th><th>${dt("状态")}</th></tr></thead><tbody>${state.batch.map((p,i)=>`<tr><td><b>ID ${p.from}</b><span class="role-tiny">${role(p.from)}</span></td><td class="arrow">→</td><td>${state.mode==='custom'?`<input type="number" min="0" max="253" step="1" data-batch-index="${i}" aria-label="${escapeAttribute(dt('ID{id} 的目标编号',{id:String(p.from)}))}" value="${p.to}" ${state.busy?'disabled':''}>`:`<span class="new-id">ID ${p.to}</span>`}</td><td class="check">${state.busy?dt("处理中"):dt("在线")}</td></tr>`).join('')}</tbody></table>`:`<div class="empty-batch">${dt("当前没有可交换的在线腿部舵机")}</div>`}
- <div class="batch-footer"><div class="error-note" id="batch-error">${error}</div><p>${dt("卡槽和模型会随新编号更新，读回后显示结果。")}</p></div><div class="panel-grow"></div><button class="primary" data-action="apply-batch" id="apply-batch" ${error||!changes||state.busy?'disabled':''}>${state.busy?dt("正在修改并读回…"):dt("应用这 {count} 项修改",{count:changes})}</button><button class="secondary" data-action="back" ${state.busy?'disabled':''}>${dt("返回")}</button>`);
+ <div class="batch-footer"><div class="error-note" id="batch-error">${error}</div><p>${dt("改完后卡槽和模型会显示新编号。")}</p></div><div class="panel-grow"></div><button class="primary" data-action="apply-batch" id="apply-batch" ${error||!changes||state.busy?'disabled':''}>${state.busy?dt("正在修改…"):dt("应用这 {count} 项修改",{count:changes})}</button><button class="secondary" data-action="back" ${state.busy?'disabled':''}>${dt("返回")}</button>`);
  if(!isRefreshingCopy())for(const el of document.querySelectorAll<HTMLInputElement>('[data-batch-index]'))el.addEventListener('input',()=>{
   required(state.batch[Number(el.dataset.batchIndex)]).to=number(el);const error=mappingError(state,state.batch),changes=state.batch.filter(p=>p.from!==p.to).length;
   $('batch-error').textContent=error;$<HTMLButtonElement>('apply-batch').disabled=!!error||!changes;$<HTMLButtonElement>('apply-batch').textContent=dt("应用这 {count} 项修改",{count:changes});
@@ -105,9 +99,9 @@ function panelBatch(){
 function render(){
  const n=online(state).length;$('online-count').textContent=dt("{count} 只在线",{count:n});
  const live=state.boards.arduino.connected,wifi=state.transport==='lan'?'WiFi '+state.host:'';
- setLocalizedHTML($('board-state'),`<i class="dot ${live?'green':''}"></i>UNO Q · ${wifi?(live?wifi:wifi+' · '+dt("未确认")):live?dt("USB已连接"):dt("未确认")} ▾`);renderBattery();renderDropouts();renderLink();
+ setLocalizedHTML($('board-state'),`<i class="dot ${live?'green':''}"></i>${live?(wifi||'USB'):dt("未连接")} ▾`);renderBattery();renderDropouts();renderLink();
  $<HTMLButtonElement>('release-all').disabled=!state.boards.arduino.connected||automatic?.active&&state.busy;$<HTMLButtonElement>('batch-swap').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('batch-custom').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('verify-online').disabled=state.busy||automatic?.active;
- slots();if(!deviceTools?.renderPanel()){state.selectedBoard?panelBoard():state.mode==='single'?panelSingle():panelBatch();}
+ slots();if(!deviceTools?.renderPanel()){state.mode==='single'?panelSingle():panelBatch();}
  if(isRefreshingCopy())scene?.refreshCopy();else scene?.update(state);deviceTools?.afterRender();say(state.message,isRefreshingCopy()&&$('feedback').classList.contains('error'));
 }
 async function poll(force=false){
@@ -117,60 +111,54 @@ async function poll(force=false){
   const next=jsonStringify([data.transport,data.host,data.lostIds,data.dropouts.length,data.onlineIds,data.boards,data.status.mode,data.scan,(isRecord(data.numbering)?data.numbering.verifiedIds:undefined),data.devices.map(d=>[d.id,d.held,d.parametersLive,d.readbackPending])]);
   mergeStatus(state,data);updateNumberingReadiness(data.numbering);deviceTools?.ingest(data);
    const v=battery(state),now=Date.now();if(v!==null)volts.push({at:now,v});while(volts.length&&volts[0]!.at<now-60_000)volts.shift();
-   const newest=data.dropouts[0];if(newest&&newest.at!==lastDropout){const first=!lastDropout;lastDropout=newest.at;if(!first&&newest.unloaded){deviceTools?.stopControl();say(dm('ID {ids} 掉线，已全部卸载',{ids:newest.ids.join(', ')}),true);}}
+   const newest=data.dropouts[0];if(newest&&newest.at!==lastDropout){const first=!lastDropout;lastDropout=newest.at;if(!first&&newest.unloaded){deviceTools?.stopControl();say(dm('ID {ids} 掉线，已全部放松',{ids:newest.ids.join(', ')}),true);}}
   if(data.error)say(debugFailure({code:data.errorCode,params:data.errorParams,message:data.error}),true);else if(String(state.message)===t('debug.status.reading'))say(dm("实时状态已读取"));
   if(next!==signature&&!document.activeElement?.closest<HTMLElement>('input,select,textarea')){signature=next;render();}
   else{slots();scene?.update(state);deviceTools?.updateLive();renderBattery();}
-  const d=selected(state);if(document.getElementById('current-position'))$('current-position').textContent=d?.online?(d.readbackPending?dt("待读回"):String(d.pos??'—')):'—';
+  const d=selected(state);if(document.getElementById('current-position'))$('current-position').textContent=d?.online?(d.readbackPending?dt("读取中"):degrees(d.pos)):'—';
    if(d&&document.getElementById('current-voltage')){$('current-voltage').textContent=volt(d);setLocalizedHTML($('current-temp'),temp(d));}
  }catch(error){for(const d of state.devices)d.online=false;state.boards={arduino:{connected:false},expansion:{connected:false}};render();say(debugFailure(error),true);}
  finally{polling=false;}
 }
 async function write(){
  const {values,errors}=validateForm();if(Object.keys(errors).length)return;const d=selected(state);state.draft=values;
- deviceTools.stopControl();await run('parameters',{id:d.id,new_id:values.id,kp:values.kp,kd:values.kd},dm('已读回 ID{id} · KP {kp} · KD {kd} · 中位未改',{id:String(values.id),kp:String(values.kp),kd:String(values.kd)}),()=>{state.selected='servo-'+values.id;});
+ deviceTools.stopControl();await run('parameters',{id:d.id,new_id:values.id,kp:values.kp,kd:values.kd},dm('已保存 ID{id} · 力度 {kp} · 阻尼 {kd}',{id:String(values.id),kp:String(values.kp),kd:String(values.kd)}),()=>{state.selected='servo-'+values.id;});
 }
 async function batch(){
  const error=mappingError(state,state.batch);if(error){say(mappingNotice(state,state.batch),true);return;}
  const plan=state.batch.map(p=>({fromId:p.from,toId:p.to})),old=selected(state)?.id;
- deviceTools.stopControl();await run('remap',{plan},dm("编号修改已读回，KP/KD和中位未改"),()=>{state.selected='servo-'+(plan.find(p=>p.fromId===old)?.toId??old);state.mode='single';});
+ deviceTools.stopControl();await run('remap',{plan},dm("编号已改好，力度、阻尼和零点没变"),()=>{state.selected='servo-'+(plan.find(p=>p.fromId===old)?.toId??old);state.mode='single';});
 }
 async function jog(delta:number){
  const d=selected(state);if(!canEdit(d)||!d.jogReady)return;
- if(!Number.isInteger(delta)||!delta||Math.abs(delta)>10){say(dm("单次请输入±1至±10单位；目标不变时无需移动"),true);return;}
- deviceTools.stopControl();await run('jog',{id:d.id,delta},dm('ID{id} 微动结束，已自动卸载；KP/KD和中位未改',{id:String(d.id)}));
+ if(!Number.isInteger(delta)||!delta||Math.abs(delta)>10){say(dm("每次最多动 0.9°"),true);return;}
+ deviceTools.stopControl();await run('jog',{id:d.id,delta},dm('ID{id} 已动完，自动放松',{id:String(d.id)}));
 }
 document.body.addEventListener('click',e=>{
   if(!eventElement(e).closest('.connection'))closeLink();
   const target=eventElement(e).closest<HTMLElement>('[data-link]');if(target){link(target.dataset.link==='usb'?null:target.dataset.link??null);return;}
   const tab=eventElement(e).closest<HTMLElement>('[data-link-tab]');if(tab){linkTab=tab.dataset.linkTab==='usb'?'usb':'lan';renderLink();if(linkTab==='lan'&&found===null)discover();return;}
- const board=eventElement(e).closest<HTMLElement>('[data-board-slot]');if(board){chooseBoard(board.dataset.boardSlot);return;}
  const slot=eventElement(e).closest<HTMLElement>('[data-slot]');if(slot){choose(Number(slot.dataset.slot));return;}
  const camera=eventElement(e).closest<HTMLElement>('[data-camera]');if(camera){scene?.look(camera.dataset.camera==='side'?'side':'front');return;}
  const stride=eventElement(e).closest<HTMLElement>('[data-step]');if(stride){step=Number(stride.dataset.step);render();return;}
  const button=eventElement(e).closest<HTMLElement>('[data-jog]');if(button){jog(Number(button.dataset.jog)*step);return;}
  const action=eventElement(e).closest<HTMLElement>('[data-action]')?.dataset.action,d=selected(state);
  if(action==='write')write();if(action==='apply-batch')batch();if(action==='back'){state.mode='single';render();}
- if(action==='read'){deviceTools.stopControl();run('read',{id:d.id},dm('已读回 ID{id}',{id:String(d.id)}));}
- if(action==='probe-board')poll(true);
- if(action==='hold'&&canEdit(d)){if(d.jogReady){d.jogReady=false;render();return;}deviceTools.stopControl();run('read',{id:d.id},dm("微调已开启；每次动作后自动卸载"),()=>{const current=state.devices.find(item=>item.id===d.id);if(current)current.jogReady=true;});}
- if(action==='move'&&canEdit(d)&&d.jogReady){const target=number($<HTMLInputElement>('target-position'));if(!Number.isInteger(target)||target<0||target>4095){say(dm("目标位置请输入0–4095的整数"),true);return;}deviceTools.stopControl();run('move',{id:d.id,target},dm("目标微调已结束，已自动卸载；请核对实际读回位置"));}
+ if(action==='read'){deviceTools.stopControl();run('read',{id:d.id},dm('已刷新 ID{id}',{id:String(d.id)}));}
+ if(action==='hold'&&canEdit(d)){if(d.jogReady){d.jogReady=false;render();return;}deviceTools.stopControl();run('read',{id:d.id},dm("微调已开启，每次动完自动放松"),()=>{const current=state.devices.find(item=>item.id===d.id);if(current)current.jogReady=true;});}
 });
 $<HTMLButtonElement>('batch-swap').onclick=()=>openBatch('swap');$<HTMLButtonElement>('batch-custom').onclick=()=>openBatch('custom');
-$<HTMLButtonElement>('verify-online').onclick=()=>{deviceTools.stopControl();run('verify',{},dm("在线编号已读回复核，累计进度已保存"));};
+$<HTMLButtonElement>('verify-online').onclick=()=>{deviceTools.stopControl();run('verify',{},dm("编号已检查，进度已保存"));};
 $<HTMLButtonElement>('release-all').onclick=()=>{deviceTools.emergency();};
 $('board-state').onclick=openLink;
 document.addEventListener('submit',e=>{const form=eventElement(e).closest<HTMLFormElement>('[data-link-form]');if(!form)return;e.preventDefault();const host=String(new FormData(form).get('host')??'').trim().replace(/^https?:\/\//u,'').replace(/(:\d+)?\/?$/u,'');if(host)link(host);});
 $('reset-camera').onclick=()=>scene?.fit();query<HTMLAnchorElement>('.brand').href='/';
 bindTranslations();
-automatic=createAutomaticNumbering({api,busy:()=>state.busy,setBusy(value){state.busy=value;},select(id){state.selected='servo-'+id;state.selectedBoard=null;state.draft=null;},render,poll:()=>poll(true)});
-const automaticTab=document.createElement('button');automaticTab.type='button';automaticTab.dataset.workbench='automatic';automaticTab.textContent=dt('自动编号');query<HTMLElement>('.work-tabs [data-workbench=servo]').after(automaticTab);
+automatic=createAutomaticNumbering({api,busy:()=>state.busy,setBusy(value){state.busy=value;},select(id){state.selected='servo-'+id;state.draft=null;},render,poll:()=>poll(true)});
 const zeroCalibration=createZeroCalibration({getState:()=>state,api,poll,say,render,focus:choose});
 servoCheck=createServoCheck({getState:()=>state,api,poll,say,render,focus:choose});
-const checkTab=document.createElement('button');checkTab.type='button';checkTab.dataset.workbench='check';checkTab.textContent=dt('舵机质检');query<HTMLElement>('.work-tabs [data-workbench=calibrate]').after(checkTab);
-const simTab=document.createElement('a');simTab.href='/sim/';simTab.className='sim-link';simTab.textContent=dt('仿真');query<HTMLElement>('.work-tabs').append(simTab);
 deviceTools=createDeviceTools({getState:()=>state,render,say,canEdit,api,poll,run,automatic,zeroCalibration,servoCheck});render();
-scene=createScene({host:$('viewport'),labelsHost:$('labels'),onSelect:choose,onBoardSelect:chooseBoard});scene.update(state);
+scene=createScene({host:$('viewport'),labelsHost:$('labels'),onSelect:choose});scene.update(state);
 scene.ready.then(()=>{$('loading').hidden=true;document.body.dataset.modelReady='true';render();}).catch(error=>{$('loading').textContent=dt("模型未加载，请检查组装素材");document.body.dataset.modelReady='failed';console.error(error);});
 const inspectTimer=setInterval(()=>{const d=selected(state);if(!document.hidden&&!state.busy&&!state.scan?.active&&deviceTools.canInspect()&&d?.parametersLive&&!IDS.includes(d.id))api('inspect',{id:d.id}).catch(()=>{});},750);
 const saved=savedHost();if(saved)api('connect',{host:saved}).catch(()=>{}).finally(()=>poll(true));else poll();const pollTimer=setInterval(poll,250);window.addEventListener('pagehide',()=>{clearInterval(pollTimer);clearInterval(inspectTimer);},{once:true});

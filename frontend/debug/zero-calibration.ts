@@ -58,7 +58,7 @@ export function createZeroCalibration({getState,api,poll,say,render,focus}:Optio
  const chosen=()=>{const s=getState(),d=s.devices.find(d=>d.uid===s.selected);return d&&TRIM_IDS.includes(d.id)?d.id:null;};
  async function stand(){if(getState().status.mode!=='hold')await api('mode',{mode:'hold'});await api('pose',{targets:null});}
  async function measure(count=5){await sleep(1000);const samples:{p:number;r:number}[]=[],rates:number[][]=[];for(let i=0;i<count;i++){await poll(true);const t=tiltOf(getState()),g=getState().status.gyro;if(t)samples.push(t);if(g?.length===3)rates.push(g);await sleep(120);}
-  if(!samples.length)throw new Error(dt('IMU 没有读数'));const mean=(v:number[])=>v.reduce((a,b)=>a+b,0)/v.length;
+  if(!samples.length)throw new Error(dt('姿态传感器（IMU）没有读数'));const mean=(v:number[])=>v.reduce((a,b)=>a+b,0)/v.length;
   return {p:mean(samples.map(t=>t.p)),r:mean(samples.map(t=>t.r)),gyro:rates.length?[0,1,2].map(k=>Math.round(mean(rates.map(g=>g[k]!))*100)/100):null};}
  // Stand up from the crouch, then close both tilts with the two knobs. The roll gain is learned from the first roll move;
  // the run stops and steps back when the tilt grows, the duck falls, or a knob would pass 8°.
@@ -156,7 +156,7 @@ export function createZeroCalibration({getState,api,poll,say,render,focus}:Optio
   else if(name==='save')await guard(async()=>{await send(true);justSaved=true;say(dm('已保存。可以先试默认姿态，再试行走。'));});
   else if(name==='discard')await guard(async()=>{trim={...original};await send();saved=true;});
  }
- function tiltView(){const t=tiltOf(getState());if(!t)return `<p class="zero-note">${dt('IMU 没有读数')}</p>`;const ok=(v:number)=>Math.abs(v)<.5?'ok':'off';
+ function tiltView(){const t=tiltOf(getState());if(!t)return `<p class="zero-note">${dt('姿态传感器（IMU）没有读数')}</p>`;const ok=(v:number)=>Math.abs(v)<.5?'ok':'off';
   return `<dl class="zero-tilt"><dt>${dt('前后')}</dt><dd class="${ok(t.p)}" data-zero-tilt="p">${fmt(t.p)}°</dd><dt>${dt('左右')}</dt><dd class="${ok(t.r)}" data-zero-tilt="r">${fmt(t.r)}°</dd></dl>`;}
  function renderLevel(){
   const [r=0,p=0]=getState().status.imu_level??[];

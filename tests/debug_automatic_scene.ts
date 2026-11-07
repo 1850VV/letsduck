@@ -27,7 +27,7 @@ export default async function automaticScene(page:Page){
     if(path.startsWith('/api/')&&request.method()!=='GET')writes.push(request.method()+' '+path);
     if(path==='/api/servo-setup')legacy.push(path);
    });
-   await view.goto(base+'/debug/');await view.waitForSelector('body[data-model-ready=true]');
+   await view.goto(base+'/debug/?bench=servo');await view.waitForSelector('body[data-model-ready=true]');
    const canvas=checks.required(await view.locator('#viewport canvas').elementHandle());
    await view.locator('[data-workbench=automatic]').click();await view.locator('#auto-progress').waitFor();
    assert.equal(await canvas.evaluate(element=>element.isConnected&&element===document.querySelector('#viewport canvas')),true,'automatic numbering reuses the existing Debug canvas');
