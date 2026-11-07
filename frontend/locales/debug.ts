@@ -1,11 +1,11 @@
 // Debug system copy only. Device IDs, model names and user values remain raw parameters.
 const rows = {
- 'debug.mode.off':['全部卸载','Release all'],
+ 'debug.mode.off':['全部放松','Relax all'],
  'debug.mode.servo_debug':['舵机设置','Servo settings'],
- 'debug.mode.shadow':['只推理','Inference only'],
- 'debug.mode.hold':['默认姿态','Default pose'],
- 'debug.mode.policy':['行走 / 起身','Walk / stand up'],
- 'debug.mode.calibrate':['中位校准','Midpoint calibration'],
+ 'debug.mode.shadow':['空跑（不动）','Dry run (no motion)'],
+ 'debug.mode.hold':['站稳','Stand still'],
+ 'debug.mode.policy':['走路 / 起身','Walk / get up'],
+ 'debug.mode.calibrate':['校零模式','Zeroing mode'],
  'debug.role.10':['左髋旋转','Left hip rotation'],
  'debug.role.11':['左髋侧摆','Left hip sway'],
  'debug.role.12':['左腿上端','Upper left leg'],
@@ -24,7 +24,7 @@ const rows = {
  'debug.role.unassigned':['未分配安装位','Unassigned installation position'],
  'debug.status.reading':['正在读取控制器状态…','Reading controller status…'],
  'debug.validation.offline':['当前未在线，连接后重新读取','Currently offline. Connect and read again'],
- 'debug.validation.duplicate':['同号舵机无法分别寻址，请分开连接后改号','Servos with the same ID cannot be addressed separately. Connect them one at a time to change their IDs'],
+ 'debug.validation.duplicate':['有两只舵机编号相同，请分开连接后改号','Two servos share an ID; connect them separately to renumber'],
  'debug.validation.integer':['请输入 0–{max} 的整数','Enter an integer from 0 to {max}'],
  'debug.validation.occupied':['ID{id} 已在线，请使用编号互换','ID{id} is online. Use ID swap'],
  'debug.validation.noOnline':['当前没有可修改的在线舵机','No online servos are available to edit'],
@@ -50,7 +50,7 @@ const rows = {
  "debug.auto.start":["开始编号","Start numbering"],
  "debug.auto.resume":["继续编号","Resume numbering"],
  "debug.auto.pause":["暂停编号","Pause numbering"],
- "debug.auto.stop":["停止并卸载","Stop and release"],
+ "debug.auto.stop":["停止并放松","Stop and relax"],
  "debug.auto.shutdown":["关机换接","Shut down and swap"],
  "debug.auto.next":["下一只","Next servo"],
  "debug.auto.queue.add":["加入下一只队列","Queue as next servo"],
@@ -63,7 +63,7 @@ const rows = {
  "debug.auto.target.id":["目标 ID{id}","Target ID{id}"],
  "debug.auto.progress":["已验证 {count}/15","Verified {count}/15"],
  "debug.auto.next.id":["下一只 ID{id}","Next ID{id}"],
- "debug.auto.stage.readback":["读回复核","Readback verification"],
+ "debug.auto.stage.readback":["核对","Check"],
  "debug.auto.stage.write":["初始化写入","Initialization and writing"],
  "debug.auto.stage.scan":["扫描识别","Scanning and detection"],
  "debug.auto.stage.profile":["识别配置档","Detecting profile"],
@@ -93,8 +93,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Operation complete"
  ],
  [
-  "正在执行并等待读回…",
-  "Running and waiting for readback…"
+  "正在执行…",
+  "Working…"
  ],
  [
   "已连接",
@@ -189,40 +189,40 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Board shapes are illustrative"
  ],
  [
-  "相同地址存在冲突。相同编号无法分别寻址，需要分开连接后改号。",
-  "The same address is in conflict. Servos with the same ID cannot be addressed separately. Connect them one at a time to change their IDs."
+  "有两只舵机用了同一个编号，请分开连接后改号。",
+  "Two servos use the same ID. Connect them separately to renumber."
  ],
  [
-  "当前未在线。保留编号位置，连接后再读取和修改。",
-  "Currently offline. The ID position is retained. Connect the servo before reading or editing it."
+  "这只舵机没在线。",
+  "This servo is offline."
  ],
  [
-  "当前位置 · 原始值",
-  "Current position · Raw value"
+  "当前角度",
+  "Current angle"
  ],
  [
-  "待读回",
-  "Awaiting readback"
+  "读取中",
+  "Reading"
  ],
  [
-  "输出状态",
-  "Output state"
+  "是否用力",
+  "Holding"
  ],
  [
-  "保持当前位置",
-  "Holding current position"
+  "用力保持",
+  "Holding position"
  ],
  [
-  "已卸载",
-  "Released"
+  "已放松",
+  "Relaxed"
  ],
  [
   "编号与参数",
   "ID and parameters"
  ],
  [
-  "重新读取 ↻",
-  "Read again ↻"
+  "刷新 ↻",
+  "Refresh ↻"
  ],
  [
   "舵机编号",
@@ -241,12 +241,12 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Offline"
  ],
  [
-  "正在写入并读回…",
-  "Writing and reading back…"
+  "正在保存…",
+  "Saving…"
  ],
  [
-  "写入编号与参数",
-  "Write ID and parameters"
+  "保存到舵机",
+  "Save to servo"
  ],
  [
   "改号与参数写入保留中位",
@@ -281,8 +281,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Move"
  ],
  [
-  "单次最多10单位；动作约0.25秒后自动卸载。主、副舵盘属于同一只舵机。",
-  "At most 10 units per move. Torque releases automatically after about 0.25 seconds. The primary and secondary horns belong to the same servo."
+  "每次动一下，约 0.25 秒后自动放松。",
+  "Each nudge relaxes the servo after about 0.25 s."
  ],
  [
   "只操作所选编号 · 串联中的其他舵机保持原设置",
@@ -321,12 +321,12 @@ const copyRows:readonly (readonly [string,string])[]=[
   "No online leg servos are available to swap"
  ],
  [
-  "卡槽和模型会随新编号更新，读回后显示结果。",
-  "Slots and models follow the new IDs. Results appear after readback."
+  "改完后卡槽和模型会显示新编号。",
+  "Slots and model show the new IDs when done."
  ],
  [
-  "正在修改并读回…",
-  "Changing IDs and reading back…"
+  "正在修改…",
+  "Changing…"
  ],
  [
   "返回",
@@ -365,16 +365,16 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Live status read"
  ],
  [
-  "编号修改已读回，KP/KD和中位未改",
-  "ID changes read back. KP/KD and midpoints are unchanged"
+  "编号已改好，力度、阻尼和零点没变",
+  "IDs changed; strength, damping and zero unchanged"
  ],
  [
-  "单次请输入±1至±10单位；目标不变时无需移动",
-  "Use ±1 to ±10 units per move. No move is needed when the target is unchanged"
+  "每次最多动 0.9°",
+  "Move at most 0.9° at a time"
  ],
  [
-  "微调已开启；每次动作后自动卸载",
-  "Adjustment enabled. Torque releases automatically after each move"
+  "微调已开启，每次动完自动放松",
+  "Nudge on; relaxes after each move"
  ],
  [
   "目标位置请输入0–4095的整数",
@@ -385,8 +385,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Target adjustment finished and torque released. Check the actual readback position"
  ],
  [
-  "在线编号已读回复核，累计进度已保存",
-  "Online IDs verified by readback. Progress saved"
+  "编号已检查，进度已保存",
+  "IDs checked; progress saved"
  ],
  [
   "模型未加载，请检查组装素材",
@@ -397,8 +397,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Motion"
  ],
  [
-  "头嘴",
-  "Head and beak"
+  "头和嘴",
+  "Head & beak"
  ],
  [
   "调参",
@@ -441,12 +441,12 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Turning joystick"
  ],
  [
-  "运动归零",
-  "Zero motion input"
+  "停下",
+  "Stop"
  ],
  [
-  "松手归零 · WASD 平移，Q/E 转向，空格卸载",
-  "Release to zero · WASD to move, Q/E to turn, Space to release torque"
+  "松手就停 · 键盘 WASD 移动、Q/E 转向、空格全部放松",
+  "Let go to stop · WASD move, Q/E turn, Space relaxes all"
  ],
  [
   "拾取 · 4秒",
@@ -457,8 +457,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Roll over · 1.9 s"
  ],
  [
-  "主控、IMU或舵机反馈未就绪",
-  "Controller, IMU or servo feedback is not ready"
+  "鸭子还没准备好：主板、姿态传感器（IMU）或舵机没有读数",
+  "The duck is not ready: no reading from the board, attitude sensor (IMU) or servos"
  ],
  [
   "轮滑外八姿态久置会使侧摆电机发热，需留出冷却时间。",
@@ -473,8 +473,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Beak · ID34 (°)"
  ],
  [
-  "头嘴归零",
-  "Zero head and beak input"
+  "头和嘴回正",
+  "Center head and beak"
  ],
  [
   "尚未读取运行参数",
@@ -549,8 +549,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Joint angles and targets come from live controller feedback."
  ],
  [
-  "整机控制",
-  "Robot control"
+  "控制",
+  "Control"
  ],
  [
   "UNO Q · 实时控制",
@@ -565,16 +565,16 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Not started"
  ],
  [
-  "先卸载全部舵机，用手把腿和脖子摆到零点姿势，再逐个设定中位。设定中位会改变零点；细调不会。",
-  "Unload all servos, set the legs and neck to the zero pose by hand, then set each center. Setting a center moves the zero; fine tuning does not."
+  "先全部放松，用手把腿和脖子摆到零点姿势，再逐个选中舵机点「设为零点」。",
+  "Relax all, pose the legs and neck at zero by hand, then select each servo and press \"Set as zero\"."
  ],
  [
-  "重新卸载全部",
-  "Release all again"
+  "再次全部放松",
+  "Relax all again"
  ],
  [
-  "开始校准 · 卸载全部",
-  "Start calibration · Release all"
+  "开始（全部放松）",
+  "Start (relax all)"
  ],
  [
   "当前位置",
@@ -585,32 +585,32 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Holding at 2048"
  ],
  [
-  "已卸载，可手动对齐",
-  "Released for manual alignment"
+  "已放松，可以用手摆",
+  "Relaxed; pose it by hand"
  ],
  [
   "当前未在线",
   "Currently offline"
  ],
  [
-  "将当前位置设为中位并保持",
-  "Set current position as midpoint and hold"
+  "设为零点",
+  "Set as zero"
  ],
  [
   "本次只设定所选舵机，先前已设定的关节继续保持。KP/KD和编号保留。",
   "Only the selected servo is set. Previously set joints keep holding. KP/KD and IDs are preserved."
  ],
  [
-  "退出校准 · 全部卸载",
-  "Exit calibration · Release all"
+  "结束校准",
+  "Finish calibration"
  ],
  [
   "原网页 Reset Mid",
   "Original web Reset Mid"
  ],
  [
-  "仅重置所选中位 · 保持卸载",
-  "Reset selected midpoint only · Keep released"
+  "恢复出厂零点",
+  "Restore factory zero"
  ],
  [
   "适用于已选编号。重置后需重新读取位置。",
@@ -737,16 +737,16 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Roll-over started"
  ],
  [
-  "已进入校准，全部卸载",
-  "Calibration started. All servos released"
+  "已开始校准，全部放松",
+  "Calibration started; all relaxed"
  ],
  [
-  "校准已退出，全部卸载",
-  "Calibration exited. All servos released"
+  "校准已结束，全部放松",
+  "Calibration finished; all relaxed"
  ],
  [
-  "已发送所选中位重置，位置待读回",
-  "Selected midpoint reset sent. Awaiting position readback"
+  "已恢复出厂零点",
+  "Factory zero restored"
  ],
  [
   "请输入0–425.9775之间的电流值",
@@ -817,24 +817,24 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Board and servo slots"
  ],
  [
-  "舵机配置台",
-  "Servo workbench"
+  "舵机卡槽",
+  "Servo slots"
  ],
  [
-  "扫描0–253",
-  "Scan 0–253"
+  "查找舵机",
+  "Find servos"
  ],
  [
-  "停止扫描",
-  "Stop scan"
+  "停止查找",
+  "Stop finding"
  ],
  [
-  "绿色在线 · ✓ 编号已验证",
-  "Green: online · ✓ ID verified"
+  "绿色 = 在线 · ✓ = 编号已确认",
+  "Green = online · ✓ = ID confirmed"
  ],
  [
-  "核验在线编号",
-  "Verify online IDs"
+  "检查编号",
+  "Check IDs"
  ],
  [
   "选中舵机参数",
@@ -861,8 +861,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Select ID{id}, {role}, {status}"
  ],
  [
-  "{count} 个编号在线 / 15 个固定盘位",
-  "{count} IDs online / 15 fixed slots"
+  "{count}/15 只在线",
+  "{count}/15 online"
  ],
  [
   "编号已验证 {count}/15 · {status}",
@@ -885,8 +885,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "{step} units"
  ],
  [
-  "只修改当前在线的 {count} 只。中位和 KP/KD 保持不变。",
-  "Only the {count} servos currently online are changed. Midpoints and KP/KD remain unchanged."
+  "只改在线的 {count} 只，零点、力度和阻尼不变。",
+  "Only the {count} online servos change; zero, strength and damping stay."
  ],
  [
   "ID{id} 的目标编号",
@@ -901,16 +901,16 @@ const copyRows:readonly (readonly [string,string])[]=[
   "{count} online"
  ],
  [
-  "已读回 ID{id} · KP {kp} · KD {kd} · 中位未改",
-  "Read back ID{id} · KP {kp} · KD {kd} · Midpoint unchanged"
+  "已保存 ID{id} · 力度 {kp} · 阻尼 {kd}",
+  "Saved ID{id} · strength {kp} · damping {kd}"
  ],
  [
-  "ID{id} 微动结束，已自动卸载；KP/KD和中位未改",
-  "ID{id} adjustment finished and torque released. KP/KD and midpoint unchanged"
+  "ID{id} 已动完，自动放松",
+  "ID{id} moved and relaxed"
  ],
  [
-  "已读回 ID{id}",
-  "Read back ID{id}"
+  "已刷新 ID{id}",
+  "Refreshed ID{id}"
  ],
  [
   "指令覆盖15个编号 · 当前 {count} 只在线",
@@ -941,8 +941,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "0 servos"
  ],
  [
-  "ID{id} 已收到中位保持回执；请核对实际孔位",
-  "ID{id} midpoint hold acknowledged. Check the actual hole alignment"
+  "ID{id} 已设为零点，请看一下孔位对不对",
+  "ID{id} set as zero; check the holes line up"
  ],
  [
   "在3D中选择 ID{id}",
@@ -989,8 +989,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "ID {ids} dropped"
  ],
  [
-  "已自动卸载",
-  "Auto-unloaded"
+  "已自动放松",
+  "Relaxed automatically"
  ],
  [
   "正在搜索局域网…",
@@ -1025,8 +1025,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Connected to {name}"
  ],
  [
-  "ID {ids} 掉线，已全部卸载",
-  "ID {ids} dropped; all servos unloaded"
+  "ID {ids} 掉线，已全部放松",
+  "ID {ids} dropped; all relaxed"
  ],
  [
   "零点校准",
@@ -1041,8 +1041,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Side"
  ],
  [
-  "粗调 · 设中位",
-  "Coarse · set centers"
+  "手动校零",
+  "Manual zeroing"
  ],
  [
   "细调",
@@ -1077,8 +1077,8 @@ const copyRows:readonly (readonly [string,string])[]=[
   "Discard and restore"
  ],
  [
-  "IMU 没有读数",
-  "No IMU reading"
+  "姿态传感器（IMU）没有读数",
+  "No reading from the attitude sensor (IMU)"
  ],
  [
   "前后",
@@ -1139,6 +1139,30 @@ const copyRows:readonly (readonly [string,string])[]=[
  [
   "没能完全调平，已保留最好的结果。",
   "Could not level fully; kept the best result."
+ ],
+ [
+  "舵机质检",
+  "Servo check"
+ ],
+ [
+  "仿真",
+  "Simulation"
+ ],
+ [
+  "设置",
+  "Settings"
+ ],
+ [
+  "力度",
+  "Strength"
+ ],
+ [
+  "阻尼",
+  "Damping"
+ ],
+ [
+  "未连接",
+  "Not connected"
  ]
 ];
 const allRows:Record<string,readonly [string,string]>={...rows};
@@ -1151,10 +1175,16 @@ export const debugMessages:Record<string,Record<string,string>>=Object.fromEntri
 // Static candidates generated from public Debug system copy; no runtime translation service.
 Object.assign(debugMessages,{
  "zh-Hant": {
+  "debug.copy.268": "舵機質檢",
+  "debug.copy.269": "模擬",
+  "debug.copy.270": "設定",
+  "debug.copy.271": "力度",
+  "debug.copy.272": "阻尼",
+  "debug.copy.273": "未連線",
   "debug.auto.queue.remove": "移除下一顆",
   "debug.auto.back.manual": "返回手動設定",
   "debug.auto.complete.note": "編號完成不代表機械零位已校準。",
-  "debug.auto.stage.readback": "讀回核對",
+  "debug.auto.stage.readback": "核對",
   "debug.auto.stage.write": "初始化寫入",
   "debug.auto.stage.scan": "掃描辨識",
   "debug.auto.stage.profile": "辨識設定檔",
@@ -1166,7 +1196,7 @@ Object.assign(debugMessages,{
   "debug.auto.start": "開始編號",
   "debug.auto.resume": "繼續編號",
   "debug.auto.pause": "暫停編號",
-  "debug.auto.stop": "停止並卸載",
+  "debug.auto.stop": "停止並放鬆",
   "debug.auto.shutdown": "關機換接",
   "debug.auto.next": "下一顆",
   "debug.auto.queue.add": "加入下一顆佇列",
@@ -1179,12 +1209,12 @@ Object.assign(debugMessages,{
   "debug.auto.target.id": "目標 ID{id}",
   "debug.auto.progress": "已驗證 {count}/15",
   "debug.auto.next.id": "下一顆 ID{id}",
-  "debug.mode.off": "全部卸載",
+  "debug.mode.off": "全部放鬆",
   "debug.mode.servo_debug": "舵機設置",
-  "debug.mode.shadow": "只推理",
-  "debug.mode.hold": "預設姿態",
-  "debug.mode.policy": "行走 / 起身",
-  "debug.mode.calibrate": "中位校準",
+  "debug.mode.shadow": "空跑（不動）",
+  "debug.mode.hold": "站穩",
+  "debug.mode.policy": "走路 / 起身",
+  "debug.mode.calibrate": "校零模式",
   "debug.role.10": "左髖旋轉",
   "debug.role.11": "左髖側擺",
   "debug.role.12": "左腿上端",
@@ -1203,7 +1233,7 @@ Object.assign(debugMessages,{
   "debug.role.unassigned": "未分配安裝位",
   "debug.status.reading": "正在讀取控制器狀態…",
   "debug.validation.offline": "目前未在線，連接後重新讀取",
-  "debug.validation.duplicate": "同號舵機無法分別定址，請分開連接後改號",
+  "debug.validation.duplicate": "有兩隻舵機編號相同，請分開連接後改號",
   "debug.validation.integer": "請輸入 0–{max} 的整數",
   "debug.validation.occupied": "ID{id} 已在線，請使用編號互換",
   "debug.validation.noOnline": "目前沒有可修改的線上舵機",
@@ -1226,7 +1256,7 @@ Object.assign(debugMessages,{
   "debug.copy.003": "控制器返回格式異常",
   "debug.copy.004": "操作未完成",
   "debug.copy.005": "操作完成",
-  "debug.copy.006": "正在執行並等待讀回…",
+  "debug.copy.006": "正在執行…",
   "debug.copy.007": "已連接",
   "debug.copy.008": "未確認",
   "debug.copy.009": "左腿",
@@ -1250,21 +1280,21 @@ Object.assign(debugMessages,{
   "debug.copy.027": "重新偵測連接",
   "debug.copy.028": "連線狀態與綠色模型同步。主控鏈路與舵機獨立供電分開確認。",
   "debug.copy.029": "闆卡外形為示意模型",
-  "debug.copy.030": "相同位址存在衝突。相同編號無法分別尋址，需分開連接後改號。",
-  "debug.copy.031": "目前未上線。保留編號位置，連接後再讀取和修改。",
-  "debug.copy.032": "目前位置 · 原始值",
-  "debug.copy.033": "待讀回",
-  "debug.copy.034": "輸出狀態",
-  "debug.copy.035": "保持目前位置",
-  "debug.copy.036": "已卸載",
+  "debug.copy.030": "有兩隻舵機用了同一個編號，請分開連接後改號。",
+  "debug.copy.031": "這隻舵機沒在線。",
+  "debug.copy.032": "目前角度",
+  "debug.copy.033": "讀取中",
+  "debug.copy.034": "是否出力",
+  "debug.copy.035": "出力保持",
+  "debug.copy.036": "已放鬆",
   "debug.copy.037": "編號與參數",
-  "debug.copy.038": "重新讀取 ↻",
+  "debug.copy.038": "重新整理 ↻",
   "debug.copy.039": "舵機編號",
   "debug.copy.040": "KP · 上次讀回",
   "debug.copy.041": "KD · 上次讀回",
   "debug.copy.042": "未在線",
-  "debug.copy.043": "正在写入并读回…",
-  "debug.copy.044": "写入编号与参数",
+  "debug.copy.043": "正在儲存…",
+  "debug.copy.044": "儲存到舵機",
   "debug.copy.045": "改号与参数写入保留中位",
   "debug.copy.046": "位置微調",
   "debug.copy.047": "關閉微調",
@@ -1273,7 +1303,7 @@ Object.assign(debugMessages,{
   "debug.copy.050": "目標位置",
   "debug.copy.051": "目标位置 · 单次±10",
   "debug.copy.052": "移動",
-  "debug.copy.053": "單次最多10單位；動作約0.25秒後自動卸載。主、副舵盘属于同一只舵机。",
+  "debug.copy.053": "每次動一下，約 0.25 秒後自動放鬆。",
   "debug.copy.054": "只操作所選編號 · 串聯中的其他舵機保持原設定",
   "debug.copy.055": "← 返回所选舵机",
   "debug.copy.056": "左右腿互换",
@@ -1283,8 +1313,8 @@ Object.assign(debugMessages,{
   "debug.copy.060": "狀態",
   "debug.copy.061": "處理中",
   "debug.copy.062": "目前沒有可交換的線上腿部舵機",
-  "debug.copy.063": "卡槽和模型會隨新編號更新，讀回後顯示結果。",
-  "debug.copy.064": "正在修改并读回…",
+  "debug.copy.063": "改完後卡槽和模型會顯示新編號。",
+  "debug.copy.064": "正在修改…",
   "debug.copy.065": "返回",
   "debug.copy.066": "USB已連接",
   "debug.copy.067": "按编号对应安装位",
@@ -1294,15 +1324,15 @@ Object.assign(debugMessages,{
   "debug.copy.071": "拖曳旋轉 · 滾輪縮放 · 點舵機查看參數",
   "debug.copy.072": "控制器状态读取失败",
   "debug.copy.073": "实时状态已读取",
-  "debug.copy.074": "編號修改已讀回，KP/KD和中位數未改",
-  "debug.copy.075": "單次請輸入±1至±10單位；目標不變時無需移動",
-  "debug.copy.076": "微調已開啟；每次動作後自動卸載",
+  "debug.copy.074": "編號已改好，力度、阻尼和零點沒變",
+  "debug.copy.075": "每次最多動 0.9°",
+  "debug.copy.076": "微調已開啟，每次動完自動放鬆",
   "debug.copy.077": "目標位置請輸入0–4095的整數",
   "debug.copy.078": "目標微調已結束，已自動卸載；請核對實際讀回位置",
-  "debug.copy.079": "線上編號已讀回核，累計進度已儲存",
+  "debug.copy.079": "編號已檢查，進度已儲存",
   "debug.copy.080": "模型未加載，請檢查組裝素材",
   "debug.copy.081": "運動",
-  "debug.copy.082": "頭嘴",
+  "debug.copy.082": "頭和嘴",
   "debug.copy.083": "調參",
   "debug.copy.084": "回饋",
   "debug.copy.085": "輪滑模式",
@@ -1313,15 +1343,15 @@ Object.assign(debugMessages,{
   "debug.copy.090": "前进与侧移摇杆",
   "debug.copy.091": "轉向",
   "debug.copy.092": "轉向搖桿",
-  "debug.copy.093": "運動歸零",
-  "debug.copy.094": "鬆手歸零 · WASD 平移，Q/E 轉向，空格卸載",
+  "debug.copy.093": "停下",
+  "debug.copy.094": "鬆手就停 · 鍵盤 WASD 移動、Q/E 轉向、空白鍵全部放鬆",
   "debug.copy.095": "拾取 · 4秒",
   "debug.copy.096": "翻滚 · 1.9秒",
-  "debug.copy.097": "主控、IMU或舵机反馈未就绪",
+  "debug.copy.097": "鴨子還沒準備好：主板、姿態感測器（IMU）或舵機沒有讀數",
   "debug.copy.098": "輪滑外八姿態久置會使側擺馬達發熱，需留出冷卻時間。",
   "debug.copy.099": "頭頸4路為弧度輸入；鴨嘴為ID34的角度輸入。",
   "debug.copy.100": "鴨嘴 · ID34（°）",
-  "debug.copy.101": "頭嘴歸零",
+  "debug.copy.101": "頭和嘴回正",
   "debug.copy.102": "尚未讀取運行參數",
   "debug.copy.103": "輪滑參數",
   "debug.copy.104": "步行 / 其他模型參數",
@@ -1340,22 +1370,22 @@ Object.assign(debugMessages,{
   "debug.copy.117": "關節角",
   "debug.copy.118": "目標",
   "debug.copy.119": "關節角與目標來自控制器即時回饋。",
-  "debug.copy.120": "整機控制",
+  "debug.copy.120": "控制",
   "debug.copy.121": "UNO Q · 即時控制",
   "debug.copy.122": "校準中",
   "debug.copy.123": "未開始",
-  "debug.copy.124": "先卸載全部舵機，用手把腿和脖子擺到零點姿勢，再逐個設定中位。設定中位會改變零點；細調不會。",
-  "debug.copy.125": "重新卸載全部",
-  "debug.copy.126": "開始校準 · 卸載全部",
+  "debug.copy.124": "先全部放鬆，用手把腿和脖子擺到零點姿勢，再逐個選中舵機點「設為零點」。",
+  "debug.copy.125": "再次全部放鬆",
+  "debug.copy.126": "開始（全部放鬆）",
   "debug.copy.127": "當前位置",
   "debug.copy.128": "保持2048",
-  "debug.copy.129": "已卸載，可手動對齊",
+  "debug.copy.129": "已放鬆，可以用手擺",
   "debug.copy.130": "目前未在線",
-  "debug.copy.131": "將目前位置設為中位並保持",
+  "debug.copy.131": "設為零點",
   "debug.copy.132": "本次只设定所选舵机，先前已设定的关节继续保持。 KP/KD和編號保留。",
-  "debug.copy.133": "退出校準 · 全部卸載",
+  "debug.copy.133": "結束校準",
   "debug.copy.134": "原網頁 Reset Mid",
-  "debug.copy.135": "僅重設選取位元 · 保持卸載",
+  "debug.copy.135": "恢復出廠零點",
   "debug.copy.136": "適用於已選編號。重置後需重新讀取位置。",
   "debug.copy.137": "中位指令回执不代表机械安装已对齐。",
   "debug.copy.138": "全部舵機保護",
@@ -1387,9 +1417,9 @@ Object.assign(debugMessages,{
   "debug.copy.164": "頭嘴輸入已歸零",
   "debug.copy.165": "拾取已啟動",
   "debug.copy.166": "翻滾已啟動",
-  "debug.copy.167": "已進入校準，全部卸載",
-  "debug.copy.168": "校準已退出，全部卸載",
-  "debug.copy.169": "已发送所选中位重置，位置待读回",
+  "debug.copy.167": "已開始校準，全部放鬆",
+  "debug.copy.168": "校準已結束，全部放鬆",
+  "debug.copy.169": "已恢復出廠零點",
   "debug.copy.170": "请输入0–425.9775之间的电流值",
   "debug.copy.171": "廣播已發送，未逐只驗證",
   "debug.copy.172": "已切換運動參數組",
@@ -1407,30 +1437,30 @@ Object.assign(debugMessages,{
   "debug.copy.184": "选中",
   "debug.copy.185": "正在載入現有3D模型…",
   "debug.copy.186": "闆卡與舵機卡槽",
-  "debug.copy.187": "舵機配置台",
-  "debug.copy.188": "扫描0–253",
-  "debug.copy.189": "停止扫描",
-  "debug.copy.190": "綠色線上 · ✓ 編號已驗證",
-  "debug.copy.191": "核驗線上編號",
+  "debug.copy.187": "舵機卡槽",
+  "debug.copy.188": "尋找舵機",
+  "debug.copy.189": "停止尋找",
+  "debug.copy.190": "綠色 = 在線 · ✓ = 編號已確認",
+  "debug.copy.191": "檢查編號",
   "debug.copy.192": "選取舵機參數",
   "debug.copy.193": "控制器陣列格式異常",
   "debug.copy.194": "控制器狀態格式異常",
   "debug.copy.195": "舵機狀態格式異常",
   "debug.copy.196": "選擇 {name}，{status}",
   "debug.copy.197": "選擇 ID{id}，{role}，{status}",
-  "debug.copy.198": "{count} 个编号在线 / 15 个固定盘位",
+  "debug.copy.198": "{count}/15 隻在線",
   "debug.copy.199": "编号已验证 {count}/15 · {status}",
   "debug.copy.200": "組裝鴨子已解鎖",
   "debug.copy.201": "完成後解鎖組裝鴨",
   "debug.copy.202": "{count} 只舵機在線",
   "debug.copy.203": "{step} 单位",
-  "debug.copy.204": "只修改当前在线的 {count} 只。中位數和 KP/KD 保持不變。",
+  "debug.copy.204": "只改線上的 {count} 隻，零點、力度和阻尼不變。",
   "debug.copy.205": "ID{id} 的目標編號",
   "debug.copy.206": "應用這 {count} 項修改",
   "debug.copy.207": "{count} 只在線",
-  "debug.copy.208": "已读回 ID{id} · KP {kp} · KD {kd} · 中位未改",
-  "debug.copy.209": "ID{id} 微动结束，已自动卸载；KP/KD和中位未改",
-  "debug.copy.210": "已讀回 ID{id}",
+  "debug.copy.208": "已儲存 ID{id} · 力度 {kp} · 阻尼 {kd}",
+  "debug.copy.209": "ID{id} 已動完，自動放鬆",
+  "debug.copy.210": "已重新整理 ID{id}",
   "debug.copy.211": "指令覆蓋15個編號 · 目前 {count} 只在線",
   "debug.copy.212": "頭頸{channel} · ID{id}",
   "debug.copy.213": "已廣播{state} · 未逐一確認",
@@ -1438,7 +1468,7 @@ Object.assign(debugMessages,{
   "debug.copy.215": "本視窗發送 {sent} · MCU回顯 {echo} · 丟幀 {gaps} · 拒收 {invalid}",
   "debug.copy.216": "{phase} {checked}/254 · 已發現 {found}{error}",
   "debug.copy.217": "0只",
-  "debug.copy.218": "ID{id} 已收到中位保持回執；請核對實際孔位",
+  "debug.copy.218": "ID{id} 已設為零點，請看一下孔位對不對",
   "debug.copy.219": "在3D中選擇 ID{id}",
   "debug.copy.220": "ID {id} · 在線",
   "debug.copy.221": "在3D中選擇 {name}",
@@ -1450,7 +1480,7 @@ Object.assign(debugMessages,{
   "debug.copy.227": "該充電",
   "debug.copy.228": "掉線記錄",
   "debug.copy.229": "ID {ids} 掉線",
-  "debug.copy.230": "已自動卸載",
+  "debug.copy.230": "已自動放鬆",
   "debug.copy.231": "正在搜尋區域網路…",
   "debug.copy.232": "連線",
   "debug.copy.233": "沒有找到，請手動輸入 IP",
@@ -1459,11 +1489,11 @@ Object.assign(debugMessages,{
   "debug.copy.236": "電壓",
   "debug.copy.237": "溫度",
   "debug.copy.238": "已連線 {name}",
-  "debug.copy.239": "ID {ids} 掉線，已全部卸載",
+  "debug.copy.239": "ID {ids} 掉線，已全部放鬆",
   "debug.copy.240": "零點校準",
   "debug.copy.241": "正面",
   "debug.copy.242": "側面",
-  "debug.copy.243": "粗調 · 設中位",
+  "debug.copy.243": "手動校零",
   "debug.copy.244": "細調",
   "debug.copy.245": "讓鴨子蹲在平桌上，點「自動校準」，它會慢慢站起來再自己調平。",
   "debug.copy.246": "站好",
@@ -1472,7 +1502,7 @@ Object.assign(debugMessages,{
   "debug.copy.249": "前後歪：調 12 / 22。左右歪：交給自動校準。",
   "debug.copy.250": "儲存",
   "debug.copy.251": "不儲存，恢復原樣",
-  "debug.copy.252": "IMU 沒有讀數",
+  "debug.copy.252": "姿態感測器（IMU）沒有讀數",
   "debug.copy.253": "前後",
   "debug.copy.254": "左右",
   "debug.copy.255": "已經調了 15° 以上還沒對齊。可能舵盤裝偏了一個齒，建議拆下來重新對準。",
@@ -1490,6 +1520,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "沒能完全調平，已保留最好的結果。"
  },
  "ja": {
+  "debug.copy.268": "サーボ点検",
+  "debug.copy.269": "シミュレーション",
+  "debug.copy.270": "設定",
+  "debug.copy.271": "強さ",
+  "debug.copy.272": "減衰",
+  "debug.copy.273": "未接続",
   "debug.auto.queue.remove": "次のサーボをキューから削除",
   "debug.auto.back.manual": "手動設定に戻る",
   "debug.auto.complete.note": "番号設定が完了しても、機械的なゼロ位置の校正が完了したことにはなりません。",
@@ -1829,6 +1865,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "完全には水平にできず、最良の結果を残しました。"
  },
  "ko": {
+  "debug.copy.268": "서보 점검",
+  "debug.copy.269": "시뮬레이션",
+  "debug.copy.270": "설정",
+  "debug.copy.271": "힘",
+  "debug.copy.272": "감쇠",
+  "debug.copy.273": "연결 안 됨",
   "debug.auto.queue.remove": "대기열에서 다음 서보 제거",
   "debug.auto.back.manual": "수동 설정으로 돌아가기",
   "debug.auto.complete.note": "번호 설정이 완료되어도 기계적 영점 보정이 완료된 것은 아닙니다.",
@@ -2168,6 +2210,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "완전히 맞추지 못해 가장 좋은 결과를 남겼습니다."
  },
  "fr": {
+  "debug.copy.268": "Contrôle des servos",
+  "debug.copy.269": "Simulation",
+  "debug.copy.270": "Réglages",
+  "debug.copy.271": "Force",
+  "debug.copy.272": "Amortissement",
+  "debug.copy.273": "Non connecté",
   "debug.auto.queue.remove": "Retirer le prochain servo de la file",
   "debug.auto.back.manual": "Revenir aux réglages manuels",
   "debug.auto.complete.note": "La fin de la numérotation ne confirme pas l’étalonnage du zéro mécanique.",
@@ -2507,6 +2555,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "Pas tout à fait de niveau ; meilleur résultat conservé."
  },
  "de": {
+  "debug.copy.268": "Servo-Prüfung",
+  "debug.copy.269": "Simulation",
+  "debug.copy.270": "Einstellungen",
+  "debug.copy.271": "Kraft",
+  "debug.copy.272": "Dämpfung",
+  "debug.copy.273": "Nicht verbunden",
   "debug.auto.queue.remove": "Nächsten Servo aus der Warteschlange entfernen",
   "debug.auto.back.manual": "Zurück zu manuellen Einstellungen",
   "debug.auto.complete.note": "Eine abgeschlossene Nummerierung bestätigt keine Kalibrierung der mechanischen Nullstellung.",
@@ -2846,6 +2900,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "Nicht ganz waagrecht; bestes Ergebnis behalten."
  },
  "es": {
+  "debug.copy.268": "Revisión de servos",
+  "debug.copy.269": "Simulación",
+  "debug.copy.270": "Ajustes",
+  "debug.copy.271": "Fuerza",
+  "debug.copy.272": "Amortiguación",
+  "debug.copy.273": "Sin conexión",
   "debug.auto.queue.remove": "Quitar el siguiente servo de la cola",
   "debug.auto.back.manual": "Volver a ajustes manuales",
   "debug.auto.complete.note": "La numeración completada no confirma la calibración del cero mecánico.",
@@ -3185,6 +3245,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "No se niveló del todo; se guardó el mejor resultado."
  },
  "pt-BR": {
+  "debug.copy.268": "Verificação dos servos",
+  "debug.copy.269": "Simulação",
+  "debug.copy.270": "Configurações",
+  "debug.copy.271": "Força",
+  "debug.copy.272": "Amortecimento",
+  "debug.copy.273": "Não conectado",
   "debug.auto.queue.remove": "Remover o próximo servo da fila",
   "debug.auto.back.manual": "Voltar às configurações manuais",
   "debug.auto.complete.note": "Concluir a numeração não confirma a calibração do zero mecânico.",
@@ -3524,6 +3590,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "Não nivelou totalmente; o melhor resultado foi mantido."
  },
  "ru": {
+  "debug.copy.268": "Проверка сервоприводов",
+  "debug.copy.269": "Симуляция",
+  "debug.copy.270": "Настройки",
+  "debug.copy.271": "Сила",
+  "debug.copy.272": "Демпфирование",
+  "debug.copy.273": "Не подключено",
   "debug.auto.queue.remove": "Убрать следующий сервопривод из очереди",
   "debug.auto.back.manual": "К ручным настройкам",
   "debug.auto.complete.note": "Завершение нумерации не подтверждает калибровку механического нуля.",
@@ -3863,6 +3935,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "Не удалось выровнять полностью; оставлен лучший результат."
  },
  "ar": {
+  "debug.copy.268": "فحص المحركات",
+  "debug.copy.269": "المحاكاة",
+  "debug.copy.270": "الإعدادات",
+  "debug.copy.271": "القوة",
+  "debug.copy.272": "التخميد",
+  "debug.copy.273": "غير متصل",
   "debug.auto.queue.remove": "إزالة المحرك التالي من قائمة الانتظار",
   "debug.auto.back.manual": "العودة إلى الإعدادات اليدوية",
   "debug.auto.complete.note": "اكتمال الترقيم لا يؤكد معايرة الصفر الميكانيكي.",
@@ -4202,6 +4280,12 @@ Object.assign(debugMessages,{
   "debug.copy.267": "لم تتم التسوية بالكامل؛ تم الإبقاء على أفضل نتيجة."
  },
  "hi": {
+  "debug.copy.268": "सर्वो जाँच",
+  "debug.copy.269": "सिमुलेशन",
+  "debug.copy.270": "सेटिंग्स",
+  "debug.copy.271": "ताकत",
+  "debug.copy.272": "डैम्पिंग",
+  "debug.copy.273": "कनेक्ट नहीं",
   "debug.auto.queue.remove": "अगले सर्वो को कतार से हटाएँ",
   "debug.auto.back.manual": "मैन्युअल सेटिंग पर लौटें",
   "debug.auto.complete.note": "क्रमांकन पूरा होने से यांत्रिक शून्य का अंशांकन सुनिश्चित नहीं होता।",

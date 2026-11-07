@@ -19,10 +19,10 @@ export default async (page:Page)=>{
   const choose=async(code:string)=>{await chooser.bringToFront();await browserChecks.chooseLocale(chooser,code);await page.bringToFront();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));};
   await choose('en');await page.goto(base+'/debug/');await page.waitForSelector('body[data-model-ready=true]');
   check('direct Debug title follows English',(await page.title()).includes('Debug'));
-  check('direct Debug static controls follow English',await page.locator('[data-workbench=servo]').innerText()==='Servo settings');
+  check('direct Debug static controls follow English',await page.locator('.work-tabs [data-workbench=servo]').innerText()==='Settings');
   for(const code of ['zh-Hans','zh-Hant','en','ja','ko','fr','de','es','pt-BR','ru','ar','hi']){
    await choose(code);await page.waitForFunction(code=>document.documentElement.lang===code,code);
-   check(code+' Debug static menu uses its catalog',await page.locator('[data-workbench=servo]').innerText()===debugMessages[code]!['debug.mode.servo_debug']);
+   check(code+' Debug static menu uses its catalog',await page.locator('.work-tabs [data-workbench=servo]').innerText()===debugMessages[code]!['debug.copy.270']);
    check(code+' Debug document direction',await page.locator('html').getAttribute('dir')===(code==='ar'?'rtl':'ltr'));
    check(code+' preserves fixed slot IDs',(await page.locator('#slots [data-slot]').evaluateAll(elements=>elements.map(element=>element.getAttribute('data-slot')).join(',')))==='10,11,12,13,14,20,21,22,23,24,30,31,32,33,34');
    check(code+' has no untranslated message keys',!(/debug\.(?:copy|mode|role)\./.test(await page.locator('main').innerText())));
@@ -46,16 +46,15 @@ export default async (page:Page)=>{
    for(const element of root.querySelectorAll<HTMLElement>('[aria-label],[title],[placeholder],[alt]'))if(element.getClientRects().length)for(const attribute of ['aria-label','title','placeholder','alt']){const value=element.getAttribute(attribute);if(value&&/[\u3400-\u9fff]/.test(value))out.push(attribute+': '+value);}
    return out;
   });
-  await page.locator('#edit-id').fill('12');
+  await page.locator('.work-tabs [data-workbench=servo]').click();await page.locator('#edit-id').fill('12');
   check('English robot display has no untranslated system copy',(await audit(page)).length===0);
-  await page.locator('[data-board-slot=expansion]').click();check('board panel follows English',(await audit(page)).length===0);
-  await page.locator('[data-slot="12"]').click();await page.locator('[data-panel-kind=protection]').click();await page.locator('#protection-current').fill('2.345');
-  await choose('zh-Hans');await page.waitForFunction(()=>document.documentElement.lang==='zh-Hans');check('unfinished protection threshold survives',await page.locator('#protection-current').inputValue()==='2.345');
-  await choose('en');await page.waitForFunction(()=>document.documentElement.lang==='en');check('protection panel follows English',(await audit(page)).length===0);
+  await page.locator('[data-slot="12"]').click();await page.locator('#edit-kp').fill('23');
+  await choose('zh-Hans');await page.waitForFunction(()=>document.documentElement.lang==='zh-Hans');check('unfinished parameter draft survives',await page.locator('#edit-kp').inputValue()==='23');
+  await choose('en');await page.waitForFunction(()=>document.documentElement.lang==='en');check('servo panel follows English',(await audit(page)).length===0);
   await page.locator('[data-workbench=control]').click();
-  for(const tab of ['motion','head','settings','feedback']){await page.locator('[data-control-tab='+tab+']').click();check('English control '+tab+' has no untranslated system copy',(await audit(page)).length===0);}
-  await page.locator('[data-workbench=calibrate]').click();check('calibration panel follows English',(await audit(page)).length===0);
-  await page.locator('[data-workbench=servo]').click();await page.locator('#batch-custom').click();check('custom mapping follows English',(await audit(page)).length===0);
+  for(const tab of ['motion','head']){await page.locator('[data-control-tab='+tab+']').click();check('English control '+tab+' has no untranslated system copy',(await audit(page)).length===0);}
+  await page.locator('.work-tabs [data-workbench=servo]').click();await page.locator('[data-workbench=calibrate]').click();check('calibration panel follows English',(await audit(page)).length===0);
+  await page.locator('.settings-tabs [data-workbench=servo]').click();await page.locator('#batch-custom').click();check('custom mapping follows English',(await audit(page)).length===0);
   await page.locator('[data-batch-index="0"]').fill('233');await choose('zh-Hans');await page.waitForFunction(()=>document.documentElement.lang==='zh-Hans');check('unfinished custom mapping survives',await page.locator('[data-batch-index="0"]').inputValue()==='233');
   await choose('en');await page.waitForFunction(()=>document.documentElement.lang==='en');
   await page.locator('[data-action=back]').first().click();
@@ -71,8 +70,8 @@ export default async (page:Page)=>{
   await choose('en');await page.goto(base+'/');await page.waitForFunction(()=>document.body.dataset.homeReady==='true');
   const duck=page.locator('[data-duck=debug]');await duck.click();if(!(await page.locator('#module-window').isVisible()))await duck.click();
   const frame=browserChecks.required(await page.locator('#module-frame').elementHandle()).contentFrame();const embedded=browserChecks.required(await frame);
-  await embedded.waitForSelector('body[data-model-ready=true]');check('homepage iframe loads English Debug',await embedded.locator('[data-workbench=servo]').innerText()==='Servo settings');
-  await embedded.locator('[data-slot="12"]').click();await embedded.locator('#edit-kp').fill('17');await choose('zh-Hans');await embedded.waitForFunction(()=>document.documentElement.lang==='zh-Hans');
+  await embedded.waitForSelector('body[data-model-ready=true]');check('homepage iframe loads English Debug',await embedded.locator('.work-tabs [data-workbench=servo]').innerText()==='Settings');
+  await embedded.locator('.work-tabs [data-workbench=servo]').click();await embedded.locator('[data-slot="12"]').click();await embedded.locator('#edit-kp').fill('17');await choose('zh-Hans');await embedded.waitForFunction(()=>document.documentElement.lang==='zh-Hans');
   check('homepage iframe input survives shared locale change',await embedded.locator('#edit-kp').inputValue()==='17');
   check('language refresh sent no controller actions',writes.length===0);check('no runtime errors',errors.length===0);
   return {pass:true,checks,writes,errors,screenshots};

@@ -10,8 +10,8 @@ test('Debug role and controller mode labels follow the selected language without
   setLocale('en');
   assert.equal(role(10),'Left hip rotation');
   assert.equal(role(20),'Right hip rotation');
-  assert.equal(MODE_NAMES.off,'Release all');
-  assert.equal(MODE_NAMES.calibrate,'Midpoint calibration');
+  assert.equal(MODE_NAMES.off,'Relax all');
+  assert.equal(MODE_NAMES.calibrate,'Zeroing mode');
   assert.deepEqual(state.devices,before);
   setLocale('zh-Hans');assert.equal(role(10),'左髋旋转');
  }finally{setLocale('auto');}
