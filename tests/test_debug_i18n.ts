@@ -19,7 +19,7 @@ test('Debug role and controller mode labels follow the selected language without
 
 test('Debug validation follows the selected language and preserves the in-progress parameter draft',()=>{
  const state=createState();for(const device of state.devices)device.online=[12,13].includes(device.id);
- state.selected='servo-12';state.view='tray';state.draft={id:22,kp:6,kd:21};
+ state.selected='servo-12';state.draft={id:22,kp:6,kd:21};
  const data=()=>({...state,message:undefined}),before=structuredClone(data());
  try{
   setLocale('en');

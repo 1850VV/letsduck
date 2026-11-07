@@ -20,8 +20,8 @@ export default async (page:Page)=>{
   await page.locator(`[data-slot="${id}"]`).click();await page.locator(`[data-model="${id}"]`).waitFor({state:'visible'});
   check('ID'+id+'参数卡与3D选择对应',await page.locator('#panel').innerText().then(s=>s.includes(name))&&await page.locator(`[data-model="${id}"]`).evaluate(el=>el.classList.contains('selected')));
  }
- await page.locator('[data-view=tray]').click();check('固定盘位仍为15个',await page.locator('#slots [data-slot]').count()===15);
- await page.locator('[data-view=robot]').click();await page.locator('[data-slot="14"]').click();
+ check('固定盘位仍为15个',await page.locator('#slots [data-slot]').count()===15);
+ await page.locator('[data-slot="14"]').click();
  await page.screenshot({path:'output/playwright/debug-leg-map/fixture-after.png'});
  check('不发送设备操作请求',writes.length===0);check('无加载错误',errors.length===0);
  await page.unrouteAll({behavior:'wait'});return {pass:true,checks,writes,errors};

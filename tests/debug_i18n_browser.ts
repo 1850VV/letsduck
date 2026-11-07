@@ -47,7 +47,7 @@ export default async (page:Page)=>{
    return out;
   });
   await page.locator('#edit-id').fill('12');
-  for(const view of ['robot','tray','circuit']){await page.locator('[data-view='+view+']').click();check('English '+view+' display has no untranslated system copy',(await audit(page)).length===0);}
+  check('English robot display has no untranslated system copy',(await audit(page)).length===0);
   await page.locator('[data-board-slot=expansion]').click();check('board panel follows English',(await audit(page)).length===0);
   await page.locator('[data-slot="12"]').click();await page.locator('[data-panel-kind=protection]').click();await page.locator('#protection-current').fill('2.345');
   await choose('zh-Hans');await page.waitForFunction(()=>document.documentElement.lang==='zh-Hans');check('unfinished protection threshold survives',await page.locator('#protection-current').inputValue()==='2.345');
@@ -58,7 +58,7 @@ export default async (page:Page)=>{
   await page.locator('[data-workbench=servo]').click();await page.locator('#batch-custom').click();check('custom mapping follows English',(await audit(page)).length===0);
   await page.locator('[data-batch-index="0"]').fill('233');await choose('zh-Hans');await page.waitForFunction(()=>document.documentElement.lang==='zh-Hans');check('unfinished custom mapping survives',await page.locator('[data-batch-index="0"]').inputValue()==='233');
   await choose('en');await page.waitForFunction(()=>document.documentElement.lang==='en');
-  await page.locator('[data-action=back]').first().click();await page.locator('[data-view=robot]').click();
+  await page.locator('[data-action=back]').first().click();
   const canvas=page.locator('#viewport canvas'),box=browserChecks.required(await canvas.boundingBox());
   await page.mouse.move(box.x+box.width*.55,box.y+box.height*.45);await page.mouse.down();await page.mouse.move(box.x+box.width*.55+73,box.y+box.height*.45+22,{steps:10});await page.mouse.up();
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));

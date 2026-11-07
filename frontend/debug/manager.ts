@@ -1,7 +1,7 @@
 import '../shared/form-messages.js';
 import {setLocalizedHTML,refreshDisplayCopy,isRefreshingCopy} from './localized-dom.js';
 import {dt,dm,t,onLocale,bindTranslations,escapeAttribute,debugFailure,displayError} from './i18n.js';
-import type {Device,Parameters,DebugView,DebugNotice} from './types.js';
+import type {Device,Parameters,DebugNotice} from './types.js';
 import {readDebugSnapshot} from './types.js';
 import {query,required,eventElement,isRecord} from '../lib/browser.js';
 import {parseResponseJson,jsonStringify} from '../shared/json.js';
@@ -15,7 +15,6 @@ import {createZeroCalibration} from './zero-calibration.js';
 import {createServoCheck} from './servo-check.js';
 applyBrand();
 if(new URLSearchParams(location.search).has('embedded'))document.body.dataset.embedded='true';
-function readView(value:string|undefined):DebugView {if(value==='robot'||value==='tray'||value==='circuit')return value;throw displayError('未知调试视图');}
 const state=createState();let step=1,scene:ReturnType<typeof createScene>|undefined,deviceTools:ReturnType<typeof createDeviceTools>,automatic:ReturnType<typeof createAutomaticNumbering>,servoCheck:ReturnType<typeof createServoCheck>|undefined,polling=false,signature='';
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>query<T>('#'+id),number=(input:HTMLInputElement)=>input.value.trim()===''?NaN:Number(input.value);
 function say(message:DebugNotice,error=false){state.message=message;$('feedback').textContent=String(message);$('feedback').classList.toggle('error',error);}
@@ -107,10 +106,6 @@ function render(){
  const n=online(state).length;$('online-count').textContent=dt("{count} 只在线",{count:n});
  const live=state.boards.arduino.connected,wifi=state.transport==='lan'?'WiFi '+state.host:'';
  setLocalizedHTML($('board-state'),`<i class="dot ${live?'green':''}"></i>UNO Q · ${wifi?(live?wifi:wifi+' · '+dt("未确认")):live?dt("USB已连接"):dt("未确认")} ▾`);renderBattery();renderDropouts();renderLink();
- for(const el of document.querySelectorAll<HTMLElement>('[data-view]'))el.setAttribute('aria-pressed',String(el.dataset.view===state.view));
- for(const el of document.querySelectorAll<HTMLElement>('[data-camera]'))el.hidden=state.view!=='robot';
- $('stage-caption').textContent=state.view==='robot'?dt("按编号对应安装位"):state.view==='tray'?dt("十五只舵机 · 固定编号位置"):dt("逻辑连接示意 · 不是实物串联顺序");
- $('stage-help').textContent=state.view==='circuit'?dt("USB → UNO Q → 扩展板 → 舵机总线 · 供电另接电池"):dt("拖动旋转 · 滚轮缩放 · 点舵机查看参数");
  $<HTMLButtonElement>('release-all').disabled=!state.boards.arduino.connected||automatic?.active&&state.busy;$<HTMLButtonElement>('batch-swap').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('batch-custom').disabled=state.busy||!n||automatic?.active;$<HTMLButtonElement>('verify-online').disabled=state.busy||automatic?.active;
  slots();if(!deviceTools?.renderPanel()){state.selectedBoard?panelBoard():state.mode==='single'?panelSingle():panelBatch();}
  if(isRefreshingCopy())scene?.refreshCopy();else scene?.update(state);deviceTools?.afterRender();say(state.message,isRefreshingCopy()&&$('feedback').classList.contains('error'));
@@ -152,7 +147,6 @@ document.body.addEventListener('click',e=>{
  const board=eventElement(e).closest<HTMLElement>('[data-board-slot]');if(board){chooseBoard(board.dataset.boardSlot);return;}
  const slot=eventElement(e).closest<HTMLElement>('[data-slot]');if(slot){choose(Number(slot.dataset.slot));return;}
  const camera=eventElement(e).closest<HTMLElement>('[data-camera]');if(camera){scene?.look(camera.dataset.camera==='side'?'side':'front');return;}
- const view=eventElement(e).closest<HTMLElement>('[data-view]');if(view){state.view=readView(view.dataset.view);render();return;}
  const stride=eventElement(e).closest<HTMLElement>('[data-step]');if(stride){step=Number(stride.dataset.step);render();return;}
  const button=eventElement(e).closest<HTMLElement>('[data-jog]');if(button){jog(Number(button.dataset.jog)*step);return;}
  const action=eventElement(e).closest<HTMLElement>('[data-action]')?.dataset.action,d=selected(state);
