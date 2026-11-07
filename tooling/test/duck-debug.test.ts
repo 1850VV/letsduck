@@ -86,6 +86,14 @@ test('invalid actions, ranges and nonfinite values make zero controller requests
     ['remap', { plan: [{ fromId: 12, toId: 13 }, { fromId: 14, toId: 13 }] }], ['read', { id: true }],
   ] as const) { const before = rt.calls.length; await assert.rejects(action(name, args)); assert.equal(rt.calls.length, before); }
 });
+test('official one-shot actions reach the runtime paths and sit/stand travels as posture', async t => {
+  const { rt, action } = await harness(t);
+  for (const [name, args, path, body] of [['sitstand', { posture: 'sit' }, '/api/sitstand', { action: 'sit' }], ['sitstand', { posture: 'stand' }, '/api/sitstand', { action: 'stand' }],
+    ['left-kick', {}, '/api/left_kick', {}], ['right-kick', {}, '/api/right_kick', {}]] as const) {
+    await action(name, args); assert.deepEqual(rt.calls.filter(call => call.method === 'POST').at(-1), { method: 'POST', path, body });
+  }
+  const before = rt.calls.length; await assert.rejects(action('sitstand', { posture: 'lie' })); assert.equal(rt.calls.length, before);
+});
 test('control requires fresh control readiness but does not require all fifteen records', async t => {
   const { rt, setup, action } = await harness(t); await action('mode', { mode: 'policy' }); assert.equal(rt.state.mode, 'policy'); assert.equal(setup.writeRequested, true);
   await action('release'); rt.calls = []; rt.state.control_ready = false;

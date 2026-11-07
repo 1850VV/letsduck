@@ -1163,6 +1163,38 @@ const copyRows:readonly (readonly [string,string])[]=[
  [
   "未连接",
   "Not connected"
+ ],
+ [
+  "🎮 手柄已连接",
+  "🎮 Controller connected"
+ ],
+ [
+  "走路",
+  "Walk"
+ ],
+ [
+  "动作",
+  "Actions"
+ ],
+ [
+  "捡东西",
+  "Pick"
+ ],
+ [
+  "坐下",
+  "Sit"
+ ],
+ [
+  "站起",
+  "Stand up"
+ ],
+ [
+  "左脚踢",
+  "Left kick"
+ ],
+ [
+  "右脚踢",
+  "Right kick"
  ]
 ];
 const allRows:Record<string,readonly [string,string]>={...rows};

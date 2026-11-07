@@ -12,7 +12,7 @@ export interface Parameters {id:number;kp:number;kd:number}
 export interface RuntimeProfile {action_scale?:number;action_alpha?:number;action_alpha_head?:number;gyro_alpha?:number;gravity_tau_s?:number;enabled?:boolean}
 export interface MCUStatus {
  mode?:string;feedback_age_ms?:number;imu_ok?:boolean;control_ready?:boolean;feedback_hz?:number;inference_hz?:number;
- recovery?:{phase?:string};pick?:{active?:boolean};roulade?:{active?:boolean;remaining_s?:number};deployment?:RuntimeProfile;roller?:RuntimeProfile;
+ recovery?:{phase?:string;active?:boolean};pick?:{active?:boolean};sitstand?:{active?:boolean;phase?:string};left_kick?:{active?:boolean};right_kick?:{active?:boolean};action_preparation?:{active?:boolean};roulade?:{active?:boolean;remaining_s?:number};deployment?:RuntimeProfile;roller?:RuntimeProfile;
  head?:number[];mouth?:number;acc?:number[];gyro?:number[];gravity?:number[];angles?:number[];targets?:number[];
  active_model?:string;trim?:Record<string,number>;imu_level?:number[];servo_voltage_v?:number[];servo_temp_c?:number[];mcu_command_seq?:number|bigint;sequence_gaps?:number|bigint;mcu_invalid_commands?:number|bigint;
 }
@@ -41,7 +41,10 @@ export function readMCUStatus(value:unknown):MCUStatus {
  // The official runtime reports the same [roll, pitch] as the first two of deployment.imu_bias_deg.
  else if(isRecord(value.deployment)&&Array.isArray(value.deployment.imu_bias_deg)){const [r,p]=value.deployment.imu_bias_deg;if(typeof r==='number'&&typeof p==='number')result.imu_level=[r,p];}
  if(isRecord(value.trim))result.trim=Object.fromEntries(Object.entries(value.trim).filter((entry):entry is [string,number]=>typeof entry[1]==='number'));
- if(isRecord(value.recovery)&&typeof value.recovery.phase==='string')result.recovery={phase:value.recovery.phase};
+ if(isRecord(value.recovery)&&typeof value.recovery.phase==='string')result.recovery={phase:value.recovery.phase,...(typeof value.recovery.active==='boolean'?{active:value.recovery.active}:{})};
+ // Official one-shot actions: only presence, active and the sit/stand phase matter here.
+ for(const key of ['left_kick','right_kick','action_preparation'] as const){const v=value[key];if(isRecord(v))result[key]={active:v.active===true};}
+ if(isRecord(value.sitstand))result.sitstand={active:value.sitstand.active===true,phase:typeof value.sitstand.phase==='string'?value.sitstand.phase:'idle'};
  if(isRecord(value.pick)&&typeof value.pick.active==='boolean')result.pick={active:value.pick.active};
  if(isRecord(value.roulade)){result.roulade={};if(typeof value.roulade.active==='boolean')result.roulade.active=value.roulade.active;if(typeof value.roulade.remaining_s==='number')result.roulade.remaining_s=value.roulade.remaining_s;}
  const deployment=profile(value.deployment),roller=profile(value.roller);if(deployment)result.deployment=deployment;if(roller)result.roller=roller;

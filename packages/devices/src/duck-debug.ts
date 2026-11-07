@@ -282,7 +282,7 @@ export class DuckDebug {
   }
   private validate(body: JsonRecord): { action: string; body: JsonRecord } {
     const a = body.action;
-    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave', 'connect', 'discover', 'pose', 'trim', 'level', 'servo-check'];
+    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'sitstand', 'left-kick', 'right-kick', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave', 'connect', 'discover', 'pose', 'trim', 'level', 'servo-check'];
     if (typeof a !== 'string' || !allowed.includes(a)) throw new DebugError(deviceMessage('device.debug.unknown_action'));
     const b = wireCopy(body);
     if (['read', 'inspect', 'parameters', 'jog', 'move', 'torque-off', 'reset-mid', 'cal-center'].includes(a)) b.id = integer(b.id, 0, 253, 'device.field.id');
@@ -312,6 +312,7 @@ export class DuckDebug {
     }
     // The official runtime's IMU_BIAS_DEG, [roll, pitch] degrees, saved on the board.
     if (a === 'level') vector(b.imu, [[-25, 25], [-25, 25]], 'device.field.imu_level');
+    if (a === 'sitstand' && !['sit', 'stand'].includes(String(b.posture))) throw new DebugError(deviceMessage('device.debug.unknown_action'));
     if (a === 'roller' && typeof b.enabled !== 'boolean') throw new DebugError(deviceMessage('device.debug.021'));
     if (a === 'action-scale') number(b.scale, 0, 2, 'device.field.action_scale');
     if (a === 'filter') for (const key of ['leg', 'head']) number(b[key], 0, .95, key);
@@ -368,8 +369,10 @@ export class DuckDebug {
         if (['hold', 'policy'].includes(String(b.mode)) && (!DuckDebug.fresh(status) || status.control_ready !== true)) throw new DebugError(deviceMessage('device.debug.030'));
         const result = await this.request('POST', '/api/mode', { mode: b.mode }); this.calibrating = false; this.held.clear(); return result;
       }
-      const paths: Record<string, [string, string[]]> = { roller: ['/api/roller', ['enabled']], pick: ['/api/pick', []], roulade: ['/api/roulade', []], 'action-scale': ['/api/action-scale', ['scale']], filter: ['/api/filter', ['leg', 'head']], 'imu-filter': ['/api/imu-filter', ['gyro_alpha', 'gravity_tau_s']], pose: ['/api/pose', ['targets']], trim: ['/api/trim', ['trim', 'save', 'imu', 'gyro']], level: ['/api/level', ['imu']] };
+      const paths: Record<string, [string, string[]]> = { roller: ['/api/roller', ['enabled']], pick: ['/api/pick', []], roulade: ['/api/roulade', []], 'left-kick': ['/api/left_kick', []], 'right-kick': ['/api/right_kick', []], 'action-scale': ['/api/action-scale', ['scale']], filter: ['/api/filter', ['leg', 'head']], 'imu-filter': ['/api/imu-filter', ['gyro_alpha', 'gravity_tau_s']], pose: ['/api/pose', ['targets']], trim: ['/api/trim', ['trim', 'save', 'imu', 'gyro']], level: ['/api/level', ['imu']] };
       if (a === 'servo-check') return this.servoCheck(Number(b.id));
+      // `action` already names the debug action here, so sit/stand travels as `posture`.
+      if (a === 'sitstand') return this.request('POST', '/api/sitstand', { action: b.posture });
       if (paths[a]) { const [path, keys] = paths[a]; return this.request('POST', path, Object.fromEntries(keys.filter(key => Object.hasOwn(b, key)).map(key => [key, b[key]]))); }
       if (['cal-enter', 'cal-exit', 'cal-center'].includes(a)) {
         if (a === 'cal-center' && !this.calibrating) throw new DebugError(deviceMessage('device.debug.031'));

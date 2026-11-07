@@ -6,7 +6,8 @@ import {jsonStringify} from '../shared/json.js';
 interface DeviceToolsOptions {getState():DebugState;render():void;say(message:DebugNotice,error?:boolean):void;canEdit(device:Device|undefined):boolean;api:DebugAction;poll(force?:boolean):Promise<void>;run:DebugRun;automatic?:ReturnType<typeof import('./automatic.js').createAutomaticNumbering>;zeroCalibration?:ReturnType<typeof import('./zero-calibration.js').createZeroCalibration>;servoCheck?:ReturnType<typeof import('./servo-check.js').createServoCheck>}
 interface ControlState {mode:string;roller:boolean;head:number[];mouth:number;motion:number[];target:number[];calibrating:boolean;status:MCUStatus}
 import {IDS,role,selected} from './state.js';
-import {MODE_NAMES,motionFromInput,canControl} from './control.js';
+import {padMapHTML,paintPad,type PadKey} from './pad-map.js';
+import {MODE_NAMES,motionFromInput,canControl,actionState,DUCK_ACTIONS,type DuckAction} from './control.js';
 export function createDeviceTools({getState,render,say,canEdit,api,poll,run,automatic,zeroCalibration,servoCheck}:DeviceToolsOptions){
  const $=<T extends HTMLElement=HTMLElement>(id:string)=>queryElement<T>('#'+id);
  const c:ControlState={mode:'unknown',roller:false,head:[0,0,0,0],mouth:0,motion:[0,0,0],target:[0,0,0],calibrating:false,status:{}};
@@ -23,12 +24,15 @@ export function createDeviceTools({getState,render,say,canEdit,api,poll,run,auto
  async function zero(){zeroLocal();if(armed)try{await api('command',{twist:[0,0,0]});}catch(error){stopControl();say(debugFailure(error),true);}}
  async function emergency(){stopControl();calOwned=false;servoOwned=false;if(automatic?.active){await automatic.release();return;}await api('release').then(()=>poll(true)).catch(error=>say(debugFailure(error),true));render();}
  async function mode(value:string){if(['hold','policy'].includes(value)&&!ready())return;stopControl();const result=await run('mode',{mode:value},{toString:()=>MODE_NAMES[value]??dt('未知')});if(result){armed=value!=='off';servoOwned=false;calOwned=false;}}
+ const ACTION_LABELS:Record<DuckAction,string>={pick:'捡东西',roulade:'翻滚',sitstand:'坐下','left-kick':'左脚踢','right-kick':'右脚踢'};
+ const actionLabel=(id:DuckAction)=>id==='sitstand'&&actionState(c.status).posture==='stand'?'站起':ACTION_LABELS[id];
+ async function duckAction(id:DuckAction){if(getState().busy||!ready()||!actionState(c.status).allowed[id])return;const label=actionLabel(id);zeroLocal();await run(id,id==='sitstand'?{posture:actionState(c.status).posture}:{},dm(label));}
  async function leaveOwned(){zeroLocal();const owned=armed||calOwned||servoOwned;stopControl();calOwned=false;servoOwned=false;if(owned)try{await api('leave');}catch(error){say(debugFailure(error),true);}}
  const controlNav=()=>`<div class="controller-tabs">${[['motion',dt("运动")],['head',dt("头和嘴")]].map(([id,label])=>`<button data-control-tab="${id}" aria-pressed="${tab===id}">${label}</button>`).join('')}</div>`;
  function slider(id:string,label:string,value:number,min:number,max:number,step:number,attribute:string){return `<label class="control-slider">${label}<output id="${id}-value">${value}</output><input id="${id}" aria-label="${label}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" ${attribute}></label>`;}
  function motionPanel(){const disabled=!ready();return `<div class="mode-buttons">${[['shadow',dt("空跑（不动）")],['hold',dt("站稳")],['policy',dt("走路 / 起身")]].map(([id,label])=>`<button data-controller-mode="${id}" aria-pressed="${c.mode===id}" ${id!=='shadow'&&disabled?'disabled':''}>${label}</button>`).join('')}</div>
   <div class="joystick-pair"><div><small>${c.roller?dt("前进 / 后退"):dt("前进 / 侧移")}</small><div class="control-joy" id="control-joy-left" role="group" aria-label="${escapeAttribute(dt("前进与侧移摇杆"))}"><i class="control-knob"></i></div></div><div><small>${dt("转向")}</small><div class="control-joy" id="control-joy-right" role="group" aria-label="${escapeAttribute(dt("转向摇杆"))}"><i class="control-knob"></i></div></div></div>
-  <div class="motion-values">${dt("前后")} <b id="control-vx">0.00</b> · ${dt("左右")} <b id="control-vy">0.00</b> · ${dt("转向")} <b id="control-wz">0.00</b></div><button class="secondary" data-control-action="zero">${dt("停下")}</button><p class="control-note">${dt("松手就停 · 键盘 WASD 移动、Q/E 转向、空格全部放松")}</p>
+  <div class="motion-values">${dt("前后")} <b id="control-vx">0.00</b> · ${dt("左右")} <b id="control-vy">0.00</b> · ${dt("转向")} <b id="control-wz">0.00</b></div><button class="secondary" data-control-action="zero">${dt("停下")}</button><div class="action-pair duck-actions" role="group" aria-label="${escapeAttribute(dt("动作"))}">${DUCK_ACTIONS.map(id=>`<button data-duck-action="${id}" disabled>${dt(actionLabel(id))}</button>`).join('')}</div><p class="control-note">${dt("松手就停 · 键盘 WASD 移动、Q/E 转向、空格全部放松")}</p><div class="pad-map" id="control-pad" hidden>${padMapHTML(actionLabel)}</div>
   <div class="recovery-readout"><span id="recovery-label"></span></div>${disabled?`<p class="control-note">${dt("鸭子还没准备好：主板、姿态传感器（IMU）或舵机没有读数")}</p>`:''}`;}
  function headPanel(){return `${c.head.map((v,i)=>slider('control-head-'+i,role(30+i),v,-1,1,.02,`data-control-head="${i}"`)).join('')}${slider('control-mouth',role(34),c.mouth,0,30,1,'data-control-mouth')}<button class="secondary" data-control-action="head-zero">${dt("头和嘴回正")}</button>`;}
  function panelControl(){return `<div class="panel-heading"><h2>${dt("控制")}</h2><span class="control-mode" id="controller-mode"></span></div>${controlNav()}<div class="controller-body">${tab==='head'?headPanel():motionPanel()}</div>`;}
@@ -43,6 +47,8 @@ export function createDeviceTools({getState,render,say,canEdit,api,poll,run,auto
   const s=c.status,q=getState().boards.arduino.connected;
   if(document.getElementById('controller-mode'))$('controller-mode').textContent=MODE_NAMES[c.mode]??dt("未知");
   ['vx','vy','wz'].forEach((id,i)=>{if(document.getElementById('control-'+id))$('control-'+id).textContent=required(c.motion[i]).toFixed(2);});
+  if(document.getElementById('control-pad'))$('control-pad').hidden=!padNow();
+  const acts=actionState(s);for(const b of document.querySelectorAll<HTMLButtonElement>('[data-duck-action]')){const id=b.dataset.duckAction as DuckAction;b.disabled=!q||getState().busy||!ready()||!acts.allowed[id];b.textContent=dt(actionLabel(id));}
   if(document.getElementById('recovery-label'))$('recovery-label').textContent=s.recovery?.phase?recoveryPhase(s.recovery.phase):'';
   if(bench==='calibrate')zeroCalibration?.updateLive();
   if(bench==='control')for(const button of document.querySelectorAll<HTMLButtonElement>('[data-controller-mode]'))button.disabled=!q||button.dataset.controllerMode!=='shadow'&&!ready();
@@ -68,6 +74,7 @@ export function createDeviceTools({getState,render,say,canEdit,api,poll,run,auto
   const t=eventElement(e).closest<HTMLElement>('[data-control-tab]');if(t){await zero();tab=required(t.dataset.controlTab);render();return;}
   // Fine tuning needs the duck standing, so leaving the hand-set centers also leaves calibrate mode.
   const z=eventElement(e).closest<HTMLElement>('[data-zero-tab]');if(z){const next=z.dataset.zeroTab==='fine'?'fine':z.dataset.zeroTab==='align'?'align':'coarse';if(zeroTab==='align'&&next!=='align')await zeroCalibration?.endAlign().catch(error=>say(debugFailure(error),true));if(next!=='coarse'&&calOwned){calOwned=false;await run('cal-exit',{},dm("校准已结束，全部放松"));}zeroTab=next;render();return;}
+  const act=eventElement(e).closest<HTMLElement>('[data-duck-action]');if(act){void duckAction(act.dataset.duckAction as DuckAction);return;}
   const m=eventElement(e).closest<HTMLElement>('[data-controller-mode]');if(m){mode(required(m.dataset.controllerMode));return;}
   const a=eventElement(e).closest<HTMLElement>('[data-control-action]')?.dataset.controlAction;if(!a)return;
   if(a==='zero'){await zero();say(dm("运动输入已归零，控制模式保留"));return;}
@@ -98,7 +105,28 @@ export function createDeviceTools({getState,render,say,canEdit,api,poll,run,auto
  });
  document.addEventListener('keydown',e=>{if(bench!=='control'||eventElement(e).closest<HTMLElement>('input,textarea,select,[contenteditable=true]'))return;if(e.code==='Space'){e.preventDefault();emergency();return;}const k=e.key.toLowerCase();if(tab==='motion'&&armed&&'wasdqe'.includes(k)&&k.length===1&&ready()){e.preventDefault();keys.add(k);c.target=motionFromInput(c.roller,sticks.left,sticks.right,keys);}});
  document.addEventListener('keyup',e=>{if(keys.delete(e.key.toLowerCase())){c.target=motionFromInput(c.roller,sticks.left,sticks.right,keys);if(!keys.size&&Object.values(sticks).every(p=>p.x===0&&p.y===0))zero();}});
- const timer=setInterval(async()=>{if(stopped||document.hidden)return;if(calOwned&&!sending){sending=true;try{await api('cal-heartbeat');}catch(error){calOwned=false;say(debugFailure(error),true);}finally{sending=false;}return;}if(!armed||sending)return;
+ // Game controller via the browser Gamepad API (standard layout): left stick moves, right stick turns,
+ // LB stands (hold), RB walks (policy), Select/−/View relaxes everything. Letting go of both sticks stops.
+ let padSteering=false,padPressed:boolean[]=[];
+ const padNow=()=>{const pads=[...(navigator.getGamepads?.()??[])].filter((p):p is Gamepad=>!!p?.connected);return pads.find(p=>p.mapping==='standard')??pads[0];};
+ const padEnabled=(k:PadKey)=>{const q=getState().boards.arduino.connected;if(k.button===8)return q;if(!q||!ready())return false;if(!k.action)return armed;return k.action==='hold'||k.action==='policy'||actionState(c.status).allowed[k.action];};
+ function readPad(){
+  const pad=padNow(),before=padPressed,pressed=pad?pad.buttons.map(b=>b.pressed):[],hit=(i:number)=>!!pressed[i]&&!before[i];padPressed=pressed;
+  if(!pad||bench!=='control'||tab!=='motion'){if(padSteering){padSteering=false;zeroLocal();}return;}
+  const map=document.getElementById('control-pad');if(map)paintPad(map,pad,padEnabled,actionLabel);
+  if(hit(8)){void emergency();return;}
+  if(!getState().busy){if(hit(4))void mode('hold');else if(hit(5))void mode('policy');
+   else{const id=([[0,'pick'],[1,'right-kick'],[2,'left-kick'],[3,'sitstand'],[12,'roulade']] as const).find(([i])=>hit(i))?.[1];if(id)void duckAction(id);}}
+  const axis=(i:number)=>{const v=pad.axes[i]??0;return Math.abs(v)<=.15?0:Math.max(-1,Math.min(1,v));};
+  const left={x:axis(0),y:-axis(1)},right={x:axis(2),y:-axis(3)},moving=[left.x,left.y,right.x].some(v=>v!==0);
+  if(!armed||!ready()){if(padSteering){padSteering=false;zeroLocal();}return;}
+  if(!moving&&!padSteering)return;// Idle pad: leave the on-screen sticks and keys alone.
+  padSteering=moving;sticks.left=left;sticks.right=right;c.target=motionFromInput(c.roller,left,right,keys);
+  for(const [side,p] of [['left',left],['right',right]] as const){const zone=document.getElementById('control-joy-'+side),knob=zone?.querySelector<HTMLElement>('.control-knob');if(zone&&knob){const r=(zone.clientWidth-knob.offsetWidth)/2;knob.style.transform=`translate(${p.x*r}px,${-p.y*r}px)`;}}
+  if(!moving)void zero();
+ }
+ const timer=setInterval(async()=>{if(stopped||document.hidden)return;readPad();if(calOwned&&!sending){sending=true;try{await api('cal-heartbeat');}catch(error){calOwned=false;say(debugFailure(error),true);}finally{sending=false;}return;}if(!armed||sending)return;
+  if(actionState(c.status).running)c.target=[0,0,0];// Official page: no walking input while an action plays.
   c.motion=c.motion.map((v,i)=>.3*v+.7*required(c.target[i]));if(c.target.every(v=>v===0))c.motion=[0,0,0];sending=true;
   try{await api('command',{twist:c.motion,head:c.head,mouth:c.mouth});}catch(error){stopControl();say(debugFailure(error),true);}finally{sending=false;updateLive();}
  },50);
