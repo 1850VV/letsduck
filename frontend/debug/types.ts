@@ -5,7 +5,6 @@ import {isRecord} from '../lib/browser.js';
 export type DebugNotice=string|LocalizedMessage;
 export type DebugScanState=DebugScan&{errorCode?:string;errorParams?:Record<string,unknown>};
 export type BoardId='arduino'|'expansion';
-export type DebugView='robot'|'tray'|'circuit';
 export interface Dropout {at:string;ids:number[];voltage:number|null;unloaded:boolean}
 export interface Device {uid:string;id:number;online:boolean;pos:unknown;kp:unknown;kd:unknown;held?:boolean;jogReady:boolean;parametersLive?:boolean;readbackPending?:boolean}
 export interface Mapping {uid:string;from:number;to:number}
@@ -19,7 +18,7 @@ export interface MCUStatus {
 }
 export interface DebugSnapshot {devices:Device[];boards:Record<BoardId,{connected:boolean}>;transport:'usb'|'lan';host:string|null;dropouts:Dropout[];lostIds:number[];status:MCUStatus;scan:DebugScanState;numbering:unknown;onlineIds:number[];error:string;errorCode?:string;errorParams?:Record<string,unknown>}
 export type Grade='good'|'weak'|'bad';
-export interface DebugState {devices:Device[];boards:Record<BoardId,{connected:boolean}>;selectedBoard:BoardId|null;selected:string|undefined;view:DebugView;mode:'single'|'swap'|'custom';batch:Mapping[];busy:boolean;draft:Parameters|null;message:DebugNotice;status:MCUStatus;transport:'usb'|'lan'|undefined;host:string|null;dropouts:Dropout[];lostIds:number[];scan?:DebugScanState;grades?:Partial<Record<number,Grade>>|undefined}
+export interface DebugState {devices:Device[];boards:Record<BoardId,{connected:boolean}>;selectedBoard:BoardId|null;selected:string|undefined;mode:'single'|'swap'|'custom';batch:Mapping[];busy:boolean;draft:Parameters|null;message:DebugNotice;status:MCUStatus;transport:'usb'|'lan'|undefined;host:string|null;dropouts:Dropout[];lostIds:number[];scan?:DebugScanState;grades?:Partial<Record<number,Grade>>|undefined}
 export type DebugAction=(action:string,values?:Record<string,unknown>)=>Promise<Record<string,unknown>>;
 export type DebugRun=(action:string,values?:Record<string,unknown>,message?:DebugNotice,after?:(data:Record<string,unknown>)=>void)=>Promise<Record<string,unknown>|null|undefined>;
 const numericArray=(value:unknown):number[]=>{if(!Array.isArray(value))return [];if(!value.every((item:unknown):item is number=>typeof item==='number'))throw displayError("控制器数组格式异常");return value;};

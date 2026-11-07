@@ -16,7 +16,7 @@ function geometryPixels(buffer:Buffer){
 }
 
 export default async function automaticScene(page:Page){
- const base=checks.browserUrl(),history=await fetch(base+'/api/servo-setup/records').then(r=>r.json()),results:{step:string;robot:number;tray:number}[]=[],errors:string[]=[];
+ const base=checks.browserUrl(),history=await fetch(base+'/api/servo-setup/records').then(r=>r.json()),results:{step:string;robot:number}[]=[],errors:string[]=[];
  for(const step of [STEPS.findIndex(s=>s.id==='prepare-usb'),STEPS.findIndex(s=>s.id==='r-prepare'),OVERVIEW_STEP]){
   const view=await page.context().newPage(),writes:string[]=[],legacy:string[]=[];
   try{
@@ -35,16 +35,11 @@ export default async function automaticScene(page:Page){
    await view.locator('[data-slot="21"]').click();await view.locator('[data-model="21"]:visible').waitFor();
    assert.equal(await view.locator('[data-slot="21"]').getAttribute('aria-pressed'),'true');
    const robot=await view.locator('#viewport canvas').screenshot(),robotPixels=geometryPixels(robot);assert.ok(robotPixels>3000,'the automatic tab displays real assembled geometry');
-   await view.locator('[data-view=tray]').click();await view.waitForFunction(()=>document.querySelector('[data-view=tray]')?.getAttribute('aria-pressed')==='true');
-   const tray=await view.locator('#viewport canvas').screenshot(),trayPixels=geometryPixels(tray);assert.ok(trayPixels>3000,'expanded servo geometry remains visible');
-   assert.equal(await view.locator('[data-slot="21"]').getAttribute('aria-pressed'),'true','view changes preserve the explicit numbered selection');
-   await view.locator('[data-view=robot]').click();await view.locator('[data-model="21"]:visible').waitFor();
-   assert.ok(geometryPixels(await view.locator('#viewport canvas').screenshot())>3000,'folding back preserves the duck');
    assert.equal(await canvas.evaluate(element=>element.isConnected&&element===document.querySelector('#viewport canvas')),true);
    assert.deepEqual(await view.evaluate(()=>JSON.parse(localStorage.getItem('letsduck-assembly')!)),{step},'Debug view and selection never overwrite the tutorial position');
-   assert.deepEqual(writes,[],'entering automatic, selecting and changing views sends no POST');assert.deepEqual(legacy,[]);
-   const stepId=checks.required(STEPS[step]).id;results.push({step:stepId,robot:robotPixels,tray:trayPixels});
-   if(process.env.DUCK_AUTO_SCENE_EVIDENCE){await mkdir(process.env.DUCK_AUTO_SCENE_EVIDENCE,{recursive:true});await writeFile(join(process.env.DUCK_AUTO_SCENE_EVIDENCE,stepId+'-robot.png'),robot);await writeFile(join(process.env.DUCK_AUTO_SCENE_EVIDENCE,stepId+'-tray.png'),tray);}
+   assert.deepEqual(writes,[],'entering automatic and selecting sends no POST');assert.deepEqual(legacy,[]);
+   const stepId=checks.required(STEPS[step]).id;results.push({step:stepId,robot:robotPixels});
+   if(process.env.DUCK_AUTO_SCENE_EVIDENCE){await mkdir(process.env.DUCK_AUTO_SCENE_EVIDENCE,{recursive:true});await writeFile(join(process.env.DUCK_AUTO_SCENE_EVIDENCE,stepId+'-robot.png'),robot);}
   }finally{await view.close();}
  }
  assert.deepEqual(await fetch(base+'/api/servo-setup/records').then(r=>r.json()),history);assert.deepEqual(errors,[]);

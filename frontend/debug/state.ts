@@ -7,7 +7,7 @@ export const IDS=SERVO_BINDINGS.map(binding=>binding.id);
 export const ROLES=SERVO_BINDINGS.map(binding=>binding.role);
 export const ACTORS=SERVO_BINDINGS.map(binding=>binding.actorId);
 export const role=(id:number)=>t(IDS.includes(id)?'debug.role.'+id:'debug.role.unassigned');
-export function createState():DebugState{return {devices:IDS.map(id=>({uid:'servo-'+id,id,kp:null,kd:null,pos:null,online:false,held:false,jogReady:false})),boards:{arduino:{connected:false},expansion:{connected:false}},selectedBoard:null,selected:'servo-12',view:'robot',mode:'single',batch:[],busy:false,draft:null,message:message('debug.status.reading'),status:{},transport:'usb',host:null,dropouts:[],lostIds:[]};}
+export function createState():DebugState{return {devices:IDS.map(id=>({uid:'servo-'+id,id,kp:null,kd:null,pos:null,online:false,held:false,jogReady:false})),boards:{arduino:{connected:false},expansion:{connected:false}},selectedBoard:null,selected:'servo-12',mode:'single',batch:[],busy:false,draft:null,message:message('debug.status.reading'),status:{},transport:'usb',host:null,dropouts:[],lostIds:[]};}
 export function mergeStatus(s:DebugState,data:Pick<DebugSnapshot,'boards'|'status'>&Partial<Pick<DebugSnapshot,'transport'|'scan'|'host'|'dropouts'|'lostIds'>>&{devices:(Pick<Device,'id'|'online'|'pos'|'kp'|'kd'>&Partial<Device>)[]}){
  const prior=new Map(s.devices.map(d=>[d.id,d]));
  s.devices=data.devices.map(d=>({...d,uid:'servo-'+d.id,jogReady:prior.get(d.id)?.jogReady??false}));

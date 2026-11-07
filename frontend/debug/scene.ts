@@ -1,5 +1,5 @@
 import {dt,displayError} from './i18n.js';
-import type {DebugState,DebugView,BoardId} from './types.js';
+import type {DebugState,BoardId} from './types.js';
 import {required,isRecord} from '../lib/browser.js';
 import {assemblyAssetUrl} from '../shared/url.js';
 import {parseResponseJson} from '../shared/json.js';
@@ -26,16 +26,16 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
  const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(170,330,250);scene.add(key);
  const fill=new THREE.DirectionalLight(0xe1edff,1.8);fill.position.set(-220,100,-180);scene.add(fill);
  const controls=new OrbitControls(camera,renderer.domElement);controls.minDistance=85;controls.maxDistance=1500;controls.maxPolarAngle=Math.PI*.85;
- const robot=new THREE.Group(),tray=new THREE.Group(),circuit=new THREE.Group(),loose=new THREE.Group();scene.add(robot,tray,circuit,loose);
- const robotObjects=new Map<number,THREE.Object3D>(),trayObjects=new Map<number,THREE.Object3D>(),circuitObjects=new Map<string,THREE.Object3D>();
- let ready=false,state:DebugState|undefined,pending=false,currentView:DebugView|''='',template:THREE.Group,center:THREE.Vector3,labels:{el:HTMLElement;position:THREE.Vector3}[]=[],circuitSignature:string|null=null,looseSignature='';
+ const robot=new THREE.Group(),loose=new THREE.Group();scene.add(robot,loose);
+ const robotObjects=new Map<number,THREE.Object3D>();
+ let ready=false,state:DebugState|undefined,pending=false,framed=false,template:THREE.Group,center:THREE.Vector3,labels:{el:HTMLElement;position:THREE.Vector3}[]=[],looseSignature='';
  const looseObjects=new Map<string,THREE.Object3D>(),boardObjects=new Map<BoardId,THREE.Group>();
  const modelIds=new Map(ACTORS.map((actor,i)=>[actor,required(IDS[i])]));
  let body:{pivot:THREE.Vector3;forward:THREE.Vector3;left:THREE.Vector3;floor:number;points:Float32Array}|null=null;
  const UP=new THREE.Vector3(0,1,0);
  // A level floor under the duck: the model rests its lowest point on it, and the rim turns green when the body is level.
  const floor=new THREE.Group(),rim=new THREE.Mesh(new THREE.RingGeometry(118,121,96),new THREE.MeshBasicMaterial({color:0x9fb0c8,side:THREE.DoubleSide}));
- floor.add(new THREE.Mesh(new THREE.CircleGeometry(120,96),new THREE.MeshBasicMaterial({color:0xdfe7f2,transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide})),rim);floor.rotation.x=-Math.PI/2;floor.visible=false;scene.add(floor);
+ floor.add(new THREE.Mesh(new THREE.CircleGeometry(120,96),new THREE.MeshBasicMaterial({color:0xdfe7f2,transparent:true,opacity:.55,depthWrite:false,side:THREE.DoubleSide})),rim);floor.rotation.x=-Math.PI/2;scene.add(floor);
  const ownMaterials=(obj:THREE.Object3D)=>obj.traverse(mesh=>{if(isMesh(mesh)){mesh.material=Array.isArray(mesh.material)?mesh.material.map(m=>m.clone()):mesh.material.clone();for(const m of materials(mesh))if(hasColor(m))m.userData.baseColor=m.color.clone();}});
  function invalidate(){if(pending||document.hidden)return;pending=true;requestAnimationFrame(()=>{pending=false;controls.update();renderer.render(scene,camera);layoutLabels();});}
  controls.addEventListener('change',invalidate);document.addEventListener('visibilitychange',invalidate);
@@ -57,7 +57,6 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
   const ring=new THREE.Mesh(new THREE.TorusGeometry(26,.7,5,48),new THREE.MeshBasicMaterial({color:0x6d8af8,depthTest:false}));ring.name='selection-ring';ring.userData.selectionRing=true;ring.rotation.x=-Math.PI/2;ring.position.y=-15;root.add(ring);return root;
  }
  function cube(size:Vector,color:THREE.ColorRepresentation,pos:Vector,parent:THREE.Object3D){const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),new THREE.MeshStandardMaterial({color,roughness:.6,metalness:.1}));mesh.position.set(...pos);parent.add(mesh);return mesh;}
- function wire(points:Vector[],color=0x8aa79c,radius=.8){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return new THREE.Mesh(new THREE.TubeGeometry(curve,25,radius,5,false),new THREE.MeshStandardMaterial({color,roughness:.6}));}
  function boardModel(id:BoardId){
   const obj=new THREE.Group();obj.userData.boardId=id;
   const pcb=cube([65,3,53],OFF,[0,0,0],obj);pcb.userData.statusSurface=true;
@@ -76,32 +75,13 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
  }
  boardModel('arduino');boardModel('expansion');
  function updateBoards(){
-  const positions=required(state).view==='robot'?{arduino:[-142,18,-62],expansion:[-142,18,50]}:required(state).view==='tray'?{arduino:[-211,13,-50],expansion:[-211,13,53]}:{arduino:[-190,12,-40],expansion:[-112,12,45]};
+  const positions={arduino:[-142,18,-62],expansion:[-142,18,50]};
   for(const [id,obj] of boardObjects){const connected=required(state).boards[id].connected;obj.position.fromArray(positions[id]);obj.rotation.y=-.1;
    obj.traverse(o=>{if(!isMesh(o))return;for(const m of materials(o)){if(o.userData.statusSurface&&hasColor(m))m.color.setHex(connected?GREEN:OFF);m.transparent=!connected;m.opacity=connected?1:.34;}});
    required(obj.getObjectByName('selection-ring')).visible=required(state).selectedBoard===id;
   }
  }
- function rebuildCircuit(){
-  for(const child of [...circuit.children]){circuit.remove(child);child.traverse(o=>{if(isMesh(o)){if(child.userData.generated||o.userData.selectionRing)o.geometry.dispose();materials(o).forEach(m=>m.dispose());}});}
-  circuitObjects.clear();const electronics=new THREE.Group();electronics.userData.generated=true;circuit.add(electronics);
-  cube([64,4,44],0xa2afc2,[-295,2,-40],electronics);const screen=cube([64,43,3],0x7f91ab,[-295,25,-62],electronics);screen.rotation.x=-.18;cube([57,34,1],0xd4e6f5,[-295,26,-59],electronics);
-  cube([38,23,25],0x4b5a72,[-210,12,70],electronics);cube([30,2,15],0x7186a0,[-210,25,70],electronics);
-  electronics.add(wire([[-262,7,-36],[-247,12,-20],[-233,15,-32],[-221,16,-33]],required(state).boards.arduino.connected?0x8ba0bd:OFF,1.2));
-  electronics.add(wire([[-160,18,-30],[-144,30,-10],[-142,26,10],[-135,19,29]],required(state).boards.expansion.connected?0x71ae91:OFF,1.1));
-  electronics.add(wire([[-194,25,70],[-178,37,66],[-151,34,35],[-140,20,33]],0xa2a787,1.1));
-  const connected=online(required(state));let previous:Vector=[-79,23,45];
-  connected.forEach((d,i)=>{
-   const obj=specimen(d.id);obj.position.set(-10+(i%5)*58,22,connected.length>5?(Math.floor(i/5)-1)*62:0);obj.rotation.y=-.15;circuit.add(obj);circuitObjects.set(d.uid,obj);
-   const here:Vector=[obj.position.x-18,25,obj.position.z+6];electronics.add(wire([previous,[previous[0]+10,35,previous[2]+14],[here[0]-8,35,here[2]+14],here],0x71ae91,1.05));previous=[obj.position.x+18,25,obj.position.z+6];
-  });
- }
- function fit(view:DebugView|undefined=state?.view){
-  if(view==='robot'){camera.position.set(340,230,440);controls.target.set(0,134,10);}
-  else if(view==='tray'){camera.position.set(120,340,480);controls.target.set(-40,5,0);}
-  else{camera.position.set(185,400,475);controls.target.set(-70,10,4);}
-  controls.update();invalidate();
- }
+ function fit(){camera.position.set(340,230,440);controls.target.set(0,134,10);controls.update();invalidate();}
  /** Look level at the floor disc, from the duck's front or its left side, so a gap under either foot shows. */
  function look(side:'front'|'side'){
   if(!body)return;const box=new THREE.Box3().setFromObject(robot),c=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
@@ -118,42 +98,30 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
   rim.material.color.setHex(level?GREEN:0x9fb0c8);
  }
  function update(next:DebugState){state=next;if(!ready)return;tilt();const active=new Set(online(required(state)).map(d=>d.id)),d=required(state).devices.find(d=>d.uid===required(state).selected),chosen=required(state).selectedBoard?null:d?.id;
-  if(currentView!==required(state).view){currentView=required(state).view;fit(required(state).view);}
-  robot.visible=floor.visible=required(state).view==='robot';tray.visible=required(state).view==='tray';circuit.visible=required(state).view==='circuit';
+  if(!framed){framed=true;fit();}
   updateBoards();
   // Servo check grades colour the weak and worst servos; a lost or hot servo still shows first.
   const warn=(id:number)=>{const g=required(state).grades?.[id];return alert(required(state),id)??(g==='good'||!g?null:g);};
   for(const [id,obj] of robotObjects)paint(obj,active.has(id),id===chosen,true,warn(id));
-  for(const [id,obj] of trayObjects)paint(obj,active.has(id),id===chosen,false,warn(id));
-  const signature=online(required(state)).map(d=>d.uid+':'+d.id).join(',')+':'+Number(required(state).boards.arduino.connected)+Number(required(state).boards.expansion.connected);
-  if(required(state).view==='circuit'&&circuitSignature!==signature){rebuildCircuit();circuitSignature=signature;}
-  for(const [uid,obj] of circuitObjects)paint(obj,true,uid===required(state).selected);
   const extras=online(required(state)).filter(d=>!IDS.includes(d.id)),extraSignature=extras.map(d=>d.uid+':'+d.id).join(',');
   if(looseSignature!==extraSignature){
    for(const child of [...loose.children]){loose.remove(child);child.traverse(o=>{if(isMesh(o)){if(o.userData.selectionRing)o.geometry.dispose();materials(o).forEach(m=>m.dispose());}});}
    looseObjects.clear();for(const d of extras){const obj=specimen(d.id);loose.add(obj);looseObjects.set(d.uid,obj);}looseSignature=extraSignature;
   }
-  loose.visible=required(state).view!=='circuit';
-  extras.forEach((d,i)=>{const obj=required(looseObjects.get(d.uid));obj.position.set(required(state).view==='robot'?-125-i*55:-164-i*55,required(state).view==='robot'?80:13,20);paint(obj,true,d.uid===required(state).selected);});
+  extras.forEach((d,i)=>{const obj=required(looseObjects.get(d.uid));obj.position.set(-125-i*55,80,20);paint(obj,true,d.uid===required(state).selected);});
   labelsHost.replaceChildren();labels=[];
-  const labelFor=(id:number,obj:THREE.Object3D,view:DebugView)=>{
+  // Mounted servos label beside their joint; extra (unassigned) servos label above themselves.
+  const labelFor=(id:number,obj:THREE.Object3D,mounted:boolean)=>{
    const connected=active.has(id),chosenId=id===chosen;
-   if(view==='robot'&&required(state).selectedBoard)return;
-   if(view==='robot'&&!chosenId&&!connected)return;
-   if(view==='robot'&&active.size>5&&!chosenId)return;
+   if(mounted&&(required(state).selectedBoard||!chosenId&&!connected||active.size>5&&!chosenId))return;
    let p=obj.position.clone();
-   if(view==='robot'){const box=new THREE.Box3().setFromObject(obj);p=box.getCenter(new THREE.Vector3());p.x+=p.x<0?-32:34;const joint=id<30?id%10:-1;p.y+=joint===2?21:joint===3?-1:joint===4?-15:10;}
+   if(mounted){const box=new THREE.Box3().setFromObject(obj);p=box.getCenter(new THREE.Vector3());p.x+=p.x<0?-32:34;const joint=id<30?id%10:-1;p.y+=joint===2?21:joint===3?-1:joint===4?-15:10;}
    else p.add(new THREE.Vector3(0,31,6));
    const el=addLabel(connected?dt('ID {id} · 在线',{id:String(id)}):'ID '+id,p,'model-label',id);el.classList.toggle('online',connected);el.classList.toggle('selected',chosenId);
   };
-  if(required(state).view==='robot')for(const [id,obj] of robotObjects)labelFor(id,obj,'robot');
-  if(required(state).view==='tray')for(const [id,obj] of trayObjects)labelFor(id,obj,'tray');
-  if(required(state).view!=='circuit')for(const [uid,obj] of looseObjects){const d=required(required(state).devices.find(d=>d.uid===uid));labelFor(d.id,obj,'tray');}
-  if(required(state).view==='circuit'){
-   addLabel(required(state).transport==='lan'?dt("Mac · 网络"):'Mac · USB',new THREE.Vector3(-295,65,-40),'circuit-label').dataset.debugCopy='transport';addLabel(dt("舵机独立电源"),new THREE.Vector3(-210,10,103),'circuit-label').dataset.debugCopy='power';
-   for(const [uid,obj] of circuitObjects){const item=required(required(state).devices.find(d=>d.uid===uid));labelFor(item.id,obj,'circuit');}
-  }
-  for(const [id,obj] of boardObjects){if(required(state).view==='robot'&&required(state).selectedBoard!==id)continue;const name=id==='arduino'?'Arduino UNO Q':dt("舵机扩展板"),el=addLabel(name,obj.position.clone().add(new THREE.Vector3(0,36,0)),'model-label');
+  for(const [id,obj] of robotObjects)labelFor(id,obj,true);
+  for(const [uid,obj] of looseObjects){const d=required(required(state).devices.find(d=>d.uid===uid));labelFor(d.id,obj,false);}
+  for(const [id,obj] of boardObjects){if(required(state).selectedBoard!==id)continue;const name=id==='arduino'?'Arduino UNO Q':dt("舵机扩展板"),el=addLabel(name,obj.position.clone().add(new THREE.Vector3(0,36,0)),'model-label');
    el.classList.toggle('online',required(state).boards[id].connected);el.classList.toggle('selected',required(state).selectedBoard===id);el.dataset.boardModel=id;el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',dt("在3D中选择 {name}",{name}));el.onclick=()=>onBoardSelect(id);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onBoardSelect(id);}};
   }
   invalidate();
@@ -164,8 +132,6 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
   for(const {el}of labels){
    if(el.dataset.model!==undefined){const id=Number(el.dataset.model);el.textContent=active.has(id)?dt('ID {id} · 在线',{id:String(id)}):'ID '+id;el.setAttribute('aria-label',dt('在3D中选择 ID{id}',{id:String(id)}));}
    else if(el.dataset.boardModel){const name=el.dataset.boardModel==='arduino'?'Arduino UNO Q':dt('舵机扩展板');el.textContent=name;el.setAttribute('aria-label',dt('在3D中选择 {name}',{name}));}
-   else if(el.dataset.debugCopy==='transport')el.textContent=state.transport==='lan'?dt('Mac · 网络'):'Mac · USB';
-   else if(el.dataset.debugCopy==='power')el.textContent=dt('舵机独立电源');
   }
  }
  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down:[number,number]|undefined;
@@ -173,14 +139,12 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
  renderer.domElement.addEventListener('pointerup',e=>{
   if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6||!ready)return;
   const r=host.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);raycaster.setFromCamera(pointer,camera);
-  const targets=required(state).view==='robot'?robotObjects:required(state).view==='tray'?trayObjects:circuitObjects;
-  const hits=raycaster.intersectObjects([...targets.values(),...boardObjects.values(),...(loose.visible?looseObjects.values():[])],true).filter(hit=>!hit.object.userData.selectionRing);
+  const hits=raycaster.intersectObjects([...robotObjects.values(),...boardObjects.values(),...(loose.visible?looseObjects.values():[])],true).filter(hit=>!hit.object.userData.selectionRing);
   if(hits.length){let obj:THREE.Object3D|null=required(hits[0]).object;while(obj&&obj.userData.servoId===undefined&&obj.userData.boardId===undefined)obj=obj.parent;if(obj){const board:unknown=obj.userData.boardId,id:unknown=obj.userData.servoId;if(board==='arduino'||board==='expansion')onBoardSelect(board);else if(typeof id==='number')onSelect(id);}}
  });
  const readyPromise=(async()=>{
   const [gltf,meta,binary,poses]=await Promise.all([new GLTFLoader().loadAsync(assemblyAssetUrl('hardware-v2/hd1910-servo.glb').href),fetch(assemblyAssetUrl('full-assembly.json')).then(parseResponseJson).then(readParts),fetch(assemblyAssetUrl('full-assembly.bin')).then(r=>r.arrayBuffer()),Promise.resolve(completePoses())]);
   template=gltf.scene;template.scale.setScalar(1000);template.updateMatrixWorld(true);center=new THREE.Box3().setFromObject(template).getCenter(new THREE.Vector3());
-  IDS.forEach((id,i)=>{const obj=specimen(id);obj.position.set((i%5-2)*57,13,(Math.floor(i/5)-1)*63);obj.rotation.y=-.18;tray.add(obj);trayObjects.set(id,obj);});
   for(const part of meta){const info=poses[part.id];if(!info?.pose?.visible)continue;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(binary,part.positionOffset,part.vertexCount*3).slice(),3));g.setIndex(new THREE.BufferAttribute(new Uint32Array(binary,part.indexOffset,part.indexCount).slice(),1));g.computeVertexNormals();
    const id=modelIds.get(part.id),material=new THREE.MeshStandardMaterial({color:id===undefined?0xd8e2ef:OFF,roughness:.6,metalness:.06,transparent:true,opacity:id===undefined?.2:.28,depthWrite:false});
    const mesh=new THREE.Mesh(g,material);mesh.position.fromArray(info.pose.position);mesh.quaternion.copy(actorQuaternion(required(assemblyActors[part.id]),info.pose));robot.add(mesh);
@@ -195,6 +159,6 @@ export function createScene({host,labelsHost,onSelect,onBoardSelect}:{host:HTMLE
   body={pivot,forward,left,floor:low,points:new Float32Array(points)};
   ready=true;resize();if(state)update(state);return true;
  })();
- function inspect(){const greens=<K>(map:ReadonlyMap<K,THREE.Object3D>)=>[...map].filter(([,obj])=>{let green=false;obj.traverse(o=>{if(isMesh(o)&&!o.userData.selectionRing&&materials(o).some(m=>hasColor(m)&&m.color.getHex()===GREEN&&m.opacity===1))green=true;});return green;}).map(([id])=>id);return {ready,view:currentView,robotCount:robotObjects.size,trayCount:trayObjects.size,greenRobotIds:greens(robotObjects),greenTrayIds:greens(trayObjects),greenBoardIds:greens(boardObjects),boardCount:boardObjects.size,greenLooseIds:greens(looseObjects).map(uid=>required(required(state).devices.find(d=>d.uid===uid)).id),circuitCount:circuitObjects.size,camera:camera.position.toArray()};}
+ function inspect(){const greens=<K>(map:ReadonlyMap<K,THREE.Object3D>)=>[...map].filter(([,obj])=>{let green=false;obj.traverse(o=>{if(isMesh(o)&&!o.userData.selectionRing&&materials(o).some(m=>hasColor(m)&&m.color.getHex()===GREEN&&m.opacity===1))green=true;});return green;}).map(([id])=>id);return {ready,robotCount:robotObjects.size,greenRobotIds:greens(robotObjects),greenBoardIds:greens(boardObjects),boardCount:boardObjects.size,greenLooseIds:greens(looseObjects).map(uid=>required(required(state).devices.find(d=>d.uid===uid)).id),camera:camera.position.toArray()};}
  return {update,refreshCopy,fit,look,ready:readyPromise,inspect};
 }
