@@ -1,4 +1,5 @@
 import { Context } from '@deepseek-ai/cordis';
+import { dirname, join } from 'node:path';
 import { AdbRuntime, DuckDebug, RuntimeSwitch, ServoSetup } from '@letsduck/devices';
 import type { DuckRuntime } from '@letsduck/devices';
 import { ExportManager } from '@letsduck/exporter';
@@ -17,6 +18,8 @@ export interface HostOptions {
   frontend: string;
   assemblyManifest?: AssemblyManifest;
   database?: string;
+  /** Where the debug duck's recordings go; default "recordings" beside the database, empty string turns recording off. */
+  recordings?: string;
   legacy?: string;
   runtime?: DuckRuntime;
   uiOrigin?: string;
@@ -73,7 +76,8 @@ export async function startHost(options: HostOptions) {
     } });
     await root.plugin({ name: 'duck-devices', inject: ['duckStore'], apply(ctx) {
       const setup = new ServoSetup(ctx.duckStore, options.runtime ?? new RuntimeSwitch(new AdbRuntime()));
-      devices = { setup, debug: new DuckDebug(ctx.duckStore, setup) };
+      const debug = new DuckDebug(ctx.duckStore, setup, {}, options.recordings === undefined ? join(dirname(ctx.duckStore.path), 'recordings') : options.recordings || undefined);
+      devices = { setup, debug };
       ctx.provide('duckDevices', devices);
     } });
     await root.plugin({ name: 'duck-http', inject: ['duckAssets', 'duckStore', 'duckDevices', 'duckExports'], async apply(ctx) {

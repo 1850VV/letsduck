@@ -1195,6 +1195,322 @@ const copyRows:readonly (readonly [string,string])[]=[
  [
   "右脚踢",
   "Right kick"
+ ],
+ [
+  "体检",
+  "Checkup"
+ ],
+ [
+  "电源和线路",
+  "Power and wiring"
+ ],
+ [
+  "舵机单测",
+  "Servo test"
+ ],
+ [
+  "零点",
+  "Zero"
+ ],
+ [
+  "结构松紧",
+  "Looseness"
+ ],
+ [
+  "加速度卡在量程上限",
+  "Acceleration pinned at its range limit"
+ ],
+ [
+  "陀螺仪读数不变",
+  "Gyro reading frozen"
+ ],
+ [
+  "板子报告 IMU 出错",
+  "The board reports an IMU error"
+ ],
+ [
+  "IMU 出错",
+  "IMU error"
+ ],
+ [
+  "ID {ids} 没在线",
+  "ID {ids} offline"
+ ],
+ [
+  "走路时电压掉了 {drop} V（正常 ≤0.8 V）",
+  "Voltage dropped {drop} V while walking (normal ≤0.8 V)"
+ ],
+ [
+  "ID {id} 的电压比别的低 {dev} V",
+  "ID {id} reads {dev} V below the others"
+ ],
+ [
+  "静止时零漂 {bias}°/s（正常 ≤{line}）",
+  "Drift at rest {bias}°/s (normal ≤{line})"
+ ],
+ [
+  "ID {id} 站着差 {err}°（正常 ≤{line}°）",
+  "ID {id} off by {err}° standing (normal ≤{line}°)"
+ ],
+ [
+  "左右腿差 {diff}°（正常 ≤1.5°）",
+  "Left and right differ by {diff}° (normal ≤1.5°)"
+ ],
+ [
+  "站着歪 {tilt}°（正常 ≤5°）",
+  "Leans {tilt}° standing (normal ≤5°)"
+ ],
+ [
+  "走路左右晃 ±{sway}°（正常 ≤{line}°）",
+  "Sways ±{sway}° walking (normal ≤{line}°)"
+ ],
+ [
+  "关节误差 {err}°（正常 ≤{line}°）",
+  "Joint error {err}° (normal ≤{line}°)"
+ ],
+ [
+  "补救幅度 {swing}°（正常 ≤{line}°）",
+  "Correction swing {swing}° (normal ≤{line}°)"
+ ],
+ [
+  "板子每秒只算 {hz} 次（正常 ≥40）",
+  "The board runs only {hz} times a second (normal ≥40)"
+ ],
+ [
+  "摔了 {falls} 次",
+  "Fell {falls} times"
+ ],
+ [
+  "ID {ids} 没在线，后面的检查都不可信",
+  "ID {ids} is offline, so the later checks can't be trusted"
+ ],
+ [
+  "查这个舵机的插头和线，再看编号对不对",
+  "Check this servo's plug and cable, then its ID"
+ ],
+ [
+  "走路时电压掉得太多",
+  "Voltage drops too far while walking"
+ ],
+ [
+  "充电或换电池，查 2P 电源插座",
+  "Charge or swap the battery and check the 2-pin power socket"
+ ],
+ [
+  "ID {id} 供电偏低",
+  "ID {id} gets low voltage"
+ ],
+ [
+  "查这一路的供电线和接头",
+  "Check the power cable and connectors on this chain"
+ ],
+ [
+  "IMU 读数卡死，后面的检查都不可信",
+  "The IMU is stuck, so the later checks can't be trusted"
+ ],
+ [
+  "断电等 5 秒再开机",
+  "Power off, wait 5 seconds, power on"
+ ],
+ [
+  "IMU 静止时漂得多",
+  "The IMU drifts at rest"
+ ],
+ [
+  "放平不动，重新标定 IMU",
+  "Lay it still and recalibrate the IMU"
+ ],
+ [
+  "ID {id} 站着吃力",
+  "ID {id} strains while standing"
+ ],
+ [
+  "查这条腿有没有蹭着、螺丝是不是太紧",
+  "Check this leg for rubbing parts or over-tight screws"
+ ],
+ [
+  "左右腿受力不一样",
+  "The legs carry different loads"
+ ],
+ [
+  "吃力的那一侧查装配",
+  "Check the assembly on the straining side"
+ ],
+ [
+  "站着身体是歪的",
+  "The body leans while standing"
+ ],
+ [
+  "先做零点校准，再看两条腿装得一不一样长",
+  "Calibrate zero first, then check both legs are assembled the same length"
+ ],
+ [
+  "走起来身体晃得太厉害：±{sway}°，正常不超过 {line}°",
+  "The body sways too much walking: ±{sway}°, normal is under {line}°"
+ ],
+ [
+  "拧紧胸部、腿部 3D 件和舵机盘的螺丝，再走一次",
+  "Tighten the chest and leg printed parts and the servo horn screws, then walk again"
+ ],
+ [
+  "走路时关节跟不上",
+  "Joints lag while walking"
+ ],
+ [
+  "去舵机质检把腿部舵机测一遍",
+  "Run the servo check on the leg servos"
+ ],
+ [
+  "走路模型一直在大幅补救",
+  "The walking model keeps making big corrections"
+ ],
+ [
+  "先查结构松紧和零点，再走一次",
+  "Check looseness and zero, then walk again"
+ ],
+ [
+  "板子算不过来",
+  "The board can't keep up"
+ ],
+ [
+  "让板子凉一会儿，关掉别的程序",
+  "Let the board cool and close other programs"
+ ],
+ [
+  "摔了 {falls} 次，但各项指标都正常",
+  "Fell {falls} times, but every check is normal"
+ ],
+ [
+  "数据已存，复制给 AI 分析",
+  "The data is saved. Copy it for AI to analyse"
+ ],
+ [
+  "{online} 个舵机都在线 · 走路时 {volt} V",
+  "All {online} servos online · {volt} V while walking"
+ ],
+ [
+  "{online} 个舵机都在线 · {volt} V",
+  "All {online} servos online · {volt} V"
+ ],
+ [
+  "{online} 个舵机都在线",
+  "All {online} servos online"
+ ],
+ [
+  "读数正常 · 零漂 {bias}°/s",
+  "Readings normal · drift {bias}°/s"
+ ],
+ [
+  "读数正常",
+  "Readings normal"
+ ],
+ [
+  "各关节误差都在 {err}° 以内",
+  "Every joint within {err}°"
+ ],
+ [
+  "走路左右晃 ±{sway}°",
+  "Sways ±{sway}° walking"
+ ],
+ [
+  "关节误差 {err}° · 补救幅度 {swing}°",
+  "Joint error {err}° · correction swing {swing}°"
+ ],
+ [
+  "关节误差 {err}°",
+  "Joint error {err}°"
+ ],
+ [
+  "没摔",
+  "No falls"
+ ],
+ [
+  "要动手",
+  "Hands-on"
+ ],
+ [
+  "去舵机质检",
+  "Open servo check"
+ ],
+ [
+  "去零点校准",
+  "Open zero calibration"
+ ],
+ [
+  "先处理上面的问题",
+  "Fix the problem above first"
+ ],
+ [
+  "滑轮模式暂不判断",
+  "Not judged on skates yet"
+ ],
+ [
+  "这次没站稳过",
+  "Didn't stand still this time"
+ ],
+ [
+  "这次没走路",
+  "Didn't walk this time"
+ ],
+ [
+  "没有数据",
+  "No data"
+ ],
+ [
+  "走路 {s} 秒 · 摔 {n} 次",
+  "Walked {s} s · fell {n} times"
+ ],
+ [
+  "走路 {s} 秒 · 没摔",
+  "Walked {s} s · no falls"
+ ],
+ [
+  "没走路",
+  "Didn't walk"
+ ],
+ [
+  "进行中",
+  "In progress"
+ ],
+ [
+  "开机 {m} 分",
+  "On {m} min"
+ ],
+ [
+  "原始数据已保存",
+  "Raw data saved"
+ ],
+ [
+  "和 {when} 比：左右晃 ±{a}° → ±{b}°，关节误差 {c}° → {d}°",
+  "Against {when}: sway ±{a}° → ±{b}°, joint error {c}° → {d}°"
+ ],
+ [
+  "正在读取…",
+  "Reading…"
+ ],
+ [
+  "连上鸭子后，每次开机都会自动记一次，走几步就能看到结果。",
+  "Once the duck is connected, every power-on is recorded. Walk a few steps to see the result."
+ ],
+ [
+  "先做：",
+  "Do first: "
+ ],
+ [
+  "这次没发现问题",
+  "No problems found this time"
+ ],
+ [
+  "已复制",
+  "Copied"
+ ],
+ [
+  "复制给 AI 分析",
+  "Copy for AI"
+ ],
+ [
+  "看一下调试鸭 {when} 这次出行（录像 {files}）",
+  "Look at the debug duck trip from {when} (recordings {files})"
  ]
 ];
 const allRows:Record<string,readonly [string,string]>={...rows};

@@ -5,6 +5,7 @@ import { JsonNumericValue, pythonTruthy, readJsonField } from '@letsduck/domain'
 import type { DeviceStore, DuckRuntime, DeviceTiming } from './types.js';
 import type { IoBus } from './bus.js';
 import { DebugError } from './errors.js';
+import { DuckRecorder, type RecorderStatus } from './duck-recorder.js';
 import { RuntimeSwitch, discoverBoards, lanHost } from './runtime.js';
 import { IDS, MAP_VERSION, cloneJson, deviceTiming, yieldToEventLoop } from './shared.js';
 
@@ -14,7 +15,7 @@ export interface DebugScan { active: boolean; checked: number; total: number; fo
 export interface DebugNumbering { board: string | null; mapVersion: string; ready: boolean; expectedIds: number[]; verifiedIds: number[]; missingIds: number[]; reviewIds: number[]; records: JsonRecord[] }
 export interface DebugDropout { at: string; ids: number[]; voltage: number | null; unloaded: boolean }
 export interface DebugDevice { uid: string; id: number; online: boolean; pos: unknown; kp: unknown; kd: unknown; parametersLive: boolean; held: boolean; readbackPending: boolean }
-export interface DebugStatus { connected: boolean; board: string | null; transport: 'usb' | 'lan'; host: string | null; dropouts: DebugDropout[]; lostIds: number[]; status: JsonRecord; error: string; errorCode?:string;errorParams?:Record<string,unknown>; onlineIds: number[]; devices: DebugDevice[]; numbering: DebugNumbering; boards: { arduino: { connected: boolean }; expansion: { connected: boolean } }; scan: DebugScan }
+export interface DebugStatus { connected: boolean; board: string | null; transport: 'usb' | 'lan'; host: string | null; dropouts: DebugDropout[]; lostIds: number[]; status: JsonRecord; error: string; errorCode?:string;errorParams?:Record<string,unknown>; onlineIds: number[]; devices: DebugDevice[]; numbering: DebugNumbering; boards: { arduino: { connected: boolean }; expansion: { connected: boolean } }; scan: DebugScan; recording?: RecorderStatus }
 const object = (value: unknown): value is JsonRecord => value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof JsonNumericValue);
 const value = (record: JsonRecord, key: string) => readJsonField(record, key);
 const wireCopy = (record: JsonRecord): JsonRecord => Object.fromEntries(Object.keys(record).map(key => [key, value(record, key)]));
@@ -75,8 +76,11 @@ export class DuckDebug {
   private stopped = false;
   private closing: Promise<void> | undefined;
   private readonly timing: DeviceTiming;
-  constructor(readonly store: DeviceStore, readonly setup: DebugSetupBridge, timing: Partial<DeviceTiming> = {}) {
+  /** Saves every board status to the computer while the page is open (duck-recorder.ts). */
+  readonly recorder: DuckRecorder | null;
+  constructor(readonly store: DeviceStore, readonly setup: DebugSetupBridge, timing: Partial<DeviceTiming> = {}, recordings?: string) {
     this.runtime = setup.runtime; this.timing = deviceTiming(timing);
+    this.recorder = recordings ? new DuckRecorder({ dir: recordings, timing, read: async () => { await this.connect(); return this.runtime.request('GET', '/api/status'); } }) : null;
   }
   /** Automatic setup supersedes manual parameter receipts for this shared runtime. */
   invalidateReadbacks(): void { this.readbacks.clear(); }
@@ -123,6 +127,7 @@ export class DuckDebug {
       missingIds: IDS.filter(id => !verified.has(id)), reviewIds: [...review].sort((a, b) => a - b), records };
   }
   async status(): Promise<DebugStatus> {
+    this.recorder?.touch();
     let error = '', status: JsonRecord = {}, connected = false;let failureNotice:DeviceMessage|undefined;
     try { status = await this.setup.io.run(() => this.request('GET', '/api/status')); connected = true; }
     catch (failure) { if (!(failure instanceof DebugError)) throw failure; error = failure.message;failureNotice=deviceFailure(failure); }
@@ -148,7 +153,7 @@ export class DuckDebug {
     });
     const runtime = this.runtime instanceof RuntimeSwitch ? this.runtime : null;
     return { connected, board: this.board, transport: runtime?.transport ?? 'usb', host: runtime?.host ?? null, dropouts: cloneJson(this.dropouts), lostIds: [...this.missing].sort((a, b) => a - b), status, error, ...(failureNotice?{errorCode:failureNotice.code,errorParams:failureNotice.params}:{}), onlineIds: [...active].sort((a, b) => a - b), devices, numbering: this.numbering(),
-      boards: { arduino: { connected: fresh }, expansion: { connected: fresh && (active.size > 0 || status.imu_ok === true) } }, scan: cloneJson(this.scan) };
+      boards: { arduino: { connected: fresh }, expansion: { connected: fresh && (active.size > 0 || status.imu_ok === true) } }, scan: cloneJson(this.scan), ...(this.recorder ? { recording: this.recorder.status() } : {}) };
   }
   /** A servo that was online and stops answering ends any motion at once and is logged. */
   private async watchDropouts(status: JsonRecord, active: Set<number>): Promise<void> {
@@ -282,7 +287,7 @@ export class DuckDebug {
   }
   private validate(body: JsonRecord): { action: string; body: JsonRecord } {
     const a = body.action;
-    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'sitstand', 'left-kick', 'right-kick', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave', 'connect', 'discover', 'pose', 'trim', 'level', 'servo-check'];
+    const allowed = ['read', 'inspect', 'parameters', 'remap', 'jog', 'move', 'torque-off', 'reset-mid', 'verify', 'scan', 'scan-stop', 'mode', 'command', 'roller', 'pick', 'roulade', 'sitstand', 'left-kick', 'right-kick', 'action-scale', 'filter', 'imu-filter', 'protection', 'cal-enter', 'cal-heartbeat', 'cal-center', 'cal-exit', 'release', 'leave', 'connect', 'discover', 'pose', 'trim', 'level', 'servo-check', 'history'];
     if (typeof a !== 'string' || !allowed.includes(a)) throw new DebugError(deviceMessage('device.debug.unknown_action'));
     const b = wireCopy(body);
     if (['read', 'inspect', 'parameters', 'jog', 'move', 'torque-off', 'reset-mid', 'cal-center'].includes(a)) b.id = integer(b.id, 0, 253, 'device.field.id');
@@ -330,9 +335,20 @@ export class DuckDebug {
     if (a === 'connect' && b.host !== null && (b.host = lanHost(b.host)) === null) throw new DebugError(deviceMessage('device.debug.043'));
     return { action: a, body: b };
   }
+  /** Every action but the steady streams (sticks, heartbeats, readouts) is marked in the recording with its outcome. */
   async action(body: JsonRecord): Promise<JsonRecord> {
+    const name = typeof body.action === 'string' ? body.action : '', quiet = ['command', 'cal-heartbeat', 'inspect', 'read', 'history'].includes(name);
+    if (!quiet) this.recorder?.mark('action', body);
+    let result: JsonRecord;
+    try { result = await this.perform(body); }
+    catch (error) { if (!quiet) this.recorder?.mark('done', { action: name, ok: false, error: message(error) }); throw error; }
+    if (!quiet) { const text = JSON.stringify(result, (_k, v: unknown) => typeof v === 'bigint' ? Number(v) : v); this.recorder?.mark('done', { action: name, ok: true, ...(text.length < 4000 ? { result } : {}) }); }
+    return result;
+  }
+  private async perform(body: JsonRecord): Promise<JsonRecord> {
     const { action: a, body: b } = this.validate(body);
     if (a === 'scan-stop') { this.scanStopped = true; return { ok: true }; }
+    if (a === 'history') return { ok: true, trips: this.recorder?.trips() ?? [] };
     if (this.stopped) throw new DebugError(deviceMessage('device.debug.026'));
     if (a === 'release' || a === 'leave') {
       this.scanStopped = true; if (a === 'release') await this.claim();
@@ -461,5 +477,5 @@ export class DuckDebug {
     this.stopped = true; this.scanStopped = true;
     return this.closing ??= (async () => { await this.scanTask; })();
   }
-  close(): Promise<void> { return this.stopBackground(); }
+  async close(): Promise<void> { await this.stopBackground(); await this.recorder?.close(); }
 }

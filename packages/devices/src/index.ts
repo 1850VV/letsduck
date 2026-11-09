@@ -5,6 +5,8 @@ export * from './shared.js';
 export * from './runtime.js';
 export * from './servo-setup.js';
 export * from './duck-debug.js';
+export * from './duck-recorder.js';
+export * from './duck-checkup.js';
 export * from './preparation.js';
 
 export * from './messages.js';
